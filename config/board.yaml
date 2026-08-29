@@ -180,24 +180,34 @@ mockup:
     layers: 2
     format: nucleo64_shield      # Arduino R3 header pattern, Nucleo below
   analog:
-    mux: { part: ADG709CRUZ, ron_ohm: 4.0, note: "dual 4:1 differential" }
+    # Coils are biased at vref_v, not mid-rail: keeps the amplified
+    # output inside the 3.3 V MCU range, the AD8421 above its minimum
+    # input common mode, and lets P-FET damp switches turn off with a
+    # gate pulled to 5 V and on with a 3.3 V MCU driving low.
+    vref_v: 1.65
+    mux: { part: 74HCT4052PW, ron_ohm: 70.0, note: "dual 4:1 diff, TTL thresholds" }
     clamp_r_ohm: 330.0           # series R before mux, BAV99 clamps to rails
-    bleed_r_ohm: 10.0e+3         # DC reference on both coil ends
-    ina: { part: AD8421ARMZ, gain: 20.0, rg_ohm: 523.0 }
+    bleed_r_ohm: 10.0e+3         # DC reference on both coil ends, to vref
+    ina: { part: AD8421ARZ, gain: 20.0, rg_ohm: 523.0 }
     input_ac_nF: 100.0
-    input_bias_r_ohm: 100.0e+3   # to mid-rail reference
-    filter:                      # MFB biquads, Butterworth, order 4 total
+    input_bias_r_ohm: 100.0e+3   # to the vref reference
+    filter:                      # Sallen-Key equal-component, order 4 total
       hp_hz: 200.0e+3
       lp_hz: 650.0e+3
-      q: 0.7071
-      stage_gain: 3.162          # per stage; chain total 20 x 3.162^2 = 200
-      opamp: OPA2810             # 105 MHz duals: HP, LP, mid-rail, output
+      q: 0.7071                  # per stage gain K = 3 - 1/Q = 1.586
+      output_gain: 4.53          # last op amp; compensates the mid-band sag
+                                 # of the 200-650 kHz bandpass: ~200 at 400 kHz
+      opamp: OPA2810IDR          # 105 MHz duals: HP, LP, vref buffer, output
     adc_rc: { r_ohm: 49.9, c_nF: 1.0 }
   drive:                         # per-coil excitation, bypasses the mux
     rail_fet: AO3401A            # one shared high-side switch from 12 V
-    rail_r_ohm: 10.0             # shared series power resistor, 1 W
-    coil_fet: AO3400A            # per coil: low-side drive AND active damping
-    clamp_diode: SS34            # flyback clamp back to the 12 V rail
+    rail_r_ohm: 10.0             # shared series power resistor, 2512
+    bus_diode: B5819W            # per coil, isolates coils from the bus at rest
+    coil_fet: AO3400A            # per coil low-side drive switch
+    clamp_diode: SS34            # per coil flyback clamp back to the 12 V rail
+    damp_fet: AO3401A            # per coil P-FET damp switch, active low
+    damp_r_ohm: 680.0            # near-critical damping of the parasitic ring;
+                                 # 0 ohm variant turns it into the idle short
   power:
     input: { v_nom: 12.0, jack: "5.5 x 2.1 mm", tvs: SMBJ15A, reverse_diode: SS54 }
     buck: { part: TPS62913RPUR, f_sw_mhz: 2.2, l_uH: 2.2, vout: 5.0, forced_pwm: true }
@@ -211,11 +221,11 @@ mockup:
     pulse_en: { arduino: A2, mcu: PA4 }
     mux_a0: { arduino: D3, mcu: PB3 }
     mux_a1: { arduino: D4, mcu: PB5 }
-    mux_en: { arduino: D5, mcu: PB4 }
-    short_1: { arduino: D6, mcu: PB10 }
-    short_2: { arduino: D7, mcu: PA8 }
-    short_3: { arduino: D9, mcu: PC7 }
-    short_4: { arduino: D10, mcu: PB6 }
+    mux_inh: { arduino: D5, mcu: PB4 }  # 4052 Inh, active high
+    damp_1: { arduino: D6, mcu: PB10 }
+    damp_2: { arduino: D7, mcu: PA8 }
+    damp_3: { arduino: D9, mcu: PC7 }
+    damp_4: { arduino: D10, mcu: PB6 }
     drive_1: { arduino: D11, mcu: PA7 }
     drive_2: { arduino: D12, mcu: PA6 }
     drive_3: { arduino: D14, mcu: PB9 }

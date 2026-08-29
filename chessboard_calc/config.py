@@ -304,7 +304,7 @@ class FilterCfg(_Model):
     hp_hz: float
     lp_hz: float
     q: float
-    stage_gain: float
+    output_gain: float
     opamp: str
 
 
@@ -314,6 +314,7 @@ class AdcRcCfg(_Model):
 
 
 class MockupAnalogCfg(_Model):
+    vref_v: float
     mux: AnalogMuxCfg
     clamp_r_ohm: float
     bleed_r_ohm: float
@@ -327,8 +328,11 @@ class MockupAnalogCfg(_Model):
 class MockupDriveCfg(_Model):
     rail_fet: str
     rail_r_ohm: float
+    bus_diode: str
     coil_fet: str
     clamp_diode: str
+    damp_fet: str
+    damp_r_ohm: float
 
 
 class MockupInputCfg(_Model):
