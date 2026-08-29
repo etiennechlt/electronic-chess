@@ -393,13 +393,15 @@ class Router:
                     (net, width, simple, "F.Cu" if la == 0 else "B.Cu"))
 
     def _astar(self, nid, width, start_cells, target, endpoint_xy,
-               relax_all=False, max_pops=500_000):
+               relax_all=False, no_relax=False, max_pops=500_000):
         soft, hard, via_ok = self._legal_masks(nid, width)
         own = np.zeros((2, self.ny, self.nx), dtype=bool)
         for la in range(2):
             own[la] = (self.pad_grid[la] == nid) | (self.track_grid[la] == nid)
         relax = np.zeros((2, self.ny, self.nx), dtype=bool)
-        if relax_all:
+        if no_relax:
+            pass
+        elif relax_all:
             relax[:, :, :] = True
         else:
             ex, ey = endpoint_xy
@@ -594,7 +596,8 @@ class Router:
                 target[la] |= (self.pad_grid[la] == nid) | (self.track_grid[la] == nid)
             for la, i, j in start_cells:
                 target[la, i, j] = False
-            path = self._astar(nid, W_SIG, start_cells, target, (pad.x, pad.y))
+            path = self._astar(nid, W_SIG, start_cells, target,
+                               (pad.x, pad.y), no_relax=True)
             if path is None:
                 self.failed.append(f"GND-via:{pad.ref}.{pad.number}")
                 continue
@@ -602,6 +605,66 @@ class Router:
             if len(path) >= 2:
                 self._emit("GND", W_SIG, path)
         # THT GND pads connect through the plane itself.
+
+
+
+
+def _hand_seeds(r: Router, pp) -> None:
+    """Structural routes for the links the maze router cannot close,
+    chosen on the rendered board; anchored on pad centers so they
+    follow placement changes. Underpasses dive below the two rails."""
+    def P(ref, num):
+        return pp[(ref, num)]
+
+    def T(net, pts, layer="F.Cu", w=W_FINE):
+        r.seed_track(net, pts, w, layer=layer)
+
+    # BUCK_EN: U1 pin 13 west out, down the x=18.6 lane to R1 pin 1.
+    x13, y13 = P("U1", "13")
+    x_r1, y_r1 = P("R1", "1")
+    T("BUCK_EN", [(x13, y13), (18.6, y13), (18.6, y_r1), (x_r1, y_r1)])
+
+    # VIN: LDO input from the C11 vin pad.
+    x_u2, y_u2 = P("U2", "1")
+    x_c11, y_c11 = P("C11", "1")
+    T("VIN", [(x_c11, y_c11), (x_c11, y_u2 + 2.2), (x_u2, y_u2 + 2.2),
+              (x_u2, y_u2)], w=W_SIG)
+
+    # M2_A: cell 2 clamp top to mux X1 over the cell-top corridor.
+    xa, ya = P("R33", "2")
+    xm, ym = P("U3", "14")
+    T("M2_A", [(xa, ya), (xa, 36.4), (xm, 36.4), (xm, ym)])
+
+    # M4_B: cell 4 clamp top, west below the VREF rail, around the mux
+    # to its south row (Y3).
+    xb, yb = P("R54", "2")
+    xy3, yy3 = P("U3", "4")
+    T("M4_B", [(xb, yb), (xb, 35.95), (53.6, 35.95), (53.6, 47.0),
+               (xy3, 47.0), (xy3, yy3)])
+
+    # LP_OUT spine from the U5 output to the U6 non-inverting input.
+    x57, y57 = P("U5", "7")
+    x65, y65 = P("U6", "5")
+    T("LP_OUT", [(x57, y57), (x57 - 1.6, y57), (x57 - 1.6, 29.7),
+                 (x65, 29.7), (x65, y65)], w=W_SIG)
+
+    # MUX_A0 and MUX_A1: J4 to the mux select pins, with underpasses
+    # below the 5VA rail (y 20.6) and the VREF rail (y 35.4).
+    def control(net, jpad, drop_x, lane_y, mux_pin):
+        xj, yj = P("J4", jpad)
+        xm_, ym_ = P("U3", mux_pin)
+        T(net, [(xj, yj), (drop_x, yj + 1.2), (drop_x, 19.5)])
+        r.seed_via(net, drop_x, 19.5)
+        T(net, [(drop_x, 19.5), (drop_x, 21.9)], layer="B.Cu")
+        r.seed_via(net, drop_x, 21.9)
+        T(net, [(drop_x, 21.9), (drop_x, 34.6)])
+        r.seed_via(net, drop_x, 34.6)
+        T(net, [(drop_x, 34.6), (drop_x, 36.6)], layer="B.Cu")
+        r.seed_via(net, drop_x, 36.6)
+        T(net, [(drop_x, 36.6), (drop_x, lane_y), (xm_, lane_y), (xm_, ym_)])
+
+    control("MUX_A0", "5", 68.55, 36.35, "10")
+    control("MUX_A1", "6", 70.35, 36.75, "9")
 
 
 # ----------------------------------------------------------------------
@@ -720,6 +783,8 @@ def build_pcb(cfg: BoardConfig, circuit: Circuit) -> PcbResult:
         key=lambda n: (n not in POWER_NETS, net_span(n)),
     )
 
+    pp = {(q.ref, q.number): (q.x, q.y) for q in pads}
+
     def run(order):
         r = Router(pads)
         # Structural rails: VREF along the south of the chain band with a
@@ -730,6 +795,7 @@ def build_pcb(cfg: BoardConfig, circuit: Circuit) -> PcbResult:
         r.seed_via("VREF", 53.0, 35.4)
         r.seed_track("VREF", [(53.0, 35.4), (92.0, 35.4)], W_SIG)
         r.seed_track("5VA", [(44.0, 20.6), (96.0, 20.6)], W_PWR)
+        _hand_seeds(r, pp)
         r.gnd_to_plane()
         for net in order:
             r.route_net(net)
