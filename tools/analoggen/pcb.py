@@ -364,7 +364,8 @@ class Router:
                         vz == -1, nid, vz)
             prev = (la, i, j)
 
-    def _emit(self, net: str, width: float, path):
+    def _emit(self, net: str, width: float, path,
+              snap_first=None, snap_last=None):
         segs = []
         cur_layer = path[0][0]
         cur = [(path[0][2] * GRID, path[0][1] * GRID)]
@@ -377,6 +378,10 @@ class Router:
                 cur_layer = la
             cur.append(pt)
         segs.append((cur_layer, cur))
+        if snap_first is not None and len(segs[0][1]) >= 2:
+            segs[0][1][0] = snap_first
+        if snap_last is not None and len(segs[-1][1]) >= 2:
+            segs[-1][1][-1] = snap_last
         for la, pts in segs:
             simple = [pts[0]]
             for prev_pt, a, b in zip(pts, pts[1:], pts[2:], strict=False):
@@ -388,9 +393,55 @@ class Router:
                 simple.append(a)
             if pts[-1] != simple[-1]:
                 simple.append(pts[-1])
+            simple = [p for k, p in enumerate(simple)
+                      if k == 0 or p != simple[k - 1]]
             if len(simple) >= 2:
                 self.tracks.append(
                     (net, width, simple, "F.Cu" if la == 0 else "B.Cu"))
+
+    def _pad_at_cell(self, net: str, la: int, i: int, j: int):
+        x, y = j * GRID, i * GRID
+        for q in self.pads:
+            if q.net != net or (la == 1 and not q.tht):
+                continue
+            if abs(x - q.x) <= q.w / 2 + 1e-9 and abs(y - q.y) <= q.h / 2 + 1e-9:
+                return q
+        return None
+
+    def emit_routed(self, net: str, width: float, path) -> None:
+        """Emit a found cell path, collapsing the run of cells inside the
+        start and end pads onto the pad's long axis.
+
+        Pad cells are rasterized one cell beyond the copper, so a path
+        entering the grid box of a small pad can otherwise sweep its
+        half-width into the neighbouring pad (0.5 mm pitch parts)."""
+        def trim(p):
+            la0, i0, j0 = p[0]
+            pad = self._pad_at_cell(net, la0, i0, j0)
+            if pad is None:
+                return p, None
+            k = 0
+            while (k + 1 < len(p) and p[k + 1][0] == la0
+                   and self._pad_at_cell(net, *p[k + 1]) is pad):
+                k += 1
+            p = p[k:]
+            x, y = p[0][2] * GRID, p[0][1] * GRID
+            if pad.w >= pad.h:
+                span = max(0.0, (pad.w - width) / 2.0)
+                sx = min(max(x, pad.x - span), pad.x + span)
+                sy = pad.y
+            else:
+                span = max(0.0, (pad.h - width) / 2.0)
+                sx = pad.x
+                sy = min(max(y, pad.y - span), pad.y + span)
+            return p, (sx, sy)
+
+        path, first_xy = trim(list(path))
+        rev, last_xy = trim(path[::-1])
+        path = rev[::-1]
+        if len(path) >= 2:
+            self._emit(net, width, path, snap_first=first_xy,
+                       snap_last=last_xy)
 
     def _astar(self, nid, width, start_cells, target, endpoint_xy,
                relax_all=False, no_relax=False, max_pops=500_000):
@@ -535,7 +586,7 @@ class Router:
                     continue
                 self._mark_path(nid, width, path)
                 if len(path) >= 2:
-                    self._emit(net, width, path)
+                    self.emit_routed(net, width, path)
                 for la, i, j in path:
                     connected[la, i, j] = True
             for la, i, j in cells:
@@ -562,7 +613,7 @@ class Router:
                 continue
             self._mark_path(nid, W_FINE, path)
             if len(path) >= 2:
-                self._emit(net, W_FINE, path)
+                self.emit_routed(net, W_FINE, path)
         self.failed = [f for f in self.failed if not self._is_conn_fail(f)] + still
 
     @staticmethod
@@ -603,7 +654,7 @@ class Router:
                 continue
             self._mark_path(nid, W_SIG, path)
             if len(path) >= 2:
-                self._emit("GND", W_SIG, path)
+                self.emit_routed("GND", W_SIG, path)
         # THT GND pads connect through the plane itself.
 
 
@@ -616,7 +667,7 @@ def _hand_seeds(r: Router, pads) -> None:
     re-checks each path against every foreign pad at build time so a
     placement change fails loudly instead of overlapping silently.
     """
-    from shapely.geometry import LineString
+    from shapely.geometry import LineString, Point
     from shapely.geometry import box as _box
 
     pp = {(q.ref, q.number): (q.x, q.y) for q in pads}
@@ -643,6 +694,23 @@ def _hand_seeds(r: Router, pads) -> None:
         laid.append((net, layer, line))
         r.seed_track(net, pts, w, layer=layer)
 
+    def V(net, x, y):
+        disc = Point(x, y).buffer(VIA_D / 2.0)
+        for q in pads:
+            if q.net == net:
+                continue
+            g = _box(q.x - q.w / 2, q.y - q.h / 2,
+                     q.x + q.w / 2, q.y + q.h / 2)
+            if disc.distance(g) < FAB_CLR:
+                raise ValueError(
+                    f"seed via {net} clashes {q.ref}.{q.number} ({q.net})")
+        for onet, _olayer, og in laid:
+            if onet != net and disc.distance(og) < FAB_CLR:
+                raise ValueError(f"seed via {net} crosses seed {onet}")
+        laid.append((net, "F.Cu", disc))
+        laid.append((net, "B.Cu", disc))
+        r.seed_via(net, x, y)
+
     # BUCK_EN: axis exit north of U1 pin 13, around the input capacitors,
     # down the far west lane to R1.
     x13, y13 = P("U1", "13")
@@ -665,10 +733,10 @@ def _hand_seeds(r: Router, pads) -> None:
     # to its south row.
     xb, yb = P("R54", "2")
     xy3, yy3 = P("U3", "4")
-    T("M4_B", [(xb, yb), (xb, 35.95), (61.5, 35.95)])
-    r.seed_via("M4_B", 61.5, 35.95)
-    T("M4_B", [(61.5, 35.95), (61.5, 46.4), (xy3, 46.4)], layer="B.Cu")
-    r.seed_via("M4_B", xy3, 46.4)
+    T("M4_B", [(xb, yb), (xb, 36.05), (61.5, 36.05)])
+    V("M4_B", 61.5, 36.05)
+    T("M4_B", [(61.5, 36.05), (61.5, 46.4), (xy3, 46.4)], layer="B.Cu")
+    V("M4_B", xy3, 46.4)
     T("M4_B", [(xy3, 46.4), (xy3, yy3)])
 
     # LP_OUT spine: through the channel between the U5 pad columns,
@@ -684,17 +752,17 @@ def _hand_seeds(r: Router, pads) -> None:
         xj, yj = P("J4", jpad)
         xm_, ym_ = P("U3", mux_pin)
         T(net, [(xj, yj), (xj, top_y), (drop_x, top_y), (drop_x, 19.5)])
-        r.seed_via(net, drop_x, 19.5)
+        V(net, drop_x, 19.5)
         T(net, [(drop_x, 19.5), (drop_x, 21.9)], layer="B.Cu")
-        r.seed_via(net, drop_x, 21.9)
+        V(net, drop_x, 21.9)
         T(net, [(drop_x, 21.9), (drop_x, 34.6)])
-        r.seed_via(net, drop_x, 34.6)
+        V(net, drop_x, 34.6)
         T(net, [(drop_x, 34.6), (drop_x, 36.6)], layer="B.Cu")
-        r.seed_via(net, drop_x, 36.6)
+        V(net, drop_x, 36.6)
         T(net, [(drop_x, 36.6), (drop_x, lane_y), (xm_, lane_y), (xm_, ym_)])
         _ = south_first
 
-    control("MUX_A0", "5", 60.6, 36.2, "10", 8.6, True)
+    control("MUX_A0", "5", 60.6, 35.95, "10", 8.6, True)
     control("MUX_A1", "6", 58.1, 36.75, "9", 1.9, False)
 
 
