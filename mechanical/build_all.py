@@ -18,7 +18,7 @@ from common import load, puck_dims
 from parts import (
     magnet_bracket_base,
     magnet_cup,
-    test_puck,
+    piece_puck,
     winding_jig,
     winding_jig_washer,
 )
@@ -38,7 +38,7 @@ def main() -> int:
     parts: dict[str, cq.Workplane] = {}
     for tp in cfg.mockup.test_pieces:
         dims = puck_dims(cfg, tp.piece, pitch)
-        parts[f"puck-{tp.piece.value}-{tp.color.value}"] = test_puck(dims)
+        parts[f"puck-{tp.piece.value}-{tp.color.value}"] = piece_puck(dims)
 
     # One winding jig per distinct coil envelope among the test pieces.
     seen = set()

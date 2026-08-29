@@ -12,7 +12,7 @@ cq = pytest.importorskip("cadquery")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "mechanical"))
 
 from common import FIT_TIGHT, puck_dims  # noqa: E402
-from parts import magnet_bracket_base, magnet_cup, test_puck, winding_jig  # noqa: E402
+from parts import magnet_bracket_base, magnet_cup, piece_puck, winding_jig  # noqa: E402
 
 from chessboard_calc.config import PieceType  # noqa: E402
 
@@ -21,7 +21,7 @@ def test_puck_has_cavities_and_fits_the_class_diameter(cfg):
     pitch = cfg.pitch.mockup_mm
     for piece in (PieceType.PAWN, PieceType.ROOK):
         dims = puck_dims(cfg, piece, pitch)
-        part = test_puck(dims)
+        part = piece_puck(dims)
         solid = part.val()
         full = math.pi * (dims.base_d / 2.0) ** 2 * dims.height
         assert 0.3 * full < solid.Volume() < 0.95 * full

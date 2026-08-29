@@ -15,7 +15,7 @@ from common import (
 )
 
 
-def test_puck(dims: PuckDims) -> cq.Workplane:
+def piece_puck(dims: PuckDims) -> cq.Workplane:
     """Test piece: cylinder with the resonator stack bored from below.
 
     Stack from the playing surface up (brief 3.2): felt (glued by the
