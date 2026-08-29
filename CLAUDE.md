@@ -17,6 +17,10 @@ Ces règles s'appliquent à toute contribution, humaine ou assistée.
   trailer Co-Authored-By, pas de pied de page « generated with », pas
   d'identifiant de modèle.
 - Auteur des commits : etiennechlt <etiennechalot@gmail.com>.
+- Branche de travail : `main`. Aucun nom de branche évoquant un outil
+  d'assistance ; si l'outillage impose une branche de travail à lui,
+  pousser le résultat sur `main` puis supprimer cette branche avant de
+  clore la session.
 
 ## Source de vérité unique
 
