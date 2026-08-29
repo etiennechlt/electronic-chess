@@ -624,9 +624,11 @@ def _hand_seeds(r: Router, pads) -> None:
     def P(ref, num):
         return pp[(ref, num)]
 
+    laid: list[tuple[str, str, object]] = []
+
     def T(net, pts, layer="F.Cu", w=W_FINE):
+        line = LineString(pts).buffer(w / 2.0)
         if layer == "F.Cu":
-            line = LineString(pts).buffer(w / 2.0)
             for q in pads:
                 if q.net == net:
                     continue
@@ -635,6 +637,10 @@ def _hand_seeds(r: Router, pads) -> None:
                 if line.distance(g) < FAB_CLR:
                     raise ValueError(
                         f"seed {net} clashes {q.ref}.{q.number} ({q.net})")
+        for onet, olayer, og in laid:
+            if onet != net and olayer == layer and line.distance(og) < FAB_CLR:
+                raise ValueError(f"seed {net} crosses seed {onet} on {layer}")
+        laid.append((net, layer, line))
         r.seed_track(net, pts, w, layer=layer)
 
     # BUCK_EN: axis exit north of U1 pin 13, around the input capacitors,
@@ -659,8 +665,8 @@ def _hand_seeds(r: Router, pads) -> None:
     # to its south row.
     xb, yb = P("R54", "2")
     xy3, yy3 = P("U3", "4")
-    T("M4_B", [(xb, yb), (xb, 35.95), (53.6, 35.95), (53.6, 47.0),
-               (xy3, 47.0), (xy3, yy3)])
+    T("M4_B", [(xb, yb), (xb, 35.95), (45.5, 35.95), (45.5, 46.4),
+               (xy3, 46.4), (xy3, yy3)])
 
     # LP_OUT spine: through the channel between the U5 pad columns,
     # then along y = 34.3 to the U6 non-inverting input.
@@ -685,8 +691,8 @@ def _hand_seeds(r: Router, pads) -> None:
         T(net, [(drop_x, 36.6), (drop_x, lane_y), (xm_, lane_y), (xm_, ym_)])
         _ = south_first
 
-    control("MUX_A0", "5", 58.1, 36.35, "10", 8.6, True)
-    control("MUX_A1", "6", 60.6, 36.75, "9", 1.9, False)
+    control("MUX_A0", "5", 60.6, 36.35, "10", 8.6, True)
+    control("MUX_A1", "6", 58.1, 36.75, "9", 1.9, False)
 
 
 # ----------------------------------------------------------------------
@@ -889,8 +895,58 @@ def build_pcb(cfg: BoardConfig, circuit: Circuit) -> PcbResult:
                        pad_pos={(p.ref, p.number): (p.x, p.y) for p in pads},
                        tracks=router.tracks, vias=router.vias,
                        plane_polys=strips)
+    # Final guarantee: any copper below the fab clearance is stripped
+    # and its connection reopened, so the shipped board is DRC clean
+    # and every leftover is an explicit airwire to finish in KiCad.
+    stripped: list[str] = []
+    for _ in range(24):
+        errors = _drc_errors(pads, router.tracks, router.vias)
+        if not errors:
+            break
+        from collections import defaultdict
+
+        from shapely.geometry import LineString as _LS
+        from shapely.geometry import Point as _Pt
+        from shapely.geometry import box as _bx
+        layer_name, rest = errors[0].split(": ", 1)
+        nets_part = rest.rsplit(":", 1)[0]
+        net_a, net_b = nets_part.split(" vs ")
+        geoms = defaultdict(list)
+        for q in pads:
+            if q.net in (net_a, net_b):
+                layers = ("F.Cu", "B.Cu") if q.tht else ("F.Cu",)
+                if layer_name in layers:
+                    geoms[q.net].append(_bx(q.x - q.w / 2, q.y - q.h / 2,
+                                            q.x + q.w / 2, q.y + q.h / 2))
+        for vnet, x, y in router.vias:
+            if vnet in (net_a, net_b):
+                geoms[vnet].append(_Pt(x, y).buffer(VIA_D / 2.0))
+        best = (None, 1e9)
+        for idx, (tnet, w, pts, tlayer) in enumerate(router.tracks):
+            if tlayer != layer_name or tnet not in (net_a, net_b):
+                continue
+            other = net_b if tnet == net_a else net_a
+            if not geoms[other]:
+                continue
+            g = _LS(pts).buffer(w / 2.0)
+            d = min(g.distance(og) for og in geoms[other])
+            if d < FAB_CLR - 1e-6 and len(pts) < best[1]:
+                best = (idx, len(pts))
+        if best[0] is None:
+            break
+        tnet = router.tracks[best[0]][0]
+        del router.tracks[best[0]]
+        stripped.append(tnet)
+    if stripped:
+        board.body[:] = [b for b in board.body if not b.startswith("  (segment")]
+        for net, width, pts, layer in router.tracks:
+            board.polyline(pts, width, layer, net_index[net])
+
+    result.tracks = router.tracks
     result.open_nets = list(router.failed) + _connectivity_errors(
         circuit, pads, router.tracks, router.vias)
+    for net in dict.fromkeys(stripped):
+        result.open_nets.append(f"{net}: piste retiree (sous-garde), a finir")
     result.drc_errors = _drc_errors(pads, router.tracks, router.vias)
     parts = list(getattr(fill, "geoms", [fill]))
     result.plane_islands = len(parts)
