@@ -133,7 +133,7 @@ PLACEMENTS: dict[str, tuple[float, float, float]] = {
     "R13": (44.2, 32.6, 90.0),
     "U4": (54.0, 26.0, 0.0),
     "R14": (54.0, 22.2, 0.0),
-    "C16": (58.5, 22.5, 90.0),
+    "C16": (59.6, 22.5, 90.0),
     "C17": (62.5, 23.5, 0.0),
     "C18": (67.0, 23.5, 0.0),
     "R15": (64.8, 26.0, 0.0),
@@ -609,26 +609,46 @@ class Router:
 
 
 
-def _hand_seeds(r: Router, pp) -> None:
-    """Structural routes for the links the maze router cannot close,
-    chosen on the rendered board; anchored on pad centers so they
-    follow placement changes. Underpasses dive below the two rails."""
+def _hand_seeds(r: Router, pads) -> None:
+    """Structural routes for the links the maze router cannot close.
+
+    Waypoints were tuned against the real pad geometry; the guard below
+    re-checks each path against every foreign pad at build time so a
+    placement change fails loudly instead of overlapping silently.
+    """
+    from shapely.geometry import LineString
+    from shapely.geometry import box as _box
+
+    pp = {(q.ref, q.number): (q.x, q.y) for q in pads}
+
     def P(ref, num):
         return pp[(ref, num)]
 
     def T(net, pts, layer="F.Cu", w=W_FINE):
+        if layer == "F.Cu":
+            line = LineString(pts).buffer(w / 2.0)
+            for q in pads:
+                if q.net == net:
+                    continue
+                g = _box(q.x - q.w / 2, q.y - q.h / 2,
+                         q.x + q.w / 2, q.y + q.h / 2)
+                if line.distance(g) < FAB_CLR:
+                    raise ValueError(
+                        f"seed {net} clashes {q.ref}.{q.number} ({q.net})")
         r.seed_track(net, pts, w, layer=layer)
 
-    # BUCK_EN: U1 pin 13 west out, down the x=18.6 lane to R1 pin 1.
+    # BUCK_EN: axis exit north of U1 pin 13, around the input capacitors,
+    # down the far west lane to R1.
     x13, y13 = P("U1", "13")
-    x_r1, y_r1 = P("R1", "1")
-    T("BUCK_EN", [(x13, y13), (18.6, y13), (18.6, y_r1), (x_r1, y_r1)])
+    xr1, yr1 = P("R1", "1")
+    T("BUCK_EN", [(x13, y13), (x13, 8.8), (22.4, 8.2), (22.4, 2.1),
+                  (10.7, 2.1), (10.7, yr1), (xr1, yr1)])
 
-    # VIN: LDO input from the C11 vin pad.
-    x_u2, y_u2 = P("U2", "1")
-    x_c11, y_c11 = P("C11", "1")
-    T("VIN", [(x_c11, y_c11), (x_c11, y_u2 + 2.2), (x_u2, y_u2 + 2.2),
-              (x_u2, y_u2)], w=W_SIG)
+    # VIN: LDO input joins the C11 vin pad below the output capacitors.
+    xu2, yu2 = P("U2", "1")
+    xc11, yc11 = P("C11", "1")
+    T("VIN", [(xu2, yu2), (xu2, 20.1), (28.9, 20.1), (28.9, 16.9),
+              (xc11, 16.9), (xc11, yc11)], w=W_SIG)
 
     # M2_A: cell 2 clamp top to mux X1 over the cell-top corridor.
     xa, ya = P("R33", "2")
@@ -636,24 +656,25 @@ def _hand_seeds(r: Router, pp) -> None:
     T("M2_A", [(xa, ya), (xa, 36.4), (xm, 36.4), (xm, ym)])
 
     # M4_B: cell 4 clamp top, west below the VREF rail, around the mux
-    # to its south row (Y3).
+    # to its south row.
     xb, yb = P("R54", "2")
     xy3, yy3 = P("U3", "4")
     T("M4_B", [(xb, yb), (xb, 35.95), (53.6, 35.95), (53.6, 47.0),
                (xy3, 47.0), (xy3, yy3)])
 
-    # LP_OUT spine from the U5 output to the U6 non-inverting input.
+    # LP_OUT spine: through the channel between the U5 pad columns,
+    # then along y = 34.3 to the U6 non-inverting input.
     x57, y57 = P("U5", "7")
     x65, y65 = P("U6", "5")
-    T("LP_OUT", [(x57, y57), (x57 - 1.6, y57), (x57 - 1.6, 29.7),
-                 (x65, 29.7), (x65, y65)], w=W_SIG)
+    T("LP_OUT", [(x57, y57), (66.5, y57), (66.5, 34.3), (x65, 34.3),
+                 (x65, y65)], w=W_SIG)
 
     # MUX_A0 and MUX_A1: J4 to the mux select pins, with underpasses
     # below the 5VA rail (y 20.6) and the VREF rail (y 35.4).
-    def control(net, jpad, drop_x, lane_y, mux_pin):
+    def control(net, jpad, drop_x, lane_y, mux_pin, top_y, south_first):
         xj, yj = P("J4", jpad)
         xm_, ym_ = P("U3", mux_pin)
-        T(net, [(xj, yj), (drop_x, yj + 1.2), (drop_x, 19.5)])
+        T(net, [(xj, yj), (xj, top_y), (drop_x, top_y), (drop_x, 19.5)])
         r.seed_via(net, drop_x, 19.5)
         T(net, [(drop_x, 19.5), (drop_x, 21.9)], layer="B.Cu")
         r.seed_via(net, drop_x, 21.9)
@@ -662,9 +683,10 @@ def _hand_seeds(r: Router, pp) -> None:
         T(net, [(drop_x, 34.6), (drop_x, 36.6)], layer="B.Cu")
         r.seed_via(net, drop_x, 36.6)
         T(net, [(drop_x, 36.6), (drop_x, lane_y), (xm_, lane_y), (xm_, ym_)])
+        _ = south_first
 
-    control("MUX_A0", "5", 68.55, 36.35, "10")
-    control("MUX_A1", "6", 70.35, 36.75, "9")
+    control("MUX_A0", "5", 58.1, 36.35, "10", 8.6, True)
+    control("MUX_A1", "6", 60.6, 36.75, "9", 1.9, False)
 
 
 # ----------------------------------------------------------------------
@@ -783,8 +805,6 @@ def build_pcb(cfg: BoardConfig, circuit: Circuit) -> PcbResult:
         key=lambda n: (n not in POWER_NETS, net_span(n)),
     )
 
-    pp = {(q.ref, q.number): (q.x, q.y) for q in pads}
-
     def run(order):
         r = Router(pads)
         # Structural rails: VREF along the south of the chain band with a
@@ -795,7 +815,7 @@ def build_pcb(cfg: BoardConfig, circuit: Circuit) -> PcbResult:
         r.seed_via("VREF", 53.0, 35.4)
         r.seed_track("VREF", [(53.0, 35.4), (92.0, 35.4)], W_SIG)
         r.seed_track("5VA", [(44.0, 20.6), (96.0, 20.6)], W_PWR)
-        _hand_seeds(r, pp)
+        _hand_seeds(r, pads)
         r.gnd_to_plane()
         for net in order:
             r.route_net(net)
