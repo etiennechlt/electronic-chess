@@ -182,8 +182,8 @@ mockup:
   analog:
     # Coils are biased at vref_v, not mid-rail: keeps the amplified
     # output inside the 3.3 V MCU range, the AD8421 above its minimum
-    # input common mode, and lets P-FET damp switches turn off with a
-    # gate pulled to 5 V and on with a 3.3 V MCU driving low.
+    # input common mode, and lets the P-FET damp switches (gates pulled
+    # to VIN, hard off) turn on with a 3.3 V MCU driving low.
     vref_v: 1.65
     mux: { part: 74HCT4052PW, ron_ohm: 70.0, note: "dual 4:1 diff, TTL thresholds" }
     clamp_r_ohm: 330.0           # series R before mux, BAV99 clamps to rails

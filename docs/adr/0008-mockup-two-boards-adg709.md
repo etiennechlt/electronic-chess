@@ -29,24 +29,37 @@ apparus à la conception détaillée :
   barrette rigide 1 x 10 (GND, A1..B4, GND). La carte analogique se
   branche sur une Nucleo-G474RE : MCU, alimentation 3,3 V, VCP USB
   pour la sortie CSV, sans MCU à souder.
-- **Mux différentiel ADG709** (double 4 vers 1) : 4 bobines en
-  différentiel vrai, même famille et mêmes parasites que l'ADG708.
-  Pour le quadrant 4 x 4 de la phase 2, l'équivalent est un ADG726
-  (double 16 vers 1), un seul boîtier par quadrant : ceci remplace le
-  « 2 x ADG708 » de la BOM du brief et résout la contradiction relevée
-  en lecture critique (point A).
+- **Mux différentiel double 4 vers 1** : retenu 74HCT4052 (seuils
+  d'entrée TTL, indispensables avec un MCU 3,3 V sur un mux alimenté
+  en 5 V ; Ron ~70 ohms négligeable devant l'entrée haute impédance de
+  l'INA, bruit thermique 1,5 nV/racine(Hz)). L'ADG709 (4 ohms) reste
+  l'alternative directe au même brochage fonctionnel. Pour le quadrant
+  4 x 4 de la phase 2, l'équivalent est un ADG726 (double 16 vers 1),
+  un seul boîtier par quadrant : ceci remplace le « 2 x ADG708 » de la
+  BOM du brief et résout la contradiction relevée en lecture critique
+  (point A).
 - **Excitation par FET dédié par bobine**, hors mux : un commutateur
   haut partagé (AO3401) applique le rail 12 V via 10 ohms, un AO3400
-  bas par bobine ferme le circuit pendant l'impulsion, une Schottky
-  SS34 par bobine écrête le flyback vers le rail. Le même AO3400 sert
-  de FET d'amortissement actif pendant le blanking et de court-circuit
-  des bobines non sélectionnées (politique `shorted`).
+  bas par bobine ferme le circuit pendant l'impulsion, une diode de
+  bus B5819W isole les bobines au repos et une Schottky SS34 par
+  bobine écrête le flyback vers le rail.
+- **Amortissement par P-FET AO3401 et 680 ohms par bobine** (grille
+  tirée à VIN, commande 3,3 V active à l'état bas) : amortissement
+  proche du critique du ringing parasite pendant le blanking, et
+  charge des bobines non sélectionnées ; la variante 0 ohm redonne le
+  court-circuit franc du brief (politique `shorted`), a comparer en
+  mesure 5.
 - **Protection du chemin de mesure** : 330 ohms série et BAV99 vers
   les rails devant chaque entrée mux, ce qui borne la contribution en
   bruit à ~3,3 nV/racine(Hz) contre 3 nV pour l'AD8421.
-- **Chaîne de gain** : AD8421 G = 20 (BW ~1,4 MHz), puis deux biquads
-  MFB Butterworth (passe-haut 200 kHz, passe-bas 650 kHz) de gain 3,16
-  chacun sur OPA2810, soit 200 au total, conformes au brief.
+- **Chaîne de gain** : AD8421 G = 20 (BW ~1,4 MHz), deux étages
+  Sallen-Key Butterworth à composants égaux (passe-haut 200 kHz,
+  passe-bas 650 kHz, K = 1,59), étage de sortie x4,57 compensant
+  l'affaissement mi-bande : ~200 à 400 kHz, validé ngspice. La
+  polarisation générale est à 1,65 V pour rester dans la fenêtre du
+  MCU 3,3 V. Réjection réelle à 1,5 MHz : ~18 dB (le 32 dB du brief
+  supposait la pente d'un passe-bas d'ordre 4, voir la doc de la
+  carte).
 
 ## Conséquences
 
