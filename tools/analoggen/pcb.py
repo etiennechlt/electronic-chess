@@ -901,19 +901,13 @@ def build_pcb(cfg: BoardConfig, circuit: Circuit) -> PcbResult:
     # Final guarantee: any copper below the fab clearance is stripped
     # and its connection reopened, so the shipped board is DRC clean
     # and every leftover is an explicit airwire to finish in KiCad.
-    stripped: list[str] = []
-    for _ in range(24):
-        errors = _drc_errors(pads, router.tracks, router.vias)
-        if not errors:
-            break
-        from collections import defaultdict
+    from collections import defaultdict
 
-        from shapely.geometry import LineString as _LS
-        from shapely.geometry import Point as _Pt
-        from shapely.geometry import box as _bx
-        layer_name, rest = errors[0].split(": ", 1)
-        nets_part = rest.rsplit(":", 1)[0]
-        net_a, net_b = nets_part.split(" vs ")
+    from shapely.geometry import LineString as _LS
+    from shapely.geometry import Point as _Pt
+    from shapely.geometry import box as _bx
+
+    def _net_geoms(net_a, net_b, layer_name):
         geoms = defaultdict(list)
         for q in pads:
             if q.net in (net_a, net_b):
@@ -924,7 +918,29 @@ def build_pcb(cfg: BoardConfig, circuit: Circuit) -> PcbResult:
         for vnet, x, y in router.vias:
             if vnet in (net_a, net_b):
                 geoms[vnet].append(_Pt(x, y).buffer(VIA_D / 2.0))
-        best = (None, 1e9)
+        for tnet, w, pts, tlayer in router.tracks:
+            if tnet in (net_a, net_b) and tlayer == layer_name:
+                geoms[tnet].append(_LS(pts).buffer(w / 2.0))
+        return geoms
+
+    stripped: list[str] = []
+    stripped_any = False
+    skipped_pairs: set[tuple[str, str, str]] = set()
+    for _ in range(64):
+        errors = _drc_errors(pads, router.tracks, router.vias)
+        target = None
+        for err in errors:
+            layer_name, rest = err.split(": ", 1)
+            nets_part = rest.rsplit(":", 1)[0]
+            net_a, net_b = nets_part.split(" vs ")
+            if (layer_name, net_a, net_b) not in skipped_pairs:
+                target = (layer_name, net_a, net_b)
+                break
+        if target is None:
+            break
+        layer_name, net_a, net_b = target
+        geoms = _net_geoms(net_a, net_b, layer_name)
+        best = (None, None, 1e9)
         for idx, (tnet, w, pts, tlayer) in enumerate(router.tracks):
             if tlayer != layer_name or tnet not in (net_a, net_b):
                 continue
@@ -933,23 +949,47 @@ def build_pcb(cfg: BoardConfig, circuit: Circuit) -> PcbResult:
                 continue
             g = _LS(pts).buffer(w / 2.0)
             d = min(g.distance(og) for og in geoms[other])
-            if d < FAB_CLR - 1e-6 and len(pts) < best[1]:
-                best = (idx, len(pts))
+            if d < FAB_CLR - 1e-6 and len(pts) < best[2]:
+                best = ("track", idx, len(pts))
         if best[0] is None:
-            break
-        tnet = router.tracks[best[0]][0]
-        del router.tracks[best[0]]
-        stripped.append(tnet)
-    if stripped:
-        board.body[:] = [b for b in board.body if not b.startswith("  (segment")]
+            # No offending track: try a via (a via barrel exists on both
+            # layers, so its removal can clear the pair as well).
+            for jdx, (vnet, x, y) in enumerate(router.vias):
+                if vnet not in (net_a, net_b):
+                    continue
+                other = net_b if vnet == net_a else net_a
+                if not geoms[other]:
+                    continue
+                g = _Pt(x, y).buffer(VIA_D / 2.0)
+                d = min(g.distance(og) for og in geoms[other])
+                if d < FAB_CLR - 1e-6:
+                    best = ("via", jdx, 0)
+                    break
+        if best[0] == "track":
+            stripped.append(router.tracks[best[1]][0])
+            del router.tracks[best[1]]
+            stripped_any = True
+        elif best[0] == "via":
+            stripped.append(router.vias[best[1]][0])
+            del router.vias[best[1]]
+            stripped_any = True
+        else:
+            # Pad against pad: a placement issue, not copper we can strip.
+            skipped_pairs.add((layer_name, net_a, net_b))
+    if stripped_any:
+        board.body[:] = [b for b in board.body
+                         if not b.startswith(("  (segment", "  (via"))]
         for net, width, pts, layer in router.tracks:
             board.polyline(pts, width, layer, net_index[net])
+        for net, x, y in router.vias:
+            board.via(x, y, VIA_D, VIA_DRILL, net_index[net])
 
     result.tracks = router.tracks
+    result.vias = router.vias
     result.open_nets = list(router.failed) + _connectivity_errors(
         circuit, pads, router.tracks, router.vias)
     for net in dict.fromkeys(stripped):
-        result.open_nets.append(f"{net}: piste retiree (sous-garde), a finir")
+        result.open_nets.append(f"{net}: cuivre retire (sous-garde), a finir")
     result.drc_errors = _drc_errors(pads, router.tracks, router.vias)
     parts = list(getattr(fill, "geoms", [fill]))
     result.plane_islands = len(parts)
