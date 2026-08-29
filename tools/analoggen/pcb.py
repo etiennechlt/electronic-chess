@@ -404,7 +404,8 @@ class Router:
         for q in self.pads:
             if q.net != net or (la == 1 and not q.tht):
                 continue
-            if abs(x - q.x) <= q.w / 2 + 1e-9 and abs(y - q.y) <= q.h / 2 + 1e-9:
+            if abs(x - q.x) <= q.w / 2 + GRID + 1e-9 \
+                    and abs(y - q.y) <= q.h / 2 + GRID + 1e-9:
                 return q
         return None
 
@@ -446,9 +447,12 @@ class Router:
     def _astar(self, nid, width, start_cells, target, endpoint_xy,
                relax_all=False, no_relax=False, max_pops=500_000):
         soft, hard, via_ok = self._legal_masks(nid, width)
+        # Own pads are free passage; own tracks are NOT: riding the edge
+        # of an earlier same-net mark would push this half-width into
+        # territory the earlier legality never cleared.
         own = np.zeros((2, self.ny, self.nx), dtype=bool)
         for la in range(2):
-            own[la] = (self.pad_grid[la] == nid) | (self.track_grid[la] == nid)
+            own[la] = self.pad_grid[la] == nid
         relax = np.zeros((2, self.ny, self.nx), dtype=bool)
         if no_relax:
             pass
@@ -638,8 +642,9 @@ class Router:
             (p for p in self.pads if p.net == "GND" and not p.tht),
             key=lambda p: (p.x, p.y))
         for pad in gnd_pads:
+            w_stub = W_FINE if pad.fine else W_SIG
             start_cells = [c for c in self._pad_cells(pad) if c[0] == 0]
-            plane_free, _hard, _via = self._legal_masks(nid, W_SIG)
+            plane_free, _hard, _via = self._legal_masks(nid, w_stub)
             target = np.zeros((2, self.ny, self.nx), dtype=bool)
             target[1] = plane_free[1] & (self.pad_grid[1] == -1) \
                 & (self.track_grid[1] == -1)
@@ -647,14 +652,14 @@ class Router:
                 target[la] |= (self.pad_grid[la] == nid) | (self.track_grid[la] == nid)
             for la, i, j in start_cells:
                 target[la, i, j] = False
-            path = self._astar(nid, W_SIG, start_cells, target,
+            path = self._astar(nid, w_stub, start_cells, target,
                                (pad.x, pad.y), no_relax=True)
             if path is None:
                 self.failed.append(f"GND-via:{pad.ref}.{pad.number}")
                 continue
-            self._mark_path(nid, W_SIG, path)
+            self._mark_path(nid, w_stub, path)
             if len(path) >= 2:
-                self.emit_routed("GND", W_SIG, path)
+                self.emit_routed("GND", w_stub, path)
         # THT GND pads connect through the plane itself.
 
 
@@ -676,6 +681,12 @@ def _hand_seeds(r: Router, pads) -> None:
         return pp[(ref, num)]
 
     laid: list[tuple[str, str, object]] = []
+    for pnet, pw, ppts, playr in r.tracks:
+        laid.append((pnet, playr, LineString(ppts).buffer(pw / 2.0)))
+    for pnet, px, py in r.vias:
+        disc = Point(px, py).buffer(VIA_D / 2.0)
+        laid.append((pnet, "F.Cu", disc))
+        laid.append((pnet, "B.Cu", disc))
 
     def T(net, pts, layer="F.Cu", w=W_FINE):
         line = LineString(pts).buffer(w / 2.0)
@@ -762,7 +773,7 @@ def _hand_seeds(r: Router, pads) -> None:
         T(net, [(drop_x, 36.6), (drop_x, lane_y), (xm_, lane_y), (xm_, ym_)])
         _ = south_first
 
-    control("MUX_A0", "5", 60.6, 35.95, "10", 8.6, True)
+    control("MUX_A0", "5", 60.6, 36.0, "10", 8.6, True)
     control("MUX_A1", "6", 58.1, 36.75, "9", 1.9, False)
 
 
