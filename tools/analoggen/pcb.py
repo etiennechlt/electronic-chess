@@ -665,8 +665,11 @@ def _hand_seeds(r: Router, pads) -> None:
     # to its south row.
     xb, yb = P("R54", "2")
     xy3, yy3 = P("U3", "4")
-    T("M4_B", [(xb, yb), (xb, 35.95), (45.5, 35.95), (45.5, 46.4),
-               (xy3, 46.4), (xy3, yy3)])
+    T("M4_B", [(xb, yb), (xb, 35.95), (61.5, 35.95)])
+    r.seed_via("M4_B", 61.5, 35.95)
+    T("M4_B", [(61.5, 35.95), (61.5, 46.4), (xy3, 46.4)], layer="B.Cu")
+    r.seed_via("M4_B", xy3, 46.4)
+    T("M4_B", [(xy3, 46.4), (xy3, yy3)])
 
     # LP_OUT spine: through the channel between the U5 pad columns,
     # then along y = 34.3 to the U6 non-inverting input.
@@ -691,7 +694,7 @@ def _hand_seeds(r: Router, pads) -> None:
         T(net, [(drop_x, 36.6), (drop_x, lane_y), (xm_, lane_y), (xm_, ym_)])
         _ = south_first
 
-    control("MUX_A0", "5", 60.6, 36.35, "10", 8.6, True)
+    control("MUX_A0", "5", 60.6, 36.2, "10", 8.6, True)
     control("MUX_A1", "6", 58.1, 36.75, "9", 1.9, False)
 
 
