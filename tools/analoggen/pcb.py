@@ -132,7 +132,7 @@ PLACEMENTS: dict[str, tuple[float, float, float]] = {
     "R12": (53.0, 32.6, 90.0),
     "R13": (44.2, 32.6, 90.0),
     "U4": (54.0, 26.0, 0.0),
-    "R14": (54.0, 21.4, 0.0),
+    "R14": (54.0, 22.2, 0.0),
     "C16": (58.5, 22.5, 90.0),
     "C17": (62.5, 23.5, 0.0),
     "C18": (67.0, 23.5, 0.0),
@@ -158,7 +158,7 @@ PLACEMENTS: dict[str, tuple[float, float, float]] = {
     "D3": (92.0, 12.5, 90.0),
     # Mux between the cell pairs.
     "U3": (48.5, 42.0, 90.0),
-    "R11": (41.2, 34.6, 90.0),
+    "R11": (38.0, 31.5, 90.0),
     # South joint socket: pin 1 lands on x = 38.57 like the coil board;
     # rot 90 lays the pin row along +x with the body toward the edge.
     "J2": (38.57, 56.4, 90.0),
@@ -273,8 +273,9 @@ class Router:
                 pad.x + pad.w / 2, pad.y + pad.h / 2)
             for la in ((0, 1) if pad.tht else (0,)):
                 zone = self.pad_grid[la][i0:i1 + 1, j0:j1 + 1]
+                clash = (zone != -1) & (zone != nid)
                 self.pad_grid[la][i0:i1 + 1, j0:j1 + 1] = np.where(
-                    zone == -1, nid, zone)
+                    clash, np.int32(-2), np.where(zone == -1, nid, zone))
             if not pad.tht:
                 self.smd_top[i0:i1 + 1, j0:j1 + 1] = True
 
@@ -317,7 +318,7 @@ class Router:
                 return (dp >= half + margin) & (dc >= half + margin)
 
             s = masks(CLR, width / 2.0)
-            h = masks(FAB_CLR, width / 2.0)
+            h = masks(FAB_CLR + 0.005, width / 2.0)
             v = masks(CLR, VIA_D / 2.0)
             edge = int(math.ceil((EDGE_KEEPOUT + width / 2.0) / GRID))
             for m in (s, h, v):
@@ -728,7 +729,7 @@ def build_pcb(cfg: BoardConfig, circuit: Circuit) -> PcbResult:
         r.seed_track("VREF", [(44.5, 35.4), (53.0, 35.4)], W_SIG, layer="B.Cu")
         r.seed_via("VREF", 53.0, 35.4)
         r.seed_track("VREF", [(53.0, 35.4), (92.0, 35.4)], W_SIG)
-        r.seed_track("5VA", [(44.0, 19.0), (96.0, 19.0)], W_PWR)
+        r.seed_track("5VA", [(44.0, 20.6), (96.0, 20.6)], W_PWR)
         r.gnd_to_plane()
         for net in order:
             r.route_net(net)
