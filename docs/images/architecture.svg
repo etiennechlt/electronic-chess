@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" font-family="Verdana, DejaVu Sans, sans-serif">
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+      <polygon points="0 0, 9 3.5, 0 7" fill="#7fb3d5"/>
+    </marker>
+    <style>
+      .box { fill: #16222e; stroke: #3d5a73; stroke-width: 1.5; rx: 8; }
+      .accent { fill: #1d3346; stroke: #6ba3c8; }
+      .t { fill: #dce8f2; font-size: 14px; }
+      .s { fill: #8fb0c9; font-size: 11px; }
+      .h { fill: #eec643; font-size: 12px; letter-spacing: 2px; }
+      .w { stroke: #7fb3d5; stroke-width: 1.6; fill: none; marker-end: url(#a); }
+      .wp { stroke: #d99a3d; stroke-width: 1.6; fill: none; marker-end: url(#a); }
+    </style>
+  </defs>
+  <rect width="960" height="560" fill="#0e141b"/>
+  <text x="30" y="36" class="t" font-size="20">Échiquier LC : architecture</text>
+  <text x="30" y="56" class="s">Détection par résonateurs passifs, déplacement magnétique, arbitrage embarqué</text>
+
+  <text x="30" y="96" class="h">JEU</text>
+  <rect x="30" y="106" width="180" height="72" class="box"/>
+  <text x="45" y="130" class="t">32 pièces</text>
+  <text x="45" y="148" class="s">bobine 45 µH + C0G E12</text>
+  <text x="45" y="163" class="s">aimant ferrite (isolant)</text>
+
+  <rect x="30" y="200" width="180" height="72" class="box"/>
+  <text x="45" y="224" class="t">Plateau 8 x 8</text>
+  <text x="45" y="242" class="s">4 quadrants PCB 4 couches</text>
+  <text x="45" y="257" class="s">64 spirales non résonantes</text>
+
+  <text x="260" y="96" class="h">MESURE</text>
+  <rect x="260" y="106" width="190" height="166" class="box accent"/>
+  <text x="275" y="130" class="t">Frontal analogique</text>
+  <text x="275" y="150" class="s">mux différentiel (HCT4052,</text>
+  <text x="275" y="164" class="s">ADG726 par quadrant)</text>
+  <text x="275" y="182" class="s">excitation FET hors mux</text>
+  <text x="275" y="200" class="s">AD8421 G20 + Sallen-Key</text>
+  <text x="275" y="214" class="s">200 a 650 kHz, gain ~200</text>
+  <text x="275" y="236" class="s">217 a 613 kHz : 12 classes</text>
+  <text x="275" y="252" class="s">calibrées par pièce en flash</text>
+
+  <text x="500" y="96" class="h">TEMPS RÉEL</text>
+  <rect x="500" y="106" width="200" height="166" class="box accent"/>
+  <text x="515" y="130" class="t">STM32G474 (maître)</text>
+  <text x="515" y="150" class="s">voie A : ADC 4 Méch/s + FFT</text>
+  <text x="515" y="164" class="s">voie B : COMP + capture 170 MHz</text>
+  <text x="515" y="184" class="s">arbitre : coups légaux, roque,</text>
+  <text x="515" y="198" class="s">promotion, prise en passant</text>
+  <text x="515" y="216" class="s">interlock scan / aimant</text>
+  <text x="515" y="234" class="s">A* interstices, gestion énergie</text>
+  <text x="515" y="252" class="s">autonome Pi éteint</text>
+
+  <text x="750" y="96" class="h">APPLICATIF</text>
+  <rect x="750" y="106" width="180" height="100" class="box"/>
+  <text x="765" y="130" class="t">Pi Zero 2 W</text>
+  <text x="765" y="150" class="s">Stockfish, Lichess Board,</text>
+  <text x="765" y="164" class="s">PGN, UI</text>
+  <text x="765" y="182" class="s">rootfs lecture seule</text>
+  <text x="765" y="196" class="s">load switch + UART isolée</text>
+
+  <text x="30" y="320" class="h">MOUVEMENT</text>
+  <rect x="30" y="330" width="200" height="96" class="box"/>
+  <text x="45" y="354" class="t">Portique CoreXY</text>
+  <text x="45" y="372" class="s">TMC2209 StealthChop,</text>
+  <text x="45" y="386" class="s">EN haut au repos</text>
+  <text x="45" y="402" class="s">chariot : N42 sur actionneur,</text>
+  <text x="45" y="416" class="s">parking hors zone de jeu</text>
+
+  <text x="500" y="320" class="h">ÉNERGIE</text>
+  <rect x="500" y="330" width="200" height="96" class="box"/>
+  <text x="515" y="354" class="t">3S2P 18650, 73 Wh</text>
+  <text x="515" y="372" class="s">buck 2,2 MHz forced PWM</text>
+  <text x="515" y="386" class="s">îlot analogique LDO</text>
+  <text x="515" y="402" class="s">réserve de coup 10 %,</text>
+  <text x="515" y="416" class="s">extinction propre du Pi</text>
+
+  <rect x="750" y="330" width="180" height="96" class="box"/>
+  <text x="765" y="354" class="t">Autonomie</text>
+  <text x="765" y="374" class="s">~68 h humain contre humain</text>
+  <text x="765" y="390" class="s">~15 h contre le moteur</text>
+  <text x="765" y="406" class="s">crête 12 W (1,1 A)</text>
+
+  <path class="w" d="M120 178 V196"/>
+  <text x="128" y="190" class="s">couplage en 1/d³</text>
+  <text x="128" y="203" class="s" font-size="10">entrefer 5,1 mm</text>
+  <path class="w" d="M210 236 H256"/>
+  <path class="w" d="M450 190 H496"/>
+  <text x="456" y="182" class="s">4 ADC</text>
+  <path class="w" d="M700 160 H746"/>
+  <text x="704" y="152" class="s">UART FEN</text>
+  <path class="w" d="M560 276 C 560 336 300 340 234 366"/>
+  <text x="330" y="332" class="s">pas à pas + fins de course</text>
+  <path class="wp" d="M600 330 V276"/>
+  <path class="wp" d="M700 378 H746"/>
+  <path class="wp" d="M500 378 C 380 378 300 400 234 400"/>
+
+  <text x="30" y="470" class="h">RÈGLE D'INTERLOCK</text>
+  <rect x="30" y="482" width="900" height="52" class="box"/>
+  <text x="45" y="503" class="s">IDLE : scan 5 Hz, moteurs coupés, aimant rétracté.  MOVING : scan coupé, aimant engagé.  SETTLING 50 ms.  VERIFY : un scan complet,</text>
+  <text x="45" y="521" class="s">état comparé aux successeurs légaux. Le chariot se parque contre les fins de course, hors de l'aire de jeu, avant toute mesure.</text>
+</svg>

@@ -44,22 +44,31 @@ def read_stl(path: Path) -> np.ndarray:
     return body["v"].reshape(-1, 3, 3).astype(float)
 
 
-def render(tris: np.ndarray, out_path: Path, elev: float = 28.0,
+def render(tris: np.ndarray | list, out_path: Path, elev: float = 28.0,
            azim: float = -55.0, color: str = "#7fa8c9") -> None:
+    """Render one triangle array, or a list of (triangles, color) parts."""
+    parts = tris if isinstance(tris, list) else [(tris, color)]
     fig = plt.figure(figsize=(6, 6))
     ax = fig.add_subplot(projection="3d")
     ax.set_facecolor("#101418")
     fig.patch.set_facecolor("#101418")
     light = np.array([0.4, -0.5, 0.75])
     light = light / np.linalg.norm(light)
-    normals = np.cross(tris[:, 1] - tris[:, 0], tris[:, 2] - tris[:, 0])
-    norm = np.linalg.norm(normals, axis=1, keepdims=True)
-    normals = normals / np.maximum(norm, 1e-12)
-    shade = 0.35 + 0.65 * np.clip(normals @ light, 0.0, 1.0)
-    base = np.array(matplotlib.colors.to_rgb(color))
-    facecolors = np.clip(base[None, :] * shade[:, None], 0.0, 1.0)
-    coll = Poly3DCollection(tris, facecolors=facecolors, edgecolors="none")
-    ax.add_collection3d(coll)
+    all_tris, all_colors = [], []
+    for part_tris, part_color in parts:
+        normals = np.cross(part_tris[:, 1] - part_tris[:, 0],
+                           part_tris[:, 2] - part_tris[:, 0])
+        norm = np.linalg.norm(normals, axis=1, keepdims=True)
+        normals = normals / np.maximum(norm, 1e-12)
+        shade = 0.35 + 0.65 * np.clip(normals @ light, 0.0, 1.0)
+        base = np.array(matplotlib.colors.to_rgb(part_color))
+        all_tris.append(part_tris)
+        all_colors.append(np.clip(base[None, :] * shade[:, None], 0.0, 1.0))
+    tris = np.concatenate(all_tris)
+    # One collection: matplotlib depth-sorts per face, so small parts on
+    # top of large slabs occlude correctly.
+    ax.add_collection3d(Poly3DCollection(
+        tris, facecolors=np.concatenate(all_colors), edgecolors="none"))
     lo = tris.reshape(-1, 3).min(axis=0)
     hi = tris.reshape(-1, 3).max(axis=0)
     center = (lo + hi) / 2.0

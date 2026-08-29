@@ -218,7 +218,7 @@ def build_circuit(cfg: BoardConfig) -> tuple[Circuit, ChainDesign]:
                 {"1": f"DAMP{k}_N", "2": a, "3": f"DMP{k}"})
         r(f"R{base + 6}", str(int(drv.damp_r_ohm)) + "R", f"DMP{k}", b,
           part=Part("Device", "R", "Resistor_SMD:R_0805_2012Metric"))
-        r(f"R{base + 7}", "100k", f"DAMP{k}_N", "5VA")
+        r(f"R{base + 7}", "100k", f"DAMP{k}_N", "VIN")  # local pull-off, VGS -10 V when idle
 
     # ---------------- Mux and amplifier chain ----------------
     ckt.add("U3", MUX, "74HC4052", {
