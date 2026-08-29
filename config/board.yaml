@@ -1,0 +1,149 @@
+# Single source of truth for every project constant.
+#
+# Only independent parameters live here. Derived quantities (resonant
+# frequencies, mm diameters, gantry travels, total gap, autonomy) are
+# computed by chessboard_calc and pinned by unit tests against the
+# specification. No value is duplicated between this file and the code.
+schema_version: 1
+
+pitch:
+  candidates_mm: [40, 50]      # final pitch intentionally open (brief 5.1)
+  mockup_mm: 50                # fixed by the 100x100 mm PCB price tier
+
+pieces:
+  classes:                     # base_ratio: base diameter as a fraction of p
+    pawn:   { base_ratio: 0.35, cap_nF: { white: 3.9, black: 12.0 } }
+    knight: { base_ratio: 0.40, cap_nF: { white: 3.3, black: 10.0 } }
+    bishop: { base_ratio: 0.40, cap_nF: { white: 2.7, black: 8.2 } }
+    rook:   { base_ratio: 0.45, cap_nF: { white: 2.2, black: 6.8 } }
+    queen:  { base_ratio: 0.45, cap_nF: { white: 1.8, black: 5.6 } }
+    king:   { base_ratio: 0.45, cap_nF: { white: 1.5, black: 4.7 } }
+  spare_queens_per_side: 1     # promotion hardware (critical review, F)
+  mass_g: [20, 40]
+
+corridor:
+  tolerance_budget_mm: 0.8     # gantry +-0.5 plus base eccentricity +-0.3
+
+resonator:
+  L_target_uH: 45.0
+  L_tol_pct: 5.0               # hand-wound spread
+  C_tol_pct: 1.0               # C0G 1 %
+  q_nominal: 50
+  q_min_with_magnet: 30        # acceptance floor of measurement 2
+  # Acceptance for check_separation. Exact computation puts the worst
+  # adjacent pair (3.3 / 3.9 nF, an E12 ratio-1.18 step) at 2.50 widths
+  # for Q = 30, so the gate sits just below to catch real regressions
+  # without tripping on the nominal design itself.
+  min_separation_widths: 2.4
+  # Worst-case frequency gap once both neighbors drift by the full
+  # component tolerance; must stay well above the ~1 kHz measurement
+  # resolution. Nominal design gives 7.1 kHz on the 12 / 10 nF pair.
+  min_tolerance_gap_khz: 4.0
+  coil:
+    outer_margin_mm: 4.0       # d_out = base - 4
+    inner_ratio: 0.40          # d_in = 0.40 * d_out, to confirm on mockup
+    height_mm: 2.0
+    wire_candidates_mm: [0.15, 0.20, 0.25, 0.315]
+    insulation_extra_mm: 0.05  # enamel build on top of copper diameter
+    fill_factor: 0.70          # round enameled wire, hand-wound
+    proximity_factor: 2.5      # crude AC resistance multiplier, mockup calibrates
+
+piece_magnet:
+  material: "SrFe hard ferrite"
+  br_T: 0.40
+  outer_margin_mm: 5.0         # d = base - 5
+  thickness_mm: 4.0
+
+gap:                           # nominal total is derived: 1.6 + 3.0 + 0.5 = 5.1
+  pcb_mm: 1.6
+  surface_mm: 3.0              # acrylic
+  felt_mm: 0.5
+  max_total_mm: 8.0
+
+sense_coil:
+  outer_ratio: 0.80            # x p
+  inner_ratio: 0.45            # x p
+  layers: 4                    # all four layers in series
+  L_target_uH: 18.0            # keeps SRF with ~40 pF mux 10x above band
+  track_gap_mm: 0.15
+  via_drill_mm: 0.30
+  copper_um: 35                # 1 oz outer and inner copper
+  # track width is derived: turns solved for L_target, spread over annulus
+
+mux:
+  part: ADG708
+  ron_ohm: 4.0
+  c_off_pF: 40.0
+  idle_coil_policy: shorted    # both ends grounded (critical review, J)
+
+measurement:
+  band_hz: [200.0e+3, 650.0e+3]
+  blanking_us: 2.0
+  window_us: 128.0
+  adc_sps: 4.0e+6
+  fft_points: 512
+  coherent_avg: 16
+  idle_scan_hz: 5
+  preamp_gain: [200, 500]
+  bandpass_order: 4
+  crosstalk_max_db: -20.0
+  snr_min_db: 20.0
+  preamp_noise_nv_rthz: 4.0    # input-referred amplifier noise density
+  drive:                       # excitation model for signal estimates
+    v: 12.0
+    pulse_us: 1.0
+    current_limit_a: 2.0
+    excitation_efficiency: 0.5 # derates the ideal flux-transfer estimate
+
+gantry:
+  kinematics: corexy
+  capture_band_ratio: 1.0      # width of each lateral capture band, x p
+  y_margin_mm: 20.0            # travels derive: x = 10 p, y = 8 p + 20
+  speed_mm_s: [60, 120]
+  accel_mm_s2: [200, 500]
+  settle_ms: 50
+  driver: { part: TMC2209, mode: stealthchop, disable_at_idle: true }
+  per_pitch:                   # discrete choices that do not scale continuously
+    40: { motor: NEMA14, guide: "8 mm rods or MGN9" }
+    50: { motor: NEMA17, guide: "MGN9 400 + 500" }
+  homing: park_against_endstops  # re-zero at every park (critical review, H)
+
+carriage:
+  magnet: { material: "NdFeB N42", d_mm: 15.0, h_mm: 5.0 }
+  engage_gap_mm: 6.0
+  retract_gap_mm: 15.0
+  actuator_candidates: [servo_permanent_magnet, electromagnet]  # open (brief 5.3)
+
+friction:
+  mu_felt_acrylic: 0.30
+  lateral_fraction: [0.20, 0.30]
+
+power:
+  battery:
+    layout: 3S2P
+    cell: "18650 NMC, Samsung 35E or LG MJ1"
+    energy_wh: 73.4
+    usable_fraction: 0.80      # implicit in the brief's 65 h claim, now explicit
+    v_range: [9.0, 12.6]
+    ntc_on_pack: true
+  buck_5v:
+    f_sw_mhz: 2.2
+    forced_pwm: true           # PFM light-load bursts would fall in-band (B)
+    spread_spectrum: false
+    candidates: [LMR33630, TPS62933F]
+  loads_w:
+    stm32_analog: 0.4
+    pi: 1.2
+    tft: 1.2
+    motors_avg: 0.35           # 7 W at 5 % duty
+    motors_peak: 7.0
+    ui_idle: 0.05              # buzzer + status LEDs, human vs human mode (G)
+  # Fixed conversion overhead: forced-PWM buck no-load loss, BMS and
+  # gauge quiescent. Reconciles the brief's 0.9 W idle total, whose own
+  # line items only sum to 0.5 W.
+  fixed_overhead_w: 0.35
+  regulation_loss_pct: 15
+  move_reserve_pct: 10         # refuse to start a move below this SoC
+  pi_link: { isolator: ADuM1201, load_switch: true }
+
+mcu: { part: STM32G474RE, sysclk_mhz: 170 }
