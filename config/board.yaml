@@ -161,17 +161,20 @@ mockup:
     size_mm: [100.0, 100.0]
     layers: 4
     coil_grid: 2                 # 2 x 2 squares
-    track_clearance_mm: 0.2
+    track_clearance_mm: 0.13   # JLC 4-layer floor; spiral turn gap is 0.15
     edge_clearance_mm: 0.5
     mounting_hole_d_mm: 3.2
     mounting_hole_inset_mm: 5.0
     magnet_mount:                # under square 1, adjustable bracket
       square: [0, 0]
-      hole_spacing_mm: 30.0
+      hole_spacing_mm: 34.0     # 30 would drill into the spiral outer turn
       hole_d_mm: 3.2
     joint:                       # to the analog board, north edge
-      pins: 10                   # GND A1 B1 A2 B2 A3 B3 A4 B4 GND
+      pins: 10                   # GND A1 B1 A3 B3 A4 B4 A2 B2 GND
       pitch_mm: 2.54
+      pad_d_mm: 1.7
+      drill_mm: 1.0
+    route_track_mm: 0.5          # coil-to-connector interconnect width
   analog_board:
     size_mm: [100.0, 56.0]
     layers: 2

@@ -12,6 +12,7 @@ dependencies = [
     "scipy>=1.11",
     "pyyaml>=6.0",
     "pydantic>=2.5",
+    "matplotlib>=3.8",
 ]
 
 [project.optional-dependencies]
@@ -21,7 +22,10 @@ dev = [
 ]
 
 [tool.setuptools]
-packages = ["chessboard_calc"]
+packages = ["chessboard_calc", "coilgen"]
+
+[tool.setuptools.package-dir]
+coilgen = "tools/coilgen"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

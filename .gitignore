@@ -25,7 +25,7 @@ fp-info-cache
 *.lck
 *.net
 hardware/**/gerbers/
-hardware/**/*.zip
+# the top-level *-gerbers.zip fabrication archives ARE committed
 
 # FreeCAD / CadQuery
 *.FCStd1

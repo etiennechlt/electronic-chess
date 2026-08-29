@@ -265,6 +265,8 @@ class MagnetMountCfg(_Model):
 class JointCfg(_Model):
     pins: int
     pitch_mm: float
+    pad_d_mm: float
+    drill_mm: float
 
 
 class CoilBoardCfg(_Model):
@@ -277,6 +279,7 @@ class CoilBoardCfg(_Model):
     mounting_hole_inset_mm: float
     magnet_mount: MagnetMountCfg
     joint: JointCfg
+    route_track_mm: float
 
 
 class AnalogBoardCfg(_Model):
