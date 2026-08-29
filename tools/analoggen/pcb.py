@@ -318,7 +318,7 @@ class Router:
                 return (dp >= half + margin) & (dc >= half + margin)
 
             s = masks(CLR, width / 2.0)
-            h = masks(FAB_CLR + 0.005, width / 2.0)
+            h = masks(FAB_CLR + 0.02, width / 2.0)
             v = masks(CLR, VIA_D / 2.0)
             edge = int(math.ceil((EDGE_KEEPOUT + width / 2.0) / GRID))
             for m in (s, h, v):
