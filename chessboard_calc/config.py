@@ -251,6 +251,137 @@ class McuCfg(_Model):
     sysclk_mhz: float
 
 
+class TestPieceCfg(_Model):
+    piece: PieceType
+    color: Color
+
+
+class MagnetMountCfg(_Model):
+    square: tuple[int, int]
+    hole_spacing_mm: float
+    hole_d_mm: float
+
+
+class JointCfg(_Model):
+    pins: int
+    pitch_mm: float
+
+
+class CoilBoardCfg(_Model):
+    size_mm: tuple[float, float]
+    layers: int
+    coil_grid: int
+    track_clearance_mm: float
+    edge_clearance_mm: float
+    mounting_hole_d_mm: float
+    mounting_hole_inset_mm: float
+    magnet_mount: MagnetMountCfg
+    joint: JointCfg
+
+
+class AnalogBoardCfg(_Model):
+    size_mm: tuple[float, float]
+    layers: int
+    format: str
+
+
+class AnalogMuxCfg(_Model):
+    part: str
+    ron_ohm: float
+    note: str
+
+
+class InaCfg(_Model):
+    part: str
+    gain: float
+    rg_ohm: float
+
+
+class FilterCfg(_Model):
+    hp_hz: float
+    lp_hz: float
+    q: float
+    stage_gain: float
+    opamp: str
+
+
+class AdcRcCfg(_Model):
+    r_ohm: float
+    c_nF: float
+
+
+class MockupAnalogCfg(_Model):
+    mux: AnalogMuxCfg
+    clamp_r_ohm: float
+    bleed_r_ohm: float
+    ina: InaCfg
+    input_ac_nF: float
+    input_bias_r_ohm: float
+    filter: FilterCfg
+    adc_rc: AdcRcCfg
+
+
+class MockupDriveCfg(_Model):
+    rail_fet: str
+    rail_r_ohm: float
+    coil_fet: str
+    clamp_diode: str
+
+
+class MockupInputCfg(_Model):
+    v_nom: float
+    jack: str
+    tvs: str
+    reverse_diode: str
+
+
+class MockupBuckCfg(_Model):
+    part: str
+    f_sw_mhz: float
+    l_uH: float
+    vout: float
+    forced_pwm: bool
+
+
+class MockupLdoCfg(_Model):
+    part: str
+    vout: float
+
+
+class PiHeaderCfg(_Model):
+    pins: int
+    rail: str
+
+
+class MockupPowerCfg(_Model):
+    input: MockupInputCfg
+    buck: MockupBuckCfg
+    ldo: MockupLdoCfg
+    analog_source_jumper: tuple[str, str]
+    pi_header: PiHeaderCfg
+
+
+class IsolatorCfg(_Model):
+    part: str
+    bypass_jumpers: bool
+
+
+class NucleoPinCfg(_Model):
+    arduino: str
+    mcu: str
+
+
+class MockupCfg(_Model):
+    test_pieces: tuple[TestPieceCfg, ...]
+    coil_board: CoilBoardCfg
+    analog_board: AnalogBoardCfg
+    analog: MockupAnalogCfg
+    drive: MockupDriveCfg
+    power: MockupPowerCfg
+    uart_isolator: IsolatorCfg
+    nucleo_pins: dict[str, NucleoPinCfg]
+
+
 class BoardConfig(_Model):
     schema_version: int
     pitch: PitchCfg
@@ -267,6 +398,7 @@ class BoardConfig(_Model):
     friction: FrictionCfg
     power: PowerCfg
     mcu: McuCfg
+    mockup: MockupCfg
 
 
 @dataclass(frozen=True)

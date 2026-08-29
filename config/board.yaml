@@ -147,3 +147,76 @@ power:
   pi_link: { isolator: ADuM1201, load_switch: true }
 
 mcu: { part: STM32G474RE, sysclk_mhz: 170 }
+
+mockup:
+  # 2 x 2 mockup, phase 1. Two boards (ADR 0008): a script-generated
+  # 4-layer coil board and a Nucleo-shield analog board, joined edge to
+  # edge by a rigid 1x10 header. Pitch is pitch.mockup_mm.
+  test_pieces:  # deliberately the bottom of the band, tightest spacing
+    - { piece: pawn, color: black }
+    - { piece: knight, color: black }
+    - { piece: bishop, color: black }
+    - { piece: rook, color: black }
+  coil_board:
+    size_mm: [100.0, 100.0]
+    layers: 4
+    coil_grid: 2                 # 2 x 2 squares
+    track_clearance_mm: 0.2
+    edge_clearance_mm: 0.5
+    mounting_hole_d_mm: 3.2
+    mounting_hole_inset_mm: 5.0
+    magnet_mount:                # under square 1, adjustable bracket
+      square: [0, 0]
+      hole_spacing_mm: 30.0
+      hole_d_mm: 3.2
+    joint:                       # to the analog board, north edge
+      pins: 10                   # GND A1 B1 A2 B2 A3 B3 A4 B4 GND
+      pitch_mm: 2.54
+  analog_board:
+    size_mm: [100.0, 56.0]
+    layers: 2
+    format: nucleo64_shield      # Arduino R3 header pattern, Nucleo below
+  analog:
+    mux: { part: ADG709CRUZ, ron_ohm: 4.0, note: "dual 4:1 differential" }
+    clamp_r_ohm: 330.0           # series R before mux, BAV99 clamps to rails
+    bleed_r_ohm: 10.0e+3         # DC reference on both coil ends
+    ina: { part: AD8421ARMZ, gain: 20.0, rg_ohm: 523.0 }
+    input_ac_nF: 100.0
+    input_bias_r_ohm: 100.0e+3   # to mid-rail reference
+    filter:                      # MFB biquads, Butterworth, order 4 total
+      hp_hz: 200.0e+3
+      lp_hz: 650.0e+3
+      q: 0.7071
+      stage_gain: 3.162          # per stage; chain total 20 x 3.162^2 = 200
+      opamp: OPA2810             # 105 MHz duals: HP, LP, mid-rail, output
+    adc_rc: { r_ohm: 49.9, c_nF: 1.0 }
+  drive:                         # per-coil excitation, bypasses the mux
+    rail_fet: AO3401A            # one shared high-side switch from 12 V
+    rail_r_ohm: 10.0             # shared series power resistor, 1 W
+    coil_fet: AO3400A            # per coil: low-side drive AND active damping
+    clamp_diode: SS34            # flyback clamp back to the 12 V rail
+  power:
+    input: { v_nom: 12.0, jack: "5.5 x 2.1 mm", tvs: SMBJ15A, reverse_diode: SS54 }
+    buck: { part: TPS62913RPUR, f_sw_mhz: 2.2, l_uH: 2.2, vout: 5.0, forced_pwm: true }
+    ldo: { part: TPS7A4901DGNR, vout: 5.0 }
+    analog_source_jumper: [buck_filtered, ldo]   # the measurement-8 A/B test
+    pi_header: { pins: 4, rail: buck_5v }
+  uart_isolator: { part: ADuM1201ARZ, bypass_jumpers: true }
+  nucleo_pins:                   # Nucleo-G474RE Arduino connector mapping
+    amp_out: { arduino: A0, mcu: PA0 }    # ADC1_IN1
+    comp_in: { arduino: A1, mcu: PA1 }    # COMP1_INP
+    pulse_en: { arduino: A2, mcu: PA4 }
+    mux_a0: { arduino: D3, mcu: PB3 }
+    mux_a1: { arduino: D4, mcu: PB5 }
+    mux_en: { arduino: D5, mcu: PB4 }
+    short_1: { arduino: D6, mcu: PB10 }
+    short_2: { arduino: D7, mcu: PA8 }
+    short_3: { arduino: D9, mcu: PC7 }
+    short_4: { arduino: D10, mcu: PB6 }
+    drive_1: { arduino: D11, mcu: PA7 }
+    drive_2: { arduino: D12, mcu: PA6 }
+    drive_3: { arduino: D14, mcu: PB9 }
+    drive_4: { arduino: D15, mcu: PB8 }
+    pi_uart_tx: { arduino: D8, mcu: PA9 }   # USART1, through the isolator
+    pi_uart_rx: { arduino: D2, mcu: PA10 }
+    # CSV output uses the Nucleo virtual COM port (USART2 PA2/PA3)

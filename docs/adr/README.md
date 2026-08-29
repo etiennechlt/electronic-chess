@@ -13,3 +13,4 @@ paramétrées dans `config/board.yaml` et seront tranchées sur mesures.
 | [0005](0005-power-and-noise-architecture.md) | Architecture d'alimentation et plan anti-bruit | acceptée |
 | [0006](0006-pitch-parametric-open.md) | Pas de case paramétrique, 40 ou 50 mm | ouverte |
 | [0007](0007-frequency-extraction-dual-path.md) | Extraction de fréquence : FFT et capture de période | ouverte |
+| [0008](0008-mockup-two-boards-adg709.md) | Maquette en deux cartes, mux différentiel, excitation hors mux | acceptée |
