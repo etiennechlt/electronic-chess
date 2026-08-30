@@ -4,6 +4,7 @@
 set -e
 DIR=hardware/mockup-2x2/analog-board
 PY="${PYTHON:-python3}"
+export PYTHONPATH="tools${PYTHONPATH:+:$PYTHONPATH}"
 "$PY" -m analoggen build --out "$DIR" --render docs/images/analog-board.png
 mkdir -p "$DIR/gerbers"
 kicad-cli pcb export gerbers --output "$DIR/gerbers/" \

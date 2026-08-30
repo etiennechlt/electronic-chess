@@ -31,13 +31,30 @@ fichiers KiCad à la main : modifier la source et regénérer.
 sh hardware/mockup-2x2/analog-board/export.sh   # gerbers + percage + zip
 ```
 
-Le générateur route la carte (routeur A* maison), calcule le plan de
-masse et refuse de conclure si une équipotentielle reste ouverte ou si
-le DRC géométrique passe sous 0,127 mm ; l'état est affiché en fin de
-build. Quelques liaisons de rattrapage peuvent descendre à la garde de
-fabrication au lieu des 0,15 mm nominaux, c'est journalisé.
+Le générateur route la carte (routeur A* maison sur grille 0,125 mm,
+légalité par transformée de distance, seeds structurels vérifiés
+contre la géométrie réelle au build), calcule le plan de masse en
+bandes (kicad-cli 7 ne re-remplit pas les zones), puis applique deux
+garanties formelles : un DRC géométrique exact (shapely) au seuil de
+fabrication 0,127 mm, et une passe finale qui retire toute piste ou
+via qui passerait sous cette garde en réouvrant la liaison concernée.
+La carte générée est donc toujours DRC zéro ; en contrepartie une
+courte liste de liaisons reste à fermer à la main.
+
+## Liste de finition (chevelu affiché dans KiCad)
+
+Le build imprime la liste exacte (« finish list ») ; à la génération
+de référence il reste une quinzaine de liaisons ouvertes, concentrées
+dans le coin buck (BUCK_SS, BUCK_PG, BUCK_FB, BUCK_DEF, SW, VIN) plus
+quelques rattrapages courts (5VA, VREF, M1_A, C2_A, C3_B, PI_3V3).
+Toutes sont des sauts locaux de quelques millimètres : ouvrir le
+`.kicad_pcb` dans pcbnew, activer l'affichage du chevelu et les fermer
+à la main (environ 30 minutes), puis relancer le DRC KiCad avant
+export. Les gerbers du dépôt sont générés depuis la carte telle
+quelle : refaire l'export après la finition.
 
 Commande JLCPCB : 2 couches, 1,6 mm, 1 oz, assemblage face top avec
 `jlc-bom.csv` et `jlc-cpl.csv` (vérifier les correspondances LCSC dans
 leur prévisualisation, et l'orientation des diodes et du régulateur
-sur le rendu avant de valider).
+sur le rendu avant de valider). Ne commander qu'après la finition du
+chevelu ci-dessus.

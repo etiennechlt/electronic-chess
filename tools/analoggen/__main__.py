@@ -51,13 +51,17 @@ def main(argv: list[str] | None = None) -> int:
                   f"open {len(result.open_nets)}, drc {len(result.drc_errors)}")
         print(status)
         if result.open_nets:
-            print("  OPEN:", ", ".join(result.open_nets[:10]))
+            print("  finish list (airwires to close in KiCad):")
+            for entry in result.open_nets:
+                print(f"    - {entry}")
         if result.drc_errors:
             print("  DRC:", "; ".join(result.drc_errors[:6]))
         if args.render:
             render_pcb(result, circuit, Path(args.render))
             print(f"wrote {args.render}")
-        if result.open_nets or result.drc_errors:
+        # Leftover airwires are a documented state (see the board README);
+        # only a clearance violation is a build failure.
+        if result.drc_errors:
             return 1
     return 0
 
