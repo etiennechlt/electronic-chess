@@ -476,9 +476,7 @@ class Router:
             return (dx + dy) * 1.0
 
         def passable(la, i, j):
-            # Entering a target cell is always allowed: it is same-net
-            # copper and the search stops there (a single-cell step).
-            if target[la, i, j] or own[la, i, j]:
+            if own[la, i, j]:
                 return True
             if soft[la][i, j]:
                 return True
@@ -507,7 +505,12 @@ class Router:
                 if not (0 <= ni < self.ny and 0 <= nj < self.nx):
                     continue
                 if not passable(la, ni, nj):
-                    continue
+                    # A pad enclosed by its own net's marks may still take
+                    # the one step from its own cells onto that copper.
+                    escape = (target[la, ni, nj]
+                              and (own[la, i, j] or dist[la, i, j] == 0.0))
+                    if not escape:
+                        continue
                 nd = d + (1.0 if la == 0 else 1.6)
                 if nd < dist[la, ni, nj]:
                     dist[la, ni, nj] = nd
