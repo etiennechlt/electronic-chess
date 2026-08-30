@@ -33,35 +33,30 @@ sh hardware/mockup-2x2/analog-board/export.sh   # gerbers + percage + zip
 
 Le générateur route la carte (routeur A* maison sur grille 0,125 mm,
 légalité par transformée de distance, seeds structurels vérifiés
-contre la géométrie réelle au build), calcule le plan de masse en
-bandes (kicad-cli 7 ne re-remplit pas les zones), puis applique deux
-garanties formelles : un DRC géométrique exact (shapely) au seuil de
-fabrication 0,127 mm, et une passe finale qui retire toute piste ou
-via qui passerait sous cette garde en réouvrant la liaison concernée.
-La carte générée est donc toujours DRC zéro ; en contrepartie une
-courte liste de liaisons reste à fermer à la main.
+contre la géométrie réelle au build), puis applique trois passes
+formelles : la passe de garantie retire toute piste ou via qui
+passerait sous la garde de fabrication de 0,127 mm (DRC exact shapely)
+en réouvrant la liaison concernée ; la passe de finition à géométrie
+exacte (`tools/analoggen/finish.py`, sans grille) referme ensuite les
+écarts restants par la jonction la plus simple (segment, coudes en L,
+coudes en Z balayés, variantes face arrière à un ou deux vias),
+chaque jonction restant à 0,132 mm de tout cuivre étranger ; le plan
+de masse est enfin calculé sur le cuivre final. La carte générée est
+donc toujours DRC zéro, et la liste résiduelle est courte.
 
 ## Liste de finition (chevelu affiché dans KiCad)
 
-Le build imprime la liste exacte (« finish list »). À la génération de
-référence (464 pistes, 242 vias, DRC zéro) : quatre liaisons jamais
-routées (BUCK_PG vers R2.1, M1_A vers U3.12, C3_B vers R44.1, C2_A
-vers R31.1) et des équipotentielles en plusieurs morceaux à
-raccorder (VIN, SW, BUCK_PG, BUCK_FB, 5VA, VREF, M1_A, C2_A, C3_B,
-PI_3V3), dont quatre proviennent de la passe de garantie qui a retiré
-un tronçon sous-garde (5VA, SW, VREF, VIN). Toutes sont des sauts
-locaux de quelques millimètres : ouvrir le `.kicad_pcb` dans pcbnew,
-activer l'affichage du chevelu et les fermer à la main (environ 30
-minutes), puis relancer le DRC KiCad avant export. Les gerbers du
-dépôt sont générés depuis la carte telle quelle : refaire l'export
-après la finition.
-
-Note de méthode : les liaisons restantes sont celles dont tout seed
-structurel déplace plus de nets qu'il n'en ferme (saturation locale du
-routage) ; les seeds conservés (BUCK_SS, BUCK_DEF, PI_3V3, contrôles
-mux, rails) ont chacun été répétés hors build contre la géométrie
-réelle avec une marge d'au moins 0,225 mm, et la garde du build les
-revalide à chaque génération.
+Le build imprime les jonctions posées et la liste exacte des restes.
+À la génération de référence (480 pistes, 249 vias, DRC zéro, 9
+jonctions posées par la finition) il reste cinq nets à fermer à la
+main : M1_A (broche 12 du mux vers la cellule 1), C2_A, C3_B (ponts
+courts dans les cellules 2 et 3), BUCK_FB et VREF (raccords de
+morceaux, dont un tronçon VREF retiré par la garantie). Vérification
+géométrique faite : leurs couloirs sont réellement occupés par du
+cuivre routé et la verticale arrière M4_B, il faut des détours
+multi-segments qu'un humain trace en dix minutes dans pcbnew, chevelu
+affiché. Relancer ensuite le DRC KiCad et refaire l'export : les
+gerbers du dépôt sont générés depuis la carte telle quelle.
 
 Commande JLCPCB : 2 couches, 1,6 mm, 1 oz, assemblage face top avec
 `jlc-bom.csv` et `jlc-cpl.csv` (vérifier les correspondances LCSC dans
