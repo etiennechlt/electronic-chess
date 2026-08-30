@@ -476,7 +476,9 @@ class Router:
             return (dx + dy) * 1.0
 
         def passable(la, i, j):
-            if own[la, i, j]:
+            # Entering a target cell is always allowed: it is same-net
+            # copper and the search stops there (a single-cell step).
+            if target[la, i, j] or own[la, i, j]:
                 return True
             if soft[la][i, j]:
                 return True
