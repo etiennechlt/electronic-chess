@@ -795,6 +795,32 @@ def _hand_seeds(r: Router, pads) -> None:
     control("MUX_A0", "5", 60.6, 36.0, "10", 8.6, True)
     control("MUX_A1", "6", 58.1, 36.75, "9", 1.9, False)
 
+    # Buck corner escapes: rehearsed against real pad geometry, all
+    # margins >= 0.225 mm (see the board README for the method).
+    T("BUCK_SS", [P("C4", "1"), (28.3, P("C4", "1")[1]), (28.3, 13.35),
+                  (25.2, 13.35), (25.2, 12.25), P("U1", "9")])
+    T("BUCK_PG", [P("R2", "1"), (26.2, 9.05), (24.9, 9.05)])
+    V("BUCK_PG", 24.9, 9.05)
+    T("BUCK_PG", [(24.9, 9.05), (21.7, 9.05)], layer="B.Cu")
+    V("BUCK_PG", 21.7, 9.05)
+    T("BUCK_PG", [(21.7, 9.05), (20.3, 9.05), (20.3, 12.25), P("U1", "4")])
+    T("BUCK_DEF", [P("JP3", "2"), (36.04, 6.5), (31.6, 6.5), (31.6, 13.9),
+                   (23.25, 13.9)], layer="B.Cu")
+    V("BUCK_DEF", 23.25, 13.9)
+    T("BUCK_DEF", [(23.25, 13.9), P("U1", "8")])
+    # Pi 3V3 drops to the plane side right at the isolator pin.
+    T("PI_3V3", [P("U7", "8"), (15.4, 31.6)])
+    V("PI_3V3", 15.4, 31.6)
+    # Cell A nodes: mux pin 12 to the cell 1 clamp on B.Cu, and the two
+    # short row bridges dodging south of the clamp resistor rows.
+    T("M1_A", [P("D11", "3"), (22.26, 40.5)])
+    V("M1_A", 22.26, 40.5)
+    T("M1_A", [(22.26, 40.5), (48.83, 40.5)], layer="B.Cu")
+    V("M1_A", 48.83, 40.5)
+    T("M1_A", [(48.83, 40.5), P("U3", "12")])
+    T("C3_B", [P("R44", "1"), (58.6, 38.4), (63.4, 38.4), P("R42", "1")])
+    T("C2_A", [P("R31", "1"), (39.5, 38.4), (34.7, 38.4), P("R33", "1")])
+
 
 # ----------------------------------------------------------------------
 # Plane, checks and assembly.
