@@ -43,15 +43,25 @@ courte liste de liaisons reste à fermer à la main.
 
 ## Liste de finition (chevelu affiché dans KiCad)
 
-Le build imprime la liste exacte (« finish list ») ; à la génération
-de référence il reste une quinzaine de liaisons ouvertes, concentrées
-dans le coin buck (BUCK_SS, BUCK_PG, BUCK_FB, BUCK_DEF, SW, VIN) plus
-quelques rattrapages courts (5VA, VREF, M1_A, C2_A, C3_B, PI_3V3).
-Toutes sont des sauts locaux de quelques millimètres : ouvrir le
-`.kicad_pcb` dans pcbnew, activer l'affichage du chevelu et les fermer
-à la main (environ 30 minutes), puis relancer le DRC KiCad avant
-export. Les gerbers du dépôt sont générés depuis la carte telle
-quelle : refaire l'export après la finition.
+Le build imprime la liste exacte (« finish list »). À la génération de
+référence (464 pistes, 242 vias, DRC zéro) : quatre liaisons jamais
+routées (BUCK_PG vers R2.1, M1_A vers U3.12, C3_B vers R44.1, C2_A
+vers R31.1) et des équipotentielles en plusieurs morceaux à
+raccorder (VIN, SW, BUCK_PG, BUCK_FB, 5VA, VREF, M1_A, C2_A, C3_B,
+PI_3V3), dont quatre proviennent de la passe de garantie qui a retiré
+un tronçon sous-garde (5VA, SW, VREF, VIN). Toutes sont des sauts
+locaux de quelques millimètres : ouvrir le `.kicad_pcb` dans pcbnew,
+activer l'affichage du chevelu et les fermer à la main (environ 30
+minutes), puis relancer le DRC KiCad avant export. Les gerbers du
+dépôt sont générés depuis la carte telle quelle : refaire l'export
+après la finition.
+
+Note de méthode : les liaisons restantes sont celles dont tout seed
+structurel déplace plus de nets qu'il n'en ferme (saturation locale du
+routage) ; les seeds conservés (BUCK_SS, BUCK_DEF, PI_3V3, contrôles
+mux, rails) ont chacun été répétés hors build contre la géométrie
+réelle avec une marge d'au moins 0,225 mm, et la garde du build les
+revalide à chaque génération.
 
 Commande JLCPCB : 2 couches, 1,6 mm, 1 oz, assemblage face top avec
 `jlc-bom.csv` et `jlc-cpl.csv` (vérifier les correspondances LCSC dans
