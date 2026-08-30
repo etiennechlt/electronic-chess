@@ -806,13 +806,8 @@ def _hand_seeds(r: Router, pads) -> None:
     # Pi 3V3 drops to the plane side right at the isolator pin.
     T("PI_3V3", [P("U7", "8"), (15.4, 31.6)])
     V("PI_3V3", 15.4, 31.6)
-    # Cell A nodes: mux pin 12 to the cell 1 clamp on B.Cu, and the two
-    # short row bridges dodging south of the clamp resistor rows.
-    T("M1_A", [P("D11", "3"), (22.26, 40.5)])
-    V("M1_A", 22.26, 40.5)
-    T("M1_A", [(22.26, 40.5), (48.83, 40.5)], layer="B.Cu")
-    V("M1_A", 48.83, 40.5)
-    T("M1_A", [(48.83, 40.5), P("U3", "12")])
+    # M1_A (mux pin 12 to cell 1) stays on the finish list: any seeded
+    # crossing of the cell band displaces more links than it closes.
 
 
 # ----------------------------------------------------------------------
