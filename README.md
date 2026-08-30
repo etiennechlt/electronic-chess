@@ -60,7 +60,8 @@ décisive est la chute de Q avec l'aimant ferrite posé
 - **Carte analogique** (100 x 62, 2 couches, générée par
   [`analoggen`](tools/analoggen/)) : mux différentiel, AD8421,
   filtres Sallen-Key validés ngspice, buck forced-PWM contre LDO en
-  cavalier, UART Pi isolée,
+  cavalier, UART Pi isolée ; routée DRC zéro par le routeur maison,
+  une courte liste de liaisons à fermer dans pcbnew avant commande,
   [détails](hardware/mockup-2x2/analog-board/README.md).
 - **Firmware** ([`firmware/mockup`](firmware/mockup/)) : les deux
   voies d'extraction du brief mesurées simultanément sur chaque
