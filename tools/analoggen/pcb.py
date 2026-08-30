@@ -505,12 +505,7 @@ class Router:
                 if not (0 <= ni < self.ny and 0 <= nj < self.nx):
                     continue
                 if not passable(la, ni, nj):
-                    # A pad enclosed by its own net's marks may still take
-                    # the one step from its own cells onto that copper.
-                    escape = (target[la, ni, nj]
-                              and (own[la, i, j] or dist[la, i, j] == 0.0))
-                    if not escape:
-                        continue
+                    continue
                 nd = d + (1.0 if la == 0 else 1.6)
                 if nd < dist[la, ni, nj]:
                     dist[la, ni, nj] = nd
@@ -584,6 +579,12 @@ class Router:
             target = connected.copy()
             for la, i, j in cells:
                 target[la, i, j] = False
+            if target.any() and self._touches_net(net, pad):
+                # Already in real contact with this net's copper (a seed
+                # under the pad, say): nothing to route, and no failure.
+                for la, i, j in cells:
+                    connected[la, i, j] = True
+                continue
             if target.any():
                 path = self._astar(nid, width, cells, target, (pad.x, pad.y))
                 if path is None and width > W_FINE:
@@ -628,6 +629,19 @@ class Router:
     @staticmethod
     def _is_conn_fail(entry: str) -> bool:
         return ":" in entry and not entry.startswith("GND-via")
+
+    def _touches_net(self, net: str, pad) -> bool:
+        pb = box(pad.x - pad.w / 2, pad.y - pad.h / 2,
+                 pad.x + pad.w / 2, pad.y + pad.h / 2)
+        for tnet, w, pts, tlayer in self.tracks:
+            if tnet != net or (tlayer == "B.Cu" and not pad.tht):
+                continue
+            if LineString(pts).buffer(w / 2.0).distance(pb) <= 1e-9:
+                return True
+        for vnet, x, y in self.vias:
+            if vnet == net and Point(x, y).buffer(VIA_D / 2.0).distance(pb) <= 1e-9:
+                return True
+        return False
 
     def _net_target_mask(self, nid):
         t = np.zeros((2, self.ny, self.nx), dtype=bool)
