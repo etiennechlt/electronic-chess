@@ -18,7 +18,7 @@ from shapely.geometry import LineString, Point, box
 from shapely.ops import nearest_points, unary_union
 from shapely.strtree import STRtree
 
-CLEAR = 0.137          # FAB_CLR + safety so the strip pass never bites
+CLEAR = 0.132          # above the 0.127 DRC gate, threads 0.52 mm channels
 W_JOIN = 0.25
 VIA_R = 0.3
 EDGE = 0.55            # edge keepout + half width
@@ -145,14 +145,15 @@ def _f_paths(pa, pb):
         yield [pa, (xb, ya), pb]
         yield [pa, (xa, yb), pb]
     for off in (0.2, -0.2, 0.4, -0.4, 0.6, -0.6, 0.9, -0.9, 1.3, -1.3,
-                1.8, -1.8, 2.4, -2.4, 3.2, -3.2, 4.0, -4.0):
+                1.8, -1.8, 2.4, -2.4, 3.2, -3.2, 4.0, -4.0, 4.8, -4.8,
+                5.6, -5.6, 6.4, -6.4):
         ym = (ya + yb) / 2.0 + off
         yield [pa, (xa, ym), (xb, ym), pb]
         xm = (xa + xb) / 2.0 + off
         yield [pa, (xm, ya), (xm, yb), pb]
 
 
-def _ring(p, radii=(0.5, 0.8, 1.2, 1.8, 2.6, 3.6)):
+def _ring(p, radii=(0.5, 0.8, 1.2, 1.8, 2.6, 3.6, 4.8)):
     x, y = p
     for r in radii:
         for dx, dy in ((r, 0), (-r, 0), (0, r), (0, -r),
