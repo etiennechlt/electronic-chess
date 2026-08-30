@@ -48,7 +48,7 @@ La maquette tranche l'essentiel de l'incertitude technique ; la mesure
 décisive est la chute de Q avec l'aimant ferrite posé
 ([protocole](measurements/protocol.md), guide de
 [commande et montage](hardware/mockup-2x2/README.md),
-[BOM chiffrée](docs/bom-maquette.md)).
+[fiche d'approvisionnement avec prix Europe contre Asie](docs/bom-maquette.md)).
 
 | Vue d'ensemble | Pièce de test éclatée |
 |---|---|
