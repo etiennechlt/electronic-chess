@@ -138,21 +138,21 @@ def _net_pieces(net, pads, tracks, vias):
 
 
 def _f_paths(pa, pb):
-    """Candidate F.Cu polylines from pa to pb, simplest first."""
+    """Candidate polylines from pa to pb on one layer, simplest first."""
     (xa, ya), (xb, yb) = pa, pb
     yield [pa, pb]
     if abs(xa - xb) > 1e-6 and abs(ya - yb) > 1e-6:
         yield [pa, (xb, ya), pb]
         yield [pa, (xa, yb), pb]
     for off in (0.2, -0.2, 0.4, -0.4, 0.6, -0.6, 0.9, -0.9, 1.3, -1.3,
-                1.8, -1.8, 2.4, -2.4):
+                1.8, -1.8, 2.4, -2.4, 3.2, -3.2, 4.0, -4.0):
         ym = (ya + yb) / 2.0 + off
         yield [pa, (xa, ym), (xb, ym), pb]
         xm = (xa + xb) / 2.0 + off
         yield [pa, (xm, ya), (xm, yb), pb]
 
 
-def _ring(p, radii=(0.45, 0.7, 1.0, 1.4)):
+def _ring(p, radii=(0.5, 0.8, 1.2, 1.8, 2.6, 3.6)):
     x, y = p
     for r in radii:
         for dx, dy in ((r, 0), (-r, 0), (0, r), (0, -r),
@@ -160,65 +160,78 @@ def _ring(p, radii=(0.45, 0.7, 1.0, 1.4)):
             yield (x + dx, y + dy)
 
 
-def _try_f_join(net, pa, pb, fa, fb, obs):
+def _contacts(geom, other, n_extra=3):
+    """Contact points on geom: nearest to other, then boundary walks."""
+    p0 = nearest_points(geom, other)[0]
+    pts = [(p0.x, p0.y)]
+    b = geom.boundary
+    if b.is_empty or b.length < 1e-6:
+        return pts
+    s0 = b.project(p0)
+    for ds in (1.0, -1.0, 2.5, -2.5, 5.0, -5.0)[: 2 * n_extra]:
+        q = b.interpolate((s0 + ds) % b.length)
+        if all(abs(q.x - x) + abs(q.y - y) > 0.3 for x, y in pts):
+            pts.append((q.x, q.y))
+    return pts
+
+
+def _layer_join(net, layer, pa, pb, ga_true, gb_true, obs):
+    """One-layer joint from pa to pb touching both true geometries."""
     for pts in _f_paths(pa, pb):
         if not _in_board(pts):
             continue
         g = LineString(pts).buffer(W_JOIN / 2.0)
-        if fa is not None and g.distance(fa) > 1e-9:
+        if ga_true is not None and g.distance(ga_true) > 1e-9:
             continue
-        if fb is not None and g.distance(fb) > 1e-9:
+        if gb_true is not None and g.distance(gb_true) > 1e-9:
             continue
-        if obs.clear_of_foreign(net, "F.Cu", g):
-            return [("T", pts, "F.Cu")]
+        if obs.clear_of_foreign(net, layer, g):
+            return [("T", pts, layer)]
     return None
 
 
-def _try_b_join(net, pa, pb, ba, bb, obs):
-    for pts in _f_paths(pa, pb):
-        if not _in_board(pts):
+def _stub_via(net, p, contact_true, obs):
+    """Legal F stub from p to a nearby via; yields (plan, via_xy)."""
+    for v in _ring(p):
+        if not obs.via_ok(net, *v):
             continue
-        g = LineString(pts).buffer(W_JOIN / 2.0)
-        if ba is not None and g.distance(ba) > 1e-9:
+        stub = [p, v]
+        g = LineString(stub).buffer(W_JOIN / 2.0)
+        if not _in_board(stub) or not obs.clear_of_foreign(net, "F.Cu", g):
             continue
-        if bb is not None and g.distance(bb) > 1e-9:
+        if contact_true is not None and g.distance(contact_true) > 1e-9:
             continue
-        if obs.clear_of_foreign(net, "B.Cu", g):
-            return [("T", pts, "B.Cu")]
+        yield [("T", stub, "F.Cu"), ("V", v, None)], v
+
+
+def _try_single_via(net, pa, pb_true_b, fa, obs):
+    """F stub + via on side A, back-side run straight onto B copper."""
+    for head, va in _stub_via(net, pa, fa, obs):
+        p2 = nearest_points(Point(va), pb_true_b)[1]
+        for run in _f_paths(va, (p2.x, p2.y)):
+            if not _in_board(run):
+                continue
+            gr = LineString(run).buffer(W_JOIN / 2.0)
+            if gr.distance(pb_true_b) > 1e-9:
+                continue
+            if obs.clear_of_foreign(net, "B.Cu", gr):
+                return head + [("T", run, "B.Cu")]
     return None
 
 
 def _try_via_join(net, pa, pb, fa, fb, obs):
     """F stub, via, back-side run, via, F stub."""
-    for va in _ring(pa):
-        if not obs.via_ok(net, *va):
-            continue
-        stub_a = [pa, va]
-        ga = LineString(stub_a).buffer(W_JOIN / 2.0)
-        if not _in_board(stub_a) or not obs.clear_of_foreign(net, "F.Cu", ga):
-            continue
-        if fa is not None and ga.distance(fa) > 1e-9:
-            continue
-        for vb in _ring(pb):
+    for head, va in _stub_via(net, pa, fa, obs):
+        for tail_rev, vb in _stub_via(net, pb, fb, obs):
             if abs(va[0] - vb[0]) < 0.75 and abs(va[1] - vb[1]) < 0.75:
-                continue
-            if not obs.via_ok(net, *vb):
-                continue
-            stub_b = [vb, pb]
-            gb = LineString(stub_b).buffer(W_JOIN / 2.0)
-            if not _in_board(stub_b) \
-                    or not obs.clear_of_foreign(net, "F.Cu", gb):
-                continue
-            if fb is not None and gb.distance(fb) > 1e-9:
                 continue
             for run in _f_paths(va, vb):
                 if not _in_board(run):
                     continue
                 gr = LineString(run).buffer(W_JOIN / 2.0)
                 if obs.clear_of_foreign(net, "B.Cu", gr):
-                    return [("T", stub_a, "F.Cu"), ("V", va, None),
-                            ("T", run, "B.Cu"), ("V", vb, None),
-                            ("T", stub_b, "F.Cu")]
+                    stub_b, via_b = tail_rev
+                    return head + [("T", run, "B.Cu"), via_b, stub_b]
     return None
 
 
@@ -253,17 +266,39 @@ def finish_pass(pads, tracks, vias) -> list[str]:
             fb, bb = pieces[j]
             plan = None
             if fa is not None and fb is not None:
-                p1, p2 = nearest_points(fa, fb)
-                plan = _try_f_join(net, (p1.x, p1.y), (p2.x, p2.y),
-                                   fa, fb, obs)
+                for pa in _contacts(fa, fb):
+                    for pb in _contacts(fb, fa):
+                        plan = _layer_join(net, "F.Cu", pa, pb, fa, fb, obs)
+                        if plan:
+                            break
+                    if plan:
+                        break
             if plan is None and ba is not None and bb is not None:
-                p1, p2 = nearest_points(ba, bb)
-                plan = _try_b_join(net, (p1.x, p1.y), (p2.x, p2.y),
-                                   ba, bb, obs)
+                for pa in _contacts(ba, bb):
+                    for pb in _contacts(bb, ba):
+                        plan = _layer_join(net, "B.Cu", pa, pb, ba, bb, obs)
+                        if plan:
+                            break
+                    if plan:
+                        break
+            if plan is None and fa is not None and bb is not None:
+                for pa in _contacts(fa, gj):
+                    plan = _try_single_via(net, pa, bb, fa, obs)
+                    if plan:
+                        break
+            if plan is None and fb is not None and ba is not None:
+                for pb in _contacts(fb, gi):
+                    plan = _try_single_via(net, pb, ba, fb, obs)
+                    if plan:
+                        break
             if plan is None and fa is not None and fb is not None:
-                p1, p2 = nearest_points(fa, fb)
-                plan = _try_via_join(net, (p1.x, p1.y), (p2.x, p2.y),
-                                     fa, fb, obs)
+                for pa in _contacts(fa, fb, n_extra=1):
+                    for pb in _contacts(fb, fa, n_extra=1):
+                        plan = _try_via_join(net, pa, pb, fa, fb, obs)
+                        if plan:
+                            break
+                    if plan:
+                        break
             if plan is None:
                 break
             for kind, payload, layer in plan:
