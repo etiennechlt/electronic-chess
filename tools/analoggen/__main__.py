@@ -50,6 +50,10 @@ def main(argv: list[str] | None = None) -> int:
         status = (f"routed: {len(result.tracks)} tracks, {len(result.vias)} vias, "
                   f"open {len(result.open_nets)}, drc {len(result.drc_errors)}")
         print(status)
+        if result.finish_log:
+            print(f"  finishing pass: {len(result.finish_log)} joints")
+            for line in result.finish_log:
+                print(f"    + {line}")
         if result.open_nets:
             print("  finish list (airwires to close in KiCad):")
             for entry in result.open_nets:

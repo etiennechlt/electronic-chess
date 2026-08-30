@@ -82,3 +82,51 @@ def test_schematic_is_parsed_by_kicad(circuit, tmp_path):
     netlist = (tmp_path / "n.net").read_text()
     for net in ("VREF", "AMP_OUT", "DRIVE_BUS", "C1_A", "5VA"):
         assert net in netlist
+
+
+def test_finish_pass_joins_and_respects_clearance():
+    from dataclasses import dataclass
+
+    from analoggen.finish import CLEAR, finish_pass
+
+    @dataclass(frozen=True)
+    class FakePad:
+        ref: str
+        number: str
+        net: str | None
+        x: float
+        y: float
+        w: float
+        h: float
+        tht: bool
+
+    pads = [
+        FakePad("R1", "1", "A", 10.0, 10.0, 1.0, 0.6, False),
+        FakePad("R2", "1", "A", 13.0, 10.0, 1.0, 0.6, False),
+        # foreign obstacle right on the straight line between the pieces
+        FakePad("R3", "1", "B", 11.5, 10.0, 0.6, 0.6, False),
+        # a pair that nothing can join: walled in by foreign copper
+        FakePad("R4", "1", "C", 40.0, 10.0, 0.5, 0.5, False),
+        FakePad("R5", "1", "C", 44.0, 10.0, 0.5, 0.5, False),
+    ]
+    tracks: list = []
+    vias: list = []
+    for k in range(160):
+        ang_x = 42.0 + 3.4 * ((k % 40) - 20) / 20.0
+        tracks.append(("WALL", 0.4,
+                       [(ang_x, 8.0 + 1.9 * (k // 40)),
+                        (ang_x, 8.2 + 1.9 * (k // 40))], "F.Cu"))
+        tracks.append(("WALL", 0.4,
+                       [(ang_x, 8.0 + 1.9 * (k // 40)),
+                        (ang_x, 8.2 + 1.9 * (k // 40))], "B.Cu"))
+    log = finish_pass(pads, tracks, vias)
+    joined = [line for line in log if line.startswith("A:")]
+    assert joined, "net A should be joined around the obstacle"
+    new_a = [t for t in tracks if t[0] == "A"]
+    assert new_a
+    from shapely.geometry import LineString
+    from shapely.geometry import box as _box
+    obstacle = _box(11.2, 9.7, 11.8, 10.3)
+    for _net, w, pts, _layer in new_a:
+        assert LineString(pts).buffer(w / 2.0).distance(obstacle) >= CLEAR - 1e-9
+    assert not [line for line in log if line.startswith("C:")]
