@@ -1,12 +1,15 @@
 """Geometry and file-level checks of the generated mockup coil board."""
 
+import json
 import shutil
 import subprocess
+from pathlib import Path
 
 import numpy as np
 import pytest
-from coilgen.board import build_coil_board
+from coilgen.board import build_coil_board, design_rules
 from coilgen.geometry import min_adjacent_turn_gap_mm
+from coilgen.project import project_json
 from scipy.spatial import cKDTree
 
 
@@ -157,3 +160,11 @@ def test_kicad_cli_parses_the_board(build, tmp_path):
     )
     assert proc.returncode == 0, proc.stderr
     assert out_svg.exists() and out_svg.stat().st_size > 10_000
+
+
+def test_committed_project_matches_this_build(cfg, build):
+    """The .kicad_pro in the repo is what this build emits, rule for rule."""
+    path = (Path(__file__).resolve().parents[1] / "hardware" / "mockup-2x2"
+            / "coil-board" / "coil-board.kicad_pro")
+    emitted = json.loads(project_json("coil-board", design_rules(cfg, build)))
+    assert json.loads(path.read_text(encoding="utf-8")) == emitted

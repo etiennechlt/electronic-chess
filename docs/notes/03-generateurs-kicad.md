@@ -23,12 +23,20 @@ main, on modifie la source et on régénère
    symbole plus empreinte officielle vérifiable n'entre pas dans le
    design (c'est pour ça que la LED est une WS2812B 5050 et non la
    2020, sans symbole officiel).
-3. **kicad-cli est l'oracle.** Chaque carte générée doit passer
+3. **Une carte générée s'ouvre comme un projet.** KiCad n'ouvre pas
+   un `.kicad_pcb` seul depuis son gestionnaire de projet, donc chaque
+   générateur émet aussi le `.kicad_pro` qui va avec
+   (`coilgen.project`, partagé par les deux). Il transporte les règles
+   que le générateur a vraiment appliquées : classe de nets pour le
+   routage à la main, minima pour le DRC, et l'uuid de la feuille
+   racine du schéma quand il y en a un. Il est réémis à chaque build,
+   jamais édité.
+4. **kicad-cli est l'oracle.** Chaque carte générée doit passer
    `kicad-cli pcb export svg` et `sch export netlist` (tests
    automatiques). Piège connu : kicad-cli 7 ne re-remplit pas les
    zones, donc le plan de masse est émis pré-rempli en bandes de
    balayage calculées par le générateur.
-4. **Sémantique des rotations.** La rotation d'une empreinte s'ajoute
+5. **Sémantique des rotations.** La rotation d'une empreinte s'ajoute
    à l'angle propre de chaque pad, et rot90 étale une rangée le long
    de +x ; `pad_abs_pos` fait foi. Les permutations largeur/hauteur
    des pads tournés ont causé assez d'incidents pour ne plus jamais

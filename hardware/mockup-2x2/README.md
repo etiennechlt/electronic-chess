@@ -4,6 +4,37 @@ Deux cartes (ADR 0008) : la carte bobines (100 x 100, 4 couches,
 passive) et la carte analogique (100 x 62, 2 couches, assemblée). Le
 MCU est une Nucleo-G474RE du commerce reliée en nappes Dupont.
 
+## 0. Ouvrir les cartes dans KiCad
+
+Chaque carte a son fichier projet `.kicad_pro` à côté du `.kicad_pcb`,
+généré en même temps que lui : c'est ce fichier qu'on ouvre, KiCad ne
+sachant pas ouvrir une carte seule depuis son gestionnaire de projet.
+
+```bash
+kicad hardware/mockup-2x2/analog-board/analog-board.kicad_pro
+kicad hardware/mockup-2x2/coil-board/coil-board.kicad_pro
+```
+
+Sous macOS ou Windows, double clic sur le `.kicad_pro` (ou KiCad,
+Fichier, Ouvrir un projet). La carte s'ouvre avec les règles du
+générateur déjà en place : classe de nets, largeurs de piste et vias
+proposés au routage, minima du DRC. Le projet de la carte analogique
+associe aussi son schéma, ouvrable depuis le même gestionnaire.
+
+Trois choses à savoir :
+
+- Les fichiers sont au format KiCad 7. KiCad 8 ou 9 les ouvre et
+  propose la conversion au premier enregistrement.
+- Symboles et empreintes sont embarqués dans les fichiers : aucune
+  bibliothèque à installer, aucune table de bibliothèques à régler.
+- KiCad réécrit le `.kicad_pro` en enregistrant (état des fenêtres) et
+  crée un `.kicad_prl` local, ignoré par git. Une régénération remet
+  le projet dans son état canonique.
+
+Sans KiCad : les rendus `docs/images/analog-board.png` et
+`docs/images/coil-board.png`, ou les zip de gerbers dans une
+visionneuse.
+
 ## 1. Commander
 
 ### Carte bobines (~15 EUR les 5)

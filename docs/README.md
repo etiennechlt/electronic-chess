@@ -47,7 +47,7 @@ pas.
 | `measurements/` | protocole M1 à M11, gabarits CSV, analyse |
 | `docs/adr/` | décisions d'architecture numérotées |
 | `docs/notes/` | la présente base de connaissances |
-| `tests/` | 61 tests, dont le couloir bloquant en CI |
+| `tests/` | 66 tests, dont le couloir bloquant en CI |
 
 ## Notes
 

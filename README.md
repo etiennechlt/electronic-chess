@@ -91,7 +91,7 @@ décisions formelles sont dans [`docs/adr/`](docs/adr/README.md).
 | `config/` | `board.yaml`, source de vérité unique | 0 |
 | `chessboard_calc/` | calculs paramétriques et garde-fous | 0 |
 | `tools/coilgen`, `tools/analoggen` | générateurs KiCad des deux cartes | 1 |
-| `hardware/mockup-2x2/` | projets KiCad, gerbers, BOM, guides | 1 |
+| `hardware/mockup-2x2/` | projets KiCad (`.kicad_pro` à ouvrir), gerbers, BOM, guides | 1 |
 | `firmware/mockup/` | firmware Nucleo-G474RE | 1 |
 | `measurements/` | protocole, gabarits CSV, analyse | 1 |
 | `mechanical/` | modèles CadQuery et rendus | 1 et 3 |

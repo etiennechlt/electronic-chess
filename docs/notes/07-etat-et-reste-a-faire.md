@@ -15,16 +15,23 @@ imprimés par les builds de référence commités.
 | Mécanique CadQuery | pucks, gabarits de bobinage, support aimant, gabarit de perçage bois, STL/STEP exportés |
 | Protocole de mesure | M1 à M11, gabarits CSV, notebook d'analyse |
 | Approvisionnement | fiche comparée Europe/Asie, prix datés, quatre commandes conseillées |
-| Qualité | 61 tests verts, couloir bloquant en CI, ruff propre |
+| Qualité | 66 tests verts, couloir bloquant en CI, ruff propre |
 
-## Le seul reste côté dépôt
+## Le reste côté dépôt
 
-Sept nets de la carte analogique à fermer à la main dans pcbnew
-(couloirs saturés : M1_A, M2_A, C2_A, C3_B, BUCK_FB, BUCK_EN, VREF),
-un quart d'heure chevelu affiché, puis relancer le DRC KiCad et
-`export.sh`. Détail et justification dans le
-[README de la carte](../../hardware/mockup-2x2/analog-board/README.md)
-et la [note 04](04-routeur-et-garanties.md).
+1. Sept nets de la carte analogique à fermer à la main dans pcbnew
+   (couloirs saturés : M1_A, M2_A, C2_A, C3_B, BUCK_FB, BUCK_EN,
+   VREF), un quart d'heure chevelu affiché, puis relancer le DRC
+   KiCad et `export.sh`. Détail et justification dans le
+   [README de la carte](../../hardware/mockup-2x2/analog-board/README.md)
+   et la [note 04](04-routeur-et-garanties.md).
+2. Placement du jack J1 à corriger : à `(5, 9.5)` sa broche 2 tombe à
+   x = -1 mm, donc 1 mm en dehors du contour ouest, et sa broche 3
+   ne laisse que 0,25 mm de cuivre au bord. Le décaler vers l'est
+   dans `tools/analoggen/pcb.py` (au moins 7,5 mm) puis regénérer.
+   Le générateur ne surveille pas la distance au bord des empreintes,
+   seulement celle des pistes ; c'est le DRC de KiCad, désormais
+   configuré par le `.kicad_pro`, qui le signale.
 
 ## Le chemin physique, dans l'ordre
 

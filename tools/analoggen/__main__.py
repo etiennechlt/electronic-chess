@@ -6,11 +6,13 @@ import argparse
 import sys
 from pathlib import Path
 
+from coilgen.project import project_json, schematic_root_uuid
+
 from chessboard_calc.config import DEFAULT_CONFIG_PATH, load_config
 
 from .bom import bom_csv, jlc_bom_csv, jlc_cpl_csv
 from .circuit import build_circuit
-from .pcb import build_pcb
+from .pcb import build_pcb, design_rules
 from .render import render_pcb
 from .schematic import emit_schematic
 from .spice import chain_netlist
@@ -32,13 +34,16 @@ def main(argv: list[str] | None = None) -> int:
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
 
-    (out / "analog-board.kicad_sch").write_text(
-        emit_schematic(circuit, "Damier LC, maquette 2x2, carte analogique"),
+    schematic = emit_schematic(circuit, "Damier LC, maquette 2x2, carte analogique")
+    (out / "analog-board.kicad_sch").write_text(schematic, encoding="utf-8")
+    (out / "analog-board.kicad_pro").write_text(
+        project_json("analog-board", design_rules(),
+                     root_sheet_uuid=schematic_root_uuid(schematic)),
         encoding="utf-8")
     (out / "bom.csv").write_text(bom_csv(circuit), encoding="utf-8")
     (out / "jlc-bom.csv").write_text(jlc_bom_csv(circuit), encoding="utf-8")
     (out / "chain-spice.cir").write_text(chain_netlist(chain), encoding="utf-8")
-    print(f"schematic, BOM and SPICE written to {out} "
+    print(f"project, schematic, BOM and SPICE written to {out} "
           f"(chain gain {chain.total_gain:.0f})")
 
     if not args.skip_pcb:

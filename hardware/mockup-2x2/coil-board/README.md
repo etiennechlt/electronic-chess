@@ -19,6 +19,15 @@ regénérer.
 - 4 trous M3 espacés de 34 mm autour de S3 pour le support d'aimant
   réglable imprimé (répertoire `mechanical/`).
 
+## Ouvrir
+
+`coil-board.kicad_pro`, généré avec la carte, est le fichier à ouvrir
+dans KiCad ; il porte la classe de nets et les minima du DRC issus du
+yaml : garde 0,13 mm, piste d'interconnexion 0,5 mm, vias 0,6/0,3 mm
+pour les bobines et 0,8/0,4 mm pour les LED, cuivre à 0,5 mm du bord.
+La carte n'a pas de schéma : elle est purement passive et toute sa
+connectivité tient dans le `.kicad_pcb`.
+
 ## Fabrication
 
 `sh hardware/mockup-2x2/coil-board/export.sh` regénère la carte et

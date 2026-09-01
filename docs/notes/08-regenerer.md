@@ -8,7 +8,7 @@ kicad-cli 7, ngspice, arm-none-eabi-gcc, CadQuery.
 
 ```bash
 .venv/bin/ruff check .
-.venv/bin/pytest -q          # 61 tests, couloir bloquant inclus
+.venv/bin/pytest -q          # 66 tests, couloir bloquant inclus
 ```
 
 ## Rapport de calculs
@@ -23,7 +23,8 @@ kicad-cli 7, ngspice, arm-none-eabi-gcc, CadQuery.
 PYTHON=.venv/bin/python sh hardware/mockup-2x2/coil-board/export.sh
 ```
 
-Régénère `coil-board.kicad_pcb`, les gerbers zippés et le rendu
+Régénère `coil-board.kicad_pcb`, son projet `coil-board.kicad_pro`
+(le fichier à ouvrir dans KiCad), les gerbers zippés et le rendu
 `docs/images/coil-board.png`. Les gardes géométriques (spirales,
 terminaux, barillets, bord) lèvent une exception en cas de conflit :
 un build silencieusement faux n'existe pas.
@@ -44,9 +45,15 @@ Lire la sortie du build :
 - `drc (0)` : doit toujours être zéro ; un DRC non nul est un bug du
   générateur, pas une carte à corriger à la main.
 
-Sorties : `analog-board.kicad_sch`, `.kicad_pcb`, `bom.csv`,
-`jlc-bom.csv`, `jlc-cpl.csv`, `chain-spice.cir`, gerbers zippés,
-rendu `docs/images/analog-board.png`.
+Sorties : `analog-board.kicad_pro` (le fichier à ouvrir dans KiCad),
+`analog-board.kicad_sch`, `.kicad_pcb`, `bom.csv`, `jlc-bom.csv`,
+`jlc-cpl.csv`, `chain-spice.cir`, gerbers zippés, rendu
+`docs/images/analog-board.png`.
+
+Le projet porte les règles du générateur (classe de nets, minima du
+DRC) et, pour la carte analogique, l'uuid de la feuille racine du
+schéma : il est réémis à chaque build, donc il ne peut pas dériver de
+la carte qu'il accompagne.
 
 ## Mécanique
 
@@ -74,6 +81,7 @@ de `mockup.nucleo_pins` ou `mockup.coil_board.leds` dans le yaml.
 
 | Artefact | Chemin |
 |---|---|
+| Projets KiCad | `hardware/mockup-2x2/*/[nom].kicad_pro` |
 | Gerbers bobines | `hardware/mockup-2x2/coil-board/coil-board-gerbers.zip` |
 | Gerbers analogique | `hardware/mockup-2x2/analog-board/analog-board-gerbers.zip` |
 | BOM et placements JLC | `hardware/mockup-2x2/analog-board/jlc-*.csv` |

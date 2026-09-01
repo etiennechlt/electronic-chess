@@ -31,6 +31,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 from coilgen.kicad import Board
+from coilgen.project import DesignRules
 from scipy import ndimage
 from shapely.geometry import LineString, Point, box
 from shapely.ops import unary_union
@@ -49,10 +50,30 @@ W_SIG = 0.4
 W_PWR = 0.8
 W_FINE = 0.25       # entries into fine-pitch pads
 VIA_D, VIA_DRILL = 0.6, 0.3
-EDGE_KEEPOUT = 0.4
+EDGE_KEEPOUT = 0.4  # router margin, keeps tracks off the outline
+DRC_EDGE_CLR = 0.2  # fabrication floor, what the KiCad DRC checks
 
 POWER_NETS = {"VIN", "VIN_JACK", "5V_BUCK", "5V_BUCK_FILT", "5V_LDO", "5VA",
               "SW", "PULSE_RAIL", "DRIVE_BUS"}
+
+
+def design_rules() -> DesignRules:
+    """KiCad design rules matching what the router enforced.
+
+    The netclass carries the design values (what the editor offers when
+    closing the remaining airwires by hand); the DRC minima are the
+    fabrication gate the generator itself verifies.
+    """
+    return DesignRules(
+        clearance_mm=CLR,
+        track_width_mm=W_SIG,
+        via_diameter_mm=VIA_D,
+        via_drill_mm=VIA_DRILL,
+        min_clearance_mm=FAB_CLR,
+        min_track_width_mm=W_FINE,
+        edge_clearance_mm=DRC_EDGE_CLR,
+        track_widths_mm=(W_PWR, W_FINE),
+    )
 
 
 def net_width(net: str) -> float:

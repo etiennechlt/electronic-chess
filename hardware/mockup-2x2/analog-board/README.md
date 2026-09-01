@@ -24,6 +24,22 @@ fichiers KiCad à la main : modifier la source et regénérer.
   x = 38,57 mm, aligné avec elle) ; J4 : 2 x 10 vers la Nucleo ;
   6 points de test.
 
+## Ouvrir
+
+`analog-board.kicad_pro` est le fichier à ouvrir dans KiCad : il
+associe le schéma et la carte, et il porte les règles du routeur.
+Classe de nets : garde 0,15 mm, piste 0,4 mm (0,8 mm pour les rails,
+0,25 mm pour les entrées dans les pastilles à pas fin), vias
+0,6/0,3 mm. Minima du DRC : garde 0,127 mm, la porte exacte que le
+générateur vérifie lui même.
+
+Le DRC de KiCad contrôle aussi ce que le générateur ne regarde pas, en
+particulier la distance du cuivre au bord de carte, réglée ici à la
+valeur de fabrication 0,2 mm. Sur la génération de référence il
+signale la broche 2 du jack J1, placée 1 mm en dehors du contour : le
+placement de J1 dans `tools/analoggen/pcb.py` est à corriger avant
+commande, ce n'est pas un faux positif.
+
 ## Génération et fabrication
 
 ```bash

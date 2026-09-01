@@ -25,8 +25,13 @@ from chessboard_calc.inductance import pcb_sense_coil
 
 from .geometry import LayerPath, spiral_stack
 from .kicad import Board
+from .project import DesignRules
 
 COPPER_LAYERS = ["F.Cu", "In1.Cu", "In2.Cu", "B.Cu"]
+
+# LED subsystem vias, the only drill on the board besides the coil
+# stacking vias, the joint header and the mounting holes.
+LED_VIA_PAD, LED_VIA_DRILL = 0.8, 0.4
 
 # Pad order chosen so no escape route crosses another (see routing plan
 # below): S1 comes from the left, S3 and S4 climb the two center lanes,
@@ -226,7 +231,7 @@ def _place_leds(cfg: BoardConfig, board: Board, result: BuildResult,
     o = leds.corner_inset_mm
     w_chain = leds.chain_track_mm
     w_ring = leds.ring_track_mm
-    via_pad, via_drill = 0.8, 0.4
+    via_pad, via_drill = LED_VIA_PAD, LED_VIA_DRILL
     w_mm, h_mm = cfg.mockup.coil_board.size_mm
 
     fp = load_footprint("LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm")
@@ -580,6 +585,30 @@ def _place_leds(cfg: BoardConfig, board: Board, result: BuildResult,
 def _in_led_board(pts, w_mm, h_mm) -> bool:
     return all(0.5 <= x <= w_mm - 0.5 and 0.5 <= y <= h_mm - 0.5
                for x, y in pts)
+
+
+def design_rules(cfg: BoardConfig, result: BuildResult) -> DesignRules:
+    """KiCad design rules describing the copper this build emitted.
+
+    Widths and drills are read back from the build, so the project file
+    can never drift from the board next to it.
+    """
+    mock = cfg.mockup.coil_board
+    coil_via_pad = 2.0 * cfg.sense_coil.via_drill_mm
+    widths = sorted({result.track_width_mm, mock.route_track_mm,
+                     *(w for _net, _layer, w, _pts in result.led_tracks)})
+    return DesignRules(
+        clearance_mm=mock.track_clearance_mm,
+        track_width_mm=mock.route_track_mm,
+        via_diameter_mm=coil_via_pad,
+        via_drill_mm=cfg.sense_coil.via_drill_mm,
+        min_track_width_mm=min(widths),
+        min_via_diameter_mm=min(coil_via_pad, LED_VIA_PAD),
+        min_hole_mm=min(cfg.sense_coil.via_drill_mm, LED_VIA_DRILL),
+        edge_clearance_mm=mock.edge_clearance_mm,
+        track_widths_mm=tuple(widths),
+        via_sizes_mm=((LED_VIA_PAD, LED_VIA_DRILL),),
+    )
 
 
 def route_w_of(cfg: BoardConfig) -> float:
