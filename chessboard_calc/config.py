@@ -279,6 +279,7 @@ class LedsCfg(_Model):
     ring_track_mm: float
     color_white: tuple[int, int, int]
     color_black: tuple[int, int, int]
+    chain_squares: tuple[int, ...]
 
 
 class CoilBoardCfg(_Model):

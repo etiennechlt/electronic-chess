@@ -12,6 +12,7 @@ int main(void) {
     comp_init();
     fft_init();
     measure_init();
+    led_init();
 
     uart_puts("# LC chessboard, 2x2 mockup\n");
     uart_puts("# fs_hz=");

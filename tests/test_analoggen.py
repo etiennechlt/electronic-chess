@@ -29,7 +29,7 @@ def circuit(cfg):
 
 def test_circuit_size_and_no_floating_nets(circuit):
     ckt, _ = circuit
-    assert len(ckt.components) == 135
+    assert len(ckt.components) == 138
     solo = [n for n, pins in ckt.nets.items() if len(pins) < 2]
     assert solo == []
 
@@ -41,7 +41,8 @@ def test_chain_gain_within_spec(cfg, circuit):
 
 
 def test_joint_order_matches_coil_board(circuit):
-    plan_nets = [f"C{t[0][1]}_{t[1]}" if t[0] != "GND" else "GND" for t in PAD_PLAN]
+    special = {"GND": "GND", "LED_DIN": "LED_DIN5", "LED_5V": "5V_BUCK"}
+    plan_nets = [special.get(t[0], f"C{t[0][1]}_{t[1]}") for t in PAD_PLAN]
     assert plan_nets == JOINT_ORDER
 
 

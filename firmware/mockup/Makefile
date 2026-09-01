@@ -11,7 +11,7 @@ BUILD   := build
 TARGET  := $(BUILD)/mockup
 
 SRCS := src/startup.c src/system.c src/main.c src/clock.c src/uart.c \
-        src/adc.c src/comp.c src/fft.c src/measure.c src/calib.c src/cli.c
+        src/adc.c src/comp.c src/fft.c src/measure.c src/calib.c src/cli.c src/led.c
 OBJS := $(SRCS:src/%.c=$(BUILD)/%.o)
 
 CFLAGS := -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard \

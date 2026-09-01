@@ -241,10 +241,22 @@ def _place_leds(cfg: BoardConfig, board: Board, result: BuildResult,
         return {"NW": (cx - d, cy - d), "SE": (cx + d, cy + d),
                 "NE": (cx + d, cy - d), "SW": (cx - d, cy + d)}[which]
 
-    # S2 uses the NE-SW diagonal: its NW corner sits under the joint
-    # pad row. Both diagonals satisfy "two opposite corners".
-    chain = [("S2", "NE"), ("S2", "SW"), ("S4", "NW"), ("S4", "SE"),
-             ("S3", "SE"), ("S3", "NW"), ("S1", "SE"), ("S1", "NW")]
+    # Square sequence comes from the yaml (shared with the firmware);
+    # the corner pattern is layout knowledge: S2 uses the NE-SW
+    # diagonal (its NW corner sits under the joint pad row), and each
+    # square's first-visited corner keeps the chain hops short. Both
+    # diagonals satisfy "two opposite corners".
+    first_corner = {"S1": "SE", "S2": "NE", "S3": "SE", "S4": "NW"}
+    other = {"NE": "SW", "SW": "NE", "NW": "SE", "SE": "NW"}
+    seen: dict[str, int] = {}
+    chain = []
+    for k in leds.chain_squares:
+        sq = f"S{k}"
+        which = first_corner[sq] if sq not in seen else other[first_corner[sq]]
+        seen[sq] = seen.get(sq, 0) + 1
+        chain.append((sq, which))
+    if [c[0] for c in chain] != ["S2", "S2", "S4", "S4", "S3", "S3", "S1", "S1"]:
+        raise ValueError("led chain routing is tuned for the S2 S4 S3 S1 order")
 
     net_5v = "LED_5V"
     net_gnd = "GND"

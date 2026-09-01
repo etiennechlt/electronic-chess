@@ -160,9 +160,13 @@ PLACEMENTS: dict[str, tuple[float, float, float]] = {
     # Mux between the cell pairs.
     "U3": (48.5, 42.0, 90.0),
     "R11": (38.0, 31.5, 90.0),
-    # South joint socket: pin 1 lands on x = 38.57 like the coil board;
-    # rot 90 lays the pin row along +x with the body toward the edge.
-    "J2": (38.57, 56.4, 90.0),
+    # South joint socket: pin 1 x is computed from the yaml joint so it
+    # always matches the coil board (see full_placements).
+    "J2": (0.0, 56.4, 90.0),
+    # WS2812 level shifter and its passives, south-east of J2.
+    "U8": (78.0, 54.0, 0.0),
+    "R68": (74.5, 54.0, 0.0),
+    "C27": (81.5, 54.0, 90.0),
     # Mechanics.
     "H1": (3.6, 3.6, 0.0),
     "H2": (3.6, 52.0, 0.0),
@@ -196,8 +200,11 @@ def cell_ref(kind: str, k: int) -> str:
     return f"Q{k + int(kind[3:])}"
 
 
-def full_placements() -> dict[str, tuple[float, float, float]]:
+def full_placements(cfg: BoardConfig) -> dict[str, tuple[float, float, float]]:
     placements = dict(PLACEMENTS)
+    joint = cfg.mockup.coil_board.joint
+    x0 = BOARD_W / 2.0 - (joint.pins - 1) * joint.pitch_mm / 2.0
+    placements["J2"] = (x0, 56.4, 90.0)
     for k, cx in CELL_X.items():
         for kind, (dx, dy, rot) in CELL_PARTS.items():
             placements[cell_ref(kind, k)] = (cx + dx, CELL_Y + dy, rot)
@@ -986,7 +993,7 @@ def _strip_subclearance(pads, router) -> list[str]:
 
 
 def build_pcb(cfg: BoardConfig, circuit: Circuit) -> PcbResult:
-    placements = full_placements()
+    placements = full_placements(cfg)
     missing = [c.ref for c in circuit.components if c.ref not in placements]
     if missing:
         raise ValueError(f"unplaced components: {missing}")

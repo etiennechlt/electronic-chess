@@ -118,18 +118,21 @@ JACK = Part("Connector", "Barrel_Jack_Switch",
             mpn="DC-005-5.5x2.1", lcsc="C381118")
 H1X3 = Part("Connector_Generic", "Conn_01x03",
             "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical")
-H1X10 = Part("Connector_Generic", "Conn_01x10",
-             "Connector_PinHeader_2.54mm:PinHeader_1x10_P2.54mm_Vertical")
+H1X12 = Part("Connector_Generic", "Conn_01x12",
+             "Connector_PinHeader_2.54mm:PinHeader_1x12_P2.54mm_Vertical")
 H2X10 = Part("Connector_Generic", "Conn_02x10_Odd_Even",
              "Connector_PinHeader_2.54mm:PinHeader_2x10_P2.54mm_Vertical")
 H2X04 = Part("Connector_Generic", "Conn_02x04_Odd_Even",
              "Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical")
+BUF5 = Part("74xGxx", "74AHCT1G125", "Package_TO_SOT_SMD:SOT-23-5",
+            mpn="SN74AHCT1G125DBVR", lcsc="C350557")
 TP = Part("Connector", "TestPoint", "TestPoint:TestPoint_Pad_1.5x1.5mm")
 HOLE = Part("Mechanical", "MountingHole_Pad",
             "MountingHole:MountingHole_3.2mm_M3_Pad")
 
 # The coil joint pad order must match coilgen.board.PAD_PLAN.
-JOINT_ORDER = [GND, "C1_A", "C1_B", "C3_A", "C3_B", "C4_A", "C4_B", "C2_A", "C2_B", GND]
+JOINT_ORDER = [GND, "C1_A", "C1_B", "C3_A", "C3_B", "C4_A", "C4_B",
+               "C2_A", "C2_B", GND, "LED_DIN5", "5V_BUCK"]
 
 
 def build_circuit(cfg: BoardConfig) -> tuple[Circuit, ChainDesign]:
@@ -302,11 +305,11 @@ def build_circuit(cfg: BoardConfig) -> tuple[Circuit, ChainDesign]:
     })
 
     # ---------------- Headers, test points, mechanics ----------------
-    ckt.add("J2", H1X10, "COIL JOINT",
+    ckt.add("J2", H1X12, "COIL JOINT",
             {str(i + 1): net for i, net in enumerate(JOINT_ORDER)})
     ckt.add("J4", H2X10, "MCU", {
         "1": "3V3_NUCLEO", "2": GND,
-        "3": "AMP_OUT", "4": GND,
+        "3": "AMP_OUT", "4": "LED_DIN",
         "5": "MUX_A0", "6": "MUX_A1",
         "7": "MUX_INH", "8": "PULSE_EN",
         "9": "DRIVE1", "10": "DRIVE2",
@@ -316,6 +319,14 @@ def build_circuit(cfg: BoardConfig) -> tuple[Circuit, ChainDesign]:
         "17": "MCU_TX", "18": "MCU_RX",
         "19": GND, "20": "INA_OUT",
     })
+    # WS2812 level shift: TTL-threshold buffer on the digital 5V rail,
+    # output enable tied low, 470R series at the source (ADR 0009).
+    ckt.add("U8", BUF5, "74AHCT1G125", {
+        "1": GND, "2": "LED_DIN", "3": GND, "4": "LED_DINB",
+        "5": "5V_BUCK"})
+    ckt.add("R68", R, "470", {"1": "LED_DINB", "2": "LED_DIN5"})
+    c("C27", "100n", "5V_BUCK", GND)
+
     for ref, net in [("TP1", "INA_OUT"), ("TP2", "AMP_OUT"), ("TP3", "VREF"),
                      ("TP4", "5VA"), ("TP5", GND), ("TP6", "DRIVE_BUS")]:
         ckt.add(ref, TP, net, {"1": net})

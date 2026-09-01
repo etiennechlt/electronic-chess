@@ -9,6 +9,9 @@
  *   i        classify each square against the stored calibration
  *   r        raw ADC dump of square 1 (512 samples, CSV)
  *   p / P    drive pulse -100 ns / +100 ns
+ *   l        identify and light the squares (demo: classes 1-2 white
+ *            camp, 3-4 black camp; empty square off)
+ *   o        all camp LEDs off
  *
  * CSV: sq,fa_hz,fb_hz,amp_mv,snr_db10
  */
@@ -57,6 +60,25 @@ static void do_calibrate(void) {
     } else {
         uart_puts("# flash store FAILED\n");
     }
+}
+
+static void do_light(void) {
+    calib_t cal;
+    if (!calib_load(&cal)) {
+        uart_puts("# no calibration stored\n");
+        return;
+    }
+    for (uint32_t sq = 0; sq < N_SQUARES; sq++) {
+        measure_t m = measure_square(sq);
+        int cls = calib_classify(&cal, m.fa_hz);
+        led_camp_t camp = LED_CAMP_OFF;
+        if (cls >= 0) {
+            camp = (cls < 2) ? LED_CAMP_WHITE : LED_CAMP_BLACK;
+        }
+        led_set_square(sq, camp);
+    }
+    led_apply();
+    uart_puts("# leds updated\n");
 }
 
 static void do_identify(void) {
@@ -126,6 +148,13 @@ void cli_poll(void) {
         break;
     case 'r':
         dump_raw();
+        break;
+    case 'l':
+        do_light();
+        break;
+    case 'o':
+        led_all_off();
+        uart_puts("# leds off\n");
         break;
     case 'p':
         if (pulse_ns > 200u) {

@@ -33,6 +33,17 @@ def main(cfg_path: str, out_path: str) -> None:
         lines.append(f"#define {upper}_PIN {num}u")
         lines.append(f"/* {upper}: {mcu}, Arduino {spec['arduino']} */")
         lines.append("")
+    leds = cfg["mockup"]["coil_board"]["leds"]
+    chain = leds["chain_squares"]
+    lines.append(f"#define LED_COUNT {len(chain)}u")
+    lines.append("/* zero-based square index per chain position */")
+    lines.append("#define LED_CHAIN_SQ { "
+                 + ", ".join(f"{k - 1}u" for k in chain) + " }")
+    for camp in ("white", "black"):
+        r, g, b = leds[f"color_{camp}"]
+        lines.append(f"#define LED_COLOR_{camp.upper()} "
+                     f"0x{r:02X}{g:02X}{b:02X}u")
+    lines.append("")
     with open(out_path, "w", encoding="utf-8") as fh:
         fh.write(TEMPLATE.format(defines="\n".join(lines)))
     print(f"wrote {out_path} ({len(pins)} pins)")

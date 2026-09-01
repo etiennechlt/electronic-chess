@@ -55,6 +55,13 @@ void measure_init(void);
 measure_t measure_square(uint32_t square); /* 0..3 */
 void measure_set_drive_pulse_ns(uint32_t ns);
 
+/* led.c */
+typedef enum { LED_CAMP_OFF = 0, LED_CAMP_WHITE, LED_CAMP_BLACK } led_camp_t;
+void led_init(void);
+void led_set_square(uint32_t square, led_camp_t camp); /* 0..3 */
+void led_apply(void);
+void led_all_off(void);
+
 /* calib.c */
 typedef struct {
     uint32_t magic;

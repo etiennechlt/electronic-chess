@@ -58,6 +58,10 @@
 #define DRIVE_4_PIN 8u
 /* DRIVE_4: PB8, Arduino D15 */
 
+#define LED_DIN_PORT GPIOA
+#define LED_DIN_PIN 5u
+/* LED_DIN: PA5, Arduino D13 */
+
 #define PI_UART_TX_PORT GPIOA
 #define PI_UART_TX_PIN 9u
 /* PI_UART_TX: PA9, Arduino D8 */
@@ -65,5 +69,11 @@
 #define PI_UART_RX_PORT GPIOA
 #define PI_UART_RX_PIN 10u
 /* PI_UART_RX: PA10, Arduino D2 */
+
+#define LED_COUNT 8u
+/* zero-based square index per chain position */
+#define LED_CHAIN_SQ { 1u, 1u, 3u, 3u, 2u, 2u, 0u, 0u }
+#define LED_COLOR_WHITE 0xFFAA3Cu
+#define LED_COLOR_BLACK 0x283CFFu
 
 #endif
