@@ -58,6 +58,25 @@ def render_board(result: BuildResult, out_path: Path, dpi: int = 220) -> None:
     for px in result.pad_xs:
         ax.add_patch(plt.Circle((px, 2.5), 0.85, color="#d0d0a0", zorder=5))
         ax.add_patch(plt.Circle((px, 2.5), 0.5, color="#101418", zorder=6))
+
+    for layer, (color, alpha, z) in LAYER_STYLE.items():
+        segs = [(pts[i], pts[i + 1])
+                for _n, llayer, _w, pts in result.led_tracks
+                if llayer == layer
+                for i in range(len(pts) - 1)]
+        if segs:
+            ax.add_collection(
+                LineCollection(segs, colors=color, alpha=alpha, zorder=z,
+                               linewidths=width_pt(0.5), capstyle="round"))
+    for vx, vy in result.led_vias:
+        ax.add_patch(plt.Circle((vx, vy), 0.4, color="#e6e6e6", zorder=5))
+        ax.add_patch(plt.Circle((vx, vy), 0.18, color="#101418", zorder=6))
+    for ref, (lx, ly) in result.leds:
+        ax.add_patch(plt.Rectangle((lx - 2.5, ly - 2.5), 5.0, 5.0,
+                                   facecolor="#e8e8ee", edgecolor="#8aa0b4",
+                                   zorder=8))
+        ax.annotate(ref, (lx, ly), color="#101418", ha="center",
+                    va="center", fontsize=6, zorder=9)
     for hx, hy, hd in result.holes:
         ax.add_patch(plt.Circle((hx, hy), hd / 2.0, fill=False,
                                 color="#8aa0b4", zorder=5, linewidth=1.0))

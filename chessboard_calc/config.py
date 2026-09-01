@@ -269,6 +269,18 @@ class JointCfg(_Model):
     drill_mm: float
 
 
+class LedsCfg(_Model):
+    part: str
+    per_square: int
+    corner_inset_mm: float
+    light_hole_d_mm: float
+    decoupling_nf: float
+    chain_track_mm: float
+    ring_track_mm: float
+    color_white: tuple[int, int, int]
+    color_black: tuple[int, int, int]
+
+
 class CoilBoardCfg(_Model):
     size_mm: tuple[float, float]
     layers: int
@@ -280,6 +292,7 @@ class CoilBoardCfg(_Model):
     magnet_mount: MagnetMountCfg
     joint: JointCfg
     route_track_mm: float
+    leds: LedsCfg
 
 
 class AnalogBoardCfg(_Model):

@@ -1,7 +1,12 @@
+import sys
+from pathlib import Path
+
 import pytest
 import yaml
 
-from chessboard_calc.config import DEFAULT_CONFIG_PATH, load_config
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+
+from chessboard_calc.config import DEFAULT_CONFIG_PATH, load_config  # noqa: E402
 
 
 @pytest.fixture(scope="session")

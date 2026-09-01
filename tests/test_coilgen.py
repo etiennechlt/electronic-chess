@@ -36,6 +36,9 @@ def _copper_items(build):
             items.append((net, path.layer, path.points, build.track_width_mm))
         for _label, layer, pts in coil.routes:
             items.append((net, layer, np.asarray(pts), 0.5))
+    for net, layer, width, pts in build.led_tracks:
+        if len(pts) >= 2:
+            items.append((net, layer, np.asarray(pts), width))
     return items
 
 
@@ -114,11 +117,32 @@ def test_cross_net_copper_clearance(cfg, build):
 def test_serialized_board_is_balanced_and_complete(build):
     text = build.board.serialize()
     assert text.count("(") == text.count(")")
-    assert text.count("(via ") == 12
-    assert text.count("(footprint ") == 1 + 4 + 4  # joint + 4 mount + 4 magnet
+    assert text.count("(via ") == 12 + len(build.led_vias)
+    # joint + 4 mount + 4 magnet + 8 LED + 8 decoupling
+    assert text.count("(footprint ") == 1 + 4 + 4 + 16
     assert "Edge.Cuts" in text and "F.SilkS" in text
     seg_count = text.count("(segment ")
     assert seg_count > 5000  # four coils, four layers of sampled spirals
+
+
+def test_led_subsystem(cfg, build):
+    """Eight chained LEDs at opposite corners, clear of the spirals."""
+    leds = cfg.mockup.coil_board.leds
+    assert len(build.leds) == 4 * leds.per_square
+    p = cfg.pitch.mockup_mm
+    per_square: dict[str, list] = {}
+    for _ref, (x, y) in build.leds:
+        sq = (int(x // p), int(y // p))
+        per_square.setdefault(sq, []).append((x, y))
+    for _sq, pts in per_square.items():
+        assert len(pts) == leds.per_square
+        (x1, y1), (x2, y2) = pts
+        # opposite corners: both offsets flip sign
+        assert abs((x1 + x2) / 2.0 % p - p / 2.0) < 1e-6
+        assert abs((y1 + y2) / 2.0 % p - p / 2.0) < 1e-6
+    nets = {n for n, _l, _w, _p in build.led_tracks}
+    assert "LED_DIN" in nets and "LED_5V" in nets and "GND" in nets
+    assert sum(1 for n in nets if n.startswith("LED_L")) == 7
 
 
 @pytest.mark.skipif(shutil.which("kicad-cli") is None, reason="kicad-cli not installed")

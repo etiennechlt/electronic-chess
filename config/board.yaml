@@ -56,7 +56,9 @@ piece_magnet:
 
 gap:                           # nominal total is derived: 1.6 + 3.0 + 0.5 = 5.1
   pcb_mm: 1.6
-  surface_mm: 3.0              # acrylic
+  surface_mm: 3.0              # dry plywood (was acrylic); thickness is the
+                               # knob that matters: wood is non magnetic and
+                               # insulating, freq shift is ppm-level (ADR 0009)
   felt_mm: 0.5
   max_total_mm: 8.0
 
@@ -170,11 +172,21 @@ mockup:
       hole_spacing_mm: 34.0     # 30 would drill into the spiral outer turn
       hole_d_mm: 3.2
     joint:                       # to the analog board, north edge
-      pins: 10                   # GND A1 B1 A3 B3 A4 B4 A2 B2 GND
+      pins: 12                   # GND A1 B1 A3 B3 A4 B4 A2 B2 GND DIN 5V
       pitch_mm: 2.54
       pad_d_mm: 1.7
       drill_mm: 1.0
     route_track_mm: 0.5          # coil-to-connector interconnect width
+    leds:                        # camp indicator, ADR 0009
+      part: WS2812B              # 5050, official KiCad symbol+footprint pair
+      per_square: 2              # two opposite corners (NW and SE)
+      corner_inset_mm: 4.5       # LED center from both edges of its square
+      light_hole_d_mm: 2.5       # light dots drilled in the wooden surface
+      decoupling_nf: 100
+      chain_track_mm: 0.3
+      ring_track_mm: 1.0
+      color_white: [255, 170, 60]  # warm white camp
+      color_black: [40, 60, 255]   # cool blue camp
   analog_board:
     size_mm: [100.0, 56.0]
     layers: 2
@@ -230,6 +242,7 @@ mockup:
     drive_2: { arduino: D12, mcu: PA6 }
     drive_3: { arduino: D14, mcu: PB9 }
     drive_4: { arduino: D15, mcu: PB8 }
+    led_din: { arduino: D13, mcu: PA5 }   # TIM2_CH1, WS2812 via PWM DMA
     pi_uart_tx: { arduino: D8, mcu: PA9 }   # USART1, through the isolator
     pi_uart_rx: { arduino: D2, mcu: PA10 }
     # CSV output uses the Nucleo virtual COM port (USART2 PA2/PA3)
