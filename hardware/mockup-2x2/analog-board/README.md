@@ -47,16 +47,16 @@ donc toujours DRC zéro, et la liste résiduelle est courte.
 ## Liste de finition (chevelu affiché dans KiCad)
 
 Le build imprime les jonctions posées et la liste exacte des restes.
-À la génération de référence (480 pistes, 249 vias, DRC zéro, 9
-jonctions posées par la finition) il reste cinq nets à fermer à la
-main : M1_A (broche 12 du mux vers la cellule 1), C2_A, C3_B (ponts
-courts dans les cellules 2 et 3), BUCK_FB et VREF (raccords de
-morceaux, dont un tronçon VREF retiré par la garantie). Vérification
-géométrique faite : leurs couloirs sont réellement occupés par du
-cuivre routé et la verticale arrière M4_B, il faut des détours
-multi-segments qu'un humain trace en dix minutes dans pcbnew, chevelu
-affiché. Relancer ensuite le DRC KiCad et refaire l'export : les
-gerbers du dépôt sont générés depuis la carte telle quelle.
+À la génération de référence (499 pistes, 259 vias, DRC zéro, 12
+jonctions posées par la finition, LED de camp entièrement câblées :
+tampon, joint 12 broches, 5V) il reste sept nets à fermer à la main
+dans la bande des cellules et le coin buck : M1_A et M2_A (broches 12
+et 14 du mux vers les écrêteurs), C2_A, C3_B (ponts courts), BUCK_FB,
+BUCK_EN et VREF (raccords de morceaux). Ce sont les couloirs saturés
+connus (cuivre routé et verticale arrière M4_B) : des détours
+multi-segments qu'un humain trace en un quart d'heure dans pcbnew,
+chevelu affiché. Relancer ensuite le DRC KiCad et refaire l'export :
+les gerbers du dépôt sont générés depuis la carte telle quelle.
 
 Commande JLCPCB : 2 couches, 1,6 mm, 1 oz, assemblage face top avec
 `jlc-bom.csv` et `jlc-cpl.csv` (vérifier les correspondances LCSC dans

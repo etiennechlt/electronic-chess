@@ -56,7 +56,9 @@ décisive est la chute de Q avec l'aimant ferrite posé
 
 - **Carte bobines** (100 x 100, 4 couches, générée par
   [`coilgen`](tools/coilgen/)) : 4 spirales série de 5 tours par
-  couche, gerbers commités, [détails](hardware/mockup-2x2/coil-board/README.md).
+  couche, 8 LED de camp WS2812B chaînées aux coins des cases (deux
+  points lumineux par case à travers la surface en bois, ADR 0009),
+  gerbers commités, [détails](hardware/mockup-2x2/coil-board/README.md).
 - **Carte analogique** (100 x 62, 2 couches, générée par
   [`analoggen`](tools/analoggen/)) : mux différentiel, AD8421,
   filtres Sallen-Key validés ngspice, buck forced-PWM contre LDO en

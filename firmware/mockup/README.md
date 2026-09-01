@@ -32,6 +32,10 @@ pour l'aide. Sortie CSV : `sq,fa_hz,fb_hz,amp_mv,snr_db10`.
 - `i` : identification au plus proche voisin contre la calibration.
 - `r` : dump brut des 512 échantillons ADC de la case 1.
 - `p` / `P` : ajuste la durée d'impulsion d'excitation par pas de 100 ns.
+- `l` : identifie chaque case et allume ses LED de camp (démo : classes
+  1 et 2 au camp blanc, 3 et 4 au camp noir) ; `o` : extinction. Les
+  trames WS2812 partent en bit-bang cycle-exact (DWT, 170 MHz) et,
+  la boucle étant mono-tâche, jamais pendant une mesure (ADR 0009).
 
 ## Séquence de mesure (par case)
 

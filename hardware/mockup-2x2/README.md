@@ -27,7 +27,7 @@ Mouser ou DigiKey et se soudent à la main (SOIC, facile).
 ### Le reste (~70 EUR)
 
 Voir `docs/bom-maquette.md` : Nucleo-G474RE, condensateurs C0G des
-résonateurs, fil émaillé, aimants ferrite et N42, acrylique 3 mm,
+résonateurs, fil émaillé, aimants ferrite et N42, contreplaqué sec 3 à 6 mm,
 feutre, visserie, impression des pièces de `mechanical/`.
 
 ## 2. Assembler
@@ -46,7 +46,9 @@ feutre, visserie, impression des pièces de `mechanical/`.
    par classe donnés par `python -m chessboard_calc report`), souder
    chaque condensateur C0G, coller bobine et aimant dans les pucks,
    feutre dessous.
-6. Poser la plaque acrylique de 3 mm sur les entretoises au dessus de
+6. Percer la planche de contreplaqué avec le gabarit `surface-template`
+   (trous de visserie et points lumineux des LED), puis la poser sur les
+   entretoises au dessus de
    la carte bobines.
 
 ## 3. Câbler la Nucleo

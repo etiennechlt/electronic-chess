@@ -145,3 +145,40 @@ def magnet_cup(magnet_d: float, magnet_h: float) -> cq.Workplane:
         .cutBlind(-M3_NUT_H)
     )
     return body
+
+
+def surface_template(cfg, pitch: float) -> cq.Workplane:
+    """Drilling template for the wooden top plate.
+
+    Same outline as the coil board, with the four mounting holes and
+    the two light dots per square over the camp LEDs. Print flat or
+    export as DXF, tape onto the plywood, drill through.
+    """
+    mock = cfg.mockup.coil_board
+    w, h = mock.size_mm
+    leds = mock.leds
+    o = leds.corner_inset_mm
+    plate = cq.Workplane("XY").box(w, h, 2.0, centered=(False, False, True))
+    inset = mock.mounting_hole_inset_mm
+    holes = [(inset, inset), (w - inset, inset),
+             (inset, h - inset), (w - inset, h - inset)]
+    first_corner = {"S1": "SE", "S2": "NE", "S3": "SE", "S4": "NW"}
+    other = {"NE": "SW", "SW": "NE", "NW": "SE", "SE": "NW"}
+    centers = {
+        "S1": (pitch / 2.0, pitch / 2.0),
+        "S2": (3.0 * pitch / 2.0, pitch / 2.0),
+        "S3": (pitch / 2.0, 3.0 * pitch / 2.0),
+        "S4": (3.0 * pitch / 2.0, 3.0 * pitch / 2.0),
+    }
+    d = pitch / 2.0 - o
+    offs = {"NW": (-d, -d), "SE": (d, d), "NE": (d, -d), "SW": (-d, d)}
+    lights = []
+    for sq, (cx, cy) in centers.items():
+        for which in (first_corner[sq], other[first_corner[sq]]):
+            dx, dy = offs[which]
+            lights.append((cx + dx, cy + dy))
+    plate = (plate.faces(">Z").workplane(origin=(0, 0))
+             .pushPoints(holes).hole(mock.mounting_hole_d_mm))
+    plate = (plate.faces(">Z").workplane(origin=(0, 0))
+             .pushPoints(lights).hole(leds.light_hole_d_mm))
+    return plate

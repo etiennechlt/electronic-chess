@@ -28,3 +28,12 @@ entretoises M3 x 25 pour la carte bobines.
 
 Les exports STL/STEP sont regénérés à la demande et ne sont pas
 commités (`.gitignore`).
+
+## Gabarit de perçage de la surface
+
+`surface-template` reprend le contour de la carte bobines avec les
+quatre trous de visserie et les deux points lumineux par case au
+droit des LED de camp (ADR 0009). L'imprimer à plat (ou exporter le
+DXF), le scotcher sur le contreplaqué et percer au travers ; les
+points lumineux font `leds.light_hole_d_mm` (2,5 mm), à remplir
+d'époxy translucide si l'on veut une surface affleurante.

@@ -51,7 +51,8 @@ Remplacer le ferrite par un N42 équivalent dans un puck,
 
 ### M4. Amplitude et SNR à l'entrefer nominal (critère : SNR >= 20 dB)
 
-Pucks complets, entrefer nominal (PCB + 3 mm d'acrylique + feutre).
+Pucks complets, entrefer nominal (PCB + surface 3 mm, bois ou
+acrylique selon M10, + feutre).
 `s` puis `m` pendant 60 s, `m4_snr.csv`. Critère sur la colonne
 snr_db10 (>= 200). Extension M4bis : répéter avec cales à l'entrefer
 max 8 mm, critère SNR >= 10 dB.
@@ -105,6 +106,30 @@ biais, écart-type et taux de rejet de la voie B en fonction du SNR.
 Décision : si fb est disponible et stable (écart-type < 200 Hz) sur
 M4, la voie B gagne et le choix du MCU s'ouvre.
 
+### M10. Surface bois contre acrylique (ADR 0009)
+
+Poser successivement la plaque d'acrylique 3 mm puis la planche de
+contreplaqué (même épaisseur si possible, sinon noter l'écart) entre
+la carte bobines et la pièce de test, sans rien changer d'autre.
+Relever pour la case 1 : fa, amplitude et SNR, 16 mesures par surface.
+Refaire la série bois après 24 h dans une pièce humide (salle de
+bain) pour borner l'effet de l'humidité.
+
+Critère : décalage de fréquence < 500 Hz entre surfaces (attendu :
+quelques Hz), chute d'amplitude cohérente avec l'écart d'épaisseur
+seul, chute de Q < 10 % même bois humide.
+
+### M11. Bruit des LED de camp (ADR 0009)
+
+Sur la case 1 avec pièce posée : série de 16 mesures LED éteintes
+(commande `o`), puis 16 avec les 8 LED au blanc plein (`l` après une
+calibration factice, ou en forçant les couleurs), la trame étant par
+construction envoyée hors mesure. Comparer plancher de bruit, sigma
+de fa et amplitude.
+
+Critère : aucun écart mesurable de sigma fa (< 100 Hz) ni du plancher
+(< 1 dB) entre LED éteintes et allumées statiques.
+
 ## Tableau de synthèse à remplir
 
 | Mesure | Critère | Résultat | Verdict |
@@ -120,3 +145,5 @@ M4, la voie B gagne et le choix du MCU s'ouvre.
 | M7 | distance pour < 2 kHz | | |
 | M8 | delta <= 6 dB | | |
 | M9 | sigma fb < 200 Hz | | |
+| M10 | df < 500 Hz, dQ < 10 % | | |
+| M11 | dsigma < 100 Hz, < 1 dB | | |

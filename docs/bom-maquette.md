@@ -8,7 +8,7 @@ Les prix Europe s'entendent TTC pour un particulier en France (TVA
 20 %) ; les prix Asie (LCSC, JLCPCB, AliExpress) sont facturés hors
 taxe puis la TVA est collectée à la commande (IOSS) ou à l'import,
 elle est incluse dans les totaux comparés. La BOM détaillée de la
-carte analogique (135 composants) est générée dans
+carte analogique (138 composants) est générée dans
 `hardware/mockup-2x2/analog-board/bom.csv` et ses fichiers JLCPCB
 (`jlc-bom.csv`, `jlc-cpl.csv`) ; ce document compare les canaux
 d'achat, la BOM générée reste la source de vérité des références.
@@ -35,7 +35,7 @@ est le seul candidat à un achat européen d'appoint.
 
 | Poste | Europe | Asie | Choix conseillé |
 |---|---|---|---|
-| Carte bobines 4 couches 100 x 100, 5 pièces | ~60 à 90 EUR (Aisler, Eurocircuits, estimé) | 2 à 5 USD en promotion JLCPCB plus port, vérifié (page tarifs) | Asie, sans hésiter |
+| Carte bobines 4 couches 100 x 100, 5 pièces dont 2 assemblées (8 LED + 8 condensateurs) | ~60 à 90 EUR fabrication seule (Aisler, Eurocircuits, estimé) | 2 à 5 USD en promotion plus assemblage économique (~10 à 15 USD) et port, vérifié pour les règles | Asie, sans hésiter |
 | Carte analogique 2 couches, 5 pièces dont 2 assemblées | assemblage prototype européen : plusieurs centaines d'EUR, estimé | fabrication ~2 USD ; assemblage économique : minimum 0,48 USD par carte plus préparation (~8 USD), chargeurs de bande, rayons X pour le QFN du buck ; composants au forfait ; ~35 à 55 USD le tout, vérifié pour les règles, estimé pour le total | Asie : l'assemblage économique JLCPCB est sans équivalent européen à ce budget |
 | Port et taxes JLCPCB vers la France | | ~15 à 20 EUR port, TVA 20 % collectée IOSS | inclus dans les totaux |
 
@@ -67,29 +67,41 @@ Les poches des pucks se régénèrent pour toute taille d'aimant du
 commerce : modifier `piece_magnet` dans `config/board.yaml` puis
 `python mechanical/build_all.py`.
 
+### LED de camp (ADR 0009)
+
+| Poste | Référence | Qté | Europe | Asie | Choix conseillé |
+|---|---|---|---|---|---|
+| LED RGB adressable 5050 | WS2812B-B | 8 + rechange | ~0,50 EUR pièce (Mouser, revendeurs), estimé | ~0,05 à 0,10 USD pièce LCSC, estimé | Asie : posées par l'assemblage JLCPCB avec leurs 100 nF |
+| Tampon de niveau | SN74AHCT1G125DBVR | 2 | ~0,45 EUR, estimé | ~0,10 USD LCSC C350557 (candidat), estimé | Asie, dans l'assemblage |
+
 ### Mécanique (achat local, pas de comparatif utile)
 
 | Poste | Quantité | Prix |
 |---|---|---|
-| Impression 3D (pucks, gabarits, support) ~80 g PETG | | ~3 EUR, estimé |
-| Acrylique 3 mm, plaque 120 x 120 | 1 | ~4 EUR, estimé |
+| Impression 3D (pucks, gabarits, support, gabarit de perçage) ~90 g PETG | | ~3 EUR, estimé |
+| Contreplaqué sec 3 à 6 mm, plaque 120 x 120 (surface de jeu, ADR 0009) | 1 | ~4 EUR, estimé |
 | Feutre adhésif 0,5 mm | 1 feuille | ~3 EUR, estimé |
 | Visserie M3 (8, 30), écrous, entretoises M3 x 25 | kit | ~6 EUR, estimé |
+
+Le bois remplace l'acrylique (préférence d'aspect) : effet nul sur la
+fréquence, voir l'ADR 0009 et la mesure M10 ; percer les points
+lumineux avec le gabarit `surface-template` généré par la mécanique.
 
 ## Trois totaux comparés (TVA et ports inclus)
 
 | Scénario | Total | Délai typique | Commentaire |
 |---|---|---|---|
-| Tout Europe | ~200 à 220 EUR | moins d'une semaine | pas d'assemblage abordable : suppose de souder la carte analogique soi-même (135 composants dont un QFN, déconseillé) |
-| Tout Asie | ~135 à 150 EUR | 2 à 5 semaines | Nucleo plus chère et douteuse en revendeur, nuances d'aimants invérifiables |
-| Panaché conseillé | ~150 à 165 EUR | 1 à 3 semaines | voir la répartition ci-dessous |
+| Tout Europe | ~210 à 235 EUR | moins d'une semaine | pas d'assemblage abordable : suppose de souder soi-même la carte analogique (138 composants dont un QFN) et les 8 LED de la carte bobines, déconseillé |
+| Tout Asie | ~145 à 165 EUR | 2 à 5 semaines | Nucleo plus chère et douteuse en revendeur, nuances d'aimants invérifiables |
+| Panaché conseillé | ~160 à 180 EUR | 1 à 3 semaines | voir la répartition ci-dessous |
 
 Répartition du panaché conseillé, en quatre commandes :
 
-1. **JLCPCB** (~65 à 75 EUR TTC port inclus) : les deux cartes,
-   l'assemblage économique de 2 cartes analogiques, tous les actifs
-   posés (AD8421, ADuM1201, mux, LDO, buck), plus les C0G des
-   résonateurs ajoutés au panier LCSC lié.
+1. **JLCPCB** (~75 à 90 EUR TTC port inclus) : les deux cartes,
+   l'assemblage économique de 2 cartes analogiques et de 2 cartes
+   bobines (LED de camp), tous les actifs posés (AD8421, ADuM1201,
+   mux, LDO, buck, tampon LED, WS2812B), plus les C0G des résonateurs
+   ajoutés au panier LCSC lié.
 2. **eStore ST ou RS** (~25 EUR TTC) : la Nucleo-G474RE.
 3. **Mouser ou Farnell** (~30 EUR TTC, seulement si nécessaire) :
    OPA2810IDR si absent du panier LCSC, AD8421 de secours ; franco

@@ -163,10 +163,11 @@ PLACEMENTS: dict[str, tuple[float, float, float]] = {
     # South joint socket: pin 1 x is computed from the yaml joint so it
     # always matches the coil board (see full_placements).
     "J2": (0.0, 56.4, 90.0),
-    # WS2812 level shifter and its passives, south-east of J2.
-    "U8": (78.0, 54.0, 0.0),
-    "R68": (74.5, 54.0, 0.0),
-    "C27": (81.5, 54.0, 90.0),
+    # WS2812 level shifter next to the MCU header: LED_DIN stays a
+    # short hop, the buffered 5V line runs down the free east edge.
+    "U8": (80.0, 11.0, 0.0),
+    "R68": (84.0, 11.0, 0.0),
+    "C27": (76.5, 11.0, 90.0),
     # Mechanics.
     "H1": (3.6, 3.6, 0.0),
     "H2": (3.6, 52.0, 0.0),

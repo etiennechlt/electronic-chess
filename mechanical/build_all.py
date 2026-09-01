@@ -19,6 +19,7 @@ from parts import (
     magnet_bracket_base,
     magnet_cup,
     piece_puck,
+    surface_template,
     winding_jig,
     winding_jig_washer,
 )
@@ -53,6 +54,7 @@ def main() -> int:
         parts[f"jig-washer-d{key:g}"] = winding_jig_washer(dims.coil_d, d_in)
 
     mm = cfg.mockup.coil_board.magnet_mount
+    parts["surface-template"] = surface_template(cfg, pitch)
     parts["magnet-bracket-base"] = magnet_bracket_base(
         mm.hole_spacing_mm, cfg.carriage.magnet.d_mm)
     parts["magnet-cup"] = magnet_cup(cfg.carriage.magnet.d_mm,
