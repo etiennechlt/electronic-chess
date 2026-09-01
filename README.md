@@ -76,6 +76,14 @@ décisive est la chute de Q avec l'aimant ferrite posé
 |---|---|
 | ![Carte bobines](docs/images/coil-board.png) | ![Carte analogique](docs/images/analog-board.png) |
 
+## Documentation
+
+La base de connaissances du projet vit dans
+[`docs/`](docs/README.md) : entrées par intention, notes de concepts
+(mesure, architecture, générateurs, routeur, firmware), état de
+référence, runbook de régénération et journal des décisions. Les
+décisions formelles sont dans [`docs/adr/`](docs/adr/README.md).
+
 ## Arborescence
 
 | Répertoire | Contenu | Phase |

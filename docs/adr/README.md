@@ -15,3 +15,5 @@ paramétrées dans `config/board.yaml` et seront tranchées sur mesures.
 | [0007](0007-frequency-extraction-dual-path.md) | Extraction de fréquence : FFT et capture de période | ouverte |
 | [0008](0008-mockup-two-boards-adg709.md) | Maquette en deux cartes, mux différentiel, excitation hors mux | acceptée |
 | [0009](0009-led-camp-et-surface-bois.md) | LED de camp par case, surface en bois | acceptée |
+
+Retour a la [base de connaissances](../README.md).
