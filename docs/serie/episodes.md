@@ -18,7 +18,11 @@ une case du plateau de progression (a1, b1, c1... en lisant les
 rangées).
 
 Rappel de la règle du secret : avant l'épisode E29, le destinataire
-s'appelle « notre pote » à l'écran et dans les descriptions.
+s'appelle « notre pote » à l'écran et dans les descriptions. Le
+compte à rebours vise la remise de Noël (25 décembre 2026) ; les
+épisodes tournés avant le 1er octobre affichent J moins 114 et moins,
+sauf si la variante « la promesse » de la bible est retenue, auquel
+cas le compteur repart de J moins 85 après E13bis.
 
 ## Saison 1. La maquette 2 x 2
 
@@ -46,7 +50,7 @@ quatre pièces et allume leurs cases.
 - **Voix off** : « On va construire un échiquier qui reconnaît chaque
   pièce, qui les déplace tout seul, et qui joue contre toi. De zéro.
   Deux cartes électroniques, un portique, du bois, et beaucoup de
-  soudure. C'est pour l'anniversaire d'un pote. Il ne doit rien
+  soudure. C'est un cadeau pour un pote. Il ne doit rien
   savoir. Suis-nous, on te montre tout, y compris ce qui rate. »
 - **Texte à l'écran** : AUCUNE MAIN / DE ZÉRO / IL NE SAIT RIEN /
   J moins N.
@@ -542,6 +546,33 @@ quatre pièces et allume leurs cases.
   les rushes de M8, M10 et M11 tournés au fil des mesures : prévoir
   dès E09 de filmer chaque mesure, même courte.
 
+### E13bis. La promesse (1er octobre, seulement si la maquette marche)
+
+- **Accroche** : une pièce d'échecs seule dans une petite boîte,
+  texte « ce n'est pas le cadeau ».
+- **Idée** : le jour de l'anniversaire, on offre une pièce équipée de
+  son résonateur et une carte : le vrai cadeau est en construction.
+  Puis la maquette joue la note de sa pièce sous ses yeux. Le secret
+  change : il sait qu'il y a un cadeau, pas ce que c'est.
+- **Plans** :
+  1. La pièce dans la boîte, la carte manuscrite (2 s).
+  2. Il ouvre, il lit, il ne comprend pas (prise continue, 5 s).
+  3. On pose sa pièce sur la maquette, la LED s'allume, la note joue
+     (3 s).
+  4. Sa réaction (3 s).
+  5. Carton : « rendez-vous à Noël », le compte à rebours repart à
+     J moins 85 (2 s).
+- **Voix off** : « On n'a pas fini. Loin de là. Mais on ne voulait
+  pas passer son anniversaire sans rien. Alors on lui offre une seule
+  pièce, et une promesse. Il ne sait toujours pas ce que c'est. »
+- **Tournage** : deux téléphones, prise continue, sa pièce préparée
+  et calibrée la veille sur la maquette (commande `c`). À ne tourner
+  que si E12 est un succès la dernière semaine de septembre ; sinon
+  l'épisode n'existe pas et le secret reste entier.
+- **Publication** : cet épisode fait exception à la règle « notre
+  pote » : il apparaît, mais son prénom reste hors des titres et
+  légendes jusqu'à E29.
+
 ## Saison 2. Le plateau 8 x 8
 
 Synopsis : passer de quatre cases à soixante-quatre. Le plateau est
@@ -586,7 +617,7 @@ pièces deviennent des pièces, et le secret prend fin.
 | E26 | La caisse | rabot sur du bois massif, copeaux | ébénisterie, l'assemblage du cadre, la surface finale, huile, les 128 points lumineux au premier allumage |
 | E27 | Les pièces | une pièce du commerce coupée en deux, le résonateur à l'intérieur | ouverture, encastrement, feutre, pesée, la note de chaque pièce jouée en gamme complète : la signature sonore en vrai |
 | E28 | Le test final | Étienne contre Romain, partie complète, sans un mot | tout ce qui marche, un dernier raté et sa correction, l'emballage |
-| E29 | Joyeux anniversaire | Ayglon qui ouvre le paquet | la réaction en une prise continue, le premier coup joué, le plateau qui répond ; premier épisode où son prénom apparaît |
+| E29 | Joyeux Noël | Ayglon qui ouvre le paquet | la réaction en une prise continue, le premier coup joué, le plateau qui répond ; premier épisode où son prénom apparaît |
 | E30 | Épilogue | le plateau de progression, 64 cases allumées | Ayglon qui joue seul contre le plateau, remerciements, ce qu'on ferait autrement, le coût total, le temps total |
 
 ## Épisodes bonus (à tourner si l'occasion se présente)
