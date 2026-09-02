@@ -2,7 +2,8 @@
 
 Documenter la construction de l'échiquier en épisodes courts verticaux
 (TikTok, Reels, Shorts), tournés au fil du projet avec Romain, et
-offerts à Ayglon avec le plateau le jour de son anniversaire. Ce
+offerts à Ayglon avec le plateau, à Noël (son anniversaire, le 1er
+octobre, est une étape en chemin). Ce
 dossier est la bible de la série : concept, format, direction
 artistique, organisation, règles de publication. Le découpage et les
 scripts sont dans [episodes.md](episodes.md), la méthode de tournage
@@ -25,7 +26,7 @@ Deux fils narratifs se croisent :
 - **Le fil technique** : une idée par épisode, expliquée avec un objet
   dans la main, jamais avec un schéma seul.
 - **Le fil humain** : le secret, le compte à rebours jusqu'à
-  l'anniversaire, la complicité avec Romain, et la réaction finale
+  la remise, la complicité avec Romain, et la réaction finale
   d'Ayglon comme dernier épisode.
 
 ## Titre et identité
@@ -72,7 +73,7 @@ Elles donnent un rythme reconnaissable et facilitent l'écriture.
   ligne. Cela relie la série au dépôt sans le montrer.
 - **Le raté** : ce qui n'a pas marché, montré sans détour. C'est la
   rubrique qui fait revenir les gens.
-- **Le compte à rebours** : « J moins N » avant l'anniversaire, en
+- **Le compte à rebours** : « J moins N » avant la remise, en
   petit dans le coin bas droit, tenu à jour à chaque épisode.
 - **Le plateau de progression** : un échiquier 8 x 8 stylisé où chaque
   épisode publié allume une case. Il ferme chaque épisode (1 s) et
@@ -135,39 +136,51 @@ Deux couleurs maximum par écran en plus du noir et du blanc.
 
 ## Organisation à deux
 
-| Rôle | Qui | Contenu |
-|---|---|---|
-| Réalisation et montage | à répartir | choix des plans, montage, export |
-| Voix off | à répartir | enregistrement après montage image |
-| Face caméra | les deux | chacun tient la caméra pour l'autre |
-| Technique à l'écran | les deux | celui qui fait le geste le commente |
-| Script | Étienne, relu par Romain | à partir de [episodes.md](episodes.md) |
+Le principe : sur chaque étape, l'un mène et l'autre est en support ;
+**celui qui est en support tient la caméra et monte l'épisode**. Le
+meneur commente son geste à l'écran et enregistre la voix off, parce
+qu'il sait ce qu'il vient de faire.
 
-Proposition : Étienne porte l'électronique et le firmware à l'écran,
-Romain la mécanique et le bois, et chacun filme l'autre. Le montage
-tourne par épisode pour ne pas créer de goulot.
+| Étape | Mène (à l'écran, voix off) | Support (caméra, montage) |
+|---|---|---|
+| Conception électronique, cartes, commande (E01 à E04) | Étienne | Romain |
+| Impression, bobinage, bois (E05, E06, E08) | Romain | Étienne |
+| Colis, câblage, firmware, mesures (E07, E09 à E13) | Étienne | Romain |
+| Plateau 8 x 8, électronique (saison 2) | Étienne | Romain |
+| Portique CoreXY, mécanique, ébénisterie (E19 à E22, E26, E27) | Romain | Étienne |
+| Firmware de jeu, Pi, batterie (E23 à E25) | Étienne | Romain |
+| Test final et remise (E28 à E30) | les deux | un troisième téléphone si possible |
+
+Script : Étienne, relu par Romain, à partir de
+[episodes.md](episodes.md). Face caméra : les deux, chacun tient la
+caméra pour l'autre.
 
 Rituel de tournage : avant chaque séance, relire la fiche de
 l'épisode (accroche, plans obligatoires, chiffre, raté). Après la
 séance, dix minutes pour renommer les rushes et noter dans le
 journal de [tournage.md](tournage.md) ce qui manque.
 
-## Publication et secret
+## Publication : en différé, épisode par épisode
 
-Ayglon ne doit rien voir avant l'anniversaire. Deux options :
+Choix retenu : rien n'est publié avant la remise du cadeau. Les
+épisodes sont montés au fil du projet (au plus tard une semaine après
+le tournage, sinon la mémoire des rushes s'efface), puis sortent
+après la remise, **un par jour**, dans l'ordre, la réaction d'Ayglon
+en avant-dernier et l'épilogue en dernier.
 
-1. **Compte privé** (recommandé) : un compte dédié, abonnés validés à
-   la main, Ayglon exclu. Les épisodes sortent au fil du projet, les
-   proches suivent, et le jour J on lui remet le plateau avec le
-   compte et un accès. Le dernier épisode est sa réaction.
-2. **Publication différée** : tout est monté au fil de l'eau mais
-   rien n'est publié avant la remise. Les épisodes sortent ensuite un
-   par jour, avec la réaction en clôture. Moins de retours pendant le
-   projet, mais aucun risque de fuite.
+Conséquences pratiques :
 
-Dans les deux cas : aucun prénom d'Ayglon dans les titres ou les
-descriptions avant la remise (dire « notre pote », « le destinataire »),
-aucun tag, et un seul mot de passe partagé entre Étienne et Romain.
+- Le compte à rebours reste filmé en direct : il compte les jours
+  jusqu'à la date de remise réelle, et c'est ce qui donne de la
+  tension à la série même vue après coup.
+- Le secret est narratif : jusqu'à E29, le destinataire s'appelle
+  « notre pote » à l'écran, pour que la révélation garde son effet.
+- Avant publication : accord d'Ayglon pour son image (E29, E30), et
+  relecture de tous les épisodes déjà montés d'une traite pour
+  vérifier la cohérence du compte à rebours et du plateau de
+  progression.
+- Pendant le projet, un compte n'est pas nécessaire ; les proches
+  peuvent voir les exports en avant-première par un dossier partagé.
 
 Musique : les bibliothèques intégrées de TikTok et Instagram ne sont
 licenciées que dans l'application. Pour pouvoir cross-poster et
@@ -176,20 +189,64 @@ garder les fichiers, préférer des sons libres (voir
 
 ## Calendrier
 
-La série suit les phases du projet. Les délais de commande (2 à 5
-semaines pour l'Asie) fixent le rythme de la saison 1 ; la date de
-l'anniversaire fixe la fin. À compléter dès que la date est connue.
+Deux dates : l'anniversaire d'Ayglon le **1er octobre 2026**, et le
+repli **Noël 2026**. Point de départ : le 2 septembre, avec la
+maquette conçue mais rien de physique.
 
-| Saison | Sujet | Épisodes | Quand |
-|---|---|---|---|
-| 1 | La maquette 2 x 2 : l'idée, les cartes, les mesures | E00 à E13 | dès maintenant, pendant la commande et le montage |
-| 2 | Le plateau 8 x 8 de détection | E14 à E18 | après les mesures |
-| 3 | Le portique CoreXY et le jeu | E19 à E25 | après le plateau |
-| 4 | Finition, ébénisterie, remise du cadeau | E26 à E30 | les dernières semaines, jour J |
+### Ce qu'un mois permet, et ce qu'il ne permet pas
 
-Rythme de publication visé : un épisode par semaine en phase calme,
-deux par semaine pendant les mesures et le montage. Garder toujours
-deux épisodes d'avance montés.
+Le plateau complet (64 cases, portique, jeu) n'est pas atteignable
+pour le 1er octobre : les cartes de la phase 2 ne sont pas conçues,
+et une commande en Asie prend 2 à 5 semaines à elle seule. La
+maquette 2 x 2, elle, peut fonctionner pour le 1er octobre à une
+condition : commander les cartes **cette semaine** (finition pcbnew
+et correction du jack J1 comprises), en livraison express, et faire
+tout le reste (impression, bobinage, bois, câblage) pendant
+l'attente.
+
+Plan retenu : **la remise du plateau se fait à Noël**. Le 1er
+octobre devient une étape de la série, avec deux variantes à choisir
+selon l'état de la maquette la dernière semaine de septembre :
+
+- **La promesse** : si la maquette reconnaît les quatre pièces, on
+  offre à Ayglon une pièce d'échecs équipée de son résonateur et une
+  carte : « ton cadeau est en construction, il sera prêt à Noël ».
+  La maquette qui joue sa note sous ses yeux fait un épisode fort au
+  milieu de la série (E13bis) ; le secret change de nature : il sait
+  qu'il y a un cadeau, pas ce que c'est.
+- **Le silence** : la maquette n'est pas prête, on offre autre chose,
+  le secret reste entier jusqu'à Noël. La série n'en parle pas.
+
+### Rétro-planning vers Noël
+
+Il n'y a **aucune marge pour une deuxième commande** de cartes :
+celles du plateau 8 x 8 doivent partir à la mi-octobre pour arriver
+mi-novembre, ce qui impose de concevoir la phase 2 en septembre,
+pendant l'attente des cartes de la maquette, et non après les
+mesures. Les mesures de la maquette ne feront que confirmer ou
+corriger cette conception (le pas de case surtout : concevoir en
+paramétrique, choisir p à la commande).
+
+| Semaine | Projet | Épisodes à tourner |
+|---|---|---|
+| 2 au 8 septembre | finition pcbnew (7 nets, jack J1), export, 4 commandes en express, impression des pièces | E01, E02, E03, E04, E05 |
+| 9 au 22 septembre | bobinage (5 bobines), contreplaqué percé, feutre, câblage préparé ; conception du plateau 8 x 8 (quadrants, mux, chaîne LED) | E06, E08, rafale du teaser |
+| 23 au 30 septembre | réception (si express), bring-up, M1 à M5 au minimum, M2 en priorité | E07, E09, E10, E11, E12 |
+| 1er octobre | anniversaire : la promesse ou le silence | E13bis (si promesse) |
+| 2 au 12 octobre | M6 à M11, tableau de synthèse, choix de p, ADR ; gel de la conception 8 x 8 | E13, E14 |
+| 13 au 19 octobre | commande des quadrants 8 x 8 et de leur électronique ; début du CoreXY (conception, impression) ; bobinage de 32 résonateurs commencé | E16 (début), E19 (conception) |
+| 20 octobre au 16 novembre | attente des cartes : CoreXY imprimé et assemblé à vide, firmware 8 x 8 et arbitre écrits sur la maquette, pièces du commerce achetées et ouvertes | E16, E19, E18 (arbitre sur maquette) |
+| 17 au 30 novembre | quadrants reçus, assemblage 8 x 8, calibration complète, premier scan de 64 cases | E15, E17 |
+| 1er au 13 décembre | portique sous le plateau, e2-e4, couloir, roque, Pi et moteur d'échecs | E20 à E24 |
+| 14 au 21 décembre | batterie, caisse, surface finale, pièces définitives | E25, E26, E27 |
+| 22 au 24 décembre | test final, emballage | E28 |
+| 25 décembre | remise | E29 |
+| 26 décembre au 25 janvier | publication, un épisode par jour, E30 en clôture | E30 (tourné entre Noël et le jour de l'an) |
+
+Règle de montage pendant tout ce temps : un épisode monté au plus
+tard une semaine après son tournage, par celui qui était en support.
+Ce qui n'est pas monté sous une semaine est mis en attente et se
+monte pendant l'attente des cartes (fin octobre), jamais en décembre.
 
 ## Ce que le dépôt fournit
 

@@ -96,7 +96,9 @@ Règles :
 ## Journal de tournage
 
 À tenir à jour après chaque séance. Statuts : à tourner, en cours,
-tourné, monté, publié.
+tourné, monté, publié. Les semaines cibles sont dans le
+rétro-planning de la [bible](README.md) ; un épisode se monte sous
+une semaine, par celui qui était en support.
 
 | Épisode | Titre | Statut | Séances | Plans manquants |
 |---|---|---|---|---|
@@ -114,6 +116,7 @@ tourné, monté, publié.
 | E11 | Pourquoi pas le néodyme | à tourner | | pièces qui se retournent, M3, M7 |
 | E12 | Elle reconnaît les pièces | à tourner | | calibration, LED, M5 |
 | E13 | Bilan | à tourner | | tableau, rushes M8 M10 M11 |
+| E13bis | La promesse (optionnel, 1er octobre) | à décider fin septembre | | prise continue, pièce calibrée la veille |
 
 Les saisons 2 à 4 s'ajoutent au tableau quand leurs fiches sont
 écrites.

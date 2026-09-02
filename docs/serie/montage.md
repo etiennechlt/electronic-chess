@@ -148,10 +148,17 @@ note à part :
   la relance. Trois à cinq mots-clés en fin de légende (échecs, DIY,
   électronique, impression 3D, bois), pas plus.
 - **Vignette** : le plan d'accroche avec le texte d'accroche.
-- **Heure** : la même chaque semaine, pour les abonnés du compte
-  privé.
+- **Heure** : publication en différé après Noël, un épisode par jour
+  à la même heure, dans l'ordre ; programmer la file entière d'un
+  coup avec l'outil de planification de l'application.
 - **Secret** : relire la légende et la vignette pour vérifier
-  qu'aucun prénom ni indice ne désigne le destinataire (jusqu'à E29).
+  qu'aucun prénom ne désigne le destinataire (jusqu'à E29), même si
+  la série sort après la remise : c'est la révélation qui fait la
+  chute.
+- **Relecture d'ensemble** : avant de programmer la file, regarder
+  tous les épisodes d'une traite pour vérifier le compte à rebours,
+  le plateau de progression et les raccords entre épisodes montés à
+  des mois d'écart.
 
 ## Checklist de sortie
 
