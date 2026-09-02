@@ -48,3 +48,8 @@ firmware/**/build/
 Thumbs.db
 .idea/
 *.swp
+
+# Video rushes and exports (docs/serie): never committed
+*.mp4
+*.mov
+*.wav

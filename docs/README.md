@@ -32,6 +32,9 @@ pas.
   le [README du firmware](../firmware/mockup/README.md).
 - **Lancer les mesures** : [protocole](../measurements/protocol.md),
   gabarits CSV et notebook dans `measurements/`.
+- **Filmer le projet** : la série vidéo « Échec et Watt »
+  ([bible](serie/README.md), [épisodes et scripts](serie/episodes.md),
+  [tournage](serie/tournage.md), [montage](serie/montage.md)).
 
 ## Carte du dépôt
 
@@ -47,6 +50,7 @@ pas.
 | `measurements/` | protocole M1 à M11, gabarits CSV, analyse |
 | `docs/adr/` | décisions d'architecture numérotées |
 | `docs/notes/` | la présente base de connaissances |
+| `docs/serie/` | série vidéo : bible, épisodes, tournage, montage |
 | `tests/` | 66 tests, dont le couloir bloquant en CI |
 
 ## Notes
