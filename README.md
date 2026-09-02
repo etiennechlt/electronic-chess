@@ -1,11 +1,13 @@
 # Échiquier électronique automatique à détection LC
 
 Échiquier physique qui identifie chaque pièce (type et couleur) par un
-résonateur LC passif logé dans sa base, déplace les pièces par un
-aimant sur portique CoreXY sous le plateau, arbitre les coups (roque,
+résonateur LC passif logé dans sa base, arbitre les coups (roque,
 prise en passant, promotion incluse), joue contre un moteur d'échecs
-ou en ligne, et fonctionne sur batterie. Le STM32G474 est maître, le
-Raspberry Pi Zero 2 W est optionnel et coupé au repos.
+ou en ligne, et fonctionne sur batterie. Plateau fin de 42 cm et
+21 mm d'épaisseur ; le déplacement des pièces par aimant sur portique
+CoreXY est une base optionnelle qui se substitue au fond plat. Le
+STM32G474 est maître, un ESP32-S3 sert de pont radio (WiFi, BLE vers
+l'horloge à bascule séparée), le Raspberry Pi Zero 2 W est optionnel.
 
 ![Architecture du système](docs/images/architecture.svg)
 
@@ -28,8 +30,9 @@ Toute valeur numérique du projet vient de
 [`config/board.yaml`](config/board.yaml). Les grandeurs dérivées (les
 12 fréquences, diamètres, courses, entrefer, autonomie) sont calculées
 par la bibliothèque `chessboard_calc` et épinglées par les tests
-contre la spécification. Le pas de case `p` (40 ou 50 mm) reste
-ouvert : tout est paramétrique.
+contre la spécification. Le pas de case `p` est figé à 50 mm
+(ADR 0010) ; tout reste paramétrique et le rapport compare toujours
+40 et 50.
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
@@ -42,13 +45,37 @@ Le test de couloir (`tests/test_corridor.py`) verrouille la contrainte
 édition du yaml la viole, la CI casse, car la partie se bloquerait dès
 e2-e4.
 
-## Maquette 2 x 2 (phase 1, prête à construire)
+## Plateau 8 x 8 (ADR 0010)
 
-La maquette tranche l'essentiel de l'incertitude technique ; la mesure
-décisive est la chute de Q avec l'aimant ferrite posé
-([protocole](measurements/protocol.md), guide de
-[commande et montage](hardware/mockup-2x2/README.md),
-[fiche d'approvisionnement avec prix Europe contre Asie](docs/bom-maquette.md)).
+Un module plateau invariant (contreplaqué plus quatre quadrants 4 x 4
+identiques, frontal analogique embarqué) posé dans une base fine ou,
+plus tard, dans une base chariot avec le CoreXY et les ailes de
+capture. Cerveau, carte puissance et cellules plates au fond de la
+base, sur la même empreinte dans les deux bases. Horloge à bascule
+séparée, en BLE. Choix et raisons dans la
+[note 10](docs/notes/10-plateau-8x8-et-horloge.md).
+
+| Plateau fin | Vue éclatée |
+|---|---|
+| ![Plateau fin](docs/images/plateau-fin.png) | ![Vue éclatée](docs/images/plateau-eclate.png) |
+
+| Base chariot ouverte | Base chariot avec le module plateau |
+|---|---|
+| ![Base chariot ouverte](docs/images/plateau-chariot-ouvert.png) | ![Base chariot](docs/images/plateau-chariot.png) |
+
+| Horloge à bascule | Horloge éclatée |
+|---|---|
+| ![Horloge](docs/images/horloge.png) | ![Horloge éclatée](docs/images/horloge-eclatee.png) |
+
+Vue 3D interactive (bases, éclaté, couches, noms au survol) :
+`python mechanical/viewer.py` puis ouvrir `mechanical/exports/plateau-3d.html`.
+
+## Maquette 2 x 2 (phase 1, conçue, non construite)
+
+La maquette a été conçue de bout en bout puis remplacée par le plateau
+direct (ADR 0010) ; elle reste la référence de la chaîne analogique et
+du routage ([guide](hardware/mockup-2x2/README.md),
+[fiche d'approvisionnement](docs/bom-maquette.md)).
 
 | Vue d'ensemble | Pièce de test éclatée |
 |---|---|
@@ -68,9 +95,9 @@ décisive est la chute de Q avec l'aimant ferrite posé
 - **Firmware** ([`firmware/mockup`](firmware/mockup/)) : les deux
   voies d'extraction du brief mesurées simultanément sur chaque
   ringdown, calibration en flash, CSV sur le port série ; compile en CI.
-- **Mécanique** ([`mechanical/`](mechanical/README.md)) : pucks de
-  test, gabarits de bobinage, support d'aimant réglable, STL et STEP
-  paramétriques.
+- **Mécanique** ([`mechanical/`](mechanical/README.md)) : plateau
+  8 x 8 (module, bases, ailes), horloge, pucks de test, gabarits de
+  bobinage, STL et STEP paramétriques, rendus et vue interactive.
 
 | Carte bobines | Carte analogique |
 |---|---|
@@ -94,13 +121,15 @@ décisions formelles sont dans [`docs/adr/`](docs/adr/README.md).
 | `hardware/mockup-2x2/` | projets KiCad (`.kicad_pro` à ouvrir), gerbers, BOM, guides | 1 |
 | `firmware/mockup/` | firmware Nucleo-G474RE | 1 |
 | `measurements/` | protocole, gabarits CSV, analyse | 1 |
-| `mechanical/` | modèles CadQuery et rendus | 1 et 3 |
+| `mechanical/` | modèles CadQuery (plateau, horloge, pucks), rendus, vue 3D | 1 à 3 |
 | `hardware/quadrant-4x4/`, `mainboard/`, `firmware/board/`, `app/` | plateau complet | 2 à 4 |
 
 ## État et décisions
 
-Phase 0 (socle, calculs, CI) et phase 1 (maquette complète : cartes,
-firmware, mécanique, protocole) livrées ; place aux mesures. Les
+Phase 0 (socle, calculs, CI) livrée, phase 1 (maquette) conçue puis
+remplacée par le plateau 8 x 8 direct (ADR 0010) : yaml, géométrie,
+modèles 3D du plateau et de l'horloge faits ; générateur de quadrant,
+cerveau et horloge à suivre. Les
 décisions d'architecture et leurs justifications sont dans
 [`docs/adr/`](docs/adr/README.md) ; conventions dans
 [`CLAUDE.md`](CLAUDE.md) : code et commentaires en anglais,

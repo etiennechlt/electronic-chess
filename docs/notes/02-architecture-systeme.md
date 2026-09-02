@@ -10,7 +10,23 @@ STM32G474 ; un Raspberry Pi Zero 2 W optionnel (moteur d'échecs,
 réseau) parle au MCU par UART isolée. La maquette 2 x 2 de phase 1
 matérialise la chaîne de mesure complète et les LED, sans portique.
 
-## Les deux cartes de la maquette (ADR 0008)
+## Le plateau 8 x 8 (ADR 0010)
+
+Un module plateau invariant (contreplaqué plus quatre quadrants 4 x 4
+identiques, chacun avec ses 16 spirales, 32 LED et son frontal
+analogique en bande de bord) posé dans une base fine (21 mm) ou une
+base chariot (54 mm, CoreXY et ailes de capture). Au fond de la base :
+cerveau (STM32G474 soudé, quatre nappes de quadrant, LED, alimentation
+bas niveau, emplacement ESP32-S3 et Pi), carte puissance (BMS 3S,
+USB-C PD) et trois cellules plates. Une horloge à bascule séparée,
+en BLE, choisit les modes et affiche les temps. Détail et raisons dans
+la [note 10](10-plateau-8x8-et-horloge.md).
+
+## Les deux cartes de la maquette (ADR 0008, remplacée)
+
+La maquette n'est plus construite ; sa chaîne analogique reste la
+référence du frontal de quadrant.
+
 
 - **Carte bobines** (100 x 100, 4 couches) : 4 spirales de détection,
   8 LED WS2812B aux coins des cases, entièrement générée par

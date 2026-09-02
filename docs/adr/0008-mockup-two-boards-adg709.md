@@ -1,6 +1,6 @@
 # ADR 0008. Maquette en deux cartes, mux différentiel, excitation hors mux
 
-Statut : acceptée.
+Statut : remplacée par l'ADR 0010 pour la maquette 2 x 2, qui n'est plus construite ; le mux différentiel, l'excitation hors mux, l'amortissement et la chaîne de gain restent la référence du frontal de quadrant.
 
 ## Contexte
 

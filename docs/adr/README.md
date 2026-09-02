@@ -9,11 +9,12 @@ paramétrées dans `config/board.yaml` et seront tranchées sur mesures.
 | [0001](0001-lc-resonators-for-piece-identification.md) | Identification des pièces par résonateurs LC passifs | acceptée |
 | [0002](0002-hard-ferrite-piece-magnets.md) | Aimant de pièce en ferrite dure, jamais en néodyme | acceptée |
 | [0003](0003-stm32-master-pi-optional.md) | STM32 maître, Raspberry Pi optionnel | acceptée |
-| [0004](0004-four-quadrant-sensing-pcb.md) | PCB de détection découpé en 4 quadrants | acceptée |
+| [0004](0004-four-quadrant-sensing-pcb.md) | PCB de détection découpé en 4 quadrants | acceptée, amendée par 0010 |
 | [0005](0005-power-and-noise-architecture.md) | Architecture d'alimentation et plan anti-bruit | acceptée |
-| [0006](0006-pitch-parametric-open.md) | Pas de case paramétrique, 40 ou 50 mm | ouverte |
+| [0006](0006-pitch-parametric-open.md) | Pas de case paramétrique, 40 ou 50 mm | tranchée à 50 mm par 0010 |
 | [0007](0007-frequency-extraction-dual-path.md) | Extraction de fréquence : FFT et capture de période | ouverte |
-| [0008](0008-mockup-two-boards-adg709.md) | Maquette en deux cartes, mux différentiel, excitation hors mux | acceptée |
+| [0008](0008-mockup-two-boards-adg709.md) | Maquette en deux cartes, mux différentiel, excitation hors mux | remplacée par 0010 (maquette), chaîne analogique conservée |
 | [0009](0009-led-camp-et-surface-bois.md) | LED de camp par case, surface en bois | acceptée |
+| [0010](0010-plateau-8x8-base-interchangeable-horloge.md) | Plateau 8 x 8 direct en quadrants, base interchangeable, horloge à bascule | acceptée |
 
 Retour a la [base de connaissances](../README.md).

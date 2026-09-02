@@ -55,7 +55,21 @@ DRC) et, pour la carte analogique, l'uuid de la feuille racine du
 schéma : il est réémis à chaque build, donc il ne peut pas dériver de
 la carte qu'il accompagne.
 
-## Mécanique
+## Plateau 8 x 8 et horloge (ADR 0010)
+
+```bash
+.venv/bin/python mechanical/scenes.py        # docs/images/plateau-*.png, horloge*.png (~4 min)
+.venv/bin/python mechanical/viewer.py        # mechanical/exports/plateau-3d.html, vue interactive
+.venv/bin/python mechanical/build_all.py     # STEP des assemblages, STL et STEP de l'horloge
+```
+
+Les cotes viennent de `plateau`, `clock`, `gap` et `power` dans le
+yaml, dérivées par `chessboard_calc.plateau` et épinglées par
+`tests/test_plateau.py` (sans CadQuery) et `tests/test_mechanical.py`
+(avec). La vue interactive charge three.js depuis cdnjs ; elle s'ouvre
+dans n'importe quel navigateur.
+
+## Mécanique de la maquette
 
 ```bash
 .venv/bin/python mechanical/build_all.py            # STL + STEP
@@ -85,7 +99,7 @@ de `mockup.nucleo_pins` ou `mockup.coil_board.leds` dans le yaml.
 | Gerbers bobines | `hardware/mockup-2x2/coil-board/coil-board-gerbers.zip` |
 | Gerbers analogique | `hardware/mockup-2x2/analog-board/analog-board-gerbers.zip` |
 | BOM et placements JLC | `hardware/mockup-2x2/analog-board/jlc-*.csv` |
-| STL/STEP | `mechanical/exports/` |
+| STL/STEP, vue 3D interactive | `mechanical/exports/` |
 | Images du README | `docs/images/` |
 
 Règle d'or : ne jamais éditer un fichier généré ; modifier

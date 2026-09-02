@@ -82,8 +82,33 @@ quatre commandes.
   tampon a tout refermé côté LED. Référence : 499 pistes, DRC zéro,
   sept couloirs saturés restants.
 
+## 02/09/2026, plateau 8 x 8 direct, base interchangeable, horloge (ADR 0010)
+
+- Point de départ : ouverture des cartes de la maquette dans KiCad 9
+  sous Debian, question « peut-on imprimer huit fois la carte bobines
+  pour faire l'échiquier ». Réponse : non (64 cases, carte analogique
+  à quatre voies, connecteurs de bord), et le porteur ne veut pas
+  traîner plusieurs versions : on conçoit directement le 8 x 8.
+- Choix successifs, avec leurs raisons dans la
+  [note 10](10-plateau-8x8-et-horloge.md) : p = 50 (signal et Q du
+  pion noir), quatre quadrants 4 x 4 intelligents, LED identiques sur
+  toutes les cases, chariot optionnel dans une base clipsable avec les
+  ailes de capture (inspiration Chessnut Air : plateau fin d'abord),
+  électronique et cellules plates au fond de la base sur une empreinte
+  commune (le bandeau arrière à 18650 a été refusé), MCU soudé,
+  emplacement ESP32-S3 plus Pi, horloge séparée à bascule en BLE
+  avec sa propre 18650.
+- Outillage : rendu matplotlib jugé illisible, remplacé par un
+  rasteriseur à tampon de profondeur et par une vue interactive
+  three.js générée depuis les modèles CadQuery.
+- Leçon : l'entrefer d'air sous le bois (LED de 1,6 mm) était
+  implicite dans la maquette ; il est maintenant un paramètre
+  (`gap.air_mm`) compté dans le signal.
+
 ## Où en est la ligne de temps
 
-Phase 0 faite, phase 1 conçue et générée de bout en bout ; le reste
-est physique (finition pcbnew, commandes, montage, mesures M1 à M11).
+Phase 0 faite ; la phase 1 (maquette) est conçue mais ne sera pas
+construite : le plateau 8 x 8 est engagé directement (ADR 0010), avec
+son module plateau, ses bases et son horloge modélisés. Suivent le
+générateur de quadrant, le cerveau, l'horloge, puis les mesures.
 Voir [l'état](07-etat-et-reste-a-faire.md).

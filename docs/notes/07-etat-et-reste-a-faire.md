@@ -1,6 +1,6 @@
 # 07. État de référence et chemin vers le prototype réel
 
-Dernière mise à jour : 01/09/2026. Ce qui est vrai ici est vérifiable
+Dernière mise à jour : 02/09/2026. Ce qui est vrai ici est vérifiable
 en régénérant ([runbook](08-regenerer.md)) ; les chiffres sont ceux
 imprimés par les builds de référence commités.
 
@@ -17,7 +17,25 @@ imprimés par les builds de référence commités.
 | Approvisionnement | fiche comparée Europe/Asie, prix datés, quatre commandes conseillées |
 | Qualité | 66 tests verts, couloir bloquant en CI, ruff propre |
 
-## Le reste côté dépôt
+## Pivot du 02/09/2026 (ADR 0010)
+
+La maquette 2 x 2 n'est plus construite : le plateau 8 x 8 est conçu
+directement en quadrants 4 x 4, avec un module plateau invariant et
+deux bases interchangeables (fine, ou chariot en option), des cellules
+plates, un cerveau à MCU soudé, un emplacement ESP32-S3 et Pi, et une
+horloge à bascule séparée en BLE. Fait ce jour : yaml (sections
+`plateau` et `clock`, `gap.air_mm`, batterie plate, p = 50 figé),
+géométrie dérivée et tests (`tests/test_plateau.py`), modèles CadQuery
+du plateau et de l'horloge, rendus à tampon de profondeur, vue 3D
+interactive, exports STEP, ADR 0010 et [note 10](10-plateau-8x8-et-horloge.md).
+
+Reste, dans l'ordre : générateur de quadrant (spirales 4 x 4, frontal,
+nappe), schéma du cerveau puis cartes puissance et moteurs, carte et
+firmware de l'horloge, mesures M1 à M11 sur un quadrant plus le
+cerveau. Les points ci-dessous concernent la maquette et ne sont
+conservés que comme référence.
+
+## Le reste côté dépôt (maquette, référence)
 
 1. Sept nets de la carte analogique à fermer à la main dans pcbnew
    (couloirs saturés : M1_A, M2_A, C2_A, C3_B, BUCK_FB, BUCK_EN,

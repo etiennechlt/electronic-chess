@@ -1,5 +1,9 @@
 # Maquette 2 x 2 : commande, montage, mise en route
 
+> Remplacée par l'ADR 0010 : la maquette n'est plus construite, le
+> plateau 8 x 8 est conçu directement en quadrants. Ce dossier reste
+> la référence de la chaîne analogique et du routage.
+
 Deux cartes (ADR 0008) : la carte bobines (100 x 100, 4 couches,
 passive) et la carte analogique (100 x 62, 2 couches, assemblée). Le
 MCU est une Nucleo-G474RE du commerce reliée en nappes Dupont.

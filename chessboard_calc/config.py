@@ -59,6 +59,7 @@ class PieceClassSpec(_Model):
 class PitchCfg(_Model):
     candidates_mm: tuple[float, ...]
     mockup_mm: float
+    plateau_mm: float
 
 
 class PiecesCfg(_Model):
@@ -110,6 +111,7 @@ class PieceMagnetCfg(_Model):
 
 class GapCfg(_Model):
     pcb_mm: float
+    air_mm: float
     surface_mm: float
     felt_mm: float
     max_total_mm: float
@@ -117,12 +119,12 @@ class GapCfg(_Model):
     @property
     def air_gap_mm(self) -> float:
         """Distance from PCB top copper to the underside of the piece coil."""
-        return self.surface_mm + self.felt_mm
+        return self.air_mm + self.surface_mm + self.felt_mm
 
     @property
     def nominal_total_mm(self) -> float:
-        """The brief's 'entrefer nominal': PCB + play surface + felt."""
-        return self.pcb_mm + self.surface_mm + self.felt_mm
+        """The 'entrefer nominal': PCB + air clearance + play surface + felt."""
+        return self.pcb_mm + self.air_mm + self.surface_mm + self.felt_mm
 
 
 class SenseCoilCfg(_Model):
@@ -249,6 +251,7 @@ class PowerCfg(_Model):
 class McuCfg(_Model):
     part: str
     sysclk_mhz: float
+    mounting: str
 
 
 class TestPieceCfg(_Model):
@@ -403,6 +406,127 @@ class MockupCfg(_Model):
     nucleo_pins: dict[str, NucleoPinCfg]
 
 
+class QuadrantLinkCfg(_Model):
+    connector: str
+    pins: int
+
+
+class QuadrantCfg(_Model):
+    squares: int
+    layers: int
+    mux: str
+    front_end_strip_mm: float
+    front_end_max_height_mm: float
+    link: QuadrantLinkCfg
+
+
+class PlateauLedsCfg(_Model):
+    corners: tuple[str, str]
+
+    @field_validator("corners")
+    @classmethod
+    def _opposite_corners(cls, v: tuple[str, str]) -> tuple[str, str]:
+        opposite = {"NW": "SE", "SE": "NW", "NE": "SW", "SW": "NE"}
+        if v[0] not in opposite or opposite[v[0]] != v[1]:
+            raise ValueError("led corners must be two opposite corners")
+        return v
+
+
+class WoodCfg(_Model):
+    border_mm: float
+
+
+class LocatingPinsCfg(_Model):
+    d_mm: float
+    count: int
+
+
+class BaseCfg(_Model):
+    shell_mm: float
+    electronics_cavity_mm: float
+    cell_mm: tuple[float, float, float]
+    gantry_cavity_mm: float
+    locating_pins: LocatingPinsCfg
+    wing_seam_max_mm: float
+
+
+class CommsCfg(_Model):
+    module: str
+    pi_header: bool
+    isolator: str
+    load_switch: bool
+
+
+class BrainCfg(_Model):
+    mcu_board: str
+    power_board: str
+    motion_board: str
+    comms: CommsCfg
+    peripheral_port: str
+
+
+class PlateauCfg(_Model):
+    grid: int
+    quadrant: QuadrantCfg
+    leds: PlateauLedsCfg
+    wood: WoodCfg
+    module_underside_clear: bool
+    base: BaseCfg
+    brain: BrainCfg
+
+    @model_validator(mode="after")
+    def _quadrants_tile_the_grid(self) -> PlateauCfg:
+        if self.grid % self.quadrant.squares != 0:
+            raise ValueError("quadrant squares must divide the grid")
+        return self
+
+
+class ClockDisplayCfg(_Model):
+    diagonal_in: float
+    window_mm: tuple[float, float]
+    up_slope_mm: float
+
+
+class RockerCfg(_Model):
+    length_mm: float
+    width_mm: float
+    thickness_mm: float
+    recess_mm: float
+    tilt_deg: float
+    pivot_d_mm: float
+    switch_inset_mm: float
+
+
+class EncoderCfg(_Model):
+    knob_d_mm: float
+    x_mm: float
+    up_slope_mm: float
+
+
+class BuzzerGrilleCfg(_Model):
+    holes: tuple[int, int]
+    pitch_mm: float
+    hole_d_mm: float
+    origin_mm: tuple[float, float]
+
+
+class ClockCfg(_Model):
+    radio: str
+    mcu: str
+    cell: str
+    body_mm: tuple[float, float]
+    height_front_mm: float
+    height_rear_mm: float
+    slope_end_mm: float
+    wall_mm: float
+    lid_mm: float
+    display: ClockDisplayCfg
+    rocker: RockerCfg
+    encoder: EncoderCfg
+    buzzer_grille: BuzzerGrilleCfg
+    usb_c_slot_mm: tuple[float, float]
+
+
 class BoardConfig(_Model):
     schema_version: int
     pitch: PitchCfg
@@ -420,6 +544,8 @@ class BoardConfig(_Model):
     power: PowerCfg
     mcu: McuCfg
     mockup: MockupCfg
+    plateau: PlateauCfg
+    clock: ClockCfg
 
 
 @dataclass(frozen=True)

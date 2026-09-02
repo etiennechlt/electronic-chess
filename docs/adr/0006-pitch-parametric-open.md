@@ -1,6 +1,6 @@
 # ADR 0006. Pas de case paramétrique, 40 ou 50 mm
 
-Statut : ouverte, à trancher sur la maquette.
+Statut : tranchée par l'ADR 0010, p = 50 mm ; les deux pas restent calculés et rapportés pour comparaison.
 
 ## Contexte
 

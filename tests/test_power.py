@@ -21,9 +21,11 @@ def test_engine_budget_matches_brief_within_model_tolerance(cfg):
     assert {"pi", "tft", "motors_avg"} <= set(budget.loads_w)
 
 
-def test_autonomy_matches_brief(cfg):
-    assert 60.0 <= autonomy_h(cfg, engine_on=False) <= 75.0  # brief: 65 h
-    assert 13.0 <= autonomy_h(cfg, engine_on=True) <= 17.0  # brief: 17 h
+def test_autonomy_with_the_flat_pack(cfg):
+    # ADR 0010: 3S1P pouch cells (55.5 Wh) instead of 3S2P 18650 (73.4 Wh),
+    # so the brief's 65 h / 17 h become ~51 h / ~11 h. Still days of play.
+    assert 45.0 <= autonomy_h(cfg, engine_on=False) <= 58.0
+    assert 10.0 <= autonomy_h(cfg, engine_on=True) <= 13.5
 
 
 def test_peak_power_and_current_match_brief(cfg):
@@ -37,6 +39,8 @@ def test_usable_energy_derate_is_explicit(cfg):
     # The brief's 65 h figure implies ~80 % usable energy; the config
     # carries it explicitly instead of leaving it implicit.
     assert cfg.power.battery.usable_fraction == pytest.approx(0.80)
+    assert cfg.power.battery.layout == "3S1P"
+    assert cfg.power.battery.energy_wh == pytest.approx(3 * 3.7 * 5.0)
 
 
 def test_move_reserve_is_sane(cfg):

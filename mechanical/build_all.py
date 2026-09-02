@@ -1,4 +1,4 @@
-"""Build every mockup mechanical part: STL + STEP into exports/.
+"""Build every mechanical part: STL + STEP into exports/ (board, clock, mockup).
 
 Usage, from the repository root with the project venv:
     python mechanical/build_all.py [--formats stl,step]
@@ -13,6 +13,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 import cadquery as cq
+import clock
+import plateau
 from cadquery import exporters
 from common import load, puck_dims
 from parts import (
@@ -59,6 +61,18 @@ def main() -> int:
         mm.hole_spacing_mm, cfg.carriage.magnet.d_mm)
     parts["magnet-cup"] = magnet_cup(cfg.carriage.magnet.d_mm,
                                      cfg.carriage.magnet.h_mm)
+
+    # The 8x8 board (ADR 0010): printable or CNC parts and the two base assemblies.
+    parts["horloge-boitier"] = clock.shell(cfg)
+    parts["horloge-fond"] = clock.lid(cfg)
+    parts["horloge-barre"] = clock.rocker_bar(cfg, tilt_deg=0.0)
+    for gantry, label in ((False, "fin"), (True, "chariot")):
+        asm = cq.Workplane("XY")
+        for p in plateau.assembly(cfg, gantry=gantry, with_pieces=False):
+            asm = asm.add(p.shape)
+        parts[f"plateau-{label}-assemblage"] = asm
+    plywood = next(p for p in plateau.wood(cfg, 0.0) if p.group == "bois")
+    parts["plateau-contreplaque"] = cq.Workplane("XY").add(plywood.shape)
 
     for name, part in parts.items():
         if "stl" in formats:

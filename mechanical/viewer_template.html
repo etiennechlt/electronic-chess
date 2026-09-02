@@ -1,0 +1,252 @@
+<title>Plateau Damier LC</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f1ede4;--panel:#faf8f3;--ink:#1f1b15;--muted:#6d665a;--line:#d8d0c0;--accent:#b5682a;--accent-ink:#fff;
+  --chip-border:rgba(0,0,0,.12);--grid:#c9c1b0;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#15171b;--panel:#1d2025;--ink:#ece7dc;--muted:#9c968a;--line:#30343a;--accent:#d78b48;--accent-ink:#1a1206;
+    --chip-border:rgba(255,255,255,.14);--grid:#2c3036;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15171b;--panel:#1d2025;--ink:#ece7dc;--muted:#9c968a;--line:#30343a;--accent:#d78b48;--accent-ink:#1a1206;
+  --chip-border:rgba(255,255,255,.14);--grid:#2c3036;color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "IBM Plex Sans",system-ui,sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{display:flex;align-items:baseline;gap:16px;padding:10px 18px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{margin:0;font:600 18px/1 "IBM Plex Sans Condensed","IBM Plex Sans",sans-serif;letter-spacing:.01em}
+header .sub{color:var(--muted);font-size:13px}
+header .mono{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+main{flex:1;display:grid;grid-template-columns:300px 1fr;min-height:0}
+aside{border-right:1px solid var(--line);background:var(--panel);overflow-y:auto;padding:14px 16px 24px;display:flex;flex-direction:column;gap:18px}
+section h2{margin:0 0 8px;font:600 11px/1 "IBM Plex Sans Condensed",sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{flex:1;padding:8px 6px;border:0;background:transparent;color:var(--ink);font:500 13px "IBM Plex Sans",sans-serif;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.seg button:focus-visible,.views button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.layers{display:flex;flex-direction:column;gap:6px}
+.layers label{display:flex;align-items:center;gap:10px;cursor:pointer}
+.layers .chip{width:14px;height:14px;border-radius:3px;border:1px solid var(--chip-border);flex:none}
+.layers input{margin:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.rangeRow{display:flex;justify-content:space-between;color:var(--muted);font-family:"IBM Plex Mono",monospace;font-size:12px}
+.views{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.views button{padding:7px 4px;border:1px solid var(--line);border-radius:6px;background:transparent;color:var(--ink);font:500 12px "IBM Plex Sans",sans-serif;cursor:pointer}
+.views button:hover{border-color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td{padding:4px 0;border-bottom:1px solid var(--line)}
+td:last-child{text-align:right;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+tr.total td{border-bottom:0;font-weight:500}
+.stage{position:relative;min-width:0}
+canvas{display:block;width:100%;height:100%}
+#tip{position:absolute;pointer-events:none;background:var(--panel);color:var(--ink);border:1px solid var(--line);padding:5px 8px;border-radius:5px;font-size:12px;max-width:280px;transform:translate(12px,12px);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+#hint{position:absolute;left:12px;bottom:10px;color:var(--muted);font-size:12px;font-family:"IBM Plex Mono",monospace}
+p.note{margin:0;color:var(--muted);font-size:12.5px}
+@media (max-width:760px){main{grid-template-columns:1fr;grid-template-rows:auto 1fr}aside{border-right:0;border-bottom:1px solid var(--line);max-height:42vh}}
+</style>
+
+<header>
+  <h1>Plateau Damier LC</h1>
+  <span class="sub">plateau 8 x 8, p = <span class="mono">50 mm</span>, module plateau + base interchangeable, horloge à bascule</span>
+</header>
+<main>
+  <aside>
+    <section>
+      <h2>Base</h2>
+      <div class="seg" role="group" aria-label="Configuration">
+        <button id="cfg-fine" aria-pressed="true">Plateau fin</button>
+        <button id="cfg-chariot" aria-pressed="false">Base chariot</button>
+      </div>
+    </section>
+    <section>
+      <h2>Éclaté</h2>
+      <input id="explode" type="range" min="0" max="100" value="0" aria-label="Éclaté">
+      <div class="rangeRow"><span>assemblé</span><span id="explodeVal">0 %</span></div>
+    </section>
+    <section>
+      <h2>Couches</h2>
+      <div class="layers" id="layers"></div>
+    </section>
+    <section>
+      <h2>Vues</h2>
+      <div class="views">
+        <button data-view="iso">Iso</button><button data-view="top">Dessus</button>
+        <button data-view="front">Face</button><button data-view="side">Côté</button><button data-view="clock">Horloge</button>
+      </div>
+    </section>
+    <section>
+      <h2>Empilement</h2>
+      <table id="stack"></table>
+    </section>
+    <section>
+      <h2>Emprise</h2>
+      <table id="size"></table>
+    </section>
+    <p class="note">Survole une pièce pour son nom. Glisser pour tourner, molette pour zoomer, clic droit ou Maj pour déplacer. Toutes les cotes viennent de config/board.yaml (mechanical/viewer.py).</p>
+  </aside>
+  <div class="stage">
+    <canvas id="c"></canvas>
+    <div id="tip" hidden></div>
+    <div id="hint"></div>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const DATA = __SCENE_JSON__;
+const GROUPS = DATA.groups;
+const ORDER = DATA.explode;
+
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(35, 1, 1, 6000);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x80776a, 0.75));
+const sun = new THREE.DirectionalLight(0xfff4e6, 0.95);
+sun.position.set(-350, 700, 450); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, {left:-450, right:450, top:450, bottom:-450, near:100, far:2500});
+scene.add(sun);
+const root = new THREE.Group(); root.rotation.x = -Math.PI / 2; scene.add(root);
+let grid;
+
+function css(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function applyTheme(){
+  renderer.setClearColor(new THREE.Color(css('--bg')));
+  if (grid) scene.remove(grid);
+  grid = new THREE.GridHelper(1400, 28, new THREE.Color(css('--grid')), new THREE.Color(css('--grid')));
+  grid.position.y = -0.5; scene.add(grid); dirty = true;
+}
+
+const mats = {};
+function mat(color){ return mats[color] || (mats[color] = new THREE.MeshStandardMaterial({color:new THREE.Color(color), roughness:0.75, flatShading:true, metalness:0.05})); }
+const meshes = [];
+function build(cfgName){
+  while (root.children.length) root.remove(root.children[0]);
+  meshes.length = 0;
+  const S = DATA[cfgName];
+  for (const p of S.parts){
+    let geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(p.v, 3));
+    geo.setIndex(p.i);
+    geo = geo.toNonIndexed();
+    geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, mat(p.c));
+    m.castShadow = m.receiveShadow = true;
+    m.userData = {g:p.g, z:0, n:p.n, e:p.e, c:p.c};
+    root.add(m); meshes.push(m);
+  }
+  stackTable(S); sizeTable(S);
+  applyExplode(); applyLayers(); dirty = true;
+}
+function stackTable(S){
+  const t = document.getElementById('stack'); let total = 0;
+  t.innerHTML = S.layers.map(([n,v]) => { total += v; return `<tr><td>${n}</td><td>${v.toFixed(1)} mm</td></tr>`; }).join('')
+    + `<tr class="total"><td>hauteur totale</td><td>${total.toFixed(1)} mm</td></tr>`;
+}
+function sizeTable(S){
+  document.getElementById('size').innerHTML = S.size.map(([n,v]) => `<tr><td>${n}</td><td>${v}</td></tr>`).join('');
+}
+let explode = 0;
+function applyExplode(){
+  for (const m of meshes) m.position.z = (m.userData.e ? m.userData.e : ORDER[m.userData.g]) * 45 * explode;
+  dirty = true;
+}
+const visible = Object.fromEntries(GROUPS.map(g => [g[0], true]));
+function applyLayers(){ for (const m of meshes) m.visible = visible[m.userData.g]; dirty = true; }
+
+// layer checkboxes
+const L = document.getElementById('layers');
+for (const [key,label,color] of GROUPS){
+  const id = 'lay-' + key;
+  const lab = document.createElement('label');
+  lab.innerHTML = `<input type="checkbox" id="${id}" checked><span class="chip" style="background:${color}"></span><span>${label}</span>`;
+  lab.querySelector('input').addEventListener('change', e => { visible[key] = e.target.checked; applyLayers(); });
+  L.appendChild(lab);
+}
+
+// camera: simple orbit
+let target = new THREE.Vector3(200, 0, 200), sph = {r: 1100, theta: -0.9, phi: 1.0};
+function updateCamera(){
+  camera.position.set(target.x + sph.r*Math.sin(sph.phi)*Math.sin(sph.theta), target.y + sph.r*Math.cos(sph.phi), target.z + sph.r*Math.sin(sph.phi)*Math.cos(sph.theta));
+  camera.lookAt(target); dirty = true;
+}
+function view(name){
+  const S = DATA[current]; const [x0,y0,w,d,h] = S.bbox;
+  target.set(x0 + w/2, h/2, -(y0 + d/2));
+  sph.r = Math.max(w,d) * 2.1;
+  if (name === 'clock'){ const [cx,cy,cz] = S.clock; target.set(cx, cz, -cy); sph.r = 320; sph.theta = -0.5; sph.phi = 1.05; updateCamera(); return; }
+  ({iso:()=>{sph.theta=-0.9;sph.phi=1.0}, top:()=>{sph.theta=0;sph.phi=0.02}, front:()=>{sph.theta=0;sph.phi=1.35}, side:()=>{sph.theta=-Math.PI/2;sph.phi=1.35}})[name]();
+  updateCamera();
+}
+let drag = null;
+canvas.addEventListener('pointerdown', e => { drag = {x:e.clientX, y:e.clientY, pan: e.button===2 || e.shiftKey}; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener('pointerup', () => drag = null);
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+canvas.addEventListener('pointermove', e => {
+  if (drag){
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
+    if (drag.pan){
+      const right = new THREE.Vector3().crossVectors(camera.getWorldDirection(new THREE.Vector3()), camera.up).normalize();
+      const up = new THREE.Vector3().copy(camera.up);
+      target.addScaledVector(right, -dx * sph.r / 900).addScaledVector(up, dy * sph.r / 900);
+    } else { sph.theta -= dx * 0.006; sph.phi = Math.min(Math.PI - 0.05, Math.max(0.02, sph.phi - dy * 0.006)); }
+    updateCamera();
+  } else hover(e);
+}, {passive:true});
+canvas.addEventListener('wheel', e => { e.preventDefault(); sph.r = Math.min(5000, Math.max(120, sph.r * (1 + Math.sign(e.deltaY) * 0.1))); updateCamera(); }, {passive:false});
+// pinch
+let pinch = null;
+canvas.addEventListener('touchstart', e => { if (e.touches.length===2) pinch = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); }, {passive:true});
+canvas.addEventListener('touchmove', e => { if (e.touches.length===2 && pinch){ const d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); sph.r = Math.min(5000, Math.max(120, sph.r * pinch / d)); pinch = d; updateCamera(); } }, {passive:true});
+
+// hover tooltip
+const ray = new THREE.Raycaster(), tip = document.getElementById('tip');
+let hovered = null;
+function hover(e){
+  const r = canvas.getBoundingClientRect();
+  ray.setFromCamera({x:((e.clientX-r.left)/r.width)*2-1, y:-((e.clientY-r.top)/r.height)*2+1}, camera);
+  const hit = ray.intersectObjects(meshes.filter(m => m.visible), false)[0];
+  const m = hit ? hit.object : null;
+  if (hovered && hovered !== m){ hovered.material = mat(hovered.userData.c); }
+  if (m && m.userData.n){
+    if (hovered !== m){ const hm = mat(m.userData.c).clone(); hm.emissive = new THREE.Color(0x553311); m.material = hm; }
+    tip.textContent = m.userData.n; tip.hidden = false; tip.style.left = (e.clientX - r.left) + 'px'; tip.style.top = (e.clientY - r.top) + 'px';
+    hovered = m;
+  } else { tip.hidden = true; hovered = null; }
+  dirty = true;
+}
+
+// controls
+let current = 'fine';
+function setCfg(name){
+  current = name;
+  document.getElementById('cfg-fine').setAttribute('aria-pressed', name==='fine');
+  document.getElementById('cfg-chariot').setAttribute('aria-pressed', name==='chariot');
+  build(name); view('iso');
+}
+document.getElementById('cfg-fine').onclick = () => setCfg('fine');
+document.getElementById('cfg-chariot').onclick = () => setCfg('chariot');
+document.getElementById('explode').addEventListener('input', e => { explode = e.target.value/100; document.getElementById('explodeVal').textContent = e.target.value + ' %'; applyExplode(); });
+document.querySelectorAll('.views button').forEach(b => b.onclick = () => view(b.dataset.view));
+document.getElementById('hint').textContent = 'unités : mm';
+
+let dirty = true;
+function resize(){
+  const r = canvas.parentElement.getBoundingClientRect();
+  renderer.setSize(r.width, r.height, false); camera.aspect = r.width / r.height; camera.updateProjectionMatrix(); dirty = true;
+}
+addEventListener('resize', resize);
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+new MutationObserver(applyTheme).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+function loop(){ if (dirty){ renderer.render(scene, camera); dirty = false; } requestAnimationFrame(loop); }
+applyTheme(); resize(); setCfg('fine'); loop();
+</script>

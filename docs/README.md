@@ -11,12 +11,16 @@ pas.
 - **Reprendre le projet à froid** : lire dans l'ordre
   [le principe de mesure](notes/01-principe-de-mesure.md),
   [l'architecture](notes/02-architecture-systeme.md),
+  [le plateau 8 x 8 et ses choix](notes/10-plateau-8x8-et-horloge.md),
   [l'état et le reste à faire](notes/07-etat-et-reste-a-faire.md),
   puis le [journal](notes/09-journal.md) pour l'historique des choix.
-- **Commander la maquette** : la
-  [fiche d'approvisionnement](bom-maquette.md) (prix comparés Europe
-  contre Asie, quatre commandes conseillées), après la finition
-  décrite dans l'[état](notes/07-etat-et-reste-a-faire.md) et le
+- **Voir le plateau en 3D** : `python mechanical/viewer.py` génère la
+  vue interactive (bases fine et chariot, éclaté, couches), les vues
+  fixes sont dans `docs/images/plateau-*.png` et `horloge*.png`,
+  méthode dans la [note 10](notes/10-plateau-8x8-et-horloge.md).
+- **La maquette 2 x 2** (retirée du plan par l'ADR 0010, conservée
+  comme référence de la chaîne analogique) : la
+  [fiche d'approvisionnement](bom-maquette.md) et le
   [README de la carte analogique](../hardware/mockup-2x2/analog-board/README.md).
 - **Comprendre la mesure** :
   [principe](notes/01-principe-de-mesure.md), ADR
@@ -46,12 +50,12 @@ pas.
 | `tools/analoggen/` | générateur complet de la carte analogique (schéma, PCB routé, BOM, SPICE) |
 | `hardware/mockup-2x2/` | artefacts générés : KiCad, gerbers, BOM JLC, guides |
 | `firmware/mockup/` | firmware Nucleo G474 en CMSIS nu |
-| `mechanical/` | pièces CadQuery : pucks, gabarits, support aimant, gabarit de perçage |
+| `mechanical/` | CadQuery : plateau 8 x 8 (module, bases, ailes), horloge, pucks, gabarits ; rendus et vue interactive |
 | `measurements/` | protocole M1 à M11, gabarits CSV, analyse |
 | `docs/adr/` | décisions d'architecture numérotées |
 | `docs/notes/` | la présente base de connaissances |
 | `docs/serie/` | série vidéo : bible, épisodes, tournage, montage |
-| `tests/` | 66 tests, dont le couloir bloquant en CI |
+| `tests/` | 77 tests, dont le couloir bloquant en CI et l'empilement du plateau |
 
 ## Notes
 
@@ -66,6 +70,7 @@ pas.
 | [07](notes/07-etat-et-reste-a-faire.md) | État de référence et chemin vers le prototype réel |
 | [08](notes/08-regenerer.md) | Runbook : tout régénérer |
 | [09](notes/09-journal.md) | Journal des décisions et pivots |
+| [10](notes/10-plateau-8x8-et-horloge.md) | Plateau 8 x 8, base interchangeable et horloge : les choix et leurs raisons |
 
 Décisions formelles : [index des ADR](adr/README.md). Conventions de
 contribution : `CLAUDE.md` à la racine (langue, typographie, source

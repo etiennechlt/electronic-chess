@@ -48,3 +48,17 @@ def load() -> tuple[BoardConfig, float]:
 def coil_former_dims(cfg: BoardConfig, piece: PieceType, pitch_mm: float):
     design = piece_coil_design(cfg, piece, pitch_mm)
     return design
+
+
+@dataclass(frozen=True)
+class Part:
+    """One solid of an assembly, for the scene renders and the 3D viewer.
+
+    `group` is the layer a viewer can hide as a whole; `explode` is the
+    lift factor along z in an exploded view (0 stays put).
+    """
+    name: str
+    shape: object          # cadquery Shape (a Solid or Compound)
+    color: str             # hex, the same for the PNG scenes and the viewer
+    group: str
+    explode: float = 0.0

@@ -7,8 +7,9 @@
 schema_version: 1
 
 pitch:
-  candidates_mm: [40, 50]      # final pitch intentionally open (brief 5.1)
+  candidates_mm: [40, 50]      # both still computed and reported for comparison
   mockup_mm: 50                # fixed by the 100x100 mm PCB price tier
+  plateau_mm: 50               # decided for the 8x8 board (ADR 0010): signal and Q
 
 pieces:
   classes:                     # base_ratio: base diameter as a fraction of p
@@ -54,11 +55,12 @@ piece_magnet:
   outer_margin_mm: 5.0         # d = base - 5
   thickness_mm: 4.0
 
-gap:                           # nominal total is derived: 1.6 + 3.0 + 0.5 = 5.1
+gap:                           # nominal total is derived: 1.6 + 2.0 + 3.0 + 0.5 = 7.1
   pcb_mm: 1.6
+  air_mm: 2.0                  # clearance under the plywood: LED bodies and the
+                               # quadrant front-end strip (ADR 0010, parts <= 1.8 mm)
   surface_mm: 3.0              # dry plywood (was acrylic); thickness is the
-                               # knob that matters: wood is non magnetic and
-                               # insulating, freq shift is ppm-level (ADR 0009)
+                               # only surface parameter that affects the signal
   felt_mm: 0.5
   max_total_mm: 8.0
 
@@ -122,9 +124,9 @@ friction:
 
 power:
   battery:
-    layout: 3S2P
-    cell: "18650 NMC, Samsung 35E or LG MJ1"
-    energy_wh: 73.4
+    layout: 3S1P
+    cell: "pouch LiPo 1S 5 Ah, 110 x 65 x 8 mm"   # flat cells keep the board 21 mm thin (ADR 0010)
+    energy_wh: 55.5            # 3 x 3.7 V x 5 Ah (was 73.4 Wh with 3S2P 18650)
     usable_fraction: 0.80      # implicit in the brief's 65 h claim, now explicit
     v_range: [9.0, 12.6]
     ntc_on_pack: true
@@ -148,7 +150,7 @@ power:
   move_reserve_pct: 10         # refuse to start a move below this SoC
   pi_link: { isolator: ADuM1201, load_switch: true }
 
-mcu: { part: STM32G474RE, sysclk_mhz: 170 }
+mcu: { part: STM32G474RE, sysclk_mhz: 170, mounting: soldered }  # LQFP64 on the brain board, SWD header (ADR 0010)
 
 mockup:
   # 2 x 2 mockup, phase 1. Two boards (ADR 0008): a script-generated
@@ -247,3 +249,54 @@ mockup:
     pi_uart_tx: { arduino: D8, mcu: PA9 }   # USART1, through the isolator
     pi_uart_rx: { arduino: D2, mcu: PA10 }
     # CSV output uses the Nucleo virtual COM port (USART2 PA2/PA3)
+
+plateau:                       # 8x8 board built directly from 4x4 quadrants (ADR 0010)
+  grid: 8
+  quadrant:
+    squares: 4                 # 4 x 4 coils per quadrant, 4 identical boards
+    layers: 4
+    mux: ADG726                # dual 16:1 differential mux, one per quadrant
+    front_end_strip_mm: 14.0   # analog front end on the top side, outer x edge
+    front_end_max_height_mm: 1.8   # must fit under the plywood in gap.air_mm
+    link: { connector: "IDC 2x10", pins: 20 }   # to the brain board, one ribbon each
+  leds:
+    corners: [NW, SE]          # every square identical, no exception (mockup S2 had one)
+  wood:
+    border_mm: 10.0            # plywood frame around the play area
+  module_underside_clear: true # nothing under the quadrants: the gantry base needs the room
+  base:
+    shell_mm: 2.0
+    electronics_cavity_mm: 12.0   # brain, power board and flat cells, same footprint in both bases
+    cell_mm: [110.0, 65.0, 8.0]   # one pouch cell, three side by side
+    gantry_cavity_mm: 33.0        # CoreXY layer above the electronics, gantry base only
+    locating_pins: { d_mm: 4.0, count: 4 }   # top module to base, sets the carriage reference
+    wing_seam_max_mm: 0.3         # wood to capture wing step, pieces slide across on felt
+  brain:
+    mcu_board: "STM32G474RE soldered, USB, SWD, 4 quadrant IDC, LED chain, 5 V buck forced PWM, 3.3 V, analog LDO island"
+    power_board: "3S BMS, USB-C PD charge, gauge"
+    motion_board: "2 x TMC2209, endstops, magnet actuator; lives in the gantry base, optional"
+    comms: { module: ESP32-S3-WROOM-1, pi_header: true, isolator: ADuM1201, load_switch: true }
+    peripheral_port: "USB-C, 5 V + UART, for wired accessories"
+
+clock:                         # separate rocker chess clock, BLE to the board (ADR 0010)
+  radio: ble
+  mcu: ESP32-C3
+  cell: "18650 1S, 3 Ah, USB-C charge"
+  body_mm: [120.0, 70.0]
+  height_front_mm: 26.0
+  height_rear_mm: 36.0
+  slope_end_mm: 42.0           # sloped display face from the front edge to here, flat behind
+  wall_mm: 2.0
+  lid_mm: 2.0
+  display: { diagonal_in: 2.4, window_mm: [50.0, 38.0], up_slope_mm: 22.5 }
+  rocker:
+    length_mm: 108.0
+    width_mm: 18.0
+    thickness_mm: 8.0
+    recess_mm: 5.0
+    tilt_deg: 5.0
+    pivot_d_mm: 4.0
+    switch_inset_mm: 12.0      # microswitch under each end, from the bar end
+  encoder: { knob_d_mm: 14.0, x_mm: 104.0, up_slope_mm: 12.0 }
+  buzzer_grille: { holes: [3, 3], pitch_mm: 5.0, hole_d_mm: 2.0, origin_mm: [12.0, 8.0] }
+  usb_c_slot_mm: [9.2, 3.6]

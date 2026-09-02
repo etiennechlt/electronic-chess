@@ -1,12 +1,34 @@
-# Mécanique de la maquette (CadQuery)
+# Mécanique (CadQuery)
 
 Modèles paramétriques pilotés par `config/board.yaml`. Construction :
 
 ```bash
 .venv/bin/python mechanical/build_all.py     # STL + STEP dans exports/
+.venv/bin/python mechanical/scenes.py        # rendus pour la doc (docs/images/)
+.venv/bin/python mechanical/viewer.py        # vue 3D interactive (exports/plateau-3d.html)
 ```
 
-## Pièces produites
+## Plateau 8 x 8 et horloge (ADR 0010)
+
+- `plateau.py` : module plateau (contreplaqué à 128 points lumineux,
+  quatre quadrants avec spirales, LED et bande de frontal), base fine,
+  base chariot (CoreXY, ailes de capture, lisière), électronique sur
+  empreinte commune, pièces. `assembly(cfg, gantry)` rend la liste des
+  `Part` ; `exploded()` les écarte pour les vues éclatées.
+- `clock.py` : boîtier de l'horloge à bascule (face inclinée, fenêtre
+  d'écran, évidement de la barre, encodeur, grille, USB-C), fond,
+  barre, bouton, intérieur. `horloge-boitier`, `horloge-fond` et
+  `horloge-barre` s'impriment ; la barre est exportée à plat.
+- `viewer_template.html` plus `viewer.py` : la vue interactive
+  three.js, régénérée depuis les mêmes solides.
+- Les cotes sont dérivées par `chessboard_calc/plateau.py` et
+  épinglées par `tests/test_plateau.py` ; raisons dans la
+  [note 10](../docs/notes/10-plateau-8x8-et-horloge.md).
+
+Le rendu (`render_stl.py`) est un rasteriseur à tampon de profondeur
+en numpy : occlusions exactes, sans OpenGL.
+
+## Pièces de la maquette 2 x 2 (référence)
 
 - `puck-<classe>-black` : pucks de test des 4 résonateurs bas de bande
   (pion, cavalier, fou, tour noirs). Alésage étagé par le dessous :

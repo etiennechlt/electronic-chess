@@ -1,6 +1,6 @@
 # ADR 0004. PCB de détection découpé en 4 quadrants
 
-Statut : acceptée.
+Statut : acceptée, amendée par l'ADR 0010 (frontal analogique embarqué sur le quadrant en face supérieure, ailes de capture portées par la base chariot optionnelle).
 
 ## Contexte
 
