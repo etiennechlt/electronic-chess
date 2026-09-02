@@ -79,3 +79,17 @@ est un diff de source relu et testé, jamais une retouche de fichier
 binaire ; et l'alignement inter-cartes (position du joint) est calculé
 des deux côtés depuis le même yaml, verrouillé par un test d'égalité
 des plans de pads.
+
+## Le générateur de quadrant (`tools/quadgen`)
+
+Troisième générateur, pour la carte 4 x 4 du plateau (ADR 0010). Il
+reprend l'écrivain KiCad et la géométrie des spirales de `coilgen`, les
+empreintes de `analoggen`, et remplace les couloirs codés à la main de
+la maquette par une mise en page calculée pour une grille n x n
+(`layout.py`) : bornes alternées par rangée, bandes d'échappée à huit
+voies, cellules du frontal en face de leur bande, LED aux mêmes coins
+sur toutes les cases. La chaîne LED et les retours d'alimentation sont
+routés par un A* sur grille (`router.py`) contre tout le cuivre déjà
+posé, et un contrôle d'isolement exact (shapely) valide la carte
+entière à chaque build. Détail dans le
+[README du quadrant](../../hardware/quadrant/README.md).

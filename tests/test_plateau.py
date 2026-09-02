@@ -32,9 +32,9 @@ def test_stack_heights(cfg):
 def test_footprints(cfg):
     g = geometry(cfg)
     assert g.play_mm == 400.0
-    assert g.module_mm == 420.0
-    assert (g.thin.width_mm, g.thin.depth_mm) == (420.0, 420.0)
-    assert (g.gantry.width_mm, g.gantry.depth_mm) == (520.0, 440.0)
+    assert g.module_mm == 432.0
+    assert (g.thin.width_mm, g.thin.depth_mm) == (432.0, 432.0)
+    assert (g.gantry.width_mm, g.gantry.depth_mm) == (532.0, 452.0)
     assert g.capture_band_mm == 50.0
 
 

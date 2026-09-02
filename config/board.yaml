@@ -256,13 +256,38 @@ plateau:                       # 8x8 board built directly from 4x4 quadrants (AD
     squares: 4                 # 4 x 4 coils per quadrant, 4 identical boards
     layers: 4
     mux: ADG726                # dual 16:1 differential mux, one per quadrant
-    front_end_strip_mm: 14.0   # analog front end on the top side, outer x edge
+    front_end_strip_mm: 16.0   # analog front end on the top side, outer x edge
     front_end_max_height_mm: 1.8   # must fit under the plywood in gap.air_mm
-    link: { connector: "IDC 2x10", pins: 20 }   # to the brain board, one ribbon each
+    link:                      # to the brain board, one flat cable each
+      connector: "FPC 0.5 mm, 16 broches, 1,4 mm de haut (Hirose FH12-16S-0.5SH)"
+      footprint: "Connector_FFC-FPC:Hirose_FH12-16S-0.5SH_1x16-1MP_P0.50mm_Horizontal"
+      pins: 16
+      pinout: [GND, 5VA, AGND, AMP_OUT, 3V3, MUX_A0, MUX_A1, MUX_A2,
+               MUX_A3, MUX_EN, PULSE_EN, DAMP_EN, VIN, 5V_LED, LED_DIN, LED_DOUT]
+    routing:                   # quadgen numbers
+      track_clearance_mm: 0.15
+      edge_clearance_mm: 0.5
+      route_track_mm: 0.3      # coil escapes and LED copper
+      lane_pitch_mm: 0.45      # route_track + clearance
+      ring_track_mm: 1.0       # 5 V and GND distribution
+      led_via: { pad_mm: 0.6, drill_mm: 0.3, stub_mm: 1.0 }
+      grid_mm: 0.2             # A* raster for the LED chain and spurs
+    strip:                     # front-end strip floor plan, y from the north edge
+      connector_zone_mm: 18.0  # FPC connector, cable exits west, locating pin hole
+      cell_pitch_mm: 8.5       # one per coil, 8 per band, none inside a band
+      middle_zone_mm: 40.0     # decoders, mux, amplifier chain
+      lane_x0_mm: 1.0          # coil entry lanes down the west edge
+      cell_entry_x_mm: 5.0
+    front_end:
+      drive_decoder: 74HC4514  # 4 to 16, active high: coil excitation gates
+      damp_decoder: 74HC154    # 4 to 16, active low: P-FET damping gates
+      flyback_diode: "SS34FL, SOD-123FL, 1 mm de haut"
+    mounting_hole_d_mm: 3.2
+    mounting_hole_inset_mm: 5.0
   leds:
     corners: [NW, SE]          # every square identical, no exception (mockup S2 had one)
   wood:
-    border_mm: 10.0            # plywood frame around the play area
+    border_mm: 16.0            # plywood frame around the play area, covers the strip
   module_underside_clear: true # nothing under the quadrants: the gantry base needs the room
   base:
     shell_mm: 2.0

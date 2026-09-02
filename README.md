@@ -70,6 +70,15 @@ séparée, en BLE. Choix et raisons dans la
 Vue 3D interactive (bases, éclaté, couches, noms au survol) :
 `python mechanical/viewer.py` puis ouvrir `mechanical/exports/plateau-3d.html`.
 
+| Quadrant 4 x 4 généré (`tools/quadgen`) |
+|---|
+| ![Quadrant](docs/images/quadrant.png) |
+
+Spirales, échappées vers la bande de frontal, 32 LED de camp et leur
+distribution, connecteur FPC : [détails](hardware/quadrant/README.md).
+Les cellules du frontal, le mux et la chaîne d'amplification sont le
+bloc suivant.
+
 ## Maquette 2 x 2 (phase 1, conçue, non construite)
 
 La maquette a été conçue de bout en bout puis remplacée par le plateau
@@ -117,19 +126,20 @@ décisions formelles sont dans [`docs/adr/`](docs/adr/README.md).
 |---|---|---|
 | `config/` | `board.yaml`, source de vérité unique | 0 |
 | `chessboard_calc/` | calculs paramétriques et garde-fous | 0 |
-| `tools/coilgen`, `tools/analoggen` | générateurs KiCad des deux cartes | 1 |
+| `tools/coilgen`, `tools/analoggen` | générateurs KiCad des deux cartes de la maquette | 1 |
+| `tools/quadgen`, `hardware/quadrant/` | générateur et projet KiCad du quadrant 4 x 4 | 2 |
 | `hardware/mockup-2x2/` | projets KiCad (`.kicad_pro` à ouvrir), gerbers, BOM, guides | 1 |
 | `firmware/mockup/` | firmware Nucleo-G474RE | 1 |
 | `measurements/` | protocole, gabarits CSV, analyse | 1 |
 | `mechanical/` | modèles CadQuery (plateau, horloge, pucks), rendus, vue 3D | 1 à 3 |
-| `hardware/quadrant-4x4/`, `mainboard/`, `firmware/board/`, `app/` | plateau complet | 2 à 4 |
+| `mainboard/`, `firmware/board/`, `app/` | cerveau, firmware du plateau, application | 2 à 4 |
 
 ## État et décisions
 
 Phase 0 (socle, calculs, CI) livrée, phase 1 (maquette) conçue puis
 remplacée par le plateau 8 x 8 direct (ADR 0010) : yaml, géométrie,
-modèles 3D du plateau et de l'horloge faits ; générateur de quadrant,
-cerveau et horloge à suivre. Les
+modèles 3D du plateau et de l'horloge faits, quadrant généré (bobines,
+LED, distribution) ; frontal du quadrant, cerveau et horloge à suivre. Les
 décisions d'architecture et leurs justifications sont dans
 [`docs/adr/`](docs/adr/README.md) ; conventions dans
 [`CLAUDE.md`](CLAUDE.md) : code et commentaires en anglais,

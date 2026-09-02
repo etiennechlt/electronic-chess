@@ -48,6 +48,8 @@ pas.
 | `chessboard_calc/` | calculs (fréquences, couloir, bobines, couplage, énergie) et CLI de rapport |
 | `tools/coilgen/` | générateur complet de la carte bobines (spirales, LED, joint) |
 | `tools/analoggen/` | générateur complet de la carte analogique (schéma, PCB routé, BOM, SPICE) |
+| `tools/quadgen/` | générateur du quadrant 4 x 4 : spirales, échappées, LED, distribution, bande de frontal |
+| `hardware/quadrant/` | projet KiCad du quadrant généré |
 | `hardware/mockup-2x2/` | artefacts générés : KiCad, gerbers, BOM JLC, guides |
 | `firmware/mockup/` | firmware Nucleo G474 en CMSIS nu |
 | `mechanical/` | CadQuery : plateau 8 x 8 (module, bases, ailes), horloge, pucks, gabarits ; rendus et vue interactive |
@@ -55,7 +57,7 @@ pas.
 | `docs/adr/` | décisions d'architecture numérotées |
 | `docs/notes/` | la présente base de connaissances |
 | `docs/serie/` | série vidéo : bible, épisodes, tournage, montage |
-| `tests/` | 77 tests, dont le couloir bloquant en CI et l'empilement du plateau |
+| `tests/` | 85 tests, dont le couloir bloquant en CI, l'empilement du plateau et le quadrant |
 
 ## Notes
 

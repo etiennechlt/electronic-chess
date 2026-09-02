@@ -29,10 +29,14 @@ géométrie dérivée et tests (`tests/test_plateau.py`), modèles CadQuery
 du plateau et de l'horloge, rendus à tampon de profondeur, vue 3D
 interactive, exports STEP, ADR 0010 et [note 10](10-plateau-8x8-et-horloge.md).
 
-Reste, dans l'ordre : générateur de quadrant (spirales 4 x 4, frontal,
-nappe), schéma du cerveau puis cartes puissance et moteurs, carte et
-firmware de l'horloge, mesures M1 à M11 sur un quadrant plus le
-cerveau. Les points ci-dessous concernent la maquette et ne sont
+Le générateur de quadrant (`tools/quadgen`) produit la carte 4 x 4 :
+spirales, échappées vers la bande de frontal, 32 LED et leur
+distribution, connecteur FPC, contrôle d'isolement exact
+([README](../../hardware/quadrant/README.md)). Reste, dans l'ordre :
+cellules du frontal, mux, décodeurs et chaîne d'amplification du
+quadrant (schéma, placement, routage), schéma du cerveau puis cartes
+puissance et moteurs, carte et firmware de l'horloge, mesures M1 à M11
+sur un quadrant plus le cerveau. Les points ci-dessous concernent la maquette et ne sont
 conservés que comme référence.
 
 ## Le reste côté dépôt (maquette, référence)

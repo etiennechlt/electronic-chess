@@ -55,6 +55,19 @@ DRC) et, pour la carte analogique, l'uuid de la feuille racine du
 schéma : il est réémis à chaque build, donc il ne peut pas dériver de
 la carte qu'il accompagne.
 
+## Quadrant 4 x 4 (~30 s)
+
+```bash
+PYTHONPATH=tools .venv/bin/python -m quadgen build --render docs/images/quadrant.png
+```
+
+Régénère `hardware/quadrant/quadrant.kicad_pcb`, son projet
+`quadrant.kicad_pro` et le rendu. Le build échoue (code 1) si une route
+de la chaîne LED ou un retour d'alimentation est ouvert, ou si le
+contrôle d'isolement exact trouve un défaut ; `tests/test_quadgen.py`
+reconstruit la carte et vérifie la source unique des LED, les
+échappées vers les cellules et l'export `kicad-cli`.
+
 ## Plateau 8 x 8 et horloge (ADR 0010)
 
 ```bash
@@ -95,7 +108,7 @@ de `mockup.nucleo_pins` ou `mockup.coil_board.leds` dans le yaml.
 
 | Artefact | Chemin |
 |---|---|
-| Projets KiCad | `hardware/mockup-2x2/*/[nom].kicad_pro` |
+| Projets KiCad | `hardware/quadrant/quadrant.kicad_pro`, `hardware/mockup-2x2/*/[nom].kicad_pro` |
 | Gerbers bobines | `hardware/mockup-2x2/coil-board/coil-board-gerbers.zip` |
 | Gerbers analogique | `hardware/mockup-2x2/analog-board/analog-board-gerbers.zip` |
 | BOM et placements JLC | `hardware/mockup-2x2/analog-board/jlc-*.csv` |

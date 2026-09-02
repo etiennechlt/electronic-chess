@@ -22,10 +22,11 @@ dev = [
 ]
 
 [tool.setuptools]
-packages = ["chessboard_calc", "coilgen"]
+packages = ["chessboard_calc", "coilgen", "quadgen"]
 
 [tool.setuptools.package-dir]
 coilgen = "tools/coilgen"
+quadgen = "tools/quadgen"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

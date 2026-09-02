@@ -172,8 +172,8 @@ def check(cfg: BoardConfig) -> list[str]:
         problems.append("front end parts taller than the air clearance")
     if not led_clears_spiral(cfg):
         problems.append("LED body overlaps the sense spiral")
-    if cfg.plateau.quadrant.front_end_strip_mm > cfg.plateau.wood.border_mm + 5.0:
-        problems.append("front end strip sticks out far beyond the wood border")
+    if cfg.plateau.quadrant.front_end_strip_mm > cfg.plateau.wood.border_mm:
+        problems.append("front end strip sticks out beyond the wood border")
     ck = cfg.clock
     slope_len = math.hypot(ck.slope_end_mm, ck.height_rear_mm - ck.height_front_mm)
     win_w, win_h = ck.display.window_mm

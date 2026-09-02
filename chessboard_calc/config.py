@@ -408,7 +408,51 @@ class MockupCfg(_Model):
 
 class QuadrantLinkCfg(_Model):
     connector: str
+    footprint: str
     pins: int
+    pinout: tuple[str, ...]
+
+    @model_validator(mode="after")
+    def _pinout_complete(self) -> QuadrantLinkCfg:
+        if len(self.pinout) != self.pins:
+            raise ValueError("link pinout must name every pin")
+        return self
+
+
+class LedViaCfg(_Model):
+    pad_mm: float
+    drill_mm: float
+    stub_mm: float
+
+
+class QuadrantRoutingCfg(_Model):
+    track_clearance_mm: float
+    edge_clearance_mm: float
+    route_track_mm: float
+    lane_pitch_mm: float
+    ring_track_mm: float
+    led_via: LedViaCfg
+    grid_mm: float
+
+    @model_validator(mode="after")
+    def _lane_pitch(self) -> QuadrantRoutingCfg:
+        if self.lane_pitch_mm < self.route_track_mm + self.track_clearance_mm - 1e-9:
+            raise ValueError("lane pitch must cover track width plus clearance")
+        return self
+
+
+class StripCfg(_Model):
+    connector_zone_mm: float
+    cell_pitch_mm: float
+    middle_zone_mm: float
+    lane_x0_mm: float
+    cell_entry_x_mm: float
+
+
+class FrontEndCfg(_Model):
+    drive_decoder: str
+    damp_decoder: str
+    flyback_diode: str
 
 
 class QuadrantCfg(_Model):
@@ -418,6 +462,11 @@ class QuadrantCfg(_Model):
     front_end_strip_mm: float
     front_end_max_height_mm: float
     link: QuadrantLinkCfg
+    routing: QuadrantRoutingCfg
+    strip: StripCfg
+    front_end: FrontEndCfg
+    mounting_hole_d_mm: float
+    mounting_hole_inset_mm: float
 
 
 class PlateauLedsCfg(_Model):

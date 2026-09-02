@@ -279,8 +279,9 @@ surtout personne ne dessine seize spirales 4 couches à la main.
 
 ## 14. Ce qui reste
 
-1. Générateur de quadrant (`coilgen` étendu à la grille 4 x 4, frontal
-   sur la bande de bord, nappe), brochage de la nappe dans le yaml.
+1. Générateur de quadrant : fait pour la couche de détection
+   (`tools/quadgen`, [README](../../hardware/quadrant/README.md)) ;
+   reste le frontal de la bande (cellules, mux, décodeurs, chaîne).
 2. Schéma du cerveau généré depuis le yaml, placement à la main dans
    KiCad ; cartes puissance et moteurs.
 3. Carte de l'horloge et son firmware ESP32-C3 ; protocole BLE
