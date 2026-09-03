@@ -151,6 +151,25 @@ quatre commandes.
   d'empilement refaits pour le plateau 8 x 8 ; note 13 (ouvrir,
   vérifier, tester) et note 07 réécrite en feuille de route.
 
+## 03/09/2026, revue des cartes (lot 1)
+
+- Le schéma généré du quadrant reliait GND à 5VA (groupes qui se
+  chevauchaient) ; l'émetteur espace désormais les groupes d'après leur
+  hauteur réelle et un test compare la netlist KiCad de chaque carte au
+  circuit. Le DRC de KiCad, lancé par `pcbnew` (`tools/drc.py`), a montré
+  que le lecteur de cours d'empreinte ne comprenait pas les bibliothèques
+  KiCad 7 : cellule du quadrant recomposée sur les cours réelles, module
+  ESP32 au bord du cerveau avec son antenne hors carte, cour réduite et
+  assumée sur l'horloge ; règles du projet alignées sur les vias
+  d'éventail, vias hors des trous de connecteurs, net tie des bobines
+  déplacé hors du trou de via.
+- Erreurs de câblage corrigées : FET d'entrée du BQ24610 en canal P
+  (ACDRV actif bas), sources des FET DSG et CHG du BQ76920, réseau de
+  température et consignes de charge (50 mohms, 1 A), UART de l'ESP32
+  croisée sur le cerveau, lecture de charge et rétroéclairage de
+  l'horloge. Détail et points restants dans la
+  [note 14](14-revue-des-cartes.md).
+
 ## Où en est la ligne de temps
 
 Phase 0 faite ; la phase 1 (maquette) est conçue mais ne sera pas

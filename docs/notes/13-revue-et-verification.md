@@ -10,8 +10,8 @@ Les cinq projets sont dans `hardware/<carte>/<carte>.kicad_pro`
 (`quadrant`, `brain`, `power`, `motion`, `clock`) ; la maquette 2 x 2
 de référence dans `hardware/mockup-2x2/`.
 
-- Fichiers au format KiCad 7 : KiCad 8 ou 9 les ouvre et propose la
-  conversion au premier enregistrement. Symboles et empreintes sont
+- Fichiers au format KiCad 7 : KiCad 7, 8 ou 9 les ouvrent, 8 et 9
+  proposent la conversion au premier enregistrement. Symboles et empreintes sont
   embarqués, rien à installer. Le `.kicad_prl` créé à l'ouverture est
   ignoré par git ; une régénération remet le projet dans son état
   canonique (voir la [note 08](08-regenerer.md)), donc modifier le
@@ -29,9 +29,9 @@ de référence dans `hardware/mockup-2x2/`.
 | Question | Où c'est garanti | Ce qu'il reste à faire à la main |
 |---|---|---|
 | Le PCB suit le schéma | même objet `Circuit` pour les deux, netlist exportée et comparée par les tests | rien, sauf après une retouche manuelle dans pcbnew : relancer « Mettre à jour le PCB depuis le schéma » ne s'applique pas (schéma généré), comparer plutôt avec `Outils > Comparer les netlists` |
-| Les broches des circuits intégrés | symboles des bibliothèques officielles KiCad, câblage par nom de broche (`pins_by_name`), refus de toute broche inconnue ou oubliée | valider contre la fiche technique les brochages marqués « à vérifier » : STM32G474 (fonctions alternatives des ADC, USART3 sur PC10 et PC11, I2C1 sur PA15 et PB7), BQ24610 et BQ76920 (application type), orientation des câbles FPC et USB-C ; liste dans la [note 11](11-cartes-du-plateau.md) |
+| Les broches des circuits intégrés | symboles des bibliothèques officielles KiCad, câblage par nom de broche (`pins_by_name`), refus de toute broche inconnue ou oubliée, netlist exportée par `kicad-cli` égale au circuit (`tests/test_schematics.py`) | relus dans la [note 14](14-revue-des-cartes.md) : STM32G474 conforme, BQ24610 et BQ76920 corrigés (FET d'entrée, FET de protection, réseau TS, consignes), UART de l'ESP32 corrigée ; restent à confirmer sur les fiches les formules ISET du BQ24610 et l'ADG1607 en 5 V simple, et à trancher le type des câbles FPC |
 | Les valeurs des composants | dérivées du yaml par `chessboard_calc` et épinglées par `pytest` ; `python -m chessboard_calc.report` imprime tout (fréquences des 12 classes, Q, séparation, bobines, entrefer, budget de puissance, autonomie) | les consignes de charge (ISET, ACSET, diviseur VFB, CTN) suivent l'application type de TI : revue en lisant la fiche BQ24610 ; les diviseurs de mesure et les RC de sortie se relisent sur le schéma |
-| Les pistes | contrôle d'isolement exact (shapely) à chaque build et sur chaque route candidate, largeur et isolement dans le `.kicad_pro` | lancer le DRC de KiCad 9 (`Inspection > Contrôle des règles`) ; fermer les nets ouverts listés dans le README de chaque carte ; confirmer les vias 0,45 mm chez le fabricant |
+| Les pistes | contrôle d'isolement exact (shapely) à chaque build et sur chaque route candidate, largeur et isolement dans le `.kicad_pro`, règles du projet égales à ce que le build a dessiné | lancer le DRC : `tools/drc.py` avec le Python de KiCad (`/usr/bin/python3 tools/drc.py hardware/brain/brain.kicad_pcb`), ou `Inspection > Contrôle des règles` dans KiCad 9 ; fermer les nets ouverts listés dans le README de chaque carte ; confirmer les vias 0,45 mm chez le fabricant. Bilan de la revue du 03/09/2026 dans la [note 14](14-revue-des-cartes.md) |
 | L'intégrité de signal | plan de masse continu, RC devant chaque ADC, buck 2,5 MHz en PWM forcé loin de l'analogique, lignes de mesure sur B.Cu et grille sur In2 du quadrant ([note 11](11-cartes-du-plateau.md)) | revue visuelle des retours de masse sous les lignes de mesure après fermeture manuelle des nets |
 | La mécanique | `tests/test_plateau.py` (empilement, empreintes des cartes dans la base, LED dans leur case), vues éclatées | rien avant impression |
 
@@ -69,9 +69,11 @@ Dans l'ordre, un quadrant seul puis le cerveau :
    DRIVE_BUS, VIN, GND sur les points de test TP1 à TP4), absence de
    court entre rails, chaque bobine mesurée entre ses deux bornes
    (environ 16 µH, quelques ohms).
-2. **Cerveau seul** : alimenter par USB-C, vérifier 5 V, 3,3 V, 5VA
-   dans l'ordre, courant au repos, console série (`firmware/board`,
-   115200 bauds, commande `h`).
+2. **Cerveau seul** : alimenter par une alimentation de laboratoire
+   limitée en courant sur VBAT_IN (embase J10, 9 à 12,6 V ; le USB-C ne
+   porte que les données), vérifier 5 V, 3,3 V, 5VA dans l'ordre,
+   courant au repos, console série (`firmware/board`, 115200 bauds,
+   commande `h`).
 3. **Quadrant sur le cerveau** : nappe FPC, `1` scanne les 16 bobines,
    CSV `q,coil,sq,fa_hz,fb_hz,amp_mv,snr_db10`. Un puck de test posé
    sur une case doit donner sa fréquence de classe et un SNR positif.

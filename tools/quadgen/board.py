@@ -54,6 +54,16 @@ CAP_VIA_DY = 1.5  # cap vias, toward the square center
 PIN_VIA_STEP = 1.2  # staggered vias behind the FPC pads
 FP_LED = "LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm"
 FP_CAP = "Capacitor_SMD:C_0603_1608Metric"
+CHECK_SLOP_MM = 0.001  # numerical slop of the exact clearance checks
+# Coil net tie on the B.Cu lead-in arc, distances along the arc from the
+# In2 to B.Cu junction via: pad B (net C{k}_B), pad A behind it joined
+# inside the tie, the wide spiral track (round ends) stopping short of
+# pad B, the thin escape track starting inside pad B.
+TIE_ALONG_MM = 2.5
+TIE_PAD_MM = 0.6
+TIE_STEP_MM = 0.58
+TIE_WIDE_END_MM = 1.3
+TIE_THIN_START_MM = 0.1
 
 
 @dataclass
@@ -162,8 +172,16 @@ class Builder:
     def via(
         self, net: str, x: float, y: float, pad: float | None = None, drill: float | None = None
     ) -> None:
+        """A via, unless one of the same net already covers this point (the
+        strip router restarts from the escape via of a cell entry and may
+        put its own a lattice cell away: two drills that close are a
+        fabrication error, and the existing pad already joins the track)."""
         pad = self.rt.led_via.pad_mm if pad is None else pad
         drill = self.rt.led_via.drill_mm if drill is None else drill
+        for v in self.res.vias:
+            reach = min(v.pad, pad) / 2.0 - 0.02
+            if v.net == net and (v.x - x) ** 2 + (v.y - y) ** 2 <= reach * reach:
+                return
         self.board.via(x, y, pad, drill, self.board.net(net))
         self.res.vias.append(Via(net, float(x), float(y), pad, drill))
         self.res.led_vias.append((float(x), float(y)))
@@ -196,10 +214,12 @@ class Builder:
 
     # ------------------------------------------------------------ pieces
     def spirals(self) -> None:
-        """Layers 1 to 3 and the two first stacking vias carry C{k}_A; the
-        In2 to B.Cu junction is a net tie footprint whose B.Cu pad starts
-        C{k}_B, so the spiral is an inductor between two nets on the board
-        exactly as in the schematic (NT{k})."""
+        """The four layers, the three stacking vias and the first
+        millimeters of the B.Cu lead-in arc carry C{k}_A; a net tie of two
+        touching B.Cu pads on that arc starts C{k}_B, which runs to the
+        terminal as a thin track. The spiral is an inductor between two
+        nets on the board exactly as in the schematic (NT{k}), and no
+        copper of one net ever covers a hole of the other."""
         lay, cfg = self.lay, self.cfg
         via_drill = cfg.sense_coil.via_drill_mm
         via_pad = 2.0 * via_drill
@@ -215,37 +235,68 @@ class Builder:
             )
             dbg = CoilDebug(coil.net, coil.center, paths, [], coil.terminal, [])
             for i, path in enumerate(paths):
-                net = net_b if i == len(paths) - 1 else net_a
-                self.board.polyline(path.points, lay.spiral_track, path.layer, self.board.net(net))
+                if i == len(paths) - 1:
+                    self._tied_last_layer(coil, path, net_a, net_b)
+                    continue
+                self.board.polyline(
+                    path.points, lay.spiral_track, path.layer, self.board.net(net_a)
+                )
                 self.res.tracks.append(
                     Track(
-                        net,
+                        net_a,
                         path.layer,
                         lay.spiral_track,
                         [tuple(map(float, p)) for p in path.points],
                     )
                 )
-            for i, (a, _b) in enumerate(zip(paths, paths[1:], strict=False)):
+            for a, _b in zip(paths, paths[1:], strict=False):
                 jx, jy = map(float, a.points[-1])
                 dbg.vias.append((jx, jy))
-                if i < len(paths) - 2:
-                    self.board.via(jx, jy, via_pad, via_drill, self.board.net(net_a))
-                    self.res.vias.append(Via(net_a, jx, jy, via_pad, via_drill))
-                else:
-                    self.net_tie(f"NT{coil.idx + 1}", jx, jy, via_pad, via_drill, net_a, net_b)
+                self.board.via(jx, jy, via_pad, via_drill, self.board.net(net_a))
+                self.res.vias.append(Via(net_a, jx, jy, via_pad, via_drill))
             self.res.coils.append(dbg)
 
-    def net_tie(
-        self, ref: str, x: float, y: float, pad: float, drill: float, net_a: str, net_b: str
-    ) -> None:
-        """quadgen:COIL_TIE, the through pad of the last stacking via (net A)
-        under a B.Cu pad of net B: KiCad's net_tie_pad_groups makes the
-        overlap legal, and the two nets stay distinct for the router."""
+    def _tied_last_layer(self, coil, path: LayerPath, net_a: str, net_b: str) -> None:
+        """B.Cu layer of a coil: wide spiral track of net A up to the tie,
+        the tie, then the thin track of net B along the rest of the path."""
+        pts = np.asarray(path.points, dtype=float)
+        seg = np.linalg.norm(np.diff(pts, axis=0), axis=1)
+        s = np.concatenate([[0.0], np.cumsum(seg)])
+
+        def at(d: float) -> tuple[float, float]:
+            x = float(np.interp(d, s, pts[:, 0]))
+            y = float(np.interp(d, s, pts[:, 1]))
+            return round(x, 4), round(y, 4)
+
+        s_tie = TIE_ALONG_MM
+        wide = [tuple(map(float, p)) for p in pts[s < s_tie - TIE_WIDE_END_MM]]
+        wide.append(at(s_tie - TIE_WIDE_END_MM))
+        self.board.polyline(wide, self.lay.spiral_track, path.layer, self.board.net(net_a))
+        self.res.tracks.append(Track(net_a, path.layer, self.lay.spiral_track, wide))
+        thin = [at(s_tie - TIE_THIN_START_MM)] + [tuple(map(float, p)) for p in pts[s > s_tie]]
+        self.board.polyline(thin, self.w, path.layer, self.board.net(net_b))
+        self.res.tracks.append(Track(net_b, path.layer, self.w, thin))
+        bx, by = at(s_tie)
+        px, py = at(s_tie + 0.05)
+        qx, qy = at(s_tie - 0.05)
+        ux, uy = px - qx, py - qy
+        norm = (ux * ux + uy * uy) ** 0.5
+        ux, uy = ux / norm, uy / norm
+        # footprint rotation putting pad A (local +x) behind pad B along the arc
+        rot = np.degrees(np.arctan2(uy, -ux))
+        self.net_tie(f"NT{coil.idx + 1}", bx, by, rot, net_a, net_b)
+
+    def net_tie(self, ref: str, x: float, y: float, rot: float, net_a: str, net_b: str) -> None:
+        """quadgen:COIL_TIE: two touching B.Cu pads, pad 2 (net B) at the
+        origin and pad 1 (net A) one step along local +x. KiCad's
+        net_tie_pad_groups makes their contact legal, the two nets stay
+        distinct for the router and the checks (_tie_pair)."""
         ia, ib = self.board.net(net_a), self.board.net(net_b)
+        pad = TIE_PAD_MM
         self.board.body.append(
             "\n".join(
                 [
-                    f'  (footprint "quadgen:COIL_TIE" (layer "F.Cu") (at {x:g} {y:g})',
+                    f'  (footprint "quadgen:COIL_TIE" (layer "F.Cu") (at {x:g} {y:g} {rot:.3f})',
                     "    (attr smd exclude_from_pos_files exclude_from_bom)",
                     '    (net_tie_pad_groups "1,2")',
                     f'    (fp_text reference "{ref}" (at 0 -1.5) (layer "F.Fab")',
@@ -254,17 +305,21 @@ class Builder:
                     '    (fp_text value "spirale" (at 0 1.5) (layer "F.Fab")',
                     "      (effects (font (size 0.8 0.8) (thickness 0.12)))",
                     "    )",
-                    f'    (pad "1" thru_hole circle (at 0 0) (size {pad:g} {pad:g}) '
-                    f'(drill {drill:g}) (layers "*.Cu") (net {ia} "{net_a}"))',
-                    f'    (pad "2" smd rect (at 0 0) (size {pad:g} {pad:g}) (layers "B.Cu") '
-                    f'(net {ib} "{net_b}"))',
+                    f'    (pad "1" smd rect (at {TIE_STEP_MM:g} 0 {rot:.3f}) '
+                    f'(size {pad:g} {pad:g}) (layers "B.Cu") (net {ia} "{net_a}"))',
+                    f'    (pad "2" smd rect (at 0 0 {rot:.3f}) (size {pad:g} {pad:g}) '
+                    f'(layers "B.Cu") (net {ib} "{net_b}"))',
                     "  )",
                 ]
             )
         )
-        self.res.vias.append(Via(net_a, x, y, pad, drill))
-        self.res.pads.append(PadItem(net_b, "B.Cu", x, y, pad, pad))
-        self.res.led_vias.append((x, y))
+        th = np.radians(rot)
+        ax = x + TIE_STEP_MM * float(np.cos(th))
+        ay = y - TIE_STEP_MM * float(np.sin(th))
+        # axis-aligned boxes of the rotated squares, conservative for the checks
+        side = pad * (abs(float(np.cos(th))) + abs(float(np.sin(th))))
+        self.res.pads.append(PadItem(net_a, "B.Cu", round(ax, 4), round(ay, 4), side, side))
+        self.res.pads.append(PadItem(net_b, "B.Cu", x, y, side, side))
 
     def escapes(self) -> None:
         """Both terminals follow the same lane; A (F.Cu) enters its cell at
@@ -699,7 +754,7 @@ class Builder:
         from shapely.geometry import box
 
         W = self.lay.strip_w
-        clr = self.clr - 0.02
+        clr = self.clr - CHECK_SLOP_MM
         key = (len(self.res.tracks), len(self.res.vias))
         if getattr(self, "_clash_key", None) != key:
             by_layer: dict[str, list] = {}
@@ -774,7 +829,7 @@ class Builder:
         by_layer: dict[str, list] = {}
         for it in items:
             by_layer.setdefault(it[1], []).append(it)
-        clr = self.clr - 0.02  # tolerance on the raster path rounding
+        clr = self.clr - CHECK_SLOP_MM
         for layer, its in by_layer.items():
             geoms = [g for _n, _l, g in its]
             tree = STRtree(geoms)
@@ -791,7 +846,7 @@ class Builder:
                         errors.append(
                             f"{layer}: {net} vs {its[j][0]} at ({c.x:.1f},{c.y:.1f}) gap {d:.3f}"
                         )
-        edge = self.rt.edge_clearance_mm - 0.02
+        edge = self.rt.edge_clearance_mm - CHECK_SLOP_MM
         for net, _layer, g in items:
             if net == "__hole__":
                 continue
@@ -851,20 +906,25 @@ def build_quadrant(cfg: BoardConfig, strip: bool = True) -> BuildResult:
 
 
 def design_rules(cfg: BoardConfig, result: BuildResult) -> DesignRules:
+    """What the DRC must accept: every track width and via size the build
+    drew, the fanout vias of the fine-pitch packages included."""
     rt = cfg.plateau.quadrant.routing
     coil_via_pad = 2.0 * cfg.sense_coil.via_drill_mm
     widths = sorted({round(t.width, 3) for t in result.tracks})
+    vias = sorted({(round(v.pad, 3), round(v.drill, 3)) for v in result.vias}) or [
+        (coil_via_pad, cfg.sense_coil.via_drill_mm)
+    ]
     return DesignRules(
         clearance_mm=rt.track_clearance_mm,
         track_width_mm=rt.route_track_mm,
         via_diameter_mm=rt.led_via.pad_mm,
         via_drill_mm=rt.led_via.drill_mm,
         min_track_width_mm=min(widths),
-        min_via_diameter_mm=min(coil_via_pad, rt.led_via.pad_mm),
-        min_hole_mm=min(cfg.sense_coil.via_drill_mm, rt.led_via.drill_mm),
+        min_via_diameter_mm=min(pad for pad, _drill in vias),
+        min_hole_mm=min(drill for _pad, drill in vias),
         edge_clearance_mm=rt.edge_clearance_mm,
         track_widths_mm=tuple(widths),
-        via_sizes_mm=((coil_via_pad, cfg.sense_coil.via_drill_mm), (0.8, 0.4)),
+        via_sizes_mm=tuple(vias),
     )
 
 

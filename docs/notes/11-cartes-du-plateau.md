@@ -52,8 +52,10 @@ avant fabrication. Les projets KiCad, BOM et placements sont dans
   combien de cellules de départ et d'arrivée étaient utilisables, ce
   qui distingue une broche murée d'un chemin introuvable.
 - **Contrôle** : isolement exact (shapely) sur tout le cuivre à chaque
-  build, `kicad-cli` exporte le schéma en netlist dans les tests ; le
-  DRC de KiCad 9 reste à lancer à l'ouverture.
+  build, `kicad-cli` exporte le schéma en netlist dans les tests et la
+  compare au circuit ; le DRC de KiCad se lance par `tools/drc.py`
+  (module `pcbnew`) ou à l'ouverture, les règles du projet étant celles
+  du build (vias d'éventail comprises).
 - **Hygiène de signal** : plan de masse continu sur chaque carte ;
   sur le quadrant, lignes de mesure (après les écrêteurs, avant les
   mux) sur B.Cu et lignes de grille sur In2, bus d'impulsion et
@@ -61,11 +63,14 @@ avant fabrication. Les projets KiCad, BOM et placements sont dans
   RC devant chaque ADC, buck à 2,5 MHz en PWM forcé dans un coin,
   module radio dans le coin opposé aux connecteurs de quadrant.
 - **Antenne du module ESP32** : l'origine de l'empreinte n'est pas au
-  centre du module (l'antenne dépasse de la cour de 6,75 mm), ce que
-  le contrôle des cours prend en compte. Sur l'horloge l'antenne
-  dépasse du bord de carte ; sur le cerveau elle repose sur la carte,
-  sous une zone d'exclusion de cuivre sur les quatre couches
-  (`keepout_rect`, que le routeur respecte aussi).
+  centre du module, et sa cour KiCad est la zone de dégagement d'antenne
+  recommandée par Espressif (48 x 41 mm), bien plus grande que le corps.
+  Sur les deux cartes le module est au bord, antenne hors de la carte ;
+  le cerveau respecte la cour entière (rien d'autre dans le coin
+  sud-est), l'horloge la réduit à la largeur du module, choix assumé
+  dans `boardgen/clock.py` (BLE à courte portée, encodeur et
+  microrupteur de part et d'autre). Si l'antenne recouvrait la carte,
+  `antenna_keepout` y interdirait tout cuivre.
 
 ## Quadrant
 
@@ -93,9 +98,10 @@ partageant un bus de commande, chaîne LED sérialisée, buck TPS62130,
 LDO logique, îlot analogique 5VA, UART isolée vers un module
 ESP32-S3-WROOM-1 ou une embase Pi (cavalier), connecteurs vers les
 cartes moteurs et puissance, buzzer, LED, boutons. Le tableau des
-broches est dans `plateau.brain.mcu_pins` ; il est à valider contre la
+broches est dans `plateau.brain.mcu_pins` ; il a été relu contre la
 fiche technique (fonctions alternatives des quatre entrées ADC, USART3
-sur PC10 et PC11, I2C1 sur PA15 et PB7) avant fabrication.
+sur PC10 et PC11, I2C1 sur PA15 et PB7), voir la
+[note 14](14-revue-des-cartes.md).
 
 ## Puissance
 
@@ -103,8 +109,10 @@ BQ24610 (chargeur 3S synchrone) alimenté en 20 V par un module
 déclencheur USB-C PD du commerce, BQ76920 (AFE de protection, FET en
 bas côté), INA219 (jauge), bouton de réveil, fusible, cellules sur JST
 XH. Les valeurs de consigne (ISET, ACSET, diviseur VFB, CTN) suivent
-l'application type de TI et sont à vérifier en revue. Tous les FET
-sont des AO3400A : la carte ne voit jamais plus de 1,5 A.
+l'application type de TI, revues dans la [note 14](14-revue-des-cartes.md)
+(mesure de charge 50 mohms, 1 A). Les FET sont des AO3400A, sauf les
+deux FET d'entrée en AO3401A que l'ACDRV actif bas du BQ24610 pilote :
+la carte ne voit jamais plus de 1,5 A.
 
 ## Moteurs
 
@@ -124,19 +132,15 @@ parois), encodeur EC11 à l'avant droit, buzzer. La carte fait
 
 ## État des builds
 
-| Carte | Composants | Nets fermés | Nets ouverts (à finir dans pcbnew) | Défauts d'isolement |
-|---|---|---|---|---|
-| Quadrant (frontal) | 296 | tous sauf 8 | 8 | 0 |
-| Cerveau | 113 | 76 | 25 | 0 |
-| Puissance | 82 | 43 | 10 | 0 |
-| Moteurs | 31 | 27 | 1 | 0 |
-| Horloge | 46 | 29 | 6 | 0 |
-
-Les listes nominatives sont dans le README de chaque carte. Ce qui reste
+Les nombres à jour (composants, nets fermés et ouverts, DRC KiCad) sont
+dans la [note 14](14-revue-des-cartes.md), section 3, et dans le README
+de chaque carte avec la liste nominative des nets ouverts. Ce qui reste
 ouvert se concentre sur trois familles : les broches USB-C (pas de
 0,5 mm sur deux rangées, l'éventail n'y tient pas), quelques nets de
 puissance vers les gros connecteurs, et des descentes de masse dans
-les zones denses. Rien de ce qui est tracé ne viole les règles.
+les zones denses. Rien de ce qui est tracé ne viole les règles : le
+DRC de KiCad ne signale plus que les nets ouverts et la sérigraphie
+depuis la revue.
 
 | Quadrant | Cerveau |
 |---|---|
@@ -148,15 +152,20 @@ les zones denses. Rien de ce qui est tracé ne viole les règles.
 
 ## Avant fabrication
 
-1. Ouvrir chaque projet dans KiCad 9, lancer le DRC et fermer les
-   nets listés ouverts par le générateur.
-2. Valider les brochages non couverts par les bibliothèques : broches
-   du STM32G474 (fonctions alternatives), application type du BQ24610
-   et du BQ76920, orientation du câble des connecteurs FPC et USB-C.
-3. Compléter les codes LCSC manquants dans les BOM (`jlc-bom.csv`
+La revue du 03/09/2026 ([note 14](14-revue-des-cartes.md)) a relu les
+brochages et corrigé les générateurs ; ce qui reste :
+
+1. Fermer dans pcbnew les nets listés ouverts par le générateur, puis
+   relancer `tools/drc.py`.
+2. Trancher les points ouverts de la note 14 (LDO 5VA, CTN des cellules,
+   plafond de luminosité des LED, type et orientation des nappes FPC,
+   position du USB-C du cerveau dans la base).
+3. Confirmer sur les fiches les formules ISET du BQ24610 et l'ADG1607 en
+   5 V simple.
+4. Compléter les codes LCSC manquants dans les générateurs (`jlc-bom.csv`
    n'exporte que les lignes qui en ont un).
 5. Confirmer auprès du fabricant les vias d'éventail (0,45 mm, perçage
-   0,2 mm) sur les cartes à deux couches ; sinon passer à 0,6 mm et
-   laisser le routeur finir ces sorties dans pcbnew.
-4. Vérifier la hauteur des composants du frontal de quadrant (1,8 mm
+   0,2 mm) ; sinon passer à 0,6 mm et laisser le routeur finir ces
+   sorties dans pcbnew.
+6. Vérifier la hauteur des composants du frontal de quadrant (1,8 mm
    maximum sous le bois) sur la BOM finale.

@@ -78,6 +78,17 @@ celui qui évite les reprises les plus chères.
 **Sortie.** Zéro erreur DRC, zéro net ouvert, liste des « à vérifier »
 cochée, BOM avec un code LCSC ou une source par ligne.
 
+**État au 03/09/2026.** Revue faite ([note 14](14-revue-des-cartes.md)) :
+brochages relus, huit erreurs bloquantes corrigées dans les générateurs
+(court-circuit GND/5VA du schéma du quadrant, FET d'entrée et de
+protection de la carte puissance, réseau de température et consignes
+de charge, UART de l'ESP32, rétroéclairage et lecture de charge de
+l'horloge), DRC KiCad ramené aux nets ouverts et à la sérigraphie,
+outil `tools/drc.py` et test netlist contre circuit ajoutés. Reste :
+fermer les nets ouverts, trancher le LDO 5VA, la CTN des cellules, le
+plafond de luminosité et le type des nappes, confirmer trois points sur
+les fiches, compléter les codes LCSC.
+
 ### 2. Simulation
 
 **Quoi.** Lancer `chain-spice.cir` (AD8421 puis Sallen-Key) et écrire

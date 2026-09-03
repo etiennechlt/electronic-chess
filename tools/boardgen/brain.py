@@ -27,12 +27,22 @@ from analoggen.circuit import (
     Part,
     R,
 )
+from analoggen.symlib import load_symbol
 
 from chessboard_calc.config import BoardConfig
 
 from .core import GenericBoard, Spec, pins_by_name, shelf
 
 GND = "GND"
+
+# ESP32-S3-WROOM-1 placed with rotation 270: its body runs from x - 12.75
+# to x + 12.75, the antenna occupies the last 6 mm (x + 6.75 onward), the
+# pad rows sit at y - 9 and y + 9. On the brain the antenna hangs past the
+# east edge, the module sits 1 mm inside the south edge.
+ESP32_X, ESP32_Y = 113.25, 70.0
+ESP32_ANTENNA_FROM, ESP32_ANTENNA_TO, ESP32_HALF = 6.75, 12.75, 9.5
+# GenericBoard options shared by the build and the tests
+BOARD_OPTIONS = {"overhang": ("U5",)}
 
 MCU = Part(
     "MCU_ST_STM32G4",
@@ -167,8 +177,6 @@ def build_brain_circuit(cfg: BoardConfig) -> Circuit:
     for signal, pin in pins.items():
         mcu[pin] = signal
     mapped = pins_by_name(MCU, mcu)
-    from analoggen.symlib import load_symbol
-
     all_pins = {p.number for p in load_symbol(MCU.lib, MCU.symbol).pins}
     ckt.add("U1", MCU, "STM32G474RE", mapped, nc=tuple(sorted(all_pins - set(mapped))))
     for i in range(1, 6):
@@ -181,6 +189,8 @@ def build_brain_circuit(cfg: BoardConfig) -> Circuit:
     ckt.add("SW1", SW, "BOOT", {"1": "BOOT0", "2": "3V3"})
     c("C9", "100n", "NRST", GND)
     ckt.add("SW2", SW, "RESET", {"1": "NRST", "2": GND})
+    # Cortex debug 10-pin: 6 (SWO) and 8 (TDI on JTAG probes) stay open, a
+    # probe driving them must never reach the reset line
     ckt.add(
         "J6",
         SWD,
@@ -191,33 +201,28 @@ def build_brain_circuit(cfg: BoardConfig) -> Circuit:
             "3": GND,
             "4": "SWCLK",
             "5": GND,
-            "6": "NRST",
             "7": GND,
-            "8": "NRST",
             "9": GND,
             "10": "NRST",
         },
+        nc=("6", "8"),
     )
-    # USB device: data through the ESD array, CC pulled down (UFP), VBUS unused
-    ckt.add(
-        "J5",
+    # USB device: data through the ESD array, CC pulled down (UFP), VBUS
+    # unused (the board runs from the pack), SBU pins unconnected
+    usb_pins = pins_by_name(
         USBC,
-        "USB-C",
-        pins_by_name(
-            USBC,
-            {
-                "GND": GND,
-                "SHIELD": GND,
-                "VBUS": "VBUS",
-                "CC1": "CC1",
-                "CC2": "CC2",
-                "D+": "USB_DP_C",
-                "D-": "USB_DM_C",
-                "SBU1": "SBU1",
-                "SBU2": "SBU2",
-            },
-        ),
+        {
+            "GND": GND,
+            "SHIELD": GND,
+            "VBUS": "VBUS",
+            "CC1": "CC1",
+            "CC2": "CC2",
+            "D+": "USB_DP_C",
+            "D-": "USB_DM_C",
+        },
     )
+    usb_all = {p.number for p in load_symbol(USBC.lib, USBC.symbol).pins}
+    ckt.add("J5", USBC, "USB-C", usb_pins, nc=tuple(sorted(usb_all - set(usb_pins))))
     r("R3", "5k1", "CC1", GND)
     r("R4", "5k1", "CC2", GND)
     ckt.add(
@@ -261,13 +266,7 @@ def build_brain_circuit(cfg: BoardConfig) -> Circuit:
     r("R10", "100k", "BUCK_FB", GND)
     c("C13", "22u/10V", "5V", GND, part=C10U)
     c("C14", "22u/10V", "5V", GND, part=C10U)
-    ckt.add(
-        "U3",
-        LDO33,
-        "AP2112K-3.3",
-        {"1": "5V", "2": GND, "3": "5V", "4": "3V3_NC", "5": "3V3"},
-        nc=(),
-    )
+    ckt.add("U3", LDO33, "AP2112K-3.3", {"1": "5V", "2": GND, "3": "5V", "5": "3V3"}, nc=("4",))
     c("C15", "1u", "5V", GND)
     c("C16", "1u", "3V3", GND)
     ckt.add(
@@ -343,17 +342,18 @@ def build_brain_circuit(cfg: BoardConfig) -> Circuit:
         "RXD0": "ESP_RXD",
     }
     esp_pins = pins_by_name(ESP32, esp)
-    from analoggen.symlib import load_symbol as _ls
-
-    esp_all = {p.number for p in _ls(ESP32.lib, ESP32.symbol).pins}
+    esp_all = {p.number for p in load_symbol(ESP32.lib, ESP32.symbol).pins}
     ckt.add("U5", ESP32, "ESP32-S3-WROOM-1", esp_pins, nc=tuple(sorted(esp_all - set(esp_pins))))
     r("R14", "10k", "ESP_EN", "ESP_3V3")
     c("C28", "1u", "ESP_EN", GND)
     r("R15", "10k", "ESP_IO0", "ESP_3V3")
     ckt.add("SW3", SW, "ESP BOOT", {"1": "ESP_IO0", "2": GND})
     ckt.add("SW4", SW, "ESP EN", {"1": "ESP_EN", "2": GND})
-    r("R16", "0R", "COMM_TXD", "ESP_RXD")
-    r("R17", "0R", "ESP_TXD", "COMM_RXD")
+    # COMM_TXD feeds the isolator input (pin 7), COMM_RXD is its output
+    # (pin 6): the module transmits into COMM_TXD and listens on COMM_RXD;
+    # the zero ohm links come off when a Pi drives the header instead
+    r("R16", "0R", "ESP_TXD", "COMM_TXD")
+    r("R17", "0R", "COMM_RXD", "ESP_RXD")
     ckt.add(
         "J7",
         H1X06,
@@ -470,6 +470,16 @@ SPEC = Spec(
 )
 
 
+def antenna_keepout(gb: GenericBoard, at: tuple[float, float, float], width: float) -> None:
+    """No copper on any layer under the part of the module antenna that
+    lies over the board (rotation 270: antenna toward +x); nothing to do
+    when the antenna hangs entirely past the edge."""
+    ux, uy, _rot = at
+    x0, x1 = ux + ESP32_ANTENNA_FROM, min(width, ux + ESP32_ANTENNA_TO)
+    if x1 - x0 > 0.5:
+        gb.keepout_rect(x0, uy - ESP32_HALF, x1, uy + ESP32_HALF, "antenna")
+
+
 def brain_placements(ckt: Circuit) -> dict[str, tuple[float, float, float]]:
     W, H = SPEC.width, SPEC.height
     out: dict[str, tuple[float, float, float]] = {}
@@ -584,15 +594,19 @@ def brain_placements(ckt: Circuit) -> dict[str, tuple[float, float, float]]:
             10.0,
         )
     )
-    # comms: Pi header, ESP32 module at the south-east, its buttons and header
-    out["J8"] = (112.0, 41.0, 0.0)
-    out["U5"] = (104.0, 58.0, 270.0)
+    # comms: ESP32 module on the east edge, its antenna (the last 6 mm of
+    # the module) past the board edge as Espressif recommends; the KiCad
+    # courtyard is the 15 mm antenna clearance and keeps every other part
+    # off the south-east corner. Pi header north of it, buttons and header
+    # west of it.
+    out["U5"] = (ESP32_X, ESP32_Y, 270.0)
+    out["J8"] = (106.0, 32.0, 0.0)
     out["J7"] = (80.0, 62.0, 0.0)
-    out["SW3"] = (66.0, 75.0, 0.0)
-    out["SW4"] = (90.0, 75.0, 0.0)
+    out["SW3"] = (70.0, 75.0, 0.0)
+    out["SW4"] = (58.0, 75.0, 0.0)
     # south edge: motion and power connectors, buzzer, LEDs
-    out["J9"] = (24.0, 74.5, 90.0)
-    out["J10"] = (109.0, 78.0, 180.0)
+    out["J9"] = (27.0, 74.5, 90.0)
+    out["J10"] = (94.0, 77.5, 180.0)
     out["BZ1"] = (14.0, 66.0, 0.0)
     out.update(
         shelf(
@@ -603,7 +617,8 @@ def brain_placements(ckt: Circuit) -> dict[str, tuple[float, float, float]]:
             60.0,
         )
     )
-    for i, (x, y) in enumerate(((5.0, 5.0), (W - 5.0, 5.0), (5.0, H - 5.0), (W - 5.0, H - 5.0)), 1):
+    # the fourth hole leaves the south-east corner to the radio module
+    for i, (x, y) in enumerate(((5.0, 5.0), (W - 5.0, 5.0), (5.0, H - 5.0), (W - 5.0, 42.5)), 1):
         out[f"H{i}"] = (x, y, 0.0)
     return out
 
@@ -616,12 +631,9 @@ def build_brain(cfg: BoardConfig):
         or cfg.plateau.brain.layers != SPEC.layers
     ):
         raise ValueError("plateau.brain.board_mm / layers disagree with boardgen.brain.SPEC")
-    gb = GenericBoard(SPEC, ckt, placements, generator="boardgen")
+    gb = GenericBoard(SPEC, ckt, placements, generator="boardgen", **BOARD_OPTIONS)
     gb.place_all()
-    # the module antenna (last 6.75 mm of the module, past its courtyard)
-    # lies over the board: no copper under it on any layer
-    ux, uy, _rot = placements["U5"]
-    gb.keepout_rect(ux + 6.7, uy - 9.5, min(SPEC.width, ux + 13.5), uy + 9.5, "antenna")
+    antenna_keepout(gb, placements["U5"], SPEC.width)
     gb.route_all()
     return gb.finish(
         texts=[

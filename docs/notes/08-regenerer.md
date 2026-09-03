@@ -2,7 +2,8 @@
 
 Depuis la racine du dépôt. Environnement : Python 3.11 avec le venv du
 projet (`python -m venv .venv && .venv/bin/pip install -e .[dev]`),
-kicad-cli 7, ngspice, arm-none-eabi-gcc, CadQuery.
+KiCad 7 ou plus récent avec ses bibliothèques (`kicad-cli` pour les
+netlists, `pcbnew` pour le DRC), ngspice, arm-none-eabi-gcc, CadQuery.
 
 ## Vérifications de base (avant tout push)
 
@@ -10,6 +11,20 @@ kicad-cli 7, ngspice, arm-none-eabi-gcc, CadQuery.
 .venv/bin/ruff check .
 .venv/bin/pytest -q          # une centaine de tests, couloir bloquant inclus
 ```
+
+## DRC KiCad des cartes générées
+
+```bash
+/usr/bin/python3 tools/drc.py hardware/quadrant/quadrant.kicad_pcb hardware/brain/brain.kicad_pcb \
+    hardware/power/power.kicad_pcb hardware/clock/clock.kicad_pcb
+```
+
+Avec le Python qui porte le module `pcbnew` de KiCad (celui du système
+sur Debian et Ubuntu, KiCad 7 ou plus récent) : charge chaque projet,
+remplit les zones, écrit le rapport de KiCad et le résume par type ;
+code de sortie non nul tant qu'il reste une erreur ou un élément non
+connecté (les nets ouverts). Bilan et lecture des familles de
+signalements dans la [note 14](14-revue-des-cartes.md).
 
 ## Rapport de calculs
 
@@ -55,7 +70,7 @@ DRC) et, pour la carte analogique, l'uuid de la feuille racine du
 schéma : il est réémis à chaque build, donc il ne peut pas dériver de
 la carte qu'il accompagne.
 
-## Quadrant 4 x 4 (~30 s)
+## Quadrant 4 x 4 (quelques minutes, routage du frontal compris)
 
 ```bash
 PYTHONPATH=tools .venv/bin/python -m quadgen build --render docs/images/quadrant.png

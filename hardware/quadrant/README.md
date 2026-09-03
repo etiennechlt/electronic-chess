@@ -28,11 +28,12 @@ diagonale des LED inchangée et met la bande de frontal au bord extérieur.
   M3 au bord est, dans les zones libres de vias LED.
 
 Le contrôle d'isolement exact (shapely) tourne à chaque build et le
-projet KiCad porte les règles du générateur ; `kicad-cli` 7 n'a pas de
-DRC en ligne de commande, lancer celui de KiCad 9 après ouverture. Le
-build échoue si une route de la chaîne LED, un retour d'alimentation ou
-un net du frontal reste ouvert : la liste imprimée est ce qu'il reste à
-fermer dans pcbnew.
+projet KiCad porte les règles du générateur, vias d'éventail comprises ;
+le DRC de KiCad se lance par `tools/drc.py` (module `pcbnew`, voir la
+[note 14](../../docs/notes/14-revue-des-cartes.md)) ou après ouverture.
+Le build échoue si une route de la chaîne LED, un retour d'alimentation
+ou un net du frontal reste ouvert : la liste imprimée est ce qu'il reste
+à fermer dans pcbnew.
 
 ## Le frontal de la bande
 
@@ -40,8 +41,10 @@ fermer dans pcbnew.
   d'autre de chaque bande d'échappée : bleed 10 k vers VREF, 330 ohms
   et BAV99 devant le mux, diode de bus B5819W et AO3400A d'excitation,
   SS34FL de roue libre (SOD-123F, 1 mm de haut), AO3401A et 680 ohms
-  d'amortissement, pulldowns 0402. L'entrée A arrive sur F.Cu à
-  y - 0,6, l'entrée B sur B.Cu à y + 0,6 avec sa via.
+  d'amortissement, pulldowns 0402. Les colonnes de la cellule sont
+  empilées à partir des cours réelles des empreintes et contrôlées
+  contre le pas de 7,4 mm. L'entrée A arrive sur F.Cu à y - 0,6,
+  l'entrée B sur B.Cu à y + 0,6 avec sa via.
 - Zone médiane de 43,8 mm : 74HC4514 (excitation, inhibé par PULSE_EN
   à travers un 74LVC1G04) et 74HC154 (amortissement, validé par
   DAMP_EN_N), deux ADG1607 (bobines 1 à 8, 9 à 16, sorties en
@@ -62,10 +65,13 @@ fermer dans pcbnew.
   5V_LED sur In2. Les lignes de mesure M{k} vers les mux et les lignes
   de grille des décodeurs sont routées par le routeur A* multicouche,
   puis un contrôle d'isolement exact valide toute la carte.
-- Les bobines sont des « net ties » (`quadgen:COIL_TIE`) : couches 1
-  à 3 et deux vias sur C{k}_A, couche 4 et échappée B sur C{k}_B, la
-  jonction In2 vers B.Cu portant les deux nets. Le schéma montre le
-  même NT{k}.
+- Les bobines sont des « net ties » (`quadgen:COIL_TIE`) : les quatre
+  couches, les trois vias d'empilement et les premiers millimètres de
+  l'arc d'entrée de la couche 4 sur C{k}_A, puis deux pastilles B.Cu
+  carrées qui se touchent (le net tie), et la suite de la couche 4 en
+  piste fine jusqu'à la borne et l'échappée B sur C{k}_B. Aucun cuivre
+  d'un net ne recouvre un trou de l'autre, ce que le DRC de KiCad
+  exige même dans un net tie. Le schéma montre le même NT{k}.
 
 Sorties du build : projet KiCad avec schéma, `bom.csv`, `jlc-bom.csv`
 (lignes avec code LCSC), `jlc-cpl.csv`, `chain-spice.cir`.

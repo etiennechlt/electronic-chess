@@ -6,13 +6,19 @@ Générée par `tools/boardgen` (module `clock`). 110 x 60 mm, 2 couches,
 dans le boîtier de `mechanical/clock.py`.
 
 - **Radio et calcul** : module ESP32-S3-WROOM-1 (le même que sur le
-  cerveau, BLE vers le plateau), boutons BOOT et EN, embase de
-  programmation 1 x 6, diviseur de tension batterie sur IO1.
-- **Énergie** : USB-C en alimentation seule (5,1 k sur CC), chargeur 1S
-  MCP73831 à 500 mA avec LED d'état, support 18650 Keystone 1042,
-  embase pour l'interrupteur, AP2112K 3,3 V.
+  cerveau, BLE vers le plateau), antenne hors du bord est, cour réduite
+  à la largeur du module (l'encodeur et un microrupteur sont de part et
+  d'autre, choix assumé pour du BLE à courte portée), boutons BOOT et
+  EN, embase de programmation 1 x 6, diviseur de tension batterie sur
+  IO1, état du chargeur sur IO2 par un diviseur 56 k / 100 k (STAT monte
+  à 5 V).
+- **Énergie** : USB-C en alimentation seule (5,1 k sur CC, D+, D- et SBU
+  non connectés), chargeur 1S MCP73831 à 500 mA avec LED d'état,
+  support 18650 Keystone 1042, embase pour l'interrupteur, AP2112K 3,3 V.
 - **Interface** : embase 1 x 14 pour un écran 2,4 pouces ILI9341 SPI
-  avec tactile, deux microrupteurs 6 x 6 sous les extrémités de la
+  avec tactile, rétroéclairage commuté par un P-FET AO3401A sur 3V3
+  (IO7 actif bas, éteint au démarrage), deux microrupteurs 6 x 6 sous
+  les extrémités de la
   barre à bascule (positions dérivées de `clock.rocker` du yaml, la
   carte étant à 5 mm des parois du boîtier), encodeur EC11 à poussoir
   à l'avant droit sous son trou de la face inclinée, buzzer 12 mm sur

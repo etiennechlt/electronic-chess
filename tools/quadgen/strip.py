@@ -11,11 +11,13 @@ and the supplies on In1 along the east side of the strip.
 
 from __future__ import annotations
 
+import functools
 import math
 from dataclasses import dataclass
 
 from analoggen.circuit import Circuit
 from analoggen.fplib import Footprint, load_footprint
+from analoggen.sexp import atom, find_all, find_one, parse
 
 from chessboard_calc.config import BoardConfig
 
@@ -24,25 +26,50 @@ from .layout import Layout
 
 Placement = tuple[float, float, float]  # x, y, rotation
 
-# Cell template, x absolute within the strip, y relative to the cell center.
-CELL_TEMPLATE: dict[str, tuple[float, float, float]] = {
-    # cell height 7.4 (y within +-3.7); left column, 0603, pitch 1.6 (courtyard 1.46)
-    "clamp_a": (5.4, -2.4, 0.0),
-    "bleed_a": (5.4, -0.8, 0.0),
-    "bleed_b": (5.4, 0.8, 0.0),
-    "clamp_b": (5.4, 2.4, 0.0),
-    # two columns of SOT-23 (courtyard 3.85 x 3.00), 0402 pulldowns between the rows
-    "dual_a": (8.9, -2.15, 0.0),
-    "pfet": (12.9, -2.15, 0.0),
-    "dual_b": (8.9, 2.15, 0.0),
-    "nfet": (12.9, 2.15, 0.0),
-    "damp_pu": (8.9, 0.0, 0.0),
-    "gate_pd": (12.9, 0.0, 0.0),
-    # right column: the two diodes (SOD-123, 4.7 x 1.7) and the 0805 damping resistor
-    "bus": (17.4, -2.85, 0.0),
-    "fly": (17.4, -1.05, 0.0),
-    "damp_r": (17.4, 0.85, 0.0),
-}
+# Cell floor plan: columns of parts stacked top to bottom from their real
+# courtyards, centered on the cell (x of the column center, then rows; a
+# row is one role centered in the column, or several (role, dx, rot)
+# side by side). Column heights are checked against the cell pitch.
+CELL_COLUMNS: tuple[tuple[float, tuple], ...] = (
+    # 0603 clamps and bleeds in front of the entries (A above, B below), one 0402
+    (5.4, ("clamp_a", "bleed_a", "bleed_b", "clamp_b", "damp_pu")),
+    # SOT-23 pairs: the clamp diodes, then the FETs
+    (8.9, ("dual_a", "dual_b")),
+    (12.9, ("pfet", "nfet")),
+    # the two SOD-123 diodes, then the 0805 damping resistor beside the upright
+    # 0402 gate pulldown (the column is as wide as a SOD-123)
+    (17.4, ("bus", "fly", (("gate_pd", -1.88, 90.0), ("damp_r", 0.67, 0.0)))),
+)
+CELL_STACK_GAP = 0.1
+
+
+def cell_template(cfg: BoardConfig, circuit: Circuit) -> dict[str, tuple[float, float, float]]:
+    """Role -> (x, dy, rot) of every part of a coil cell, dy from the cell
+    center; every cell uses the same parts so cell 1 sizes the template."""
+    pitch = cfg.plateau.quadrant.strip.cell_pitch_mm
+    by_ref = {c.ref: c for c in circuit.components}
+    cr = cell_refs(1)
+    out: dict[str, tuple[float, float, float]] = {}
+    for x, rows in CELL_COLUMNS:
+        items = [((row,) if isinstance(row, str) else row) for row in rows]
+        heights = []
+        for row in items:
+            hs = []
+            for it in row:
+                role, rot = (it, 0.0) if isinstance(it, str) else (it[0], it[2])
+                w, h = courtyard(load_footprint(by_ref[cr[role]].part.footprint))
+                hs.append(w if abs(math.sin(math.radians(rot))) > 0.5 else h)
+            heights.append(max(hs))
+        total = sum(heights) + CELL_STACK_GAP * (len(heights) - 1)
+        if total > pitch:
+            raise ValueError(f"cell column at x = {x}: {total:.2f} mm tall for a {pitch} mm cell")
+        y = -total / 2.0
+        for row, h in zip(items, heights, strict=True):
+            for it in row:
+                role, dx, rot = (it, 0.0, 0.0) if isinstance(it, str) else it
+                out[role] = (round(x + dx, 3), round(y + h / 2.0, 3), rot)
+            y += h + CELL_STACK_GAP
+    return out
 
 # In1 supply buses (net, x, width) and In2 logic rail, along the strip.
 BUSES_IN1 = (("5VA", 15.4, 0.6), ("VREF", 16.2, 0.4), ("DRIVE_BUS", 17.0, 0.5), ("VIN", 17.9, 0.6))
@@ -59,25 +86,46 @@ class Box:
     rot: float
 
 
-def courtyard_box(fp: Footprint) -> tuple[float, float, float, float]:
-    """(xmin, ymin, xmax, ymax) of the footprint's courtyard in its own
-    frame (fallback: pads plus 0.5 mm). The origin is not always the
-    center: the ESP32 modules keep theirs near the pads."""
-    import re
-
-    xs, ys = [], []
-    for m in re.finditer(
-        r"\(fp_line \(start ([-\d.]+) ([-\d.]+)\) \(end ([-\d.]+) ([-\d.]+)\)"
-        r' \(layer "F\.CrtYd"\)',
-        fp.raw,
-    ):
-        xs += [float(m.group(1)), float(m.group(3))]
-        ys += [float(m.group(2)), float(m.group(4))]
+@functools.cache
+def _courtyard_box(lib_id: str, raw: str) -> tuple[float, float, float, float]:
+    xs: list[float] = []
+    ys: list[float] = []
+    for item in parse(raw):
+        if not isinstance(item, list) or not item:
+            continue
+        tag = item[0]
+        if tag not in ("fp_line", "fp_rect", "fp_poly", "fp_circle", "fp_arc"):
+            continue
+        layer = find_one(item, "layer")
+        if layer is None or atom(layer[1]) != "F.CrtYd":
+            continue
+        if tag == "fp_poly":
+            for xy in find_all(find_one(item, "pts"), "xy"):
+                xs.append(float(xy[1]))
+                ys.append(float(xy[2]))
+        elif tag == "fp_circle":
+            c, e = find_one(item, "center"), find_one(item, "end")
+            r = math.hypot(float(e[1]) - float(c[1]), float(e[2]) - float(c[2]))
+            xs += [float(c[1]) - r, float(c[1]) + r]
+            ys += [float(c[2]) - r, float(c[2]) + r]
+        else:
+            for key in ("start", "mid", "end"):
+                node = find_one(item, key)
+                if node is not None:
+                    xs.append(float(node[1]))
+                    ys.append(float(node[2]))
     if xs:
         return min(xs), min(ys), max(xs), max(ys)
-    xs = [p.dx + s * p.size[0] / 2 for p in fp.pads for s in (-1, 1)]
-    ys = [p.dy + s * p.size[1] / 2 for p in fp.pads for s in (-1, 1)]
-    return min(xs) - 0.25, min(ys) - 0.25, max(xs) + 0.25, max(ys) + 0.25
+    raise ValueError(f"{lib_id}: no F.CrtYd outline")
+
+
+def courtyard_box(fp: Footprint) -> tuple[float, float, float, float]:
+    """(xmin, ymin, xmax, ymax) of the footprint's courtyard in its own
+    frame, from every F.CrtYd primitive whatever the attribute order of
+    the library file (KiCad 6 and 7 differ). The origin is not always the
+    center: the ESP32 modules keep theirs near the pads, and their
+    courtyard is the antenna clearance area, far larger than the body."""
+    return _courtyard_box(fp.lib_id, fp.raw)
 
 
 def courtyard(fp: Footprint) -> tuple[float, float]:
@@ -116,7 +164,12 @@ def shelf_pack(
     boxes = sorted(boxes, key=lambda b: (-b.h, -b.w))
     y = y0
     while boxes:
-        row_h = boxes[0].h
+        # the tallest box that fits the column width leads the row; boxes
+        # wider than the column are left out (the caller places them elsewhere)
+        leader = next((b for b in boxes if b.w <= x1 - x0), None)
+        if leader is None:
+            break
+        row_h = leader.h
         x = x0
         rest = []
         for b in boxes:
@@ -135,9 +188,10 @@ def strip_placements(cfg: BoardConfig, lay: Layout, circuit: Circuit) -> dict[st
     by_ref = {c.ref: c for c in circuit.components}
     out: dict[str, Placement] = {}
     # coil cells
+    template = cell_template(cfg, circuit)
     for coil in lay.coils:
         cr = cell_refs(coil.idx + 1)
-        for role, (x, dy, rot) in CELL_TEMPLATE.items():
+        for role, (x, dy, rot) in template.items():
             out[cr[role]] = (x, round(coil.cell_y + dy, 3), rot)
     # middle zone: the two TSSOP decoders stacked on the strip axis (pads
     # east and west, fanout 1.9 mm past the pad tips), the two LFCSP muxes
@@ -171,8 +225,22 @@ def strip_placements(cfg: BoardConfig, lay: Layout, circuit: Circuit) -> dict[st
     out.update(packed)
     if max(y for _x, y, _r in packed.values()) > st.connector_zone_mm - 1.0:
         raise ValueError("connector zone overflow")
+    # the FPC connector sits at lay.connector_xy rotated 270: its courtyard
+    # width runs down the strip
+    fpc_w, fpc_h = courtyard(load_footprint(q.link.footprint))
+    fpc_bottom = lay.connector_xy[1] + fpc_w / 2.0
+    link_bottom = max(y + 2.0 for _x, y, _r in packed.values())
+    # test points: three at the bottom of the connector zone (VREF and the
+    # buses run the whole strip on In1), one between the two muxes
+    zone_bottom = st.connector_zone_mm - 0.5  # the first cell's parts start 0.4 mm lower
+    tp_y = zone_bottom - 1.25
+    tps = {"TP1": (2.05, tp_y), "TP2": (4.8, tp_y), "TP3": (7.55, tp_y), "TP4": (xc, top + 21.5)}
+    for ref, (x, y) in tps.items():
+        out[ref] = (x, y, 0.0)
     # decoupling and the inverter first, close to their packages, then the
-    # rest: side columns beside the decoders, a row under the amplifiers
+    # rest: side columns beside the decoders, the gaps around the muxes, the
+    # rows left in the connector zone, a column beside the amplifiers and a
+    # flat row under them
     first = ["U6", "C5", "C6", "C3", "C7", "C8"]
     rest = [box_of(by_ref[r]) for r in first] + sorted(
         (
@@ -184,29 +252,29 @@ def strip_placements(cfg: BoardConfig, lay: Layout, circuit: Circuit) -> dict[st
         ),
         key=lambda b: -(b.w * b.h),
     )
-    # the FPC connector sits at lay.connector_xy rotated 270: its courtyard
-    # width runs down the strip
-    fpc_w, fpc_h = courtyard(load_footprint(q.link.footprint))
-    fpc_bottom = lay.connector_xy[1] + fpc_w / 2.0
-    link_bottom = max(y + 2.0 for _x, y, _r in packed.values())
-    # decoder fanout (one via row) reaches 1.5 mm past the pad tips at 3.6
+    # decoder fanout (one via row) reaches 1.5 mm past the pad tips at 3.6;
+    # (x0, x1, y0, y1, upright)
+    mux_lo, mux_hi = out["U3"][1] - 3.1, out["U4"][1] + 3.1
     columns = [
-        (x_lo, xc - 5.2, top + 0.8, top + 17.6),
-        (xc + 5.2, x_hi, top + 0.8, top + 17.6),
-        (x_lo, 10.0, fpc_bottom + 0.8, st.connector_zone_mm - 0.8),
-        (10.4, x_hi, link_bottom + 0.8, st.connector_zone_mm - 0.8),
-        (16.7, x_hi, top + 29.5, top + 40.6),
-        (x_lo, x_hi, top + 41.2, top + st.middle_zone_mm - 0.8),
+        (x_lo, xc - 5.2, top + 0.8, top + 17.6, True),
+        (xc + 5.2, x_hi, top + 0.8, top + 17.6, True),
+        (x_lo, 10.0, fpc_bottom + 0.8, tp_y - 1.25 - 0.4, True),
+        (10.4, x_hi, link_bottom + 0.8, zone_bottom, True),
+        (16.7, x_hi, top + 29.5, top + 40.6, True),
+        (x_lo, x_hi, top + 41.2, top + st.middle_zone_mm - 0.8, False),
+        (x_lo, out["U3"][0] - 3.1 - 0.3, mux_lo, mux_hi, True),
+        (out["U4"][0] + 3.1 + 0.3, x_hi, mux_lo, mux_hi, True),
+        (out["U3"][0] + 3.1 + 0.3, out["U4"][0] - 3.1 - 0.3, top + 23.0, mux_hi, True),
     ]
     pending = list(rest)
-    for cx0, cx1, cy0, cy1 in columns:
+    for cx0, cx1, cy0, cy1, upright in columns:
         if not pending:
             break
-        placed = shelf_pack(pending, cx0, cx1, cy0, upright=True)
+        placed = shelf_pack(pending, cx0, cx1, cy0, upright=upright)
         kept = {}
         for ref, (x, y, r) in placed.items():
             box = next(b for b in pending if b.ref == ref)
-            h = max(box.w, box.h)  # upright: the long side runs down the column
+            h = box.w if abs(math.sin(math.radians(r))) > 0.5 else box.h
             if y + h / 2.0 <= cy1:
                 kept[ref] = (x, y, r)
         out.update(kept)

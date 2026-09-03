@@ -30,8 +30,9 @@ pas.
 - **Savoir quoi faire ensuite** : la [note 07](notes/07-etat-et-reste-a-faire.md),
   feuille de route en deux phases (sans chariot d'abord, chariot ensuite).
 - **Ouvrir, vérifier et tester les cartes** : la
-  [note 13](notes/13-revue-et-verification.md) (KiCad 9, DRC, netlists,
-  valeurs, simulation, commande, protocole de test).
+  [note 13](notes/13-revue-et-verification.md) (KiCad, DRC, netlists,
+  valeurs, simulation, commande, protocole de test) et le bilan de la
+  revue des cartes, [note 14](notes/14-revue-des-cartes.md).
 - **Imprimer** : `python mechanical/build_all.py` écrit STL et STEP
   dans `mechanical/exports/` (non versionnés).
 - **Modifier une carte** :
@@ -68,7 +69,7 @@ pas.
 | `docs/adr/` | décisions d'architecture numérotées |
 | `docs/notes/` | la présente base de connaissances |
 | `docs/serie/` | série vidéo : bible, épisodes, tournage, montage |
-| `tests/` | 85 tests, dont le couloir bloquant en CI, l'empilement du plateau et le quadrant |
+| `tests/` | une centaine de tests, dont le couloir bloquant en CI, l'empilement du plateau, le quadrant et la netlist de chaque schéma |
 
 ## Notes
 
@@ -87,6 +88,7 @@ pas.
 | [11](notes/11-cartes-du-plateau.md) | Les cinq cartes du plateau : méthode, choix, revue avant fabrication |
 | [12](notes/12-protocole.md) | Protocole plateau, pont radio, horloge (lignes texte, BLE) |
 | [13](notes/13-revue-et-verification.md) | Ouvrir, vérifier, simuler, commander et tester les cartes |
+| [14](notes/14-revue-des-cartes.md) | Revue des cartes de la phase 1 : constats, corrections, ce qui reste |
 
 Décisions formelles : [index des ADR](adr/README.md). Conventions de
 contribution : `CLAUDE.md` à la racine (langue, typographie, source

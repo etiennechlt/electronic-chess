@@ -2,13 +2,21 @@
 20 V USB-C PD trigger module (or a 19 V adapter), BQ76920 analog front
 end with low-side protection FETs, INA219 gauge on the pack output,
 push button for wake-up, links to the brain and to the cells.
-100 x 60 mm, 2 layers. Every FET is an AO3400A: the board never sees
-more than 1.5 A.
+100 x 60 mm, 2 layers. The board never sees more than 1.5 A: AO3400A
+everywhere, AO3401A for the two P-channel input FETs that the active
+low ACDRV output of the BQ24610 drives.
+
+Charger set points (BQ24610 datasheet, to confirm on the sheet before
+fabrication): ICHG = V(ISET1) / (20 RSR), IPRE = ITERM = V(ISET2) /
+(10 RSR), IIN = V(ACSET) / (20 RAC), VBAT = 2.1 V (1 + R14 / R15); the
+TS window follows the 103AT example of the datasheet (RT1 5.24 k from
+VREF, RT2 30.31 k to ground, 10 k NTC).
 """
 
 from __future__ import annotations
 
-from analoggen.circuit import C1206, NFET, TP, C, Circuit, Part, R
+from analoggen.circuit import C1206, NFET, PFET, TP, C, Circuit, Part, R
+from analoggen.symlib import load_symbol
 
 from chessboard_calc.config import BoardConfig
 
@@ -62,20 +70,17 @@ def build_power_circuit(cfg: BoardConfig) -> Circuit:
     ckt.add("J1", XH2, "PD 20V IN", {"1": "VAD", "2": GND})
     ckt.add("D1", DTVS, "SMBJ24A", {"1": GND, "2": "VAD"})
     c("C1", "10u/50V", "VAD", GND, part=C1206)
-    # input current sense and the back to back input FETs driven by ACDRV
+    # input current sense and the back to back P-channel input FETs (common
+    # drain, sources at ACN and at the charger input) that ~ACDRV pulls low
     r("R1", "10m", "VAD", "ACN", part=RSENSE)
-    ckt.add("Q1", NFET, "AO3400A", {"1": "ACDRV", "2": "ACN", "3": "ACMID"})
-    ckt.add("Q2", NFET, "AO3400A", {"1": "ACDRV", "2": "VCHG_IN", "3": "ACMID"})
+    ckt.add("Q1", PFET, "AO3401A", {"1": "ACDRV", "2": "ACN", "3": "ACMID"})
+    ckt.add("Q2", PFET, "AO3401A", {"1": "ACDRV", "2": "VCHG_IN", "3": "ACMID"})
     c("C2", "10u/50V", "VCHG_IN", GND, part=C1206)
     r("R2", "10R", "VAD", "VCC")
     c("C3", "1u", "VCC", GND)
 
     # ---------------- BQ24610 charger ----------------
-    ckt.add(
-        "U1",
-        CHG,
-        "BQ24610",
-        pins_by_name(
+    chg_pins = pins_by_name(
             CHG,
             {
                 "ACN": "ACN",
@@ -100,11 +105,12 @@ def build_power_circuit(cfg: BoardConfig) -> Circuit:
                 "PH": "PH",
                 "HIDRV": "HIDRV",
                 "BTST": "BTST",
-                "~{BATDRV}": "BATDRV",
                 "VCC": "VCC",
             },
-        ),
-    )
+        )
+    # no power path: the system runs from the pack, BATDRV stays unconnected
+    chg_all = {p.number for p in load_symbol(CHG.lib, CHG.symbol).pins}
+    ckt.add("U1", CHG, "BQ24610", chg_pins, nc=tuple(sorted(chg_all - set(chg_pins))))
     c("C4", "1u", "REGN", GND)
     c("C5", "1u", "VREF", GND)
     c("C6", "100n", "BTST", "PH")
@@ -113,34 +119,31 @@ def build_power_circuit(cfg: BoardConfig) -> Circuit:
     r("R5", "10k", "CHG_STAT2", "3V3_BMS")
     r("R6", "10k", "CHG_PG", "3V3_BMS")
     c("C7", "100n", "TTC", GND)
-    r("R7", "10k", "TS", "REGN")
+    # TS window 0 to 45 C with a 10 k NTC: the datasheet's 103AT network
+    # from VREF (RT1 5.24 k, RT2 30.31 k), nearest E96 values
+    r("R7", "5k23", "VREF", "TS")
+    r("R39", "30k1", "TS", GND)
     ckt.add("RT1", NTC, "10k NTC", {"1": "TS", "2": GND})
-    r("R8", "100k", "VREF", "ISET1")  # charge current 1 A with 10 mOhm
-    r("R9", "50k", "ISET1", GND)
-    r("R10", "100k", "VREF", "ISET2")  # precharge / termination
-    r("R11", "10k", "ISET2", GND)
-    r("R12", "100k", "VREF", "ACSET")  # input current limit
-    r("R13", "50k", "ACSET", GND)
+    # 50 mOhm sense: 1 A gives 50 mV, the range the ISET pins are made for
+    r("R8", "100k", "VREF", "ISET1")  # 0.995 V: ICHG = 1.0 A
+    r("R9", "43k2", "ISET1", GND)
+    r("R10", "100k", "VREF", "ISET2")  # 0.101 V: precharge and termination 0.2 A
+    r("R11", "3k16", "ISET2", GND)
+    r("R12", "100k", "VREF", "ACSET")  # 0.499 V: input limit 2.5 A (20 V, 3 A source)
+    r("R13", "17k8", "ACSET", GND)
     r("R14", "100k", "PACK+", "VFB")  # 12.6 V regulation: 2.1 V at VFB
     r("R15", "20k", "VFB", GND)
     c("C8", "100n", "VFB", GND)
-    r("R16", "0R", "BATDRV", "BATDRV_NC")  # no power path: system runs from the pack
-    ckt.add(
-        "Q3", NFET, "AO3400A", {"1": "HIDRV", "2": "PH", "3": "VCHG_IN"}
-    )  # high side, D=VCHG_IN? see note
+    ckt.add("Q3", NFET, "AO3400A", {"1": "HIDRV", "2": "PH", "3": "VCHG_IN"})  # high side
     ckt.add("Q4", NFET, "AO3400A", {"1": "LODRV", "2": GND, "3": "PH"})
     ckt.add("L1", LCHG, "10u", {"1": "PH", "2": "SRP"})
     c("C9", "10u/25V", "SRP", GND, part=C1206)
-    r("R17", "10m", "SRP", "SRN", part=RSENSE)
+    r("R17", "50m", "SRP", "SRN", part=RSENSE)
     c("C10", "10u/25V", "SRN", GND, part=C1206)
     r("R18", "0R", "SRN", "PACK+")
 
     # ---------------- BQ76920 analog front end, low side protection ----------------
-    ckt.add(
-        "U2",
-        AFE,
-        "BQ76920",
-        pins_by_name(
+    afe_pins = pins_by_name(
             AFE,
             {
                 "DSG": "DSG",
@@ -153,7 +156,6 @@ def build_power_circuit(cfg: BoardConfig) -> Circuit:
                 "REGOUT": "3V3_BMS",
                 "REGSRC": "REGSRC",
                 "BAT": "BAT_F",
-                "NC": "AFE_NC",
                 "VC5": "CELL3_F",
                 "VC4": "CELL3_F",
                 "VC3": "CELL3_F",
@@ -164,8 +166,9 @@ def build_power_circuit(cfg: BoardConfig) -> Circuit:
                 "SRN": "AFE_SRN",
                 "ALERT": "ALERT",
             },
-        ),
-    )
+        )
+    afe_all = {p.number for p in load_symbol(AFE.lib, AFE.symbol).pins}
+    ckt.add("U2", AFE, "BQ76920", afe_pins, nc=tuple(sorted(afe_all - set(afe_pins))))
     for i, cell in ((1, "CELL1"), (2, "CELL2"), (3, "CELL3")):
         r(f"R{20 + i}", "1k", cell, f"{cell}_F")
         c(f"C{10 + i}", "100n", f"{cell}_F", BATN if i == 1 else f"CELL{i - 1}_F")
@@ -181,12 +184,16 @@ def build_power_circuit(cfg: BoardConfig) -> Circuit:
     r("R28", "1k", BATN, "AFE_SRP")
     r("R29", "1k", "PACK-PRE", "AFE_SRN")
     c("C18", "100n", "AFE_SRP", "AFE_SRN")
-    ckt.add("Q5", NFET, "AO3400A", {"1": "DSG_G", "2": GND, "3": "DSG_MID"})
-    ckt.add("Q6", NFET, "AO3400A", {"1": "CHG_G", "2": "PACK-PRE", "3": "DSG_MID"})
+    # BQ76920 low side pair: the DSG FET's source sits on the cell side (its
+    # driver is referenced to VSS), the CHG FET's source on PACK-; discharge
+    # current flows through the CHG body diode and is blocked by DSG only,
+    # charge current the other way round
+    ckt.add("Q5", NFET, "AO3400A", {"1": "DSG_G", "2": "PACK-PRE", "3": "DSG_MID"})
+    ckt.add("Q6", NFET, "AO3400A", {"1": "CHG_G", "2": GND, "3": "DSG_MID"})
     r("R30", "1k", "DSG", "DSG_G")
     r("R31", "1k", "CHG", "CHG_G")
-    r("R32", "1M", "DSG_G", GND)
-    r("R33", "1M", "CHG_G", "PACK-PRE")
+    r("R32", "1M", "DSG_G", "PACK-PRE")
+    r("R33", "1M", "CHG_G", GND)
     r("R34", "10k", "ALERT", "3V3_BMS")
 
     # ---------------- Gauge on the pack output, wake button, links ----------------
@@ -311,7 +318,7 @@ def power_placements(ckt: Circuit) -> dict[str, tuple[float, float, float]]:
                 "R14",
                 "R15",
                 "C8",
-                "R16",
+                "R39",
                 "Q3",
                 "Q4",
                 "C9",
@@ -420,7 +427,7 @@ def schematic_groups() -> list[tuple[str, float, list[str]]]:
                 "R14",
                 "R15",
                 "C8",
-                "R16",
+                "R39",
                 "Q3",
                 "Q4",
                 "L1",

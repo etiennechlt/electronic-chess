@@ -233,6 +233,8 @@ def make_layout(cfg: BoardConfig) -> Layout:
         leds=tuple(leds),
         band_lanes=tuple(band_lanes),
         cell_ys=tuple(cell_ys),
+        # cable west; the GND pin's In1 tie and the pin hole leave the LED
+        # chain a corridor at y = 5.8 only with the connector this low
         connector_xy=(5.0, 11.0),
         pin_hole_xy=(11.0, 3.0),
         # east edge, in the stretches free of LED vias and chain hops

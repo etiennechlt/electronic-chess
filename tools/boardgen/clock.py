@@ -6,8 +6,9 @@ header, battery divider. 110 x 60 mm, 2 layers.
 
 from __future__ import annotations
 
-from analoggen.circuit import DDUAL, NFET, TP, C, Circuit, Part, R
+from analoggen.circuit import DDUAL, NFET, PFET, TP, C, Circuit, Part, R
 from analoggen.fplib import load_footprint
+from analoggen.symlib import load_symbol
 from quadgen.strip import courtyard_box
 
 from chessboard_calc.config import BoardConfig
@@ -16,6 +17,13 @@ from .brain import BUZ, ESP32, H1X06, LDO33, SW, USBC
 from .core import GenericBoard, Spec, pins_by_name, shelf
 
 GND = "GND"
+# The clock cannot afford the 15 mm antenna clearance of the library
+# courtyard on every side: the encoder and a rocker switch sit beside the
+# module. Only the antenna end keeps its clearance (past the board edge):
+# BLE across a table, a short range this does not compromise.
+ESP32_CLOCK_COURTYARD = (-10.0, -27.75, 10.0, 13.45)
+# GenericBoard options shared by the build and the tests
+BOARD_OPTIONS = {"overhang": ("U1",), "courtyards": {"U1": ESP32_CLOCK_COURTYARD}}
 CHG = Part(
     "Battery_Management",
     "MCP73831-2-MC",
@@ -45,7 +53,7 @@ ESP_PINS = {
     "IO4": "TFT_CS",
     "IO5": "TFT_DC",
     "IO6": "TFT_RST",
-    "IO7": "TFT_LED",
+    "IO7": "TFT_LED_N",  # backlight, through the high side P-FET, active low
     "IO15": "SPI_SCK",
     "IO16": "SPI_MOSI",
     "IO17": "SPI_MISO",
@@ -58,7 +66,7 @@ ESP_PINS = {
     "IO13": "SW_BLACK",
     "IO14": "BUZZER",
     "IO1": "VBAT_SENSE",
-    "IO2": "LED_CHG",
+    "IO2": "CHG_SENSE",  # charger STAT (0 to 5 V) through the 56k / 100k divider
 }
 
 
@@ -71,26 +79,12 @@ def build_clock_circuit(cfg: BoardConfig) -> Circuit:
     def c(ref, value, a, b):
         ckt.add(ref, C, value, {"1": a, "2": b})
 
-    # USB-C power only, 1S charger, cell, 3.3 V
-    ckt.add(
-        "J1",
-        USBC,
-        "USB-C",
-        pins_by_name(
-            USBC,
-            {
-                "GND": GND,
-                "SHIELD": GND,
-                "VBUS": "VBUS",
-                "CC1": "CC1",
-                "CC2": "CC2",
-                "D+": "USB_DP",
-                "D-": "USB_DM",
-                "SBU1": "SBU1",
-                "SBU2": "SBU2",
-            },
-        ),
+    # USB-C power only (data and SBU pins unconnected), 1S charger, cell, 3.3 V
+    usb_pins = pins_by_name(
+        USBC, {"GND": GND, "SHIELD": GND, "VBUS": "VBUS", "CC1": "CC1", "CC2": "CC2"}
     )
+    usb_all = {p.number for p in load_symbol(USBC.lib, USBC.symbol).pins}
+    ckt.add("J1", USBC, "USB-C", usb_pins, nc=tuple(sorted(usb_all - set(usb_pins))))
     r("R1", "5k1", "CC1", GND)
     r("R2", "5k1", "CC2", GND)
     ckt.add(
@@ -113,9 +107,13 @@ def build_clock_circuit(cfg: BoardConfig) -> Circuit:
     c("C2", "4u7", "VCELL", GND)
     ckt.add("D1", LED, "CHG", {"1": "LED_CHG_K", "2": "VBUS"})
     r("R4", "1k", "LED_CHG_K", "CHG_STAT")
+    # STAT swings to VBUS (5 V): divided to 3.2 V for the module, read low
+    # when charging, low too without USB (pulled down, STAT high impedance)
+    r("R15", "56k", "CHG_STAT", "CHG_SENSE")
+    r("R16", "100k", "CHG_SENSE", GND)
     ckt.add("BT1", CELL, "18650", {"1": "VCELL", "2": GND})
     ckt.add("J2", H1X02, "POWER SWITCH", {"1": "VCELL", "2": "VSW"})
-    ckt.add("U3", LDO33, "AP2112K-3.3", {"1": "VSW", "2": GND, "3": "VSW", "4": "NC", "5": "3V3"})
+    ckt.add("U3", LDO33, "AP2112K-3.3", {"1": "VSW", "2": GND, "3": "VSW", "5": "3V3"}, nc=("4",))
     c("C3", "1u", "VSW", GND)
     c("C4", "10u", "3V3", GND)
     r("R5", "100k", "VSW", "VBAT_SENSE")
@@ -133,8 +131,6 @@ def build_clock_circuit(cfg: BoardConfig) -> Circuit:
         **ESP_PINS,
     }
     esp_pins = pins_by_name(ESP32, esp)
-    from analoggen.symlib import load_symbol
-
     esp_all = {p.number for p in load_symbol(ESP32.lib, ESP32.symbol).pins}
     ckt.add("U1", ESP32, "ESP32-S3-WROOM-1", esp_pins, nc=tuple(sorted(esp_all - set(esp_pins))))
     r("R7", "10k", "ESP_EN", "3V3")
@@ -173,6 +169,10 @@ def build_clock_circuit(cfg: BoardConfig) -> Circuit:
             "14": "T_IRQ",
         },
     )
+    # backlight: the module's LED pin draws tens of mA, more than a GPIO
+    # sources; a high side P-FET switches it from 3V3 (off while the module boots)
+    ckt.add("Q2", PFET, "AO3401A", {"1": "TFT_LED_N", "2": "3V3", "3": "TFT_LED"})
+    r("R17", "100k", "TFT_LED_N", "3V3")
     # rocker microswitches, encoder, buzzer
     ckt.add("SW3", SWBIG, "WHITE", {"1": "SW_WHITE", "2": GND})
     ckt.add("SW4", SWBIG, "BLACK", {"1": "SW_BLACK", "2": GND})
@@ -251,7 +251,24 @@ def clock_placements(
     out["J3"] = (72.0, 56.5, 90.0)  # programming header
     out.update(
         shelf(
-            ["U2", "R3", "C1", "C2", "D1", "R4", "R1", "R2", "U3", "C3", "C4", "R5", "R6", "C5"],
+            [
+                "U2",
+                "R3",
+                "C1",
+                "C2",
+                "D1",
+                "R4",
+                "R15",
+                "R16",
+                "R1",
+                "R2",
+                "U3",
+                "C3",
+                "C4",
+                "R5",
+                "R6",
+                "C5",
+            ],
             ckt,
             12.0,
             38.0,
@@ -261,7 +278,23 @@ def clock_placements(
     )
     out.update(
         shelf(
-            ["R7", "C6", "R8", "C7", "C8", "R9", "R10", "R11", "R12", "R13", "Q1", "R14", "D2"],
+            [
+                "R7",
+                "C6",
+                "R8",
+                "C7",
+                "C8",
+                "R9",
+                "R10",
+                "R11",
+                "R12",
+                "R13",
+                "Q1",
+                "R14",
+                "D2",
+                "Q2",
+                "R17",
+            ],
             ckt,
             60.0,
             78.0,
@@ -270,14 +303,16 @@ def clock_placements(
         )
     )
     out["TP1"], out["TP2"], out["TP3"] = (78.0, 16.0, 0.0), (82.0, 16.0, 0.0), (86.0, 16.0, 0.0)
-    for i, (x, y) in enumerate(((5.0, 5.0), (83.0, 5.0), (5.0, 18.0), (106.0, 44.0)), 1):
+    # the fourth hole sits between the cell holder, the buzzer and the EN
+    # button: the east edge belongs to the module's antenna clearance area
+    for i, (x, y) in enumerate(((5.0, 5.0), (83.0, 5.0), (5.0, 18.0), (73.0, 50.5)), 1):
         out[f"H{i}"] = (x, y, 0.0)
     return out
 
 
 def build_clock(cfg: BoardConfig):
     ckt = build_clock_circuit(cfg)
-    gb = GenericBoard(SPEC, ckt, clock_placements(ckt, cfg), generator="boardgen")
+    gb = GenericBoard(SPEC, ckt, clock_placements(ckt, cfg), generator="boardgen", **BOARD_OPTIONS)
     gb.place_all()
     gb.route_all()
     return gb.finish(texts=[("DAMIER LC / HORLOGE", 55.0, 58.5, "F.SilkS", 1.2)])
@@ -298,6 +333,8 @@ def schematic_groups() -> list[tuple[str, float, list[str]]]:
                 "C2",
                 "D1",
                 "R4",
+                "R15",
+                "R16",
                 "BT1",
                 "J2",
                 "U3",
@@ -312,7 +349,23 @@ def schematic_groups() -> list[tuple[str, float, list[str]]]:
         (
             "DISPLAY AND INPUTS",
             180.0,
-            ["J4", "SW3", "SW4", "R9", "R10", "SW5", "R11", "R12", "R13", "BZ1", "Q1", "R14", "D2"],
+            [
+                "J4",
+                "Q2",
+                "R17",
+                "SW3",
+                "SW4",
+                "R9",
+                "R10",
+                "SW5",
+                "R11",
+                "R12",
+                "R13",
+                "BZ1",
+                "Q1",
+                "R14",
+                "D2",
+            ],
         ),
         ("TEST AND MECHANICAL", 240.0, ["TP1", "TP2", "TP3", "H1", "H2", "H3", "H4"]),
     ]

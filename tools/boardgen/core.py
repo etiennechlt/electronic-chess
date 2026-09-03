@@ -10,6 +10,7 @@ listed for pcbnew, like on the mockup analog board.
 
 from __future__ import annotations
 
+import dataclasses
 import math
 import os
 import re
@@ -117,6 +118,11 @@ class PadItem:
     rot: float
     ref: str
     number: str
+    drill: float = 0.0  # plated hole of a through pad, 0 for SMD
+
+
+HOLE_TO_HOLE_MM = 0.25  # fabrication: drill edge to drill edge
+CHECK_SLOP_MM = 0.001  # numerical slop of the exact clearance checks
 
 
 @dataclass
@@ -141,10 +147,19 @@ class GenericBoard:
         circuit: Circuit,
         placements: dict[str, tuple[float, float, float]],
         generator: str = "boardgen",
+        overhang: tuple[str, ...] = (),
+        courtyards: dict[str, tuple[float, float, float, float]] | None = None,
     ) -> None:
         self.spec = spec
         self.circuit = circuit
         self.placements = placements
+        # parts whose courtyard may leave the board: a radio module whose
+        # antenna, and the clearance area around it, hang past the edge
+        self.overhang = set(overhang)
+        # reference -> (x0, y0, x1, y1) in the footprint frame, replacing the
+        # library courtyard on the board and in the checks (a deliberately
+        # reduced antenna clearance, stated where it is decided)
+        self.courtyards = dict(courtyards or {})
         self.layers = LAYERS4 if spec.layers == 4 else LAYERS2
         self.board = Board(
             thickness_mm=1.6, title=spec.title, copper_layers=spec.layers, generator=generator
@@ -167,8 +182,15 @@ class GenericBoard:
     def via(
         self, net: str, x: float, y: float, pad: float | None = None, drill: float | None = None
     ) -> None:
+        """A via, unless one of the same net already covers this point (the
+        router restarts from a fanout via and may put its own next to it;
+        two drills that close are a fabrication error)."""
         pad = self.spec.via_pad if pad is None else pad
         drill = self.spec.via_drill if drill is None else drill
+        for v in self.res.vias:
+            reach = min(v.pad, pad) / 2.0 - 0.02
+            if v.net == net and (v.x - x) ** 2 + (v.y - y) ** 2 <= reach * reach:
+                return
         self.board.via(x, y, pad, drill, self.board.net(net))
         self.res.vias.append(Via(net, float(x), float(y), pad, drill))
 
@@ -179,6 +201,19 @@ class GenericBoard:
         self.board.npth_hole(x, y, d, ref=ref)
         self.res.holes.append((x, y, d))
 
+    def footprint(self, comp) -> Footprint:
+        """The component's footprint, its courtyard replaced when overridden."""
+        fp = load_footprint(comp.part.footprint)
+        if comp.ref not in self.courtyards:
+            return fp
+        x0, y0, x1, y1 = self.courtyards[comp.ref]
+        raw = _strip_courtyard(fp.raw)
+        rect = (
+            f"  (fp_rect (start {x0:g} {y0:g}) (end {x1:g} {y1:g}) "
+            '(stroke (width 0.05) (type default)) (fill none) (layer "F.CrtYd"))\n'
+        )
+        return dataclasses.replace(fp, raw=raw.rstrip()[:-1] + rect + ")\n")
+
     def place_all(self) -> None:
         missing = [c.ref for c in self.circuit.components if c.ref not in self.placements]
         if missing:
@@ -186,18 +221,20 @@ class GenericBoard:
         pending: list = []
         for comp in self.circuit.components:
             x, y, rot = self.placements[comp.ref]
-            fp = load_footprint(comp.part.footprint)
+            fp = self.footprint(comp)
             nets = {num: (self.board.net(n), n) for num, n in comp.pins.items()}
             self.board.body.append(place_footprint(fp, comp.ref, comp.value, x, y, rot, nets))
             for pad in fp.pads:
                 px, py = pad_abs_pos(x, y, rot, pad)
                 sw, sh = pad.size
                 net = comp.pins.get(pad.number, "")
+                drill = pad.drill if pad.kind == "thru_hole" and pad.drill else 0.0
                 for layer in pad.layers:
                     if layer in self.layers or layer == "*.Cu":
-                        self.res.pads.append(
-                            PadItem(net, layer, px, py, sw, sh, rot + pad.rot, comp.ref, pad.number)
+                        item = PadItem(
+                            net, layer, px, py, sw, sh, rot + pad.rot, comp.ref, pad.number, drill
                         )
+                        self.res.pads.append(item)
                         break
                 if pad.kind == "np_thru_hole" and pad.drill:
                     self.res.holes.append((px, py, pad.drill))
@@ -218,8 +255,10 @@ class GenericBoard:
         boxes = []
         for comp in self.circuit.components:
             x, y, rot = self.placements[comp.ref]
-            x0, y0, x1, y1 = placed_box(load_footprint(comp.part.footprint), x, y, rot)
+            x0, y0, x1, y1 = placed_box(self.footprint(comp), x, y, rot)
             boxes.append((comp.ref, x0, y0, x1, y1))
+            if comp.ref in self.overhang:
+                continue
             if x0 < 0 or y0 < 0 or x1 > self.spec.width or y1 > self.spec.height:
                 raise ValueError(f"{comp.ref} courtyard leaves the board")
         for i, a in enumerate(boxes):
@@ -265,6 +304,9 @@ class GenericBoard:
             layers = self.layers if p.layer == "*.Cu" else [p.layer]
             net = p.net or ("__nc__" + p.ref + p.number)
             mr.rect(net, layers, p.x, p.y, p.w, p.h, p.rot)
+            if p.drill:
+                # a via of the pad's own net may touch its copper, never its hole
+                mr.via_keepout(p.x, p.y, p.drill / 2.0 + sp.via_drill / 2.0 + HOLE_TO_HOLE_MM)
         for hx, hy, hd in self.res.holes:
             mr.keepout(hx, hy, hd / 2.0 + 0.3 + sp.clearance + 0.1)
         for x, y, r in self.keepouts:
@@ -498,7 +540,7 @@ class GenericBoard:
     def _route_clash(self, net: str, tracks, vias, width: float) -> str | None:
         """Exact clearance of a candidate route against the copper drawn so
         far; returns a description of the first clash, or None."""
-        clr = self.spec.clearance - 0.02
+        clr = self.spec.clearance - CHECK_SLOP_MM
         new = []
         for la, pts in tracks:
             new.append((la, LineString(pts).buffer(width / 2.0)))
@@ -552,7 +594,7 @@ class GenericBoard:
         by_layer: dict[str, list] = {}
         for it in items:
             by_layer.setdefault(it[1], []).append(it)
-        clr = sp.clearance - 0.02
+        clr = sp.clearance - CHECK_SLOP_MM
         for layer, its in by_layer.items():
             geoms = [g for _n, _l, g in its]
             tree = STRtree(geoms)
@@ -581,18 +623,47 @@ class GenericBoard:
         return self.res
 
 
+def _strip_courtyard(raw: str) -> str:
+    """The footprint text without its F.CrtYd primitives."""
+    out = []
+    i = 0
+    for m in re.finditer(r"\(fp_(?:line|rect|poly|circle|arc)\b", raw):
+        if m.start() < i:
+            continue
+        depth, k = 0, m.start()
+        while True:
+            if raw[k] == "(":
+                depth += 1
+            elif raw[k] == ")":
+                depth -= 1
+                if depth == 0:
+                    break
+            k += 1
+        block = raw[m.start() : k + 1]
+        if "F.CrtYd" in block:
+            out.append(raw[i : m.start()].rstrip(" \t"))
+            i = k + 1
+            if raw[i : i + 1] == "\n":
+                i += 1
+    out.append(raw[i:])
+    return "".join(out)
+
+
 def design_rules(spec: Spec) -> DesignRules:
+    """What the DRC must accept: the router's tracks and vias, plus the
+    fanout stubs and vias of the fine-pitch packages (the smallest items
+    of the board) and the small plated holes of the radio module."""
     return DesignRules(
         clearance_mm=spec.clearance,
         track_width_mm=spec.track,
         via_diameter_mm=spec.via_pad,
         via_drill_mm=spec.via_drill,
-        min_track_width_mm=min(spec.track, 0.25),
-        min_via_diameter_mm=spec.via_pad,
-        min_hole_mm=spec.via_drill,
+        min_track_width_mm=min(spec.track, STUB_WIDTH_MM),
+        min_via_diameter_mm=min(spec.via_pad, FANOUT_VIA_PAD_MM),
+        min_hole_mm=min(spec.via_drill, FANOUT_VIA_DRILL_MM),
         edge_clearance_mm=spec.edge_clearance,
-        track_widths_mm=(spec.track, spec.power_track),
-        via_sizes_mm=(),
+        track_widths_mm=(STUB_WIDTH_MM, spec.track, spec.power_track),
+        via_sizes_mm=((spec.via_pad, spec.via_drill), (FANOUT_VIA_PAD_MM, FANOUT_VIA_DRILL_MM)),
     )
 
 

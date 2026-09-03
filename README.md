@@ -158,7 +158,10 @@ décisions formelles sont dans [`docs/adr/`](docs/adr/README.md).
 Socle, calculs et CI livrés ; le plateau 8 x 8 est conçu directement
 (ADR 0010) : yaml, géométrie, modèles 3D (STL et STEP dans
 `mechanical/exports/`), quadrant complet, cerveau, puissance, moteurs et
-horloge générés, firmware du cerveau compilé, pont et horloge écrits.
+horloge générés, firmware du cerveau compilé, pont et horloge écrits ;
+premier lot de la phase 1 fait, la revue des cartes
+([note 14](docs/notes/14-revue-des-cartes.md) : brochages relus, huit
+erreurs corrigées dans les générateurs, DRC KiCad par `tools/drc.py`).
 La suite est phasée : **phase 1, tout fonctionne sans chariot** (revue,
 simulation, commande, bring-up, mesures, firmware, horloge, appli) ;
 **phase 2, le chariot**. Feuille de route dans la

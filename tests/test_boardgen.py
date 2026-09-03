@@ -34,7 +34,7 @@ def test_circuit_and_placement(cfg, name):
         assert 0.0 < x < spec.width and 0.0 < y < spec.height, ref
     from boardgen.core import GenericBoard
 
-    gb = GenericBoard(spec, ckt, placements)
+    gb = GenericBoard(spec, ckt, placements, **getattr(mod, "BOARD_OPTIONS", {}))
     gb.place_all()  # raises on any courtyard overlap or part off the board
     groups = mod.schematic_groups()
     listed = {r for _t, _y, refs_ in groups for r in refs_}

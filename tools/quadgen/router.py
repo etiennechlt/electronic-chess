@@ -263,6 +263,15 @@ class MultiRouter:
 
         self._shape(net, list(layers), fn)
 
+    def via_keepout(self, cx, cy, radius: float) -> None:
+        """A drilled hole of a pad: no via center within `radius` (the
+        hole to hole clearance), tracks unaffected."""
+        i0, i1, j0, j1 = self._window(cx, cy, cx, cy, radius)
+        xs, ys = self._xs[j0:j1, i0:i1], self._ys[j0:j1, i0:i1]
+        m = (xs - cx) ** 2 + (ys - cy) ** 2 <= (radius + 0.5 * self.grid) ** 2
+        for la in self.layers:
+            self.own_via[la][j0:j1, i0:i1][m] = self.MULTI
+
     def keepout(self, cx, cy, radius: float) -> None:
         """A hole: blocked for every net on every layer."""
         i0, i1, j0, j1 = self._window(cx, cy, cx, cy, radius + self.via_pad)
