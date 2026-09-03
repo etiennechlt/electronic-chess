@@ -28,7 +28,7 @@
   <text x="45" y="242" class="s">contreplaqué, 4 quadrants 4 x 4</text>
   <text x="45" y="257" class="s">64 spirales, 128 LED, frontal</text>
 
-  <text x="260" y="96" class="h">MESURE (sur chaque quadrant)</text>
+  <text x="260" y="96" class="h">MESURE (par quadrant)</text>
   <rect x="260" y="106" width="190" height="166" class="box accent"/>
   <text x="275" y="130" class="t">Frontal analogique</text>
   <text x="275" y="150" class="s">16 cellules d'excitation,</text>

@@ -58,7 +58,7 @@
   <rect x="302" y="380" width="14" height="16" fill="#2b4a62" stroke="#9fc6e8"/>
   <rect x="700" y="378" width="60" height="18" fill="#2b4a62" stroke="#9fc6e8"/>
   <text x="150" y="388" class="s" text-anchor="end">entrefer d'air 2,0</text>
-  <text x="640" y="374" class="s" font-size="10">LED WS2812B, frontal de la bande (1,8 max)</text>
+  <text x="770" y="391" class="s" font-size="10">LED, frontal (1,8 max)</text>
 
   <!-- PCB 1.6mm = 19px : y396..415 with 4 copper layers -->
   <rect x="60" y="396" width="800" height="19" fill="#1d4034" stroke="#3f6f9e"/>
