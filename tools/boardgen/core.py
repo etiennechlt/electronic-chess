@@ -241,7 +241,10 @@ class GenericBoard:
                     self.res.holes.append((px, py, pad.drill))
             pending.extend(escape_stubs(fp, x, y, rot, dict(comp.pins)))
         self._check_courtyards()
-        kept = free_stubs(pending, self.res, self.spec.clearance)
+        sp = self.spec
+        kept = free_stubs(
+            pending, self.res, sp.clearance, board=(sp.width, sp.height, sp.edge_clearance)
+        )
         if len(kept) != len(pending):
             print(f"escape stubs: {len(kept)} of {len(pending)} drawn", file=sys.stderr)
         for net, _num, pts, runway, via in kept:

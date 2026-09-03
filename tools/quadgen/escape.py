@@ -192,13 +192,24 @@ def reclaim_stubs(router, stubs, layer: str = "F.Cu", exit_layer: str | None = N
                     own_x[j, i] = nid
 
 
-def free_stubs(stubs: list[Stub], res, clearance: float) -> list[Stub]:
+def free_stubs(
+    stubs: list[Stub],
+    res,
+    clearance: float,
+    board: tuple[float, float, float] | None = None,
+) -> list[Stub]:
     """Keeps the stubs whose stub, runway and fanout via stay `clearance`
     away from every F.Cu item of another net in `res` (pads, tracks, vias,
-    holes) and from each other; a stub that does not fit loses its via,
+    holes), from each other and from the board edge (`board` is width,
+    height and edge clearance); a stub that does not fit loses its via,
     then gets shorter."""
     items: list[tuple[str, object]] = []  # top layer copper
     deep: list[tuple[str, object]] = []  # copper of any layer, for the via
+    if board is not None:
+        w, h, e = board
+        rim = box(-1.0, -1.0, w + 1.0, h + 1.0).difference(box(e, e, w - e, h - e))
+        items.append(("__edge__", rim))
+        deep.append(("__edge__", rim))
     for p in res.pads:
         if p.layer not in ("F.Cu", "*.Cu"):
             deep.append((p.net, box(p.x - p.w / 2, p.y - p.h / 2, p.x + p.w / 2, p.y + p.h / 2)))

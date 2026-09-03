@@ -588,7 +588,12 @@ class Builder:
             n: net for n, net in self.by_ref["J1"].pins.items() if net not in self.EXPLICIT_PINS
         }
         pending.extend(escape_stubs(load_footprint(self.q.link.footprint), jx, jy, jrot, j_nets))
-        kept = free_stubs(pending, self.res, self.clr)
+        kept = free_stubs(
+            pending,
+            self.res,
+            self.clr,
+            board=(self.lay.board_w, self.lay.board_h, self.rt.edge_clearance_mm),
+        )
         if len(kept) != len(pending):
             print(f"escape stubs: {len(kept)} of {len(pending)} drawn", file=sys.stderr)
         for net, _num, pts, runway, via in kept:
