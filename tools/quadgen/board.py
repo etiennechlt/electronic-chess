@@ -16,6 +16,8 @@ placed, then a global clearance check validates the whole board.
 
 from __future__ import annotations
 
+import dataclasses
+import math
 import sys
 from dataclasses import dataclass, field
 
@@ -55,15 +57,22 @@ PIN_VIA_STEP = 1.2  # staggered vias behind the FPC pads
 FP_LED = "LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm"
 FP_CAP = "Capacitor_SMD:C_0603_1608Metric"
 CHECK_SLOP_MM = 0.001  # numerical slop of the exact clearance checks
-# Coil net tie on the B.Cu lead-in arc, distances along the arc from the
-# In2 to B.Cu junction via: pad B (net C{k}_B), pad A behind it joined
-# inside the tie, the wide spiral track (round ends) stopping short of
-# pad B, the thin escape track starting inside pad B.
-TIE_ALONG_MM = 2.5
+# Stacking vias sit radially off the turn bands: a via at the inner or
+# outer radius lands in the turns of the two other layers (the next turn
+# is a quarter turn away, 0.4 mm further out) and shorts the coil. Each
+# junction is joined to its two spirals by a radial run of the same
+# track. Half track 0.8, via pad 0.3, clearance 0.15, margin 0.05.
+VIA_OFFSET_MM = 1.3
+# The last junction (In2 to B.Cu) goes deeper into the hollow: its radial
+# run on B.Cu carries the coil net tie, distances along the run from the
+# via: the wide track of net A (round end), pad A, pad B touching it, the
+# wide track of net B resuming past pad B, then the lead-in arc.
+TIE_VIA_OFFSET_MM = 3.5
 TIE_PAD_MM = 0.6
 TIE_STEP_MM = 0.58
-TIE_WIDE_END_MM = 1.3
-TIE_THIN_START_MM = 0.1
+TIE_ALONG_MM = 2.33  # pad B center
+TIE_WIDE_END_MM = 1.43  # net A track ends this far before pad B (cap 0.33 from pad B)
+TIE_WIDE_RESUME_MM = 0.9  # net B track resumes this far past pad B (cap 0.38 from pad A)
 
 
 @dataclass
@@ -91,6 +100,17 @@ class PadItem:
     y: float
     w: float
     h: float
+    rot: float = 0.0  # degrees, KiCad sense (counterclockwise on screen)
+
+    def geometry(self):
+        """Exact outline as a shapely polygon."""
+        from shapely import affinity
+        from shapely.geometry import box
+
+        g = box(-self.w / 2, -self.h / 2, self.w / 2, self.h / 2)
+        if self.rot:
+            g = affinity.rotate(g, -self.rot, origin=(0, 0))
+        return affinity.translate(g, self.x, self.y)
 
 
 @dataclass
@@ -233,6 +253,7 @@ class Builder:
                 lay.turns_per_layer,
                 start_angle_deg=coil.start_angle_deg,
             )
+            paths, junctions = _offset_junctions(paths, coil.center, lay.r_in, lay.r_out)
             dbg = CoilDebug(coil.net, coil.center, paths, [], coil.terminal, [])
             for i, path in enumerate(paths):
                 if i == len(paths) - 1:
@@ -249,16 +270,16 @@ class Builder:
                         [tuple(map(float, p)) for p in path.points],
                     )
                 )
-            for a, _b in zip(paths, paths[1:], strict=False):
-                jx, jy = map(float, a.points[-1])
+            for jx, jy in junctions:
                 dbg.vias.append((jx, jy))
                 self.board.via(jx, jy, via_pad, via_drill, self.board.net(net_a))
                 self.res.vias.append(Via(net_a, jx, jy, via_pad, via_drill))
             self.res.coils.append(dbg)
 
     def _tied_last_layer(self, coil, path: LayerPath, net_a: str, net_b: str) -> None:
-        """B.Cu layer of a coil: wide spiral track of net A up to the tie,
-        the tie, then the thin track of net B along the rest of the path."""
+        """B.Cu layer of a coil: the radial run from the junction via as net
+        A up to the tie, the tie, then net B along the rest of the run, the
+        lead-in arc and the spiral, all at the spiral track width."""
         pts = np.asarray(path.points, dtype=float)
         seg = np.linalg.norm(np.diff(pts, axis=0), axis=1)
         s = np.concatenate([[0.0], np.cumsum(seg)])
@@ -269,13 +290,15 @@ class Builder:
             return round(x, 4), round(y, 4)
 
         s_tie = TIE_ALONG_MM
-        wide = [tuple(map(float, p)) for p in pts[s < s_tie - TIE_WIDE_END_MM]]
-        wide.append(at(s_tie - TIE_WIDE_END_MM))
-        self.board.polyline(wide, self.lay.spiral_track, path.layer, self.board.net(net_a))
-        self.res.tracks.append(Track(net_a, path.layer, self.lay.spiral_track, wide))
-        thin = [at(s_tie - TIE_THIN_START_MM)] + [tuple(map(float, p)) for p in pts[s > s_tie]]
-        self.board.polyline(thin, self.w, path.layer, self.board.net(net_b))
-        self.res.tracks.append(Track(net_b, path.layer, self.w, thin))
+        width = self.lay.spiral_track
+        wide_a = [tuple(map(float, p)) for p in pts[s < s_tie - TIE_WIDE_END_MM]]
+        wide_a.append(at(s_tie - TIE_WIDE_END_MM))
+        self.board.polyline(wide_a, width, path.layer, self.board.net(net_a))
+        self.res.tracks.append(Track(net_a, path.layer, width, wide_a))
+        s_b = s_tie + TIE_WIDE_RESUME_MM
+        wide_b = [at(s_b)] + [tuple(map(float, p)) for p in pts[s > s_b]]
+        self.board.polyline(wide_b, width, path.layer, self.board.net(net_b))
+        self.res.tracks.append(Track(net_b, path.layer, width, wide_b))
         bx, by = at(s_tie)
         px, py = at(s_tie + 0.05)
         qx, qy = at(s_tie - 0.05)
@@ -288,7 +311,8 @@ class Builder:
 
     def net_tie(self, ref: str, x: float, y: float, rot: float, net_a: str, net_b: str) -> None:
         """quadgen:COIL_TIE: two touching B.Cu pads, pad 2 (net B) at the
-        origin and pad 1 (net A) one step along local +x. KiCad's
+        origin and pad 1 (net A) one step along local +x, both inside the
+        hollow of the coil on the radial run of the last junction. KiCad's
         net_tie_pad_groups makes their contact legal, the two nets stay
         distinct for the router and the checks (_tie_pair)."""
         ia, ib = self.board.net(net_a), self.board.net(net_b)
@@ -316,10 +340,8 @@ class Builder:
         th = np.radians(rot)
         ax = x + TIE_STEP_MM * float(np.cos(th))
         ay = y - TIE_STEP_MM * float(np.sin(th))
-        # axis-aligned boxes of the rotated squares, conservative for the checks
-        side = pad * (abs(float(np.cos(th))) + abs(float(np.sin(th))))
-        self.res.pads.append(PadItem(net_a, "B.Cu", round(ax, 4), round(ay, 4), side, side))
-        self.res.pads.append(PadItem(net_b, "B.Cu", x, y, side, side))
+        self.res.pads.append(PadItem(net_a, "B.Cu", round(ax, 4), round(ay, 4), pad, pad, rot))
+        self.res.pads.append(PadItem(net_b, "B.Cu", x, y, pad, pad, rot))
 
     def escapes(self) -> None:
         """Both terminals follow the same lane; A (F.Cu) enters its cell at
@@ -751,7 +773,6 @@ class Builder:
     def _route_clash(self, net: str, tracks, vias, width: float, via_pad: float) -> str | None:
         """Exact clearance of a candidate strip route against the copper drawn
         so far (strip region only); the first clash, or None."""
-        from shapely.geometry import box
 
         W = self.lay.strip_w
         clr = self.clr - CHECK_SLOP_MM
@@ -771,7 +792,7 @@ class Builder:
                         )
             for p in self.res.pads:
                 if p.x < W + 2.0:
-                    g = box(p.x - p.w / 2, p.y - p.h / 2, p.x + p.w / 2, p.y + p.h / 2)
+                    g = p.geometry()
                     for la in COPPER_LAYERS if p.layer == "*.Cu" else [p.layer]:
                         by_layer.setdefault(la, []).append((p.net, g))
             for hx, hy, hd in self.res.holes:
@@ -794,7 +815,7 @@ class Builder:
             its, tree = self._clash_index[la]
             for j in tree.query(g.buffer(clr)):
                 other = its[int(j)]
-                if other[0] == net or _tie_pair(net, other[0]):
+                if other[0] == net:
                     continue
                 d = g.distance(other[1])
                 if d < clr:
@@ -808,36 +829,34 @@ class Builder:
         """Exact same-layer clearance between items of different nets, vias
         and holes against everything; a copper item off the board."""
         lay = self.lay
-        items = []  # (net, layer, geometry)
+        items = []  # (net, layer, geometry, kind)
         for t in self.res.tracks:
-            items.append((t.net, t.layer, LineString(t.pts).buffer(t.width / 2.0)))
+            items.append((t.net, t.layer, LineString(t.pts).buffer(t.width / 2.0), "track"))
         for v in self.res.vias:
             for layer in COPPER_LAYERS:
-                items.append((v.net, layer, Point(v.x, v.y).buffer(v.pad / 2.0)))
+                items.append((v.net, layer, Point(v.x, v.y).buffer(v.pad / 2.0), "via"))
         for p in self.res.pads:
             layers = COPPER_LAYERS if p.layer == "*.Cu" else [p.layer]
-            from shapely.geometry import box
-
             for layer in layers:
-                items.append(
-                    (p.net, layer, box(p.x - p.w / 2, p.y - p.h / 2, p.x + p.w / 2, p.y + p.h / 2))
-                )
+                items.append((p.net, layer, p.geometry(), "pad"))
         for hx, hy, hd in self.res.holes:
             for layer in COPPER_LAYERS:
-                items.append(("__hole__", layer, Point(hx, hy).buffer(hd / 2.0 + 0.35)))
+                items.append(("__hole__", layer, Point(hx, hy).buffer(hd / 2.0 + 0.35), "hole"))
         errors = []
         by_layer: dict[str, list] = {}
         for it in items:
             by_layer.setdefault(it[1], []).append(it)
         clr = self.clr - CHECK_SLOP_MM
         for layer, its in by_layer.items():
-            geoms = [g for _n, _l, g in its]
+            geoms = [g for _n, _l, g, _k in its]
             tree = STRtree(geoms)
-            for i, (net, _l, g) in enumerate(its):
+            for i, (net, _l, g, kind) in enumerate(its):
                 for j in tree.query(g.buffer(clr)):
                     j = int(j)
-                    if j <= i or its[j][0] == net or _tie_pair(net, its[j][0]):
+                    if j <= i or its[j][0] == net:
                         continue
+                    if kind == "pad" and its[j][3] == "pad" and _tie_pair(net, its[j][0]):
+                        continue  # the two touching pads of a coil net tie
                     d = g.distance(geoms[j])
                     if d < clr:
                         from shapely.ops import nearest_points
@@ -847,7 +866,7 @@ class Builder:
                             f"{layer}: {net} vs {its[j][0]} at ({c.x:.1f},{c.y:.1f}) gap {d:.3f}"
                         )
         edge = self.rt.edge_clearance_mm - CHECK_SLOP_MM
-        for net, _layer, g in items:
+        for net, _layer, g, _kind in items:
             if net == "__hole__":
                 continue
             minx, miny, maxx, maxy = g.bounds
@@ -876,12 +895,34 @@ class Builder:
 
 
 def _tie_pair(a: str, b: str) -> bool:
-    """C{k}_A against C{k}_B: joined on purpose by the coil net tie."""
+    """C{k}_A against C{k}_B: the two nets of one coil, joined on purpose
+    by the two touching pads of its net tie and nowhere else."""
     return (
         (a.endswith("_A") and b.endswith("_B") or a.endswith("_B") and b.endswith("_A"))
         and a[:-2] == b[:-2]
         and a.startswith("C")
     )
+
+
+def _offset_junctions(paths, center, r_in: float, r_out: float):
+    """Every layer junction moved radially off the turn bands: inward at
+    the inner radius, outward at the outer one, joined to both spirals
+    by a radial run of the same track. Returns the new paths (still
+    sharing their junction points) and the via positions."""
+    cx, cy = center
+    pts = [np.asarray(p.points, dtype=float) for p in paths]
+    vias = []
+    for i in range(len(paths) - 1):
+        px, py = pts[i][-1]
+        r = math.hypot(px - cx, py - cy)
+        inner = r < (r_in + r_out) / 2.0
+        last = i == len(paths) - 2
+        d = -(TIE_VIA_OFFSET_MM if last else VIA_OFFSET_MM) if inner else VIA_OFFSET_MM
+        vx, vy = cx + (px - cx) * (r + d) / r, cy + (py - cy) * (r + d) / r
+        pts[i] = np.vstack([pts[i], [[vx, vy]]])
+        pts[i + 1] = np.vstack([[[vx, vy]], pts[i + 1]])
+        vias.append((float(vx), float(vy)))
+    return [dataclasses.replace(p, points=q) for p, q in zip(paths, pts, strict=True)], vias
 
 
 def _nearest_on_lines(p: tuple[float, float], lines) -> tuple[float, float]:

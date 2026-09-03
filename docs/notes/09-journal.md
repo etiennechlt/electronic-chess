@@ -162,7 +162,11 @@ quatre commandes.
   ESP32 au bord du cerveau avec son antenne hors carte, cour réduite et
   assumée sur l'horloge ; règles du projet alignées sur les vias
   d'éventail, vias hors des trous de connecteurs, net tie des bobines
-  déplacé hors du trou de via.
+  déplacé hors du trou de via. Plus grave : les vias d'empilement des
+  bobines, posées sur le rayon intérieur ou extérieur, recouvraient les
+  spires des autres couches et court-circuitaient la bobine (le
+  contrôle maison exemptait les paires A/B) ; elles sont désormais
+  décalées radialement hors des bandes, la maquette reste à corriger.
 - Erreurs de câblage corrigées : FET d'entrée du BQ24610 en canal P
   (ACDRV actif bas), sources des FET DSG et CHG du BQ76920, réseau de
   température et consignes de charge (50 mohms, 1 A), UART de l'ESP32

@@ -83,8 +83,11 @@ Sallen-Key validée en SPICE, FPC 16 broches. L'ADG726 du brief n'a pas
 de symbole vérifiable dans KiCad 7 et sa fiche n'était pas accessible
 depuis l'environnement de génération : les deux ADG1607 le remplacent
 avec un brochage vérifié. La bobine est un « net tie » sur le PCB
-(couches 1 à 3 sur C{k}_A, couche 4 sur C{k}_B) pour que le routeur ne
-puisse jamais court-circuiter ses deux bornes. Sur le FPC, les quatre
+(couches 1 à 3 sur C{k}_A, couche 4 sur C{k}_B, jonction par deux
+pastilles B.Cu dans le creux de la bobine) pour que le routeur ne
+puisse jamais court-circuiter ses deux bornes ; ses vias d'empilement
+sont décalées radialement hors des bandes de spires, sans quoi elles
+court-circuitaient les couches entre elles ([note 14](14-revue-des-cartes.md)). Sur le FPC, les quatre
 broches à destination imposée (masse vers le bus In1, 5 V LED vers le
 bus In2, entrée et sortie de la chaîne LED) sortent en ligne droite au
 delà des rangées de vias d'éventail de leurs voisines : le brochage du
