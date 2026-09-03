@@ -27,6 +27,11 @@ pas.
   [0001](adr/0001-lc-resonators-for-piece-identification.md) et
   [0007](adr/0007-frequency-extraction-dual-path.md), puis le
   [protocole M1 à M11](../measurements/protocol.md).
+- **Ouvrir, vérifier et tester les cartes** : la
+  [note 13](notes/13-revue-et-verification.md) (KiCad 9, DRC, netlists,
+  valeurs, simulation, commande, protocole de test).
+- **Imprimer** : `python mechanical/build_all.py` écrit STL et STEP
+  dans `mechanical/exports/` (non versionnés).
 - **Modifier une carte** :
   [générateurs KiCad](notes/03-generateurs-kicad.md),
   [routeur et garanties](notes/04-routeur-et-garanties.md),
@@ -79,6 +84,7 @@ pas.
 | [10](notes/10-plateau-8x8-et-horloge.md) | Plateau 8 x 8, base interchangeable et horloge : les choix et leurs raisons |
 | [11](notes/11-cartes-du-plateau.md) | Les cinq cartes du plateau : méthode, choix, revue avant fabrication |
 | [12](notes/12-protocole.md) | Protocole plateau, pont radio, horloge (lignes texte, BLE) |
+| [13](notes/13-revue-et-verification.md) | Ouvrir, vérifier, simuler, commander et tester les cartes |
 
 Décisions formelles : [index des ADR](adr/README.md). Conventions de
 contribution : `CLAUDE.md` à la racine (langue, typographie, source

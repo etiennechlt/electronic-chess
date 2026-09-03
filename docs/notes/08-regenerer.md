@@ -8,7 +8,7 @@ kicad-cli 7, ngspice, arm-none-eabi-gcc, CadQuery.
 
 ```bash
 .venv/bin/ruff check .
-.venv/bin/pytest -q          # 66 tests, couloir bloquant inclus
+.venv/bin/pytest -q          # une centaine de tests, couloir bloquant inclus
 ```
 
 ## Rapport de calculs

@@ -90,6 +90,7 @@ OPA2810) : [détails](hardware/quadrant/README.md).
 Les quatre cartes sortent du générateur générique `tools/boardgen` ;
 ce que le routeur laisse ouvert est listé dans le README de chaque
 carte et résumé dans la [note 11](docs/notes/11-cartes-du-plateau.md).
+Pour ouvrir, vérifier, simuler et tester : [note 13](docs/notes/13-revue-et-verification.md).
 
 ## Maquette 2 x 2 (phase 1, conçue, non construite)
 
