@@ -27,7 +27,7 @@ FOOTPRINT_DIR = Path("/usr/share/kicad/footprints")
 @dataclass(frozen=True)
 class PadSpec:
     number: str
-    kind: str          # smd / thru_hole / np_thru_hole
+    kind: str  # smd / thru_hole / np_thru_hole
     shape: str
     dx: float
     dy: float
@@ -67,13 +67,19 @@ def load_footprint(lib_id: str) -> Footprint:
         layers = find_one(pad, "layers")
         drill_val = None
         if drill is not None:
-            nums = [float(x) for x in drill[1:] if not isinstance(x, list)
-                    and re.match(r"^-?\d", str(x))]
+            nums = [
+                float(x)
+                for x in drill[1:]
+                if not isinstance(x, list) and re.match(r"^-?\d", str(x))
+            ]
             drill_val = nums[0] if nums else None
         pads.append(
             PadSpec(
-                number=number, kind=kind, shape=shape,
-                dx=float(at[1]), dy=float(at[2]),
+                number=number,
+                kind=kind,
+                shape=shape,
+                dx=float(at[1]),
+                dy=float(at[2]),
                 rot=float(at[3]) if len(at) > 3 else 0.0,
                 size=(float(size[1]), float(size[2])),
                 drill=drill_val,
@@ -92,7 +98,12 @@ def pad_abs_pos(x: float, y: float, rot_deg: float, pad: PadSpec) -> tuple[float
 
 
 def place_footprint(
-    fp: Footprint, ref: str, value: str, x: float, y: float, rot_deg: float,
+    fp: Footprint,
+    ref: str,
+    value: str,
+    x: float,
+    y: float,
+    rot_deg: float,
     pad_nets: dict[str, tuple[int, str]],
 ) -> str:
     """Instance block for a .kicad_pcb (top side only)."""
@@ -102,17 +113,17 @@ def place_footprint(
     header_match = re.match(r'\((?:footprint|module)\s+("[^"]+"|\S+)', text)
     name_tok = header_match.group(1)
     bare = name_tok.strip('"')
-    text = text.replace(header_match.group(0),
-                        f'(footprint "{fp.lib_id.split(":", 1)[0]}:{bare}"', 1)
+    text = text.replace(
+        header_match.group(0), f'(footprint "{fp.lib_id.split(":", 1)[0]}:{bare}"', 1
+    )
     rot_txt = f" {rot_deg:g}" if abs(rot_deg) > 1e-9 else ""
-    text = re.sub(r'(\(layer\s+"?F\.Cu"?\))',
-                  rf'\1\n  (at {x:g} {y:g}{rot_txt})', text, count=1)
+    text = re.sub(r'(\(layer\s+"?F\.Cu"?\))', rf"\1\n  (at {x:g} {y:g}{rot_txt})", text, count=1)
 
     # Reference and value (library files may quote them or not).
-    text = re.sub(r'\(fp_text reference\s+(?:"[^"]*"|\S+)',
-                  f'(fp_text reference "{ref}"', text, count=1)
-    text = re.sub(r'\(fp_text value\s+(?:"[^"]*"|\S+)',
-                  f'(fp_text value "{value}"', text, count=1)
+    text = re.sub(
+        r'\(fp_text reference\s+(?:"[^"]*"|\S+)', f'(fp_text reference "{ref}"', text, count=1
+    )
+    text = re.sub(r'\(fp_text value\s+(?:"[^"]*"|\S+)', f'(fp_text value "{value}"', text, count=1)
 
     # Pad angles are absolute: add the footprint angle to every pad, and
     # inject nets. Walk pad blocks one by one.
@@ -138,12 +149,14 @@ def place_footprint(
         block = text[start:end]
         number = m.group(1).strip('"')
         if abs(rot_deg) > 1e-9:
+
             def _rot(mm):
                 parts = mm.group(1).split()
                 if len(parts) == 2:
                     parts.append("0")
                 parts[2] = f"{float(parts[2]) + rot_deg:g}"
                 return f"(at {' '.join(parts)})"
+
             block = re.sub(r"\(at\s+([^()]*)\)", _rot, block, count=1)
         if number in pad_nets:
             net_i, net_name = pad_nets[number]

@@ -32,9 +32,9 @@ def test_stack_heights(cfg):
 def test_footprints(cfg):
     g = geometry(cfg)
     assert g.play_mm == 400.0
-    assert g.module_mm == 432.0
-    assert (g.thin.width_mm, g.thin.depth_mm) == (432.0, 432.0)
-    assert (g.gantry.width_mm, g.gantry.depth_mm) == (532.0, 452.0)
+    assert g.module_mm == 440.0
+    assert (g.thin.width_mm, g.thin.depth_mm) == (440.0, 440.0)
+    assert (g.gantry.width_mm, g.gantry.depth_mm) == (540.0, 460.0)
     assert g.capture_band_mm == 50.0
 
 
@@ -42,8 +42,12 @@ def test_quadrants_tile_the_play_area(cfg):
     g = geometry(cfg)
     origins = quadrant_origins(cfg)
     assert len(origins) == g.quadrants_per_side**2 == 4
-    covered = {(x + dx, y + dy) for x, y in origins
-               for dx in (0.0, g.quadrant_mm) for dy in (0.0, g.quadrant_mm)}
+    covered = {
+        (x + dx, y + dy)
+        for x, y in origins
+        for dx in (0.0, g.quadrant_mm)
+        for dy in (0.0, g.quadrant_mm)
+    }
     assert max(x for x, _ in covered) == g.play_mm
     assert max(y for _, y in covered) == g.play_mm
 
@@ -70,8 +74,9 @@ def test_thin_base_hides_no_component_under_the_quadrants(cfg):
 
 def test_guards_fire(cfg):
     from chessboard_calc.config import BoardConfig
+
     raw = cfg.model_dump()
-    raw["gap"]["air_mm"] = 1.0                 # LEDs and front end no longer fit
+    raw["gap"]["air_mm"] = 1.0  # LEDs and front end no longer fit
     assert "front end parts taller than the air clearance" in check(BoardConfig.model_validate(raw))
     raw = cfg.model_dump()
     raw["clock"]["rocker"]["length_mm"] = 118.0

@@ -25,8 +25,9 @@ def main(argv: list[str] | None = None) -> int:
     build.add_argument("--config", default=str(DEFAULT_CONFIG_PATH))
     build.add_argument("--out", default="hardware/mockup-2x2/analog-board")
     build.add_argument("--render", default=None, help="optional PNG output path")
-    build.add_argument("--skip-pcb", action="store_true",
-                       help="only schematic, BOM and SPICE outputs")
+    build.add_argument(
+        "--skip-pcb", action="store_true", help="only schematic, BOM and SPICE outputs"
+    )
     args = parser.parse_args(argv)
 
     cfg = load_config(args.config)
@@ -37,23 +38,24 @@ def main(argv: list[str] | None = None) -> int:
     schematic = emit_schematic(circuit, "Damier LC, maquette 2x2, carte analogique")
     (out / "analog-board.kicad_sch").write_text(schematic, encoding="utf-8")
     (out / "analog-board.kicad_pro").write_text(
-        project_json("analog-board", design_rules(),
-                     root_sheet_uuid=schematic_root_uuid(schematic)),
-        encoding="utf-8")
+        project_json(
+            "analog-board", design_rules(), root_sheet_uuid=schematic_root_uuid(schematic)
+        ),
+        encoding="utf-8",
+    )
     (out / "bom.csv").write_text(bom_csv(circuit), encoding="utf-8")
     (out / "jlc-bom.csv").write_text(jlc_bom_csv(circuit), encoding="utf-8")
     (out / "chain-spice.cir").write_text(chain_netlist(chain), encoding="utf-8")
-    print(f"project, schematic, BOM and SPICE written to {out} "
-          f"(chain gain {chain.total_gain:.0f})")
+    print(f"project, schematic, BOM and SPICE written to {out} (chain gain {chain.total_gain:.0f})")
 
     if not args.skip_pcb:
         result = build_pcb(cfg, circuit)
-        (out / "analog-board.kicad_pcb").write_text(
-            result.board.serialize(), encoding="utf-8")
-        (out / "jlc-cpl.csv").write_text(
-            jlc_cpl_csv(circuit, result.placements), encoding="utf-8")
-        status = (f"routed: {len(result.tracks)} tracks, {len(result.vias)} vias, "
-                  f"open {len(result.open_nets)}, drc {len(result.drc_errors)}")
+        (out / "analog-board.kicad_pcb").write_text(result.board.serialize(), encoding="utf-8")
+        (out / "jlc-cpl.csv").write_text(jlc_cpl_csv(circuit, result.placements), encoding="utf-8")
+        status = (
+            f"routed: {len(result.tracks)} tracks, {len(result.vias)} vias, "
+            f"open {len(result.open_nets)}, drc {len(result.drc_errors)}"
+        )
         print(status)
         if result.finish_log:
             print(f"  finishing pass: {len(result.finish_log)} joints")

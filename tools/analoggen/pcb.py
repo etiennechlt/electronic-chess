@@ -43,18 +43,27 @@ from .fplib import load_footprint, pad_abs_pos, place_footprint
 
 BOARD_W, BOARD_H = 100.0, 62.0
 GRID = 0.125
-CLR = 0.15          # routing design clearance
-FAB_CLR = 0.127     # exact DRC gate
-SLOP = 0.09         # rasterization slack (half cell diagonal)
+CLR = 0.15  # routing design clearance
+FAB_CLR = 0.127  # exact DRC gate
+SLOP = 0.09  # rasterization slack (half cell diagonal)
 W_SIG = 0.4
 W_PWR = 0.8
-W_FINE = 0.25       # entries into fine-pitch pads
+W_FINE = 0.25  # entries into fine-pitch pads
 VIA_D, VIA_DRILL = 0.6, 0.3
 EDGE_KEEPOUT = 0.4  # router margin, keeps tracks off the outline
 DRC_EDGE_CLR = 0.2  # fabrication floor, what the KiCad DRC checks
 
-POWER_NETS = {"VIN", "VIN_JACK", "5V_BUCK", "5V_BUCK_FILT", "5V_LDO", "5VA",
-              "SW", "PULSE_RAIL", "DRIVE_BUS"}
+POWER_NETS = {
+    "VIN",
+    "VIN_JACK",
+    "5V_BUCK",
+    "5V_BUCK_FILT",
+    "5V_LDO",
+    "5VA",
+    "SW",
+    "PULSE_RAIL",
+    "DRIVE_BUS",
+}
 
 
 def design_rules() -> DesignRules:
@@ -85,8 +94,8 @@ class PcbResult:
     board: Board
     placements: dict[str, tuple[float, float, float]]
     pad_pos: dict[tuple[str, str], tuple[float, float]]
-    tracks: list = field(default_factory=list)   # (net, width, pts, layer)
-    vias: list = field(default_factory=list)     # (net, x, y)
+    tracks: list = field(default_factory=list)  # (net, width, pts, layer)
+    vias: list = field(default_factory=list)  # (net, x, y)
     plane_polys: list = field(default_factory=list)
     finish_log: list = field(default_factory=list)
     drc_errors: list = field(default_factory=list)
@@ -103,8 +112,12 @@ CELL_Y = 38.0
 PLACEMENTS: dict[str, tuple[float, float, float]] = {
     # North edge: MCU header and test points.
     "J4": (64.0, 6.0, 90.0),
-    "TP1": (59.5, 3.0, 0.0), "TP2": (59.5, 7.5, 0.0), "TP3": (55.5, 3.0, 0.0),
-    "TP4": (55.5, 7.5, 0.0), "TP5": (51.5, 3.0, 0.0), "TP6": (51.5, 7.5, 0.0),
+    "TP1": (59.5, 3.0, 0.0),
+    "TP2": (59.5, 7.5, 0.0),
+    "TP3": (55.5, 3.0, 0.0),
+    "TP4": (55.5, 7.5, 0.0),
+    "TP5": (51.5, 3.0, 0.0),
+    "TP6": (51.5, 7.5, 0.0),
     # Power entry, west.
     "J1": (5.0, 9.5, 0.0),
     "D1": (15.5, 4.5, 180.0),
@@ -197,19 +210,19 @@ PLACEMENTS: dict[str, tuple[float, float, float]] = {
 }
 
 CELL_PARTS: dict[str, tuple[float, float, float]] = {
-    "Rb+3": (1.2, 0.4, 90.0),    # clamp A -> MkA node at top
-    "Rb+4": (3.6, 0.4, 90.0),    # clamp B
-    "Rb+1": (6.0, 0.4, 90.0),    # bleed A (mux-side node)
-    "Rb+2": (8.4, 0.4, 90.0),    # bleed B
+    "Rb+3": (1.2, 0.4, 90.0),  # clamp A -> MkA node at top
+    "Rb+4": (3.6, 0.4, 90.0),  # clamp B
+    "Rb+1": (6.0, 0.4, 90.0),  # bleed A (mux-side node)
+    "Rb+2": (8.4, 0.4, 90.0),  # bleed B
     "Dd+10": (2.2, 3.4, 180.0),  # BAV99 A, common west
-    "Dd+20": (8.0, 3.4, 0.0),    # BAV99 B, common east
-    "Dd+30": (1.4, 6.4, 90.0),   # bus diode, K south
-    "Qq+10": (8.6, 6.6, 0.0),    # drive FET
-    "Rb+5": (11.0, 6.6, 90.0),   # drive gate pulldown
-    "Dd+40": (5.6, 9.6, 0.0),    # flyback SS34, A pad east near the FET drain
+    "Dd+20": (8.0, 3.4, 0.0),  # BAV99 B, common east
+    "Dd+30": (1.4, 6.4, 90.0),  # bus diode, K south
+    "Qq+10": (8.6, 6.6, 0.0),  # drive FET
+    "Rb+5": (11.0, 6.6, 90.0),  # drive gate pulldown
+    "Dd+40": (5.6, 9.6, 0.0),  # flyback SS34, A pad east near the FET drain
     "Qq+20": (1.6, 12.6, 180.0),  # damp FET, source on the A node
-    "Rb+6": (5.4, 12.8, 0.0),    # damp resistor 0805
-    "Rb+7": (8.8, 12.6, 90.0),   # damp gate pullup
+    "Rb+6": (5.4, 12.8, 0.0),  # damp resistor 0805
+    "Rb+7": (8.8, 12.6, 90.0),  # damp gate pullup
 }
 
 
@@ -243,7 +256,7 @@ class PadInst:
     net: str | None
     x: float
     y: float
-    w: float           # bounding box after rotation
+    w: float  # bounding box after rotation
     h: float
     tht: bool
 
@@ -266,10 +279,18 @@ def _pad_instances(circuit: Circuit, placements) -> list[PadInst]:
             if abs(math.sin(math.radians(total))) > 0.5:
                 w, h = h, w
             net = comp.pins.get(pad.number)
-            out.append(PadInst(
-                ref=comp.ref, number=pad.number, net=net, x=px, y=py,
-                w=w, h=h, tht=pad.kind != "smd",
-            ))
+            out.append(
+                PadInst(
+                    ref=comp.ref,
+                    number=pad.number,
+                    net=net,
+                    x=px,
+                    y=py,
+                    w=w,
+                    h=h,
+                    tht=pad.kind != "smd",
+                )
+            )
     return out
 
 
@@ -283,14 +304,11 @@ class Router:
         self.pads = pads
         self.net_ids: dict[str, int] = {}
         # Pad ownership per layer (-1 free, -2 no-net keepout, else net id).
-        self.pad_grid = [np.full((self.ny, self.nx), -1, dtype=np.int32)
-                         for _ in range(2)]
+        self.pad_grid = [np.full((self.ny, self.nx), -1, dtype=np.int32) for _ in range(2)]
         self.smd_top = np.zeros((self.ny, self.nx), dtype=bool)
         # Routed copper: true-extent mask plus first-come ownership.
-        self.track_grid = [np.full((self.ny, self.nx), -1, dtype=np.int32)
-                           for _ in range(2)]
-        self.copper = [np.zeros((self.ny, self.nx), dtype=bool)
-                       for _ in range(2)]
+        self.track_grid = [np.full((self.ny, self.nx), -1, dtype=np.int32) for _ in range(2)]
+        self.copper = [np.zeros((self.ny, self.nx), dtype=bool) for _ in range(2)]
         self.tracks: list[tuple[str, float, list[tuple[float, float]], str]] = []
         self.vias: list[tuple[str, float, float]] = []
         self.failed: list[str] = []
@@ -299,15 +317,16 @@ class Router:
         for pad in pads:
             nid = self._nid(pad.net) if pad.net else -2
             i0, i1, j0, j1 = self._cells_inside(
-                pad.x - pad.w / 2, pad.y - pad.h / 2,
-                pad.x + pad.w / 2, pad.y + pad.h / 2)
-            for la in ((0, 1) if pad.tht else (0,)):
-                zone = self.pad_grid[la][i0:i1 + 1, j0:j1 + 1]
+                pad.x - pad.w / 2, pad.y - pad.h / 2, pad.x + pad.w / 2, pad.y + pad.h / 2
+            )
+            for la in (0, 1) if pad.tht else (0,):
+                zone = self.pad_grid[la][i0 : i1 + 1, j0 : j1 + 1]
                 clash = (zone != -1) & (zone != nid)
-                self.pad_grid[la][i0:i1 + 1, j0:j1 + 1] = np.where(
-                    clash, np.int32(-2), np.where(zone == -1, nid, zone))
+                self.pad_grid[la][i0 : i1 + 1, j0 : j1 + 1] = np.where(
+                    clash, np.int32(-2), np.where(zone == -1, nid, zone)
+                )
             if not pad.tht:
-                self.smd_top[i0:i1 + 1, j0:j1 + 1] = True
+                self.smd_top[i0 : i1 + 1, j0 : j1 + 1] = True
 
     def _nid(self, net: str) -> int:
         if net not in self.net_ids:
@@ -337,11 +356,17 @@ class Router:
         big = np.float32(1e6)
         for la in range(2):
             foreign_pad = (self.pad_grid[la] != -1) & (self.pad_grid[la] != nid)
-            d_pad = ndimage.distance_transform_edt(~foreign_pad) * GRID \
-                if foreign_pad.any() else np.full((self.ny, self.nx), big)
+            d_pad = (
+                ndimage.distance_transform_edt(~foreign_pad) * GRID
+                if foreign_pad.any()
+                else np.full((self.ny, self.nx), big)
+            )
             foreign_cu = self.copper[la] & (self.track_grid[la] != nid)
-            d_cu = ndimage.distance_transform_edt(~foreign_cu) * GRID \
-                if foreign_cu.any() else np.full((self.ny, self.nx), big)
+            d_cu = (
+                ndimage.distance_transform_edt(~foreign_cu) * GRID
+                if foreign_cu.any()
+                else np.full((self.ny, self.nx), big)
+            )
 
             def masks(margin, half, dp=d_pad, dc=d_cu):
                 # Marks over-approximate the copper, no slack needed.
@@ -363,11 +388,10 @@ class Router:
 
     def _pad_cells(self, pad: PadInst):
         i0, i1, j0, j1 = self._cells_inside(
-            pad.x - pad.w / 2, pad.y - pad.h / 2,
-            pad.x + pad.w / 2, pad.y + pad.h / 2)
+            pad.x - pad.w / 2, pad.y - pad.h / 2, pad.x + pad.w / 2, pad.y + pad.h / 2
+        )
         layers = (0, 1) if pad.tht else (0,)
-        cells = [(la, i, j) for la in layers
-                 for i in range(i0, i1 + 1) for j in range(j0, j1 + 1)]
+        cells = [(la, i, j) for la in layers for i in range(i0, i1 + 1) for j in range(j0, j1 + 1)]
         if not cells:
             ci, cj = int(round(pad.y / GRID)), int(round(pad.x / GRID))
             cells = [(la, ci, cj) for la in layers]
@@ -380,22 +404,19 @@ class Router:
         for la, i, j in cells:
             i0, i1 = max(0, i - r), min(self.ny - 1, i + r)
             j0, j1 = max(0, j - r), min(self.nx - 1, j + r)
-            self.copper[la][i0:i1 + 1, j0:j1 + 1] = True
-            zone = self.track_grid[la][i0:i1 + 1, j0:j1 + 1]
-            self.track_grid[la][i0:i1 + 1, j0:j1 + 1] = np.where(
-                zone == -1, nid, zone)
+            self.copper[la][i0 : i1 + 1, j0 : j1 + 1] = True
+            zone = self.track_grid[la][i0 : i1 + 1, j0 : j1 + 1]
+            self.track_grid[la][i0 : i1 + 1, j0 : j1 + 1] = np.where(zone == -1, nid, zone)
             if prev is not None and prev[0] != la and prev[1:] == (i, j):
                 vi0, vi1 = max(0, i - rv), min(self.ny - 1, i + rv)
                 vj0, vj1 = max(0, j - rv), min(self.nx - 1, j + rv)
                 for vla in range(2):
-                    self.copper[vla][vi0:vi1 + 1, vj0:vj1 + 1] = True
-                    vz = self.track_grid[vla][vi0:vi1 + 1, vj0:vj1 + 1]
-                    self.track_grid[vla][vi0:vi1 + 1, vj0:vj1 + 1] = np.where(
-                        vz == -1, nid, vz)
+                    self.copper[vla][vi0 : vi1 + 1, vj0 : vj1 + 1] = True
+                    vz = self.track_grid[vla][vi0 : vi1 + 1, vj0 : vj1 + 1]
+                    self.track_grid[vla][vi0 : vi1 + 1, vj0 : vj1 + 1] = np.where(vz == -1, nid, vz)
             prev = (la, i, j)
 
-    def _emit(self, net: str, width: float, path,
-              snap_first=None, snap_last=None):
+    def _emit(self, net: str, width: float, path, snap_first=None, snap_last=None):
         segs = []
         cur_layer = path[0][0]
         cur = [(path[0][2] * GRID, path[0][1] * GRID)]
@@ -417,25 +438,23 @@ class Router:
             for prev_pt, a, b in zip(pts, pts[1:], pts[2:], strict=False):
                 _ = prev_pt
                 last = simple[-1]
-                if (abs(a[0] - last[0]) < 1e-9 and abs(a[0] - b[0]) < 1e-9) or \
-                        (abs(a[1] - last[1]) < 1e-9 and abs(a[1] - b[1]) < 1e-9):
+                if (abs(a[0] - last[0]) < 1e-9 and abs(a[0] - b[0]) < 1e-9) or (
+                    abs(a[1] - last[1]) < 1e-9 and abs(a[1] - b[1]) < 1e-9
+                ):
                     continue
                 simple.append(a)
             if pts[-1] != simple[-1]:
                 simple.append(pts[-1])
-            simple = [p for k, p in enumerate(simple)
-                      if k == 0 or p != simple[k - 1]]
+            simple = [p for k, p in enumerate(simple) if k == 0 or p != simple[k - 1]]
             if len(simple) >= 2:
-                self.tracks.append(
-                    (net, width, simple, "F.Cu" if la == 0 else "B.Cu"))
+                self.tracks.append((net, width, simple, "F.Cu" if la == 0 else "B.Cu"))
 
     def _pad_at_cell(self, net: str, la: int, i: int, j: int):
         x, y = j * GRID, i * GRID
         for q in self.pads:
             if q.net != net or (la == 1 and not q.tht):
                 continue
-            if abs(x - q.x) <= q.w / 2 + GRID + 1e-9 \
-                    and abs(y - q.y) <= q.h / 2 + GRID + 1e-9:
+            if abs(x - q.x) <= q.w / 2 + GRID + 1e-9 and abs(y - q.y) <= q.h / 2 + GRID + 1e-9:
                 return q
         return None
 
@@ -446,14 +465,16 @@ class Router:
         Pad cells are rasterized one cell beyond the copper, so a path
         entering the grid box of a small pad can otherwise sweep its
         half-width into the neighbouring pad (0.5 mm pitch parts)."""
+
         def trim(p):
             la0, i0, j0 = p[0]
             pad = self._pad_at_cell(net, la0, i0, j0)
             if pad is None:
                 return p, None
             k = 0
-            while (k + 1 < len(p) and p[k + 1][0] == la0
-                   and self._pad_at_cell(net, *p[k + 1]) is pad):
+            while (
+                k + 1 < len(p) and p[k + 1][0] == la0 and self._pad_at_cell(net, *p[k + 1]) is pad
+            ):
                 k += 1
             p = p[k:]
             x, y = p[0][2] * GRID, p[0][1] * GRID
@@ -471,11 +492,19 @@ class Router:
         rev, last_xy = trim(path[::-1])
         path = rev[::-1]
         if len(path) >= 2:
-            self._emit(net, width, path, snap_first=first_xy,
-                       snap_last=last_xy)
+            self._emit(net, width, path, snap_first=first_xy, snap_last=last_xy)
 
-    def _astar(self, nid, width, start_cells, target, endpoint_xy,
-               relax_all=False, no_relax=False, max_pops=500_000):
+    def _astar(
+        self,
+        nid,
+        width,
+        start_cells,
+        target,
+        endpoint_xy,
+        relax_all=False,
+        no_relax=False,
+        max_pops=500_000,
+    ):
         soft, hard, via_ok = self._legal_masks(nid, width)
         # Own pads are free passage; own tracks are NOT: riding the edge
         # of an earlier same-net mark would push this half-width into
@@ -490,9 +519,8 @@ class Router:
             relax[:, :, :] = True
         else:
             ex, ey = endpoint_xy
-            i0, i1, j0, j1 = self._cells_inside(ex - 1.6, ey - 1.6,
-                                                ex + 1.6, ey + 1.6)
-            relax[:, i0:i1 + 1, j0:j1 + 1] = True
+            i0, i1, j0, j1 = self._cells_inside(ex - 1.6, ey - 1.6, ex + 1.6, ey + 1.6)
+            relax[:, i0 : i1 + 1, j0 : j1 + 1] = True
 
         tgt_idx = np.argwhere(target.any(axis=0))
         if len(tgt_idx) == 0:
@@ -542,10 +570,13 @@ class Router:
                     prev[(la, ni, nj)] = (la, i, j)
                     heapq.heappush(heap, (nd + hcost(ni, nj), nd, (la, ni, nj)))
             ol = 1 - la
-            if passable(ol, i, j) and not self.smd_top[i, j] \
-                    and via_ok[i, j] \
-                    and self.pad_grid[0][i, j] in (-1, nid) \
-                    and self.pad_grid[1][i, j] in (-1, nid):
+            if (
+                passable(ol, i, j)
+                and not self.smd_top[i, j]
+                and via_ok[i, j]
+                and self.pad_grid[0][i, j] in (-1, nid)
+                and self.pad_grid[1][i, j] in (-1, nid)
+            ):
                 nd = d + 28.0
                 if nd < dist[ol, i, j]:
                     dist[ol, i, j] = nd
@@ -582,20 +613,17 @@ class Router:
         i, j = int(round(y / GRID)), int(round(x / GRID))
         rv = int(math.ceil(VIA_D / 2.0 / GRID))
         for la in range(2):
-            self.copper[la][max(0, i - rv):i + rv + 1,
-                            max(0, j - rv):j + rv + 1] = True
-            z = self.track_grid[la][max(0, i - rv):i + rv + 1,
-                                    max(0, j - rv):j + rv + 1]
-            self.track_grid[la][max(0, i - rv):i + rv + 1,
-                                max(0, j - rv):j + rv + 1] = np.where(
-                z == -1, nid, z)
+            self.copper[la][max(0, i - rv) : i + rv + 1, max(0, j - rv) : j + rv + 1] = True
+            z = self.track_grid[la][max(0, i - rv) : i + rv + 1, max(0, j - rv) : j + rv + 1]
+            self.track_grid[la][max(0, i - rv) : i + rv + 1, max(0, j - rv) : j + rv + 1] = (
+                np.where(z == -1, nid, z)
+            )
         self.vias.append((net, x, y))
 
     def route_net(self, net: str) -> None:
         """Connect every pad to the component grown from the seed pad."""
         nid = self._nid(net)
-        pads = sorted((p for p in self.pads if p.net == net),
-                      key=lambda p: (p.x, p.y))
+        pads = sorted((p for p in self.pads if p.net == net), key=lambda p: (p.x, p.y))
         if len(pads) < 2:
             return
         connected = np.zeros((2, self.ny, self.nx), dtype=bool)
@@ -646,8 +674,7 @@ class Router:
                 target[la, i, j] = False
             if not target.any():
                 continue
-            path = self._astar(nid, W_FINE, cells, target, (pad.x, pad.y),
-                               relax_all=True)
+            path = self._astar(nid, W_FINE, cells, target, (pad.x, pad.y), relax_all=True)
             if path is None:
                 still.append(f"{net}:{pad.ref}.{pad.number}")
                 continue
@@ -661,8 +688,7 @@ class Router:
         return ":" in entry and not entry.startswith("GND-via")
 
     def _touches_net(self, net: str, pad) -> bool:
-        pb = box(pad.x - pad.w / 2, pad.y - pad.h / 2,
-                 pad.x + pad.w / 2, pad.y + pad.h / 2)
+        pb = box(pad.x - pad.w / 2, pad.y - pad.h / 2, pad.x + pad.w / 2, pad.y + pad.h / 2)
         for tnet, w, pts, tlayer in self.tracks:
             if tnet != net or (tlayer == "B.Cu" and not pad.tht):
                 continue
@@ -688,21 +714,19 @@ class Router:
         """
         nid = self._nid("GND")
         gnd_pads = sorted(
-            (p for p in self.pads if p.net == "GND" and not p.tht),
-            key=lambda p: (p.x, p.y))
+            (p for p in self.pads if p.net == "GND" and not p.tht), key=lambda p: (p.x, p.y)
+        )
         for pad in gnd_pads:
             w_stub = W_FINE if pad.fine else W_SIG
             start_cells = [c for c in self._pad_cells(pad) if c[0] == 0]
             plane_free, _hard, _via = self._legal_masks(nid, w_stub)
             target = np.zeros((2, self.ny, self.nx), dtype=bool)
-            target[1] = plane_free[1] & (self.pad_grid[1] == -1) \
-                & (self.track_grid[1] == -1)
+            target[1] = plane_free[1] & (self.pad_grid[1] == -1) & (self.track_grid[1] == -1)
             for la in range(2):
                 target[la] |= (self.pad_grid[la] == nid) | (self.track_grid[la] == nid)
             for la, i, j in start_cells:
                 target[la, i, j] = False
-            path = self._astar(nid, w_stub, start_cells, target,
-                               (pad.x, pad.y), no_relax=True)
+            path = self._astar(nid, w_stub, start_cells, target, (pad.x, pad.y), no_relax=True)
             if path is None:
                 self.failed.append(f"GND-via:{pad.ref}.{pad.number}")
                 continue
@@ -710,8 +734,6 @@ class Router:
             if len(path) >= 2:
                 self.emit_routed("GND", w_stub, path)
         # THT GND pads connect through the plane itself.
-
-
 
 
 def _hand_seeds(r: Router, pads) -> None:
@@ -743,11 +765,9 @@ def _hand_seeds(r: Router, pads) -> None:
             for q in pads:
                 if q.net == net:
                     continue
-                g = _box(q.x - q.w / 2, q.y - q.h / 2,
-                         q.x + q.w / 2, q.y + q.h / 2)
+                g = _box(q.x - q.w / 2, q.y - q.h / 2, q.x + q.w / 2, q.y + q.h / 2)
                 if line.distance(g) < FAB_CLR:
-                    raise ValueError(
-                        f"seed {net} clashes {q.ref}.{q.number} ({q.net})")
+                    raise ValueError(f"seed {net} clashes {q.ref}.{q.number} ({q.net})")
         for onet, olayer, og in laid:
             if onet != net and olayer == layer and line.distance(og) < FAB_CLR:
                 raise ValueError(f"seed {net} crosses seed {onet} on {layer}")
@@ -759,11 +779,9 @@ def _hand_seeds(r: Router, pads) -> None:
         for q in pads:
             if q.net == net:
                 continue
-            g = _box(q.x - q.w / 2, q.y - q.h / 2,
-                     q.x + q.w / 2, q.y + q.h / 2)
+            g = _box(q.x - q.w / 2, q.y - q.h / 2, q.x + q.w / 2, q.y + q.h / 2)
             if disc.distance(g) < FAB_CLR:
-                raise ValueError(
-                    f"seed via {net} clashes {q.ref}.{q.number} ({q.net})")
+                raise ValueError(f"seed via {net} clashes {q.ref}.{q.number} ({q.net})")
         for onet, _olayer, og in laid:
             if onet != net and disc.distance(og) < FAB_CLR:
                 raise ValueError(f"seed via {net} crosses seed {onet}")
@@ -775,14 +793,19 @@ def _hand_seeds(r: Router, pads) -> None:
     # down the far west lane to R1.
     x13, y13 = P("U1", "13")
     xr1, yr1 = P("R1", "1")
-    T("BUCK_EN", [(x13, y13), (x13, 8.8), (22.4, 8.2), (22.4, 2.1),
-                  (10.7, 2.1), (10.7, yr1), (xr1, yr1)])
+    T(
+        "BUCK_EN",
+        [(x13, y13), (x13, 8.8), (22.4, 8.2), (22.4, 2.1), (10.7, 2.1), (10.7, yr1), (xr1, yr1)],
+    )
 
     # VIN: LDO input joins the C11 vin pad below the output capacitors.
     xu2, yu2 = P("U2", "1")
     xc11, yc11 = P("C11", "1")
-    T("VIN", [(xu2, yu2), (xu2, 20.1), (28.9, 20.1), (28.9, 16.9),
-              (xc11, 16.9), (xc11, yc11)], w=W_SIG)
+    T(
+        "VIN",
+        [(xu2, yu2), (xu2, 20.1), (28.9, 20.1), (28.9, 16.9), (xc11, 16.9), (xc11, yc11)],
+        w=W_SIG,
+    )
 
     # M2_A: cell 2 clamp top to mux X1 over the cell-top corridor.
     xa, ya = P("R33", "2")
@@ -803,8 +826,7 @@ def _hand_seeds(r: Router, pads) -> None:
     # then along y = 34.3 to the U6 non-inverting input.
     x57, y57 = P("U5", "7")
     x65, y65 = P("U6", "5")
-    T("LP_OUT", [(x57, y57), (66.5, y57), (66.5, 34.3), (x65, 34.3),
-                 (x65, y65)], w=W_SIG)
+    T("LP_OUT", [(x57, y57), (66.5, y57), (66.5, 34.3), (x65, 34.3), (x65, y65)], w=W_SIG)
 
     # MUX_A0 and MUX_A1: J4 to the mux select pins, with underpasses
     # below the 5VA rail (y 20.6) and the VREF rail (y 35.4).
@@ -827,10 +849,22 @@ def _hand_seeds(r: Router, pads) -> None:
 
     # Buck corner escapes: rehearsed against real pad geometry, all
     # margins >= 0.225 mm (see the board README for the method).
-    T("BUCK_SS", [P("C4", "1"), (28.3, P("C4", "1")[1]), (28.3, 13.35),
-                  (25.2, 13.35), (25.2, 12.25), P("U1", "9")])
-    T("BUCK_DEF", [P("JP3", "2"), (36.04, 6.5), (31.6, 6.5), (31.6, 13.9),
-                   (23.25, 13.9)], layer="B.Cu")
+    T(
+        "BUCK_SS",
+        [
+            P("C4", "1"),
+            (28.3, P("C4", "1")[1]),
+            (28.3, 13.35),
+            (25.2, 13.35),
+            (25.2, 12.25),
+            P("U1", "9"),
+        ],
+    )
+    T(
+        "BUCK_DEF",
+        [P("JP3", "2"), (36.04, 6.5), (31.6, 6.5), (31.6, 13.9), (23.25, 13.9)],
+        layer="B.Cu",
+    )
     V("BUCK_DEF", 23.25, 13.9)
     T("BUCK_DEF", [(23.25, 13.9), P("U1", "8")])
     # Pi 3V3 drops to the plane side right at the isolator pin.
@@ -847,10 +881,14 @@ def _plane_strips(pads, tracks, vias):
     keep_out = []
     for pad in pads:
         if pad.tht and pad.net != "GND":
-            keep_out.append(box(pad.x - pad.w / 2 - PLANE_CLR,
-                                pad.y - pad.h / 2 - PLANE_CLR,
-                                pad.x + pad.w / 2 + PLANE_CLR,
-                                pad.y + pad.h / 2 + PLANE_CLR))
+            keep_out.append(
+                box(
+                    pad.x - pad.w / 2 - PLANE_CLR,
+                    pad.y - pad.h / 2 - PLANE_CLR,
+                    pad.x + pad.w / 2 + PLANE_CLR,
+                    pad.y + pad.h / 2 + PLANE_CLR,
+                )
+            )
     for net, width, pts, layer in tracks:
         if layer == "B.Cu" and net != "GND":
             keep_out.append(LineString(pts).buffer(width / 2.0 + PLANE_CLR))
@@ -858,22 +896,19 @@ def _plane_strips(pads, tracks, vias):
         if net != "GND":
             keep_out.append(Point(x, y).buffer(VIA_D / 2.0 + PLANE_CLR))
     holes = unary_union(keep_out) if keep_out else None
-    outline = box(EDGE_KEEPOUT, EDGE_KEEPOUT,
-                  BOARD_W - EDGE_KEEPOUT, BOARD_H - EDGE_KEEPOUT)
+    outline = box(EDGE_KEEPOUT, EDGE_KEEPOUT, BOARD_W - EDGE_KEEPOUT, BOARD_H - EDGE_KEEPOUT)
     fill = outline.difference(holes) if holes is not None else outline
 
     strips = []
     step, overlap = 0.5, 0.06
     y = EDGE_KEEPOUT
     while y < BOARD_H - EDGE_KEEPOUT:
-        band = box(EDGE_KEEPOUT, y - overlap,
-                   BOARD_W - EDGE_KEEPOUT, y + step + overlap)
+        band = box(EDGE_KEEPOUT, y - overlap, BOARD_W - EDGE_KEEPOUT, y + step + overlap)
         inter = fill.intersection(band)
         for g in getattr(inter, "geoms", [inter]):
             if g.is_empty or g.area < 0.05:
                 continue
-            strips.append([(round(px, 3), round(py, 3))
-                           for px, py in g.exterior.coords])
+            strips.append([(round(px, 3), round(py, 3)) for px, py in g.exterior.coords])
         y += step
     return fill, strips
 
@@ -892,9 +927,15 @@ def _connectivity_errors(circuit: Circuit, pads, tracks, vias) -> list[str]:
     for net, net_pads in by_net_pads.items():
         if net == "GND" or len(net_pads) < 2:
             continue
-        geoms = [box(p.x - p.w / 2 - 0.05, p.y - p.h / 2 - 0.05,
-                     p.x + p.w / 2 + 0.05, p.y + p.h / 2 + 0.05)
-                 for p in net_pads]
+        geoms = [
+            box(
+                p.x - p.w / 2 - 0.05,
+                p.y - p.h / 2 - 0.05,
+                p.x + p.w / 2 + 0.05,
+                p.y + p.h / 2 + 0.05,
+            )
+            for p in net_pads
+        ]
         for tnet, width, pts, _layer in tracks:
             if tnet == net:
                 geoms.append(LineString(pts).buffer(width / 2.0 + 0.02))
@@ -913,9 +954,8 @@ def _drc_errors(pads, tracks, vias) -> list[str]:
 
     items = defaultdict(list)
     for pad in pads:
-        geom = box(pad.x - pad.w / 2, pad.y - pad.h / 2,
-                   pad.x + pad.w / 2, pad.y + pad.h / 2)
-        for la in (("F.Cu", "B.Cu") if pad.tht else ("F.Cu",)):
+        geom = box(pad.x - pad.w / 2, pad.y - pad.h / 2, pad.x + pad.w / 2, pad.y + pad.h / 2)
+        for la in ("F.Cu", "B.Cu") if pad.tht else ("F.Cu",):
             items[la].append((pad.net or f"NC:{pad.ref}.{pad.number}", geom))
     for net, width, pts, layer in tracks:
         items[layer].append((net, LineString(pts).buffer(width / 2.0)))
@@ -931,7 +971,7 @@ def _drc_errors(pads, tracks, vias) -> list[str]:
         nets = {net: unary_union(gs) for net, gs in merged.items()}
         names = sorted(nets)
         for i, a in enumerate(names):
-            for b in names[i + 1:]:
+            for b in names[i + 1 :]:
                 d = nets[a].distance(nets[b])
                 if d < FAB_CLR - 1e-6:
                     errors.append(f"{layer}: {a} vs {b}: {d:.3f} mm")
@@ -951,8 +991,9 @@ def _strip_subclearance(pads, router) -> list[str]:
             if q.net in (net_a, net_b):
                 layers = ("F.Cu", "B.Cu") if q.tht else ("F.Cu",)
                 if layer_name in layers:
-                    geoms[q.net].append(box(q.x - q.w / 2, q.y - q.h / 2,
-                                            q.x + q.w / 2, q.y + q.h / 2))
+                    geoms[q.net].append(
+                        box(q.x - q.w / 2, q.y - q.h / 2, q.x + q.w / 2, q.y + q.h / 2)
+                    )
         for vnet, x, y in router.vias:
             if vnet in (net_a, net_b):
                 geoms[vnet].append(Point(x, y).buffer(VIA_D / 2.0))
@@ -1073,12 +1114,12 @@ def build_pcb(cfg: BoardConfig, circuit: Circuit) -> PcbResult:
     # plane over the final copper and assemble the file once.
     stripped = _strip_subclearance(pads, router)
     from .finish import finish_pass
+
     finish_log = finish_pass(pads, router.tracks, router.vias)
 
     fill, strips = _plane_strips(pads, router.tracks, router.vias)
 
-    board = Board(thickness_mm=1.6,
-                  title="Damier LC, maquette 2x2, carte analogique")
+    board = Board(thickness_mm=1.6, title="Damier LC, maquette 2x2, carte analogique")
     net_index = {"": 0}
     for comp in circuit.components:
         for net in comp.pins.values():
@@ -1098,11 +1139,9 @@ def build_pcb(cfg: BoardConfig, circuit: Circuit) -> PcbResult:
     poly_lines = []
     for strip in strips:
         pts_txt = " ".join(f"(xy {px} {py})" for px, py in strip)
-        poly_lines.append(
-            "    (filled_polygon (layer \"B.Cu\") (island) (pts " + pts_txt + "))"
-        )
+        poly_lines.append('    (filled_polygon (layer "B.Cu") (island) (pts ' + pts_txt + "))")
     zone = (
-        f"  (zone (net {gnd}) (net_name \"GND\") (layer \"B.Cu\") "
+        f'  (zone (net {gnd}) (net_name "GND") (layer "B.Cu") '
         "(hatch edge 0.5)\n"
         "    (connect_pads yes (clearance 0.3))\n"
         "    (min_thickness 0.2) (filled_areas_thickness no)\n"
@@ -1110,8 +1149,7 @@ def build_pcb(cfg: BoardConfig, circuit: Circuit) -> PcbResult:
         f"    (polygon (pts (xy {EDGE_KEEPOUT} {EDGE_KEEPOUT}) "
         f"(xy {BOARD_W - EDGE_KEEPOUT} {EDGE_KEEPOUT}) "
         f"(xy {BOARD_W - EDGE_KEEPOUT} {BOARD_H - EDGE_KEEPOUT}) "
-        f"(xy {EDGE_KEEPOUT} {BOARD_H - EDGE_KEEPOUT})))\n"
-        + "\n".join(poly_lines) + "\n  )"
+        f"(xy {EDGE_KEEPOUT} {BOARD_H - EDGE_KEEPOUT})))\n" + "\n".join(poly_lines) + "\n  )"
     )
     board.body.append(zone)
 
@@ -1119,14 +1157,19 @@ def build_pcb(cfg: BoardConfig, circuit: Circuit) -> PcbResult:
     board.gr_text("DAMIER LC / MAQUETTE 2x2 / ANALOG", 22.0, 59.5, "F.SilkS", 1.5)
     board.gr_text("vers carte bobines", 80.0, 59.5, "F.SilkS", 1.2)
 
-    result = PcbResult(board=board, placements=placements,
-                       pad_pos={(p.ref, p.number): (p.x, p.y) for p in pads},
-                       tracks=router.tracks, vias=router.vias,
-                       plane_polys=strips)
+    result = PcbResult(
+        board=board,
+        placements=placements,
+        pad_pos={(p.ref, p.number): (p.x, p.y) for p in pads},
+        tracks=router.tracks,
+        vias=router.vias,
+        plane_polys=strips,
+    )
     conn = _connectivity_errors(circuit, pads, router.tracks, router.vias)
     still_split = {e.split(":")[0] for e in conn}
-    kept_fails = [f for f in router.failed
-                  if f.startswith("GND-via") or f.split(":")[0] in still_split]
+    kept_fails = [
+        f for f in router.failed if f.startswith("GND-via") or f.split(":")[0] in still_split
+    ]
     result.open_nets = kept_fails + conn
     for net in dict.fromkeys(stripped):
         if net in still_split:

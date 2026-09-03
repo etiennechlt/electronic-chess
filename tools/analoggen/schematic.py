@@ -39,33 +39,96 @@ class PlacedUnit:
 # from the map land in the last group. Multi-unit symbols place each
 # unit side by side automatically.
 GROUPS: list[tuple[str, float, list[str]]] = [
-    ("POWER", 40.0,
-     ["J1", "D1", "D2", "C1", "C2", "C3", "U1", "L1", "R1", "R2", "R3", "R4",
-      "C4", "C5", "C6", "JP3", "FB1", "C7", "C8", "U2", "C9", "C10", "C11",
-      "JP1", "C12", "R5", "R6", "C13"]),
+    (
+        "POWER",
+        40.0,
+        [
+            "J1",
+            "D1",
+            "D2",
+            "C1",
+            "C2",
+            "C3",
+            "U1",
+            "L1",
+            "R1",
+            "R2",
+            "R3",
+            "R4",
+            "C4",
+            "C5",
+            "C6",
+            "JP3",
+            "FB1",
+            "C7",
+            "C8",
+            "U2",
+            "C9",
+            "C10",
+            "C11",
+            "JP1",
+            "C12",
+            "R5",
+            "R6",
+            "C13",
+        ],
+    ),
     ("DRIVE RAIL", 105.0, ["Q1", "R7", "Q2", "R8", "R9", "R10"]),
-    ("COIL CELL 1", 150.0,
-     ["R21", "R22", "R23", "R24", "D11", "D21", "D31", "D41", "Q11", "R25",
-      "Q21", "R26", "R27"]),
-    ("COIL CELL 2", 195.0,
-     ["R31", "R32", "R33", "R34", "D12", "D22", "D32", "D42", "Q12", "R35",
-      "Q22", "R36", "R37"]),
-    ("COIL CELL 3", 240.0,
-     ["R41", "R42", "R43", "R44", "D13", "D23", "D33", "D43", "Q13", "R45",
-      "Q23", "R46", "R47"]),
-    ("COIL CELL 4", 285.0,
-     ["R51", "R52", "R53", "R54", "D14", "D24", "D34", "D44", "Q14", "R55",
-      "Q24", "R56", "R57"]),
-    ("MUX AND AMPLIFIER", 340.0,
-     ["U3", "R11", "C14", "C15", "R12", "R13", "U4", "R14", "C16"]),
-    ("FILTERS AND OUTPUT", 395.0,
-     ["C17", "C18", "R15", "R16", "R17", "R18", "R19", "R20", "C19", "C20",
-      "R61", "R62", "U5", "C21", "R63", "R64", "U6", "C22", "C23", "R65",
-      "C24", "D3"]),
-    ("UART AND HEADERS", 450.0,
-     ["U7", "C25", "C26", "R66", "R67", "J5", "J2", "J4"]),
-    ("TEST AND MECHANICAL", 505.0,
-     ["TP1", "TP2", "TP3", "TP4", "TP5", "TP6", "H1", "H2", "H3", "H4"]),
+    (
+        "COIL CELL 1",
+        150.0,
+        ["R21", "R22", "R23", "R24", "D11", "D21", "D31", "D41", "Q11", "R25", "Q21", "R26", "R27"],
+    ),
+    (
+        "COIL CELL 2",
+        195.0,
+        ["R31", "R32", "R33", "R34", "D12", "D22", "D32", "D42", "Q12", "R35", "Q22", "R36", "R37"],
+    ),
+    (
+        "COIL CELL 3",
+        240.0,
+        ["R41", "R42", "R43", "R44", "D13", "D23", "D33", "D43", "Q13", "R45", "Q23", "R46", "R47"],
+    ),
+    (
+        "COIL CELL 4",
+        285.0,
+        ["R51", "R52", "R53", "R54", "D14", "D24", "D34", "D44", "Q14", "R55", "Q24", "R56", "R57"],
+    ),
+    ("MUX AND AMPLIFIER", 340.0, ["U3", "R11", "C14", "C15", "R12", "R13", "U4", "R14", "C16"]),
+    (
+        "FILTERS AND OUTPUT",
+        395.0,
+        [
+            "C17",
+            "C18",
+            "R15",
+            "R16",
+            "R17",
+            "R18",
+            "R19",
+            "R20",
+            "C19",
+            "C20",
+            "R61",
+            "R62",
+            "U5",
+            "C21",
+            "R63",
+            "R64",
+            "U6",
+            "C22",
+            "C23",
+            "R65",
+            "C24",
+            "D3",
+        ],
+    ),
+    ("UART AND HEADERS", 450.0, ["U7", "C25", "C26", "R66", "R67", "J5", "J2", "J4"]),
+    (
+        "TEST AND MECHANICAL",
+        505.0,
+        ["TP1", "TP2", "TP3", "TP4", "TP5", "TP6", "H1", "H2", "H3", "H4"],
+    ),
 ]
 
 
@@ -76,11 +139,12 @@ def _unit_extent(comp: Component, unit: int) -> tuple[float, float, float, float
     return min(xs), max(xs), min(ys), max(ys)
 
 
-def _place(circuit: Circuit) -> list[PlacedUnit]:
+def _place(circuit: Circuit, groups=None) -> list[PlacedUnit]:
+    groups = GROUPS if groups is None else groups
     by_ref = {c.ref: c for c in circuit.components}
     placed: list[PlacedUnit] = []
     listed: set[str] = set()
-    for _title, y, refs in GROUPS:
+    for _title, y, refs in groups:
         x = 30.0
         for ref in refs:
             comp = by_ref.get(ref)
@@ -96,8 +160,9 @@ def _place(circuit: Circuit) -> list[PlacedUnit]:
                 x += width
     leftovers = [c for c in circuit.components if c.ref not in listed]
     x = 30.0
+    y_left = max((y for _t, y, _r in groups), default=500.0) + 60.0
     for comp in leftovers:
-        placed.append(PlacedUnit(comp=comp, unit=1, x=_snap(x), y=_snap(560.0)))
+        placed.append(PlacedUnit(comp=comp, unit=1, x=_snap(x), y=_snap(y_left)))
         x += 25.0
     return placed
 
@@ -112,13 +177,16 @@ def _label_rot_and_justify(dx: float, dy: float) -> tuple[int, str]:
     return 270, "left"
 
 
-def emit_schematic(circuit: Circuit, title: str) -> str:
-    placed = _place(circuit)
+def emit_schematic(
+    circuit: Circuit, title: str, groups=None, project: str = "analog-board", paper: str = "A1"
+) -> str:
+    groups = GROUPS if groups is None else groups
+    placed = _place(circuit, groups)
     root = _u()
     out: list[str] = []
-    out.append('(kicad_sch (version 20230121) (generator analoggen)')
-    out.append(f'  (uuid {root})')
-    out.append('  (paper "A1")')
+    out.append("(kicad_sch (version 20230121) (generator analoggen)")
+    out.append(f"  (uuid {root})")
+    out.append(f'  (paper "{paper}")')
     out.append(f'  (title_block (title "{title}"))')
 
     libs: dict[str, str] = {}
@@ -138,33 +206,33 @@ def emit_schematic(circuit: Circuit, title: str) -> str:
         sym = comp.sym
         inst = [
             f'  (symbol (lib_id "{sym.lib_id}") (at {pu.x:g} {pu.y:g} 0) (unit {unit})',
-            f'    (in_bom yes) (on_board yes) (dnp {"yes" if comp.dnp else "no"})',
-            f'    (uuid {_u()})',
+            f"    (in_bom yes) (on_board yes) (dnp {'yes' if comp.dnp else 'no'})",
+            f"    (uuid {_u()})",
             f'    (property "Reference" "{comp.ref}" (at {pu.x:g} {pu.y - 10:g} 0)',
-            '      (effects (font (size 1.27 1.27)))',
-            '    )',
+            "      (effects (font (size 1.27 1.27)))",
+            "    )",
             f'    (property "Value" "{comp.value}" (at {pu.x:g} {pu.y + 10:g} 0)',
-            '      (effects (font (size 1.27 1.27)))',
-            '    )',
+            "      (effects (font (size 1.27 1.27)))",
+            "    )",
             f'    (property "Footprint" "{comp.part.footprint}" (at {pu.x:g} {pu.y:g} 0)',
-            '      (effects (font (size 1.27 1.27)) hide)',
-            '    )',
+            "      (effects (font (size 1.27 1.27)) hide)",
+            "    )",
             f'    (property "Datasheet" "" (at {pu.x:g} {pu.y:g} 0)',
-            '      (effects (font (size 1.27 1.27)) hide)',
-            '    )',
+            "      (effects (font (size 1.27 1.27)) hide)",
+            "    )",
             f'    (property "MPN" "{comp.part.mpn}" (at {pu.x:g} {pu.y:g} 0)',
-            '      (effects (font (size 1.27 1.27)) hide)',
-            '    )',
+            "      (effects (font (size 1.27 1.27)) hide)",
+            "    )",
             f'    (property "LCSC" "{comp.part.lcsc}" (at {pu.x:g} {pu.y:g} 0)',
-            '      (effects (font (size 1.27 1.27)) hide)',
-            '    )',
+            "      (effects (font (size 1.27 1.27)) hide)",
+            "    )",
         ]
         for pin in sym.pins_of_unit(unit) + sym.pins_of_unit(0):
             inst.append(f'    (pin "{pin.number}" (uuid {_u()}))')
         inst.append(
-            '    (instances (project "analog-board" '
+            f'    (instances (project "{project}" '
             f'(path "/{root}" (reference "{comp.ref}") (unit {unit})))'
-            ')'
+            ")"
         )
         inst.append("  )")
         instances.append("\n".join(inst))
@@ -178,23 +246,23 @@ def emit_schematic(circuit: Circuit, title: str) -> str:
             ex, ey = px + dx * STUB, py + dy * STUB
             net = comp.pins.get(pin.number)
             if net is None:
-                out_nc = f'  (no_connect (at {px:g} {py:g}) (uuid {_u()}))'
+                out_nc = f"  (no_connect (at {px:g} {py:g}) (uuid {_u()}))"
                 labels.append(out_nc)
                 continue
             wires.append(
-                f'  (wire (pts (xy {px:g} {py:g}) (xy {ex:g} {ey:g})) '
-                f'(stroke (width 0) (type default)) (uuid {_u()}))'
+                f"  (wire (pts (xy {px:g} {py:g}) (xy {ex:g} {ey:g})) "
+                f"(stroke (width 0) (type default)) (uuid {_u()}))"
             )
             rot, justify = _label_rot_and_justify(dx, dy)
             labels.append(
                 f'  (global_label "{net}" (shape passive) (at {ex:g} {ey:g} {rot}) '
-                f'(effects (font (size 1.27 1.27)) (justify {justify})) (uuid {_u()}))'
+                f"(effects (font (size 1.27 1.27)) (justify {justify})) (uuid {_u()}))"
             )
 
-    for _title_g, y, _refs in GROUPS:
+    for _title_g, y, _refs in groups:
         labels.append(
             f'  (text "{_title_g}" (at 20 {y - 20:g} 0) '
-            f'(effects (font (size 3 3) (thickness 0.6) bold) (justify left)) (uuid {_u()}))'
+            f"(effects (font (size 3 3) (thickness 0.6) bold) (justify left)) (uuid {_u()}))"
         )
 
     out.extend(wires)

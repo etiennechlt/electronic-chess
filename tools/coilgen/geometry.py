@@ -48,9 +48,7 @@ def spiral_points(
 ) -> np.ndarray:
     """Archimedean spiral polyline from r_from to r_to over `turns` turns."""
     n = max(2, int(round(points_per_turn * turns)))
-    theta = np.radians(start_angle_deg) + angular_sign * np.linspace(
-        0.0, 2.0 * np.pi * turns, n
-    )
+    theta = np.radians(start_angle_deg) + angular_sign * np.linspace(0.0, 2.0 * np.pi * turns, n)
     r = np.linspace(r_from_mm, r_to_mm, n)
     x = center_xy[0] + r * np.cos(theta)
     y = center_xy[1] + r * np.sin(theta)
@@ -97,9 +95,7 @@ def spiral_stack(
         r_from, r_to = (r_out_mm, r_in_mm) if inward else (r_in_mm, r_out_mm)
         pieces = []
         if i > 0:
-            pieces.append(
-                arc_points(center_xy, r_from, angle, angular_sign * lead_arc_deg)
-            )
+            pieces.append(arc_points(center_xy, r_from, angle, angular_sign * lead_arc_deg))
             angle += angular_sign * lead_arc_deg
         pieces.append(
             spiral_points(

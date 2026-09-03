@@ -32,8 +32,9 @@ pas.
   [routeur et garanties](notes/04-routeur-et-garanties.md),
   [seeds et couloirs](notes/05-seeds-et-couloirs.md), puis le
   [runbook de régénération](notes/08-regenerer.md).
-- **Toucher au firmware** : [note firmware](notes/06-firmware.md) et
-  le [README du firmware](../firmware/mockup/README.md).
+- **Toucher au firmware** : [note firmware](notes/06-firmware.md), le
+  [README du firmware du cerveau](../firmware/board/README.md) (quatre
+  quadrants) et celui de la [maquette](../firmware/mockup/README.md).
 - **Lancer les mesures** : [protocole](../measurements/protocol.md),
   gabarits CSV et notebook dans `measurements/`.
 - **Filmer le projet** : la série vidéo « Échec et Watt »
@@ -48,10 +49,13 @@ pas.
 | `chessboard_calc/` | calculs (fréquences, couloir, bobines, couplage, énergie) et CLI de rapport |
 | `tools/coilgen/` | générateur complet de la carte bobines (spirales, LED, joint) |
 | `tools/analoggen/` | générateur complet de la carte analogique (schéma, PCB routé, BOM, SPICE) |
-| `tools/quadgen/` | générateur du quadrant 4 x 4 : spirales, échappées, LED, distribution, bande de frontal |
-| `hardware/quadrant/` | projet KiCad du quadrant généré |
+| `tools/quadgen/` | générateur du quadrant 4 x 4 : spirales, échappées, LED, frontal complet (schéma, placement, routage) |
+| `tools/boardgen/` | générateur générique et les quatre cartes du plateau : cerveau, puissance, moteurs, horloge |
+| `hardware/quadrant/`, `hardware/brain/`, `hardware/power/`, `hardware/motion/`, `hardware/clock/` | projets KiCad générés, BOM, placements, README de chaque carte |
 | `hardware/mockup-2x2/` | artefacts générés : KiCad, gerbers, BOM JLC, guides |
-| `firmware/mockup/` | firmware Nucleo G474 en CMSIS nu |
+| `firmware/board/` | firmware du cerveau (STM32G474, quatre quadrants, 128 LED) en CMSIS nu |
+| `firmware/esp32/` | pont radio du cerveau et horloge (ESP-IDF, NimBLE), logique d'horloge testée sur PC |
+| `firmware/mockup/` | firmware de la maquette Nucleo, référence |
 | `mechanical/` | CadQuery : plateau 8 x 8 (module, bases, ailes), horloge, pucks, gabarits ; rendus et vue interactive |
 | `measurements/` | protocole M1 à M11, gabarits CSV, analyse |
 | `docs/adr/` | décisions d'architecture numérotées |
@@ -73,6 +77,8 @@ pas.
 | [08](notes/08-regenerer.md) | Runbook : tout régénérer |
 | [09](notes/09-journal.md) | Journal des décisions et pivots |
 | [10](notes/10-plateau-8x8-et-horloge.md) | Plateau 8 x 8, base interchangeable et horloge : les choix et leurs raisons |
+| [11](notes/11-cartes-du-plateau.md) | Les cinq cartes du plateau : méthode, choix, revue avant fabrication |
+| [12](notes/12-protocole.md) | Protocole plateau, pont radio, horloge (lignes texte, BLE) |
 
 Décisions formelles : [index des ADR](adr/README.md). Conventions de
 contribution : `CLAUDE.md` à la racine (langue, typographie, source

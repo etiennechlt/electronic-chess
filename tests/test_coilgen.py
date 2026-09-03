@@ -89,8 +89,8 @@ def test_everything_stays_inside_the_board(cfg, build):
     w, h = build.outline_mm
     margin = cfg.mockup.coil_board.edge_clearance_mm
     for net, _layer, pts in (
-        (c[0], c[1], c[2]) for c in ((f"C{co.name[1]}", p.layer, p.points)
-                                     for co in build.coils for p in co.paths)
+        (c[0], c[1], c[2])
+        for c in ((f"C{co.name[1]}", p.layer, p.points) for co in build.coils for p in co.paths)
     ):
         assert pts[:, 0].min() >= margin and pts[:, 0].max() <= w - margin, net
         assert pts[:, 1].min() >= margin and pts[:, 1].max() <= h - margin, net
@@ -106,7 +106,7 @@ def test_cross_net_copper_clearance(cfg, build):
         for i, (net_a, _l, pts_a, w_a) in enumerate(layer_items):
             samples_a = np.vstack([s for _n, _la, s in _sample_segments([(net_a, layer, pts_a)])])
             tree = cKDTree(samples_a)
-            for net_b, _lb, pts_b, w_b in layer_items[i + 1:]:
+            for net_b, _lb, pts_b, w_b in layer_items[i + 1 :]:
                 if net_b == net_a:
                     continue
                 samples_b = np.vstack(
@@ -154,9 +154,20 @@ def test_kicad_cli_parses_the_board(build, tmp_path):
     pcb.write_text(build.board.serialize(), encoding="utf-8")
     out_svg = tmp_path / "out.svg"
     proc = subprocess.run(
-        ["kicad-cli", "pcb", "export", "svg", "--output", str(out_svg),
-         "--layers", "F.Cu,B.Cu,Edge.Cuts", str(pcb)],
-        capture_output=True, text=True, timeout=120,
+        [
+            "kicad-cli",
+            "pcb",
+            "export",
+            "svg",
+            "--output",
+            str(out_svg),
+            "--layers",
+            "F.Cu,B.Cu,Edge.Cuts",
+            str(pcb),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=120,
     )
     assert proc.returncode == 0, proc.stderr
     assert out_svg.exists() and out_svg.stat().st_size > 10_000
@@ -164,7 +175,12 @@ def test_kicad_cli_parses_the_board(build, tmp_path):
 
 def test_committed_project_matches_this_build(cfg, build):
     """The .kicad_pro in the repo is what this build emits, rule for rule."""
-    path = (Path(__file__).resolve().parents[1] / "hardware" / "mockup-2x2"
-            / "coil-board" / "coil-board.kicad_pro")
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "hardware"
+        / "mockup-2x2"
+        / "coil-board"
+        / "coil-board.kicad_pro"
+    )
     emitted = json.loads(project_json("coil-board", design_rules(cfg, build)))
     assert json.loads(path.read_text(encoding="utf-8")) == emitted

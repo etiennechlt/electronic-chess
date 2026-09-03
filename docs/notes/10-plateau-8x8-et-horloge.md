@@ -222,10 +222,13 @@ autonome, posé à côté comme une pendule de compétition :
   chiffres ; encodeur rotatif à poussoir à l'avant droit pour les
   menus (mode de jeu, cadence, niveau du moteur, connexion Lichess) ;
   grille de buzzer à l'avant gauche ; fente USB-C à l'arrière ;
-- ESP32-C3 (BLE, faible consommation), une 18650 1S de 3 Ah couchée en
+- module ESP32-S3-WROOM-1 (le même que le cerveau : une seule
+  référence à stocker, une seule chaîne d'outils ; l'ESP32-C3 envisagé
+  d'abord n'a pas de symbole dans les bibliothèques KiCad et gagnerait
+  peu en consommation face à une 18650 de 3 Ah), une 18650 1S couchée en
   travers, chargeur USB-C. Des semaines d'autonomie en usage pendule.
 
-La logique d'horloge et des menus vit dans l'ESP32-C3 ; le STM32 du
+La logique d'horloge et des menus vit dans l'ESP32 de l'horloge ; le STM32 du
 plateau reste maître de la partie et de l'arbitrage, l'ESP32-S3 n'est
 qu'un pont radio. Les boutons séparés (première version) ont été
 remplacés par la barre à la demande du porteur.
@@ -279,12 +282,15 @@ surtout personne ne dessine seize spirales 4 couches à la main.
 
 ## 14. Ce qui reste
 
-1. Générateur de quadrant : fait pour la couche de détection
-   (`tools/quadgen`, [README](../../hardware/quadrant/README.md)) ;
-   reste le frontal de la bande (cellules, mux, décodeurs, chaîne).
+1. Générateur de quadrant : fait, détection et frontal complet
+   (`tools/quadgen`, [README](../../hardware/quadrant/README.md)).
+   Cartes cerveau, puissance, moteurs et horloge : générées par
+   `tools/boardgen` (README dans chaque dossier `hardware/`), à finir
+   dans pcbnew pour les nets que le routeur laisse ouverts, puis
+   revue des valeurs avant commande.
 2. Schéma du cerveau généré depuis le yaml, placement à la main dans
    KiCad ; cartes puissance et moteurs.
-3. Carte de l'horloge et son firmware ESP32-C3 ; protocole BLE
+3. Carte de l'horloge et son firmware ESP32 ; protocole BLE
    plateau contre horloge.
 4. Retrait progressif de la maquette 2 x 2 des docs de commande ; ses
    générateurs restent la référence de la chaîne analogique.

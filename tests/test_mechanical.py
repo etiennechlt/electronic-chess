@@ -85,6 +85,7 @@ def test_plateau_assemblies_build(cfg):
     wood = next(p for p in thin if p.group == "bois" and p.name.startswith("contreplaque"))
     bb = wood.shape.BoundingBox()
     from chessboard_calc.plateau import geometry
+
     assert bb.xlen == pytest.approx(geometry(cfg).module_mm, abs=0.2)
     # the wood sits exactly one air gap above the quadrant PCBs
     pcb = next(p for p in thin if p.name.startswith("quadrant Q1"))

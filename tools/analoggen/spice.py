@@ -91,8 +91,9 @@ def run_chain_ac(chain: ChainDesign, workdir: Path) -> SpiceReport:
     net = chain_netlist(chain).replace("OUTFILE", data.as_posix())
     cir = workdir / "chain.cir"
     cir.write_text(net, encoding="utf-8")
-    subprocess.run(["ngspice", "-b", cir.as_posix()], check=True,
-                   capture_output=True, text=True, timeout=120)
+    subprocess.run(
+        ["ngspice", "-b", cir.as_posix()], check=True, capture_output=True, text=True, timeout=120
+    )
     freqs, mags = [], []
     for line in data.read_text().splitlines():
         parts = re.split(r"\s+", line.strip())
@@ -107,12 +108,15 @@ def run_chain_ac(chain: ChainDesign, workdir: Path) -> SpiceReport:
         return mags[best]
 
     import math
+
     peak = max(mags)
     peak_db = 20 * math.log10(peak)
-    lo = next(f for f, m in zip(freqs, mags, strict=True)
-              if 20 * math.log10(m) >= peak_db - 3.0)
-    hi = next(f for f, m in zip(reversed(freqs), reversed(mags), strict=True)
-              if 20 * math.log10(m) >= peak_db - 3.0)
+    lo = next(f for f, m in zip(freqs, mags, strict=True) if 20 * math.log10(m) >= peak_db - 3.0)
+    hi = next(
+        f
+        for f, m in zip(reversed(freqs), reversed(mags), strict=True)
+        if 20 * math.log10(m) >= peak_db - 3.0
+    )
     return SpiceReport(
         gain_400k=mag_at(400e3),
         f_low_3db_hz=lo,

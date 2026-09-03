@@ -13,13 +13,9 @@ from chessboard_calc.corridor import check_corridor, corridor_margin_mm
 def test_all_pairs_pass_for_all_candidate_pitches(cfg):
     for pitch in cfg.pitch.candidates_mm:
         report = check_corridor(cfg, pitch)
-        assert report.ok, (
-            f"corridor constraint violated at p={pitch}: "
-            + ", ".join(
-                f"{v.a.value}+{v.b.value} margin {v.margin_mm:.2f} mm "
-                f"< budget {report.budget_mm} mm"
-                for v in report.violations()
-            )
+        assert report.ok, f"corridor constraint violated at p={pitch}: " + ", ".join(
+            f"{v.a.value}+{v.b.value} margin {v.margin_mm:.2f} mm < budget {report.budget_mm} mm"
+            for v in report.violations()
         )
 
 

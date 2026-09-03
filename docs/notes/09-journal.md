@@ -105,6 +105,42 @@ quatre commandes.
   implicite dans la maquette ; il est maintenant un paramètre
   (`gap.air_mm`) compté dans le signal.
 
+## 03/09/2026, générateurs de cartes
+
+- Quadrant : frontal complet (cellules, deux ADG1607, décodeurs,
+  chaîne) placé et routé par un routeur A* multicouche écrit pour
+  l'occasion ; cellules disposées autour des bandes d'échappée après
+  qu'une garde trop laxiste (centre au lieu d'emprise) avait posé des
+  composants sur les voies. Bande élargie à 20 mm et bordure bois à
+  20 mm pour laisser de la place.
+- Cerveau, puissance, moteurs, horloge : générateur générique
+  `boardgen` (placement par blocs et étagères depuis les cours réels,
+  routage en deux grilles, plan de masse), [note 11](11-cartes-du-plateau.md).
+- Leçons : les fiches techniques externes ne sont pas accessibles
+  depuis l'environnement de génération, donc chaque composant vient
+  des bibliothèques KiCad (brochage vérifié) ou est marqué à vérifier ;
+  un routeur qui gonfle les obstacles pour la piste large bloque les
+  passages entre broches traversantes, d'où la grille séparée pour les
+  signaux.
+- Sorties des boîtiers fins : les nets des QFN, LQFP, TSSOP et
+  connecteurs FPC restaient tous ouverts, le routeur ne pouvant pas
+  quitter une broche au pas de 0,5 mm ; chaque broche reçoit un tronçon
+  de sortie avant routage (`quadgen.escape`) et les passifs sont
+  espacés de 1,2 mm pour laisser passer un via. Le premier essai
+  traçait les tronçons dans la direction radiale, ce qui envoyait ceux
+  des connecteurs en rangée sur la broche voisine : ils suivent
+  désormais l'axe long de la broche. Les tronçons seuls ne suffisaient
+  pas : tout bus routé devant une rangée la murait sur la couche
+  supérieure, et un tronçon voisin routé rendait la grille aveugle au
+  pas de 0,5 mm. D'où l'éventail complet (tronçon, petit via sur deux
+  rangées alternées, couloir de sortie sur la couche interne, cellules
+  rendues au net après chaque routage) et l'ordre de routage qui sort
+  les boîtiers fins en premier, [note 11](11-cartes-du-plateau.md).
+- Horloge sur le même module ESP32-S3-WROOM-1 que le cerveau (une
+  référence, une chaîne d'outils) ; protocole texte commun
+  ([note 12](12-protocole.md)), firmware du pont et de l'horloge
+  écrits (`firmware/esp32`), logique de pendule testée sur PC.
+
 ## Où en est la ligne de temps
 
 Phase 0 faite ; la phase 1 (maquette) est conçue mais ne sera pas

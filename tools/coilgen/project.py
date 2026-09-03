@@ -112,9 +112,7 @@ def project_json(name: str, rules: DesignRules, *, root_sheet_uuid: str | None =
                 "drc_exclusions": [],
                 "rules": rules.rules_block(),
                 "track_widths": _unique(widths),
-                "via_dimensions": [
-                    {"diameter": d, "drill": k} for d, k in _unique_pairs(vias)
-                ],
+                "via_dimensions": [{"diameter": d, "drill": k} for d, k in _unique_pairs(vias)],
             },
             "layer_presets": [],
             "viewports": [],

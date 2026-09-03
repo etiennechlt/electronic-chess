@@ -75,7 +75,8 @@ raisons ; le détail chiffré et la discussion sont dans la
    0005). Cible en ligne réaliste : l'API Board de Lichess ; chess.com
    n'offre pas d'API de jeu publique.
 10. **Horloge séparée, à bascule, sans fil.** Module autonome
-    (120 x 70 mm, ESP32-C3, une 18650, écran 2,4 pouces sur face
+    (120 x 70 mm, module ESP32-S3-WROOM-1 comme le cerveau, une 18650,
+    écran 2,4 pouces sur face
     inclinée, barre à bascule de 108 mm sur pivot central avec un
     microrupteur sous chaque extrémité, encodeur pour les menus,
     buzzer, USB-C), relié au plateau en BLE. Elle choisit les modes de

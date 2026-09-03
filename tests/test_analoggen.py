@@ -75,9 +75,10 @@ def test_schematic_is_parsed_by_kicad(circuit, tmp_path):
     sch = tmp_path / "analog.kicad_sch"
     sch.write_text(emit_schematic(ckt, "test"), encoding="utf-8")
     proc = subprocess.run(
-        ["kicad-cli", "sch", "export", "netlist", "--output",
-         str(tmp_path / "n.net"), str(sch)],
-        capture_output=True, text=True, timeout=120,
+        ["kicad-cli", "sch", "export", "netlist", "--output", str(tmp_path / "n.net"), str(sch)],
+        capture_output=True,
+        text=True,
+        timeout=120,
     )
     assert proc.returncode == 0, proc.stderr
     netlist = (tmp_path / "n.net").read_text()
@@ -114,12 +115,12 @@ def test_finish_pass_joins_and_respects_clearance():
     vias: list = []
     for k in range(160):
         ang_x = 42.0 + 3.4 * ((k % 40) - 20) / 20.0
-        tracks.append(("WALL", 0.4,
-                       [(ang_x, 8.0 + 1.9 * (k // 40)),
-                        (ang_x, 8.2 + 1.9 * (k // 40))], "F.Cu"))
-        tracks.append(("WALL", 0.4,
-                       [(ang_x, 8.0 + 1.9 * (k // 40)),
-                        (ang_x, 8.2 + 1.9 * (k // 40))], "B.Cu"))
+        tracks.append(
+            ("WALL", 0.4, [(ang_x, 8.0 + 1.9 * (k // 40)), (ang_x, 8.2 + 1.9 * (k // 40))], "F.Cu")
+        )
+        tracks.append(
+            ("WALL", 0.4, [(ang_x, 8.0 + 1.9 * (k // 40)), (ang_x, 8.2 + 1.9 * (k // 40))], "B.Cu")
+        )
     log = finish_pass(pads, tracks, vias)
     joined = [line for line in log if line.startswith("A:")]
     assert joined, "net A should be joined around the obstacle"
@@ -127,6 +128,7 @@ def test_finish_pass_joins_and_respects_clearance():
     assert new_a
     from shapely.geometry import LineString
     from shapely.geometry import box as _box
+
     obstacle = _box(11.2, 9.7, 11.8, 10.3)
     for _net, w, pts, _layer in new_a:
         assert LineString(pts).buffer(w / 2.0).distance(obstacle) >= CLEAR - 1e-9

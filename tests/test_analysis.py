@@ -36,13 +36,16 @@ def test_q_extraction_within_15_percent(f0, q):
 def test_crosstalk_and_dispersion_helpers():
     assert crosstalk_db(1000.0, 100.0) == pytest.approx(-20.0)
     assert dispersion_pct([217000, 219000, 221000, 223000]) == pytest.approx(
-        (223000 - 217000) / 220000 * 100 / 2, rel=0.05)
+        (223000 - 217000) / 220000 * 100 / 2, rel=0.05
+    )
 
 
 def test_ab_compare_reports_bias_and_validity():
-    rows = [ScanRow(1, 217000, 217150, 500, 40),
-            ScanRow(1, 217020, 217180, 500, 40),
-            ScanRow(1, 217010, 0, 500, 10)]
+    rows = [
+        ScanRow(1, 217000, 217150, 500, 40),
+        ScanRow(1, 217020, 217180, 500, 40),
+        ScanRow(1, 217010, 0, 500, 10),
+    ]
     rep = ab_compare(rows)
     assert rep.n == 3 and rep.n_b_valid == 2
     assert rep.bias_hz == pytest.approx(155.0, abs=1.0)

@@ -1,0 +1,37 @@
+* mockup analog chain
+
+.subckt opamp inp inn out
+E1 n1 0 inp inn 1e5
+R1 n1 n2 1k
+C1 n2 0 1.5158e-07
+E2 out 0 n2 0 1
+.ends
+
+Vin inp 0 dc 0 ac 1
+E_ina ina_raw 0 inp 0 20.0
+R_ip ina_raw ina_p 1k
+C_ip ina_p 0 1.1368e-10
+E_inab ina_out 0 ina_p 0 1
+C1 ina_out hp_n1 1.0000e-09
+C2 hp_n1 hp_in 1.0000e-09
+R1 hp_n1 hp_out 7.8700e+02
+R2 hp_in 0 7.8700e+02
+X1 hp_in hp_fb hp_out opamp
+Rf1 hp_out hp_fb 5.9000e+02
+Rg1 hp_fb 0 1.0000e+03
+R3 hp_out lp_n1 7.5000e+02
+R4 lp_n1 lp_in 7.5000e+02
+C3 lp_n1 lp_out 3.3000e-10
+C4 lp_in 0 3.3000e-10
+X2 lp_in lp_fb lp_out opamp
+Rf2 lp_out lp_fb 5.9000e+02
+Rg2 lp_fb 0 1.0000e+03
+X3 lp_out out_fb amp_out opamp
+Rf3 amp_out out_fb 3.5700e+03
+Rg3 out_fb 0 1.0000e+03
+.ac dec 60 1k 20meg
+.control
+run
+wrdata OUTFILE mag(v(amp_out))
+.endc
+.end

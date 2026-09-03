@@ -159,7 +159,7 @@ def electronics(cfg: BoardConfig, z: float) -> list[Part]:
     parts.append(
         Part(
             f"carte puissance : {brain.power_board}",
-            _box(90, 60, cfg.gap.pcb_mm, 160, g.play_mm - 90, z),
+            _box(100, 60, cfg.gap.pcb_mm, 160, g.play_mm - 90, z),
             COL["strip"],
             "elec",
         )
@@ -375,7 +375,7 @@ def gantry_frame(cfg: BoardConfig, z: float) -> list[Part]:
     parts.append(
         Part(
             f"carte moteurs : {cfg.plateau.brain.motion_board}",
-            _box(60, 40, cfg.gap.pcb_mm, g.play_mm / 2.0 - 30, travel_y - 44, z),
+            _box(90, 60, cfg.gap.pcb_mm, g.play_mm / 2.0 - 45, travel_y - 64, z),
             COL["strip"],
             "chariot",
         )

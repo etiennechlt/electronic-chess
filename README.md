@@ -101,9 +101,12 @@ du routage ([guide](hardware/mockup-2x2/README.md),
   cavalier, UART Pi isolée ; routée DRC zéro par le routeur maison,
   une courte liste de liaisons à fermer dans pcbnew avant commande,
   [détails](hardware/mockup-2x2/analog-board/README.md).
-- **Firmware** ([`firmware/mockup`](firmware/mockup/)) : les deux
+- **Firmware** ([`firmware/board`](firmware/board/)) : les deux
   voies d'extraction du brief mesurées simultanément sur chaque
-  ringdown, calibration en flash, CSV sur le port série ; compile en CI.
+  ringdown, quatre quadrants par le bus de mux, calibration en flash,
+  CSV sur le port série ; compile en CI. Pont radio et horloge en
+  ESP-IDF ([`firmware/esp32`](firmware/esp32/)), protocole texte commun
+  ([note 12](docs/notes/12-protocole.md)).
 - **Mécanique** ([`mechanical/`](mechanical/README.md)) : plateau
   8 x 8 (module, bases, ailes), horloge, pucks de test, gabarits de
   bobinage, STL et STEP paramétriques, rendus et vue interactive.
@@ -128,11 +131,14 @@ décisions formelles sont dans [`docs/adr/`](docs/adr/README.md).
 | `chessboard_calc/` | calculs paramétriques et garde-fous | 0 |
 | `tools/coilgen`, `tools/analoggen` | générateurs KiCad des deux cartes de la maquette | 1 |
 | `tools/quadgen`, `hardware/quadrant/` | générateur et projet KiCad du quadrant 4 x 4 | 2 |
+| `tools/boardgen`, `hardware/{brain,power,motion,clock}/` | générateur générique et projets KiCad du cerveau, de la puissance, des moteurs et de l'horloge | 2 |
 | `hardware/mockup-2x2/` | projets KiCad (`.kicad_pro` à ouvrir), gerbers, BOM, guides | 1 |
-| `firmware/mockup/` | firmware Nucleo-G474RE | 1 |
+| `firmware/mockup/` | firmware Nucleo-G474RE (référence) | 1 |
+| `firmware/board/` | firmware du cerveau : bus des quadrants, quatre ADC, 128 LED | 2 |
+| `firmware/esp32/` | pont radio et horloge (ESP-IDF, NimBLE), protocole de la note 12 | 2 à 3 |
 | `measurements/` | protocole, gabarits CSV, analyse | 1 |
 | `mechanical/` | modèles CadQuery (plateau, horloge, pucks), rendus, vue 3D | 1 à 3 |
-| `mainboard/`, `firmware/board/`, `app/` | cerveau, firmware du plateau, application | 2 à 4 |
+| `app/` | application, client Lichess sur le pont | 3 à 4 |
 
 ## État et décisions
 

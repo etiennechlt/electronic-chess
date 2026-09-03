@@ -68,6 +68,22 @@ contrôle d'isolement exact trouve un défaut ; `tests/test_quadgen.py`
 reconstruit la carte et vérifie la source unique des LED, les
 échappées vers les cellules et l'export `kicad-cli`.
 
+## Cartes du plateau : cerveau, puissance, moteurs, horloge (~2 à 15 min chacune)
+
+```bash
+for b in brain power motion clock; do
+  PYTHONPATH=tools .venv/bin/python -m boardgen build $b --render docs/images/$b.png
+done
+```
+
+Chaque build écrit `hardware/<carte>/<carte>.kicad_pro`, le schéma, le
+PCB, `bom.csv`, `jlc-bom.csv` et `jlc-cpl.csv`, puis route tous les
+nets avec le routeur A* multicouche et passe le contrôle d'isolement
+exact. Les nets restés ouverts sont listés dans la sortie (et dans le
+README de chaque carte) : ils se ferment dans pcbnew avant commande.
+Le générateur échoue si deux cours d'empreinte se chevauchent ou si une
+pièce sort de la carte.
+
 ## Plateau 8 x 8 et horloge (ADR 0010)
 
 ```bash
@@ -94,6 +110,14 @@ Le gabarit de perçage du bois est la pièce `surface-template` dans
 `mechanical/exports/`.
 
 ## Firmware
+
+```bash
+cd firmware/board
+make pins    # regénère src/board_pins.h (PYTHONPATH=tools, chaîne LED depuis quadgen)
+make         # build/board.elf
+```
+
+Maquette, pour référence :
 
 ```bash
 cd firmware/mockup

@@ -32,9 +32,9 @@ class Pin:
 @dataclass(frozen=True)
 class Symbol:
     lib: str
-    name: str          # base symbol name actually embedded
-    lib_id: str        # "Lib:Name"
-    raw: str           # block ready for lib_symbols (name already prefixed)
+    name: str  # base symbol name actually embedded
+    lib_id: str  # "Lib:Name"
+    raw: str  # block ready for lib_symbols (name already prefixed)
     pins: tuple[Pin, ...]
     units: tuple[int, ...]
 
@@ -54,7 +54,7 @@ def _extract_block(text: str, symbol_name: str) -> str:
         elif text[i] == ")":
             depth -= 1
             if depth == 0:
-                return text[start:i + 1]
+                return text[start : i + 1]
     raise ValueError(f"unbalanced block for {symbol_name}")
 
 
@@ -105,5 +105,4 @@ def load_symbol(lib: str, name: str) -> Symbol:
     pins, units = _pins_from_block(block, name)
     if not pins:
         raise ValueError(f"symbol {lib}:{name} has no pins")
-    return Symbol(lib=lib, name=name, lib_id=f"{lib}:{name}", raw=prefixed,
-                  pins=pins, units=units)
+    return Symbol(lib=lib, name=name, lib_id=f"{lib}:{name}", raw=prefixed, pins=pins, units=units)

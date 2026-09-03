@@ -37,15 +37,16 @@ def test_analog_project_carries_the_router_rules():
     assert netclass["clearance"] == CLR
     assert (netclass["via_diameter"], netclass["via_drill"]) == (VIA_D, VIA_DRILL)
     rules = project["board"]["design_settings"]["rules"]
-    assert rules["min_clearance"] == FAB_CLR   # the exact fabrication gate
+    assert rules["min_clearance"] == FAB_CLR  # the exact fabrication gate
     assert rules["min_track_width"] == W_FINE  # entries into fine-pitch pads
 
 
 def test_committed_analog_project_is_the_generated_one():
     directory = HARDWARE / "analog-board"
     schematic = (directory / "analog-board.kicad_sch").read_text(encoding="utf-8")
-    expected = project_json("analog-board", design_rules(),
-                            root_sheet_uuid=schematic_root_uuid(schematic))
+    expected = project_json(
+        "analog-board", design_rules(), root_sheet_uuid=schematic_root_uuid(schematic)
+    )
     assert (directory / "analog-board.kicad_pro").read_text(encoding="utf-8") == expected
 
 

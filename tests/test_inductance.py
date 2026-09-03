@@ -53,9 +53,7 @@ def test_piece_coils_are_windable_for_every_class_and_pitch(cfg):
                 f"no candidate wire fits the {piece.value} coil at p={pitch}"
             )
             assert 20 <= design.n_turns <= 150
-            assert design.L_achieved_uH == pytest.approx(
-                cfg.resonator.L_target_uH, rel=0.05
-            )
+            assert design.L_achieved_uH == pytest.approx(cfg.resonator.L_target_uH, rel=0.05)
 
 
 def test_smallest_class_is_wire_constrained(cfg):

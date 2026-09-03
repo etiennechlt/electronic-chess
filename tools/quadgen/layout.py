@@ -131,22 +131,32 @@ def make_layout(cfg: BoardConfig) -> Layout:
             raise ValueError("escape band too narrow for the lanes between the LED bodies")
         band_lanes.append(tuple(yb - half_span + k * lane_pitch for k in range(n_lanes)))
 
-    # Front-end cells down the strip, one per coil, 8 per band.
+    # Front-end cells down the strip, one per coil, 8 per band, split
+    # around the escape band so no cell ever sits on the lanes: as many
+    # as fit above the band, the rest below it.
     st = q.strip
     per_band = n_lanes
-    cell_ys = []
-    y0 = st.connector_zone_mm
-    for b in range(n // 2):
-        top = y0 + b * (per_band * st.cell_pitch_mm + st.middle_zone_mm)
-        cell_ys += [top + (m + 0.5) * st.cell_pitch_mm for m in range(per_band)]
-    if cell_ys[-1] + st.cell_pitch_mm / 2.0 > board_h:
-        raise ValueError("strip floor plan overflows the board")
+    pitch_c = st.cell_pitch_mm
     guard = rt.route_track_mm + rt.track_clearance_mm
+    cell_ys: list[float] = []
+    zone_start = st.connector_zone_mm
+    for b in range(n // 2):
+        lanes = band_lanes[b]
+        gap_lo, gap_hi = lanes[0] - guard, lanes[-1] + guard
+        n_up = max(0, min(per_band, int((gap_lo - zone_start) / pitch_c)))
+        y = gap_lo - n_up * pitch_c
+        for m in range(n_up):
+            cell_ys.append(y + (m + 0.5) * pitch_c)
+        y = gap_hi
+        for m in range(per_band - n_up):
+            cell_ys.append(y + (m + 0.5) * pitch_c)
+        zone_start = y + (per_band - n_up) * pitch_c + st.middle_zone_mm
+    if cell_ys[-1] + pitch_c / 2.0 > board_h:
+        raise ValueError("strip floor plan overflows the board")
     for lanes in band_lanes:
         for yc in cell_ys:
-            if lanes[0] - guard < yc < lanes[-1] + guard:
-                raise ValueError(f"cell at y = {yc:.2f} lies inside an escape band")
-
+            if lanes[0] - guard < yc + pitch_c / 2.0 and yc - pitch_c / 2.0 < lanes[-1] + guard:
+                raise ValueError(f"cell at y = {yc:.2f} overlaps an escape band")
     coils = []
     for row in range(n):
         for col in range(n):
@@ -161,12 +171,14 @@ def make_layout(cfg: BoardConfig) -> Layout:
             # cells of this band and the up/down split around the lanes
             cells = list(range(band * per_band, (band + 1) * per_band))
             n_up = sum(1 for c in cells if cell_ys[c] < lanes[0])
+            n_down = per_band - n_up
             if k < n_up:
                 cell = cells[n_up - 1 - k]
                 xi = n_up - 1 - k
             else:
                 cell = cells[per_band - 1 - (k - n_up)]
                 xi = k - n_up
+            del n_down
             lane_x = st.lane_x0_mm + xi * lane_pitch
             coils.append(
                 Coil(
@@ -221,8 +233,8 @@ def make_layout(cfg: BoardConfig) -> Layout:
         leds=tuple(leds),
         band_lanes=tuple(band_lanes),
         cell_ys=tuple(cell_ys),
-        connector_xy=(5.5, st.connector_zone_mm / 2.0 + 1.5),
-        pin_hole_xy=(3.0, board_h - 3.0),
+        connector_xy=(5.0, 11.0),
+        pin_hole_xy=(11.0, 3.0),
         # east edge, in the stretches free of LED vias and chain hops
         mounting_holes=((board_w - 2.5, 1.4 * p), (board_w - 2.5, 3.4 * p)),
     )

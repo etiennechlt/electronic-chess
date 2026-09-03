@@ -47,6 +47,8 @@ class Board:
     title: str = ""
     nets: list[str] = field(default_factory=lambda: [""])
     body: list[str] = field(default_factory=list)
+    copper_layers: int = 4
+    generator: str = "coilgen"
 
     def net(self, name: str) -> int:
         if name in self.nets:
@@ -57,53 +59,101 @@ class Board:
     def segment(self, x1, y1, x2, y2, width_mm: float, layer: str, net: int) -> None:
         self.body.append(
             f"  (segment (start {_f(x1)} {_f(y1)}) (end {_f(x2)} {_f(y2)}) "
-            f"(width {_f(width_mm)}) (layer \"{layer}\") (net {net}))"
+            f'(width {_f(width_mm)}) (layer "{layer}") (net {net}))'
         )
 
     def polyline(self, points, width_mm: float, layer: str, net: int) -> None:
         for i in range(len(points) - 1):
             self.segment(
-                points[i][0], points[i][1], points[i + 1][0], points[i + 1][1],
-                width_mm, layer, net,
+                points[i][0],
+                points[i][1],
+                points[i + 1][0],
+                points[i + 1][1],
+                width_mm,
+                layer,
+                net,
             )
 
     def via(self, x, y, size_mm: float, drill_mm: float, net: int) -> None:
         self.body.append(
             f"  (via (at {_f(x)} {_f(y)}) (size {_f(size_mm)}) (drill {_f(drill_mm)}) "
-            f"(layers \"F.Cu\" \"B.Cu\") (net {net}))"
+            f'(layers "F.Cu" "B.Cu") (net {net}))'
+        )
+
+    def zone(
+        self,
+        net: int,
+        net_name: str,
+        layer: str,
+        pts,
+        clearance_mm: float = 0.3,
+        min_width_mm: float = 0.25,
+    ) -> None:
+        """Unfilled copper pour; KiCad fills it on load (B) or on DRC."""
+        xy = " ".join(f"(xy {_f(x)} {_f(y)})" for x, y in pts)
+        self.body.append(
+            f'  (zone (net {net}) (net_name "{net_name}") (layer "{layer}") (hatch edge 0.5)\n'
+            f"    (connect_pads yes (clearance {_f(clearance_mm)}))\n"
+            f"    (min_thickness {_f(min_width_mm)}) (filled_areas_thickness no)\n"
+            "    (fill yes (thermal_gap 0.3) (thermal_bridge_width 0.4))\n"
+            f"    (polygon (pts {xy}))\n  )"
+        )
+
+    def keepout_zone(self, layers: list[str], pts, name: str = "keepout") -> None:
+        """Rule area: no copper of any kind (pour, tracks, vias, pads) on the
+        given layers, footprints still allowed (an antenna sits over it)."""
+        xy = " ".join(f"(xy {_f(x)} {_f(y)})" for x, y in pts)
+        lay = " ".join(f'"{la}"' for la in layers)
+        self.body.append(
+            f'  (zone (net 0) (net_name "") (layers {lay}) (name "{name}") (hatch edge 0.5)\n'
+            "    (connect_pads (clearance 0)) (min_thickness 0.25) (filled_areas_thickness no)\n"
+            "    (keepout (tracks not_allowed) (vias not_allowed) (pads not_allowed)"
+            " (copperpour not_allowed) (footprints allowed))\n"
+            "    (fill (thermal_gap 0.5) (thermal_bridge_width 0.5))\n"
+            f"    (polygon (pts {xy}))\n  )"
         )
 
     def gr_line(self, x1, y1, x2, y2, layer: str, width_mm: float = 0.1) -> None:
         self.body.append(
             f"  (gr_line (start {_f(x1)} {_f(y1)}) (end {_f(x2)} {_f(y2)}) "
-            f"(stroke (width {_f(width_mm)}) (type solid)) (layer \"{layer}\"))"
+            f'(stroke (width {_f(width_mm)}) (type solid)) (layer "{layer}"))'
         )
 
     def gr_rect(self, x1, y1, x2, y2, layer: str, width_mm: float = 0.1) -> None:
         self.body.append(
             f"  (gr_rect (start {_f(x1)} {_f(y1)}) (end {_f(x2)} {_f(y2)}) "
-            f"(stroke (width {_f(width_mm)}) (type solid)) (fill none) (layer \"{layer}\"))"
+            f'(stroke (width {_f(width_mm)}) (type solid)) (fill none) (layer "{layer}"))'
         )
 
     def gr_circle(self, cx, cy, r_mm, layer: str, width_mm: float = 0.1) -> None:
         self.body.append(
             f"  (gr_circle (center {_f(cx)} {_f(cy)}) (end {_f(cx + r_mm)} {_f(cy)}) "
-            f"(stroke (width {_f(width_mm)}) (type solid)) (fill none) (layer \"{layer}\"))"
+            f'(stroke (width {_f(width_mm)}) (type solid)) (fill none) (layer "{layer}"))'
         )
 
     def gr_text(
-        self, text: str, x, y, layer: str, size_mm: float = 1.5,
-        thickness_mm: float = 0.2, mirror: bool = False,
+        self,
+        text: str,
+        x,
+        y,
+        layer: str,
+        size_mm: float = 1.5,
+        thickness_mm: float = 0.2,
+        mirror: bool = False,
     ) -> None:
         just = " (justify mirror)" if mirror else ""
         self.body.append(
-            f"  (gr_text \"{text}\" (at {_f(x)} {_f(y)}) (layer \"{layer}\")\n"
+            f'  (gr_text "{text}" (at {_f(x)} {_f(y)}) (layer "{layer}")\n'
             f"    (effects (font (size {_f(size_mm)} {_f(size_mm)}) "
             f"(thickness {_f(thickness_mm)})){just})\n  )"
         )
 
     def tht_pad_footprint(
-        self, ref: str, value: str, x, y,
+        self,
+        ref: str,
+        value: str,
+        x,
+        y,
         pads: list[tuple[str, float, float, float, float, int, str]],
     ) -> None:
         """One footprint with plated through-hole pads.
@@ -111,20 +161,20 @@ class Board:
         pads: (number, dx, dy, pad_d, drill_d, net_index, net_name).
         """
         lines = [
-            f"  (footprint \"coilgen:{value}\" (layer \"F.Cu\") (at {_f(x)} {_f(y)})",
+            f'  (footprint "coilgen:{value}" (layer "F.Cu") (at {_f(x)} {_f(y)})',
             "    (attr through_hole)",
-            f"    (fp_text reference \"{ref}\" (at 0 -2.6) (layer \"F.SilkS\")",
+            f'    (fp_text reference "{ref}" (at 0 -2.6) (layer "F.SilkS")',
             "      (effects (font (size 1 1) (thickness 0.15)))",
             "    )",
-            f"    (fp_text value \"{value}\" (at 0 2.6) (layer \"F.Fab\")",
+            f'    (fp_text value "{value}" (at 0 2.6) (layer "F.Fab")',
             "      (effects (font (size 1 1) (thickness 0.15)))",
             "    )",
         ]
         for num, dx, dy, pad_d, drill_d, net_i, net_name in pads:
             lines.append(
-                f"    (pad \"{num}\" thru_hole circle (at {_f(dx)} {_f(dy)}) "
+                f'    (pad "{num}" thru_hole circle (at {_f(dx)} {_f(dy)}) '
                 f"(size {_f(pad_d)} {_f(pad_d)}) (drill {_f(drill_d)}) "
-                f"(layers \"*.Cu\" \"*.Mask\") (net {net_i} \"{net_name}\"))"
+                f'(layers "*.Cu" "*.Mask") (net {net_i} "{net_name}"))'
             )
         lines.append("  )")
         self.body.append("\n".join(lines))
@@ -133,31 +183,36 @@ class Board:
         self.body.append(
             "\n".join(
                 [
-                    f"  (footprint \"coilgen:NPTH_{_f(drill_mm)}\" (layer \"F.Cu\") "
+                    f'  (footprint "coilgen:NPTH_{_f(drill_mm)}" (layer "F.Cu") '
                     f"(at {_f(x)} {_f(y)})",
                     "    (attr exclude_from_pos_files exclude_from_bom)",
-                    f"    (fp_text reference \"{ref}\" (at 0 -2.6) (layer \"F.Fab\")",
+                    f'    (fp_text reference "{ref}" (at 0 -2.6) (layer "F.Fab")',
                     "      (effects (font (size 1 1) (thickness 0.15)))",
                     "    )",
-                    "    (fp_text value \"NPTH\" (at 0 2.6) (layer \"F.Fab\")",
+                    '    (fp_text value "NPTH" (at 0 2.6) (layer "F.Fab")',
                     "      (effects (font (size 1 1) (thickness 0.15)))",
                     "    )",
-                    f"    (pad \"\" np_thru_hole circle (at 0 0) "
+                    f'    (pad "" np_thru_hole circle (at 0 0) '
                     f"(size {_f(drill_mm)} {_f(drill_mm)}) (drill {_f(drill_mm)}) "
-                    "(layers \"*.Cu\" \"*.Mask\"))",
+                    '(layers "*.Cu" "*.Mask"))',
                     "  )",
                 ]
             )
         )
 
     def serialize(self) -> str:
-        nets = "\n".join(f"  (net {i} \"{n}\")" for i, n in enumerate(self.nets))
+        nets = "\n".join(f'  (net {i} "{n}")' for i, n in enumerate(self.nets))
+        table = _LAYER_TABLE
+        if self.copper_layers == 2:
+            table = "\n".join(
+                line for line in table.split("\n") if "In1.Cu" not in line and "In2.Cu" not in line
+            )
         header = (
-            f"(kicad_pcb (version {KICAD_VERSION}) (generator coilgen)\n\n"
+            f"(kicad_pcb (version {KICAD_VERSION}) (generator {self.generator})\n\n"
             f"  (general\n    (thickness {_f(self.thickness_mm)})\n  )\n\n"
-            "  (paper \"A4\")\n"
-            f"  (title_block\n    (title \"{self.title}\")\n  )\n\n"
-            f"  (layers\n{_LAYER_TABLE}\n  )\n\n"
+            '  (paper "A4")\n'
+            f'  (title_block\n    (title "{self.title}")\n  )\n\n'
+            f"  (layers\n{table}\n  )\n\n"
             "  (setup\n"
             "    (pad_to_mask_clearance 0)\n"
             "    (aux_axis_origin 0 0)\n"

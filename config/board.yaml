@@ -255,15 +255,19 @@ plateau:                       # 8x8 board built directly from 4x4 quadrants (AD
   quadrant:
     squares: 4                 # 4 x 4 coils per quadrant, 4 identical boards
     layers: 4
-    mux: ADG726                # dual 16:1 differential mux, one per quadrant
-    front_end_strip_mm: 16.0   # analog front end on the top side, outer x edge
+    mux: ADG1607               # two dual 8:1 muxes, outputs paralleled, one enable each
+                               # (ADG726 has no verified symbol in the KiCad 7 libraries)
+    front_end_strip_mm: 20.0   # analog front end on the top side, outer x edge
     front_end_max_height_mm: 1.8   # must fit under the plywood in gap.air_mm
     link:                      # to the brain board, one flat cable each
       connector: "FPC 0.5 mm, 16 broches, 1,4 mm de haut (Hirose FH12-16S-0.5SH)"
       footprint: "Connector_FFC-FPC:Hirose_FH12-16S-0.5SH_1x16-1MP_P0.50mm_Horizontal"
       pins: 16
-      pinout: [GND, 5VA, AGND, AMP_OUT, 3V3, MUX_A0, MUX_A1, MUX_A2,
-               MUX_A3, MUX_EN, PULSE_EN, DAMP_EN, VIN, 5V_LED, LED_DIN, LED_DOUT]
+      # GND, 5V_LED, LED_DIN and LED_DOUT get a dedicated fan-out on the
+      # quadrant (bus ties, LED chain): keep them apart, never on adjacent pins
+      pinout: [GND, 5VA, GND, AMP_OUT, 3V3, MUX_A0, LED_DIN, MUX_A1,
+               MUX_A2, 5V_LED, MUX_EN_L, MUX_EN_H, LED_DOUT, PULSE_EN,
+               DAMP_EN_N, VIN]
     routing:                   # quadgen numbers
       track_clearance_mm: 0.15
       edge_clearance_mm: 0.5
@@ -273,21 +277,22 @@ plateau:                       # 8x8 board built directly from 4x4 quadrants (AD
       led_via: { pad_mm: 0.6, drill_mm: 0.3, stub_mm: 1.0 }
       grid_mm: 0.2             # A* raster for the LED chain and spurs
     strip:                     # front-end strip floor plan, y from the north edge
-      connector_zone_mm: 18.0  # FPC connector, cable exits west, locating pin hole
-      cell_pitch_mm: 8.5       # one per coil, 8 per band, none inside a band
-      middle_zone_mm: 40.0     # decoders, mux, amplifier chain
+      connector_zone_mm: 25.7  # FPC connector, cable exits west, locating pin hole, rail switch, spare passives
+      cell_pitch_mm: 7.4       # one per coil, 8 per band, split around the escape band
+      middle_zone_mm: 43.8     # decoders stacked, muxes side by side, amplifier chain (cells are anchored to the bands)
       lane_x0_mm: 1.0          # coil entry lanes down the west edge
-      cell_entry_x_mm: 5.0
+      cell_entry_x_mm: 3.8     # A on F.Cu at y - 0.6, B on B.Cu at y + 0.6
     front_end:
-      drive_decoder: 74HC4514  # 4 to 16, active high: coil excitation gates
-      damp_decoder: 74HC154    # 4 to 16, active low: P-FET damping gates
+      drive_decoder: 74HC4514  # 4 to 16, active high: coil excitation gates, inhibited by PULSE_EN_N
+      damp_decoder: 74HC154    # 4 to 16, active low: P-FET damping gates, enabled by DAMP_EN_N
       flyback_diode: "SS34FL, SOD-123FL, 1 mm de haut"
+      logic_rail: 3V3          # decoders and inverter; mux, INA and op amps on 5VA
     mounting_hole_d_mm: 3.2
     mounting_hole_inset_mm: 5.0
   leds:
     corners: [NW, SE]          # every square identical, no exception (mockup S2 had one)
   wood:
-    border_mm: 16.0            # plywood frame around the play area, covers the strip
+    border_mm: 20.0            # plywood frame around the play area, covers the strip
   module_underside_clear: true # nothing under the quadrants: the gantry base needs the room
   base:
     shell_mm: 2.0
@@ -302,10 +307,56 @@ plateau:                       # 8x8 board built directly from 4x4 quadrants (AD
     motion_board: "2 x TMC2209, endstops, magnet actuator; lives in the gantry base, optional"
     comms: { module: ESP32-S3-WROOM-1, pi_header: true, isolator: ADuM1201, load_switch: true }
     peripheral_port: "USB-C, 5 V + UART, for wired accessories"
+    board_mm: [120.0, 80.0]
+    layers: 4
+    mcu_pins:                  # STM32G474RE, to validate against the datasheet before fab
+      ADC1: PA0                # quadrant 1, ADC1_IN1
+      ADC2: PA6                # quadrant 2, ADC2_IN3
+      ADC3: PB0                # quadrant 3, ADC3_IN12
+      ADC4: PB14               # quadrant 4, ADC4_IN4
+      LED_DIN_MCU: PA5         # TIM2_CH1, WS2812 chain through the 74AHCT1G125
+      MUX_A0: PB3
+      MUX_A1: PB5
+      MUX_A2: PB4
+      MUX_EN_L: PC0
+      MUX_EN_H: PC1
+      PULSE_EN: PA4
+      DAMP_EN_N: PC2
+      STEP1: PC6               # TIM3_CH1
+      DIR1: PC7
+      STEP2: PC8               # TIM3_CH3
+      DIR2: PC9
+      MOT_EN: PC12
+      TMC_TX: PC10             # USART3
+      TMC_RX: PC11
+      ENDSTOP_X: PD2
+      ENDSTOP_Y: PA3
+      SERVO: PB6               # TIM4_CH1
+      I2C_SCL: PA15            # I2C1, power board AFE and gauge (PB8 is BOOT0)
+      I2C_SDA: PB7
+      BUZZER: PB10             # TIM2_CH3
+      LED_STAT1: PC13
+      LED_STAT2: PC14
+      LED_STAT3: PC15
+      LED_STAT4: PA8
+      USER_BTN: PB11
+      COMM_EN: PB15            # comms module load switch
+      MCU_TX: PA9              # USART1 to the isolated UART
+      MCU_RX: PA10
+      USB_DM_MCU: PA11
+      USB_DP_MCU: PA12
+      SWDIO: PA13
+      SWCLK: PA14
+      CHG_STAT: PA7
+      PWR_KEY: PB1
+      MOT_ALARM: PB2
+      MOT_DIAG: PC4
+      ESP_EN: PB12
+      ESP_IO0: PB13
 
 clock:                         # separate rocker chess clock, BLE to the board (ADR 0010)
   radio: ble
-  mcu: ESP32-C3
+  mcu: ESP32-S3-WROOM-1       # same module as the brain, one part to stock and one toolchain
   cell: "18650 1S, 3 Ah, USB-C charge"
   body_mm: [120.0, 70.0]
   height_front_mm: 26.0

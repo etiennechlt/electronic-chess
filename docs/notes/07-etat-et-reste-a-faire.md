@@ -32,12 +32,21 @@ interactive, exports STEP, ADR 0010 et [note 10](10-plateau-8x8-et-horloge.md).
 Le générateur de quadrant (`tools/quadgen`) produit la carte 4 x 4 :
 spirales, échappées vers la bande de frontal, 32 LED et leur
 distribution, connecteur FPC, contrôle d'isolement exact
-([README](../../hardware/quadrant/README.md)). Reste, dans l'ordre :
-cellules du frontal, mux, décodeurs et chaîne d'amplification du
-quadrant (schéma, placement, routage), schéma du cerveau puis cartes
-puissance et moteurs, carte et firmware de l'horloge, mesures M1 à M11
-sur un quadrant plus le cerveau. Les points ci-dessous concernent la maquette et ne sont
-conservés que comme référence.
+([README](../../hardware/quadrant/README.md)), avec son frontal
+(cellules, mux, décodeurs, chaîne) placé et routé. Le générateur
+générique `tools/boardgen` produit le cerveau, la puissance, les
+moteurs et l'horloge ([note 11](11-cartes-du-plateau.md)). Le firmware
+du cerveau (`firmware/board`) compile ; le pont radio et l'horloge
+(`firmware/esp32`) sont écrits contre ESP-IDF et attendent une première
+compilation sur poste ; le protocole est fixé ([note 12](12-protocole.md)).
+
+Reste, dans l'ordre : revue des cinq projets dans KiCad 9 (DRC, nets
+laissés ouverts par le routeur, tableau dans la [note 11](11-cartes-du-plateau.md),
+brochages marqués à vérifier),
+simulation SPICE de la chaîne et des cellules, commande des cartes,
+puis les mesures M1 à M11 sur un quadrant plus le cerveau. Les points
+ci-dessous concernent la maquette et ne sont conservés que comme
+référence.
 
 ## Le reste côté dépôt (maquette, référence)
 

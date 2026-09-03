@@ -13,6 +13,7 @@ dependencies = [
     "pyyaml>=6.0",
     "pydantic>=2.5",
     "matplotlib>=3.8",
+    "shapely>=2.0",
 ]
 
 [project.optional-dependencies]
@@ -22,11 +23,13 @@ dev = [
 ]
 
 [tool.setuptools]
-packages = ["chessboard_calc", "coilgen", "quadgen"]
+packages = ["chessboard_calc", "coilgen", "analoggen", "quadgen", "boardgen"]
 
 [tool.setuptools.package-dir]
 coilgen = "tools/coilgen"
+analoggen = "tools/analoggen"
 quadgen = "tools/quadgen"
+boardgen = "tools/boardgen"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

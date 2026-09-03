@@ -18,10 +18,10 @@ from shapely.geometry import LineString, Point, box
 from shapely.ops import nearest_points, unary_union
 from shapely.strtree import STRtree
 
-CLEAR = 0.132          # above the 0.127 DRC gate, threads 0.52 mm channels
+CLEAR = 0.132  # above the 0.127 DRC gate, threads 0.52 mm channels
 W_JOIN = 0.25
 VIA_R = 0.3
-EDGE = 0.55            # edge keepout + half width
+EDGE = 0.55  # edge keepout + half width
 MAX_JOINTS = 50
 
 
@@ -35,8 +35,7 @@ class _Obstacles:
     def __init__(self, pads, tracks, vias):
         self.items = {"F.Cu": [], "B.Cu": []}
         for q in pads:
-            g = box(q.x - q.w / 2, q.y - q.h / 2,
-                    q.x + q.w / 2, q.y + q.h / 2)
+            g = box(q.x - q.w / 2, q.y - q.h / 2, q.x + q.w / 2, q.y + q.h / 2)
             name = q.net or f"NC:{q.ref}.{q.number}"
             for la in _layers_of_pad(q):
                 self.items[la].append((name, g))
@@ -46,8 +45,9 @@ class _Obstacles:
             g = Point(x, y).buffer(VIA_R)
             self.items["F.Cu"].append((net, g))
             self.items["B.Cu"].append((net, g))
-        self.pad_boxes = [box(q.x - q.w / 2, q.y - q.h / 2,
-                              q.x + q.w / 2, q.y + q.h / 2) for q in pads]
+        self.pad_boxes = [
+            box(q.x - q.w / 2, q.y - q.h / 2, q.x + q.w / 2, q.y + q.h / 2) for q in pads
+        ]
         self.pad_tree = STRtree(self.pad_boxes)
         self._trees = {}
         self._geoms = {}
@@ -68,8 +68,10 @@ class _Obstacles:
 
     def via_ok(self, net, x, y) -> bool:
         disc = Point(x, y).buffer(VIA_R)
-        if not (EDGE + VIA_R - W_JOIN / 2 <= x <= 100.0 - EDGE - VIA_R + W_JOIN / 2
-                and EDGE + VIA_R - W_JOIN / 2 <= y <= 62.0 - EDGE - VIA_R + W_JOIN / 2):
+        if not (
+            EDGE + VIA_R - W_JOIN / 2 <= x <= 100.0 - EDGE - VIA_R + W_JOIN / 2
+            and EDGE + VIA_R - W_JOIN / 2 <= y <= 62.0 - EDGE - VIA_R + W_JOIN / 2
+        ):
             return False
         for la in ("F.Cu", "B.Cu"):
             if not self.clear_of_foreign(net, la, disc):
@@ -92,8 +94,7 @@ class _Obstacles:
 
 
 def _in_board(pts) -> bool:
-    return all(EDGE <= x <= 100.0 - EDGE and EDGE <= y <= 62.0 - EDGE
-               for x, y in pts)
+    return all(EDGE <= x <= 100.0 - EDGE and EDGE <= y <= 62.0 - EDGE for x, y in pts)
 
 
 def _net_pieces(net, pads, tracks, vias):
@@ -132,8 +133,7 @@ def _net_pieces(net, pads, tracks, vias):
     for part in parts:
         pf = [g for g in true_f if part.intersects(g)]
         pb = [g for g in true_b if part.intersects(g)]
-        pieces.append((unary_union(pf) if pf else None,
-                       unary_union(pb) if pb else None))
+        pieces.append((unary_union(pf) if pf else None, unary_union(pb) if pb else None))
     return pieces
 
 
@@ -144,9 +144,32 @@ def _f_paths(pa, pb):
     if abs(xa - xb) > 1e-6 and abs(ya - yb) > 1e-6:
         yield [pa, (xb, ya), pb]
         yield [pa, (xa, yb), pb]
-    for off in (0.2, -0.2, 0.4, -0.4, 0.6, -0.6, 0.9, -0.9, 1.3, -1.3,
-                1.8, -1.8, 2.4, -2.4, 3.2, -3.2, 4.0, -4.0, 4.8, -4.8,
-                5.6, -5.6, 6.4, -6.4):
+    for off in (
+        0.2,
+        -0.2,
+        0.4,
+        -0.4,
+        0.6,
+        -0.6,
+        0.9,
+        -0.9,
+        1.3,
+        -1.3,
+        1.8,
+        -1.8,
+        2.4,
+        -2.4,
+        3.2,
+        -3.2,
+        4.0,
+        -4.0,
+        4.8,
+        -4.8,
+        5.6,
+        -5.6,
+        6.4,
+        -6.4,
+    ):
         ym = (ya + yb) / 2.0 + off
         yield [pa, (xa, ym), (xb, ym), pb]
         xm = (xa + xb) / 2.0 + off
@@ -156,8 +179,7 @@ def _f_paths(pa, pb):
 def _ring(p, radii=(0.5, 0.8, 1.2, 1.8, 2.6, 3.6, 4.8)):
     x, y = p
     for r in radii:
-        for dx, dy in ((r, 0), (-r, 0), (0, r), (0, -r),
-                       (r, r), (r, -r), (-r, r), (-r, -r)):
+        for dx, dy in ((r, 0), (-r, 0), (0, r), (0, -r), (r, r), (r, -r), (-r, r), (-r, -r)):
             yield (x + dx, y + dy)
 
 

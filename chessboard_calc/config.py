@@ -453,6 +453,7 @@ class FrontEndCfg(_Model):
     drive_decoder: str
     damp_decoder: str
     flyback_diode: str
+    logic_rail: str
 
 
 class QuadrantCfg(_Model):
@@ -512,6 +513,17 @@ class BrainCfg(_Model):
     motion_board: str
     comms: CommsCfg
     peripheral_port: str
+    board_mm: tuple[float, float]
+    layers: int
+    mcu_pins: dict[str, str]
+
+    @model_validator(mode="after")
+    def _pins_unique(self) -> BrainCfg:
+        pins = list(self.mcu_pins.values())
+        if len(pins) != len(set(pins)):
+            dup = sorted({p for p in pins if pins.count(p) > 1})
+            raise ValueError(f"MCU pins used twice: {dup}")
+        return self
 
 
 class PlateauCfg(_Model):
