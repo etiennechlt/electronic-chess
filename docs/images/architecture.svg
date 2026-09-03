@@ -14,8 +14,8 @@
     </style>
   </defs>
   <rect width="960" height="560" fill="#0e141b"/>
-  <text x="30" y="36" class="t" font-size="20">Échiquier LC : architecture</text>
-  <text x="30" y="56" class="s">Détection par résonateurs passifs, déplacement magnétique, arbitrage embarqué</text>
+  <text x="30" y="36" class="t" font-size="20">Échiquier LC : architecture (plateau 8 x 8, ADR 0010)</text>
+  <text x="30" y="56" class="s">Détection par résonateurs passifs, arbitrage embarqué, horloge sans fil, chariot en option</text>
 
   <text x="30" y="96" class="h">JEU</text>
   <rect x="30" y="106" width="180" height="72" class="box"/>
@@ -24,72 +24,80 @@
   <text x="45" y="163" class="s">aimant ferrite (isolant)</text>
 
   <rect x="30" y="200" width="180" height="72" class="box"/>
-  <text x="45" y="224" class="t">Plateau 8 x 8</text>
-  <text x="45" y="242" class="s">4 quadrants PCB 4 couches</text>
-  <text x="45" y="257" class="s">64 spirales non résonantes</text>
+  <text x="45" y="224" class="t">Module plateau</text>
+  <text x="45" y="242" class="s">contreplaqué, 4 quadrants 4 x 4</text>
+  <text x="45" y="257" class="s">64 spirales, 128 LED, frontal</text>
 
-  <text x="260" y="96" class="h">MESURE</text>
+  <text x="260" y="96" class="h">MESURE (sur chaque quadrant)</text>
   <rect x="260" y="106" width="190" height="166" class="box accent"/>
   <text x="275" y="130" class="t">Frontal analogique</text>
-  <text x="275" y="150" class="s">mux différentiel (HCT4052,</text>
-  <text x="275" y="164" class="s">ADG726 par quadrant)</text>
+  <text x="275" y="150" class="s">16 cellules d'excitation,</text>
+  <text x="275" y="164" class="s">deux ADG1607, décodeurs 74HC</text>
   <text x="275" y="182" class="s">excitation FET hors mux</text>
   <text x="275" y="200" class="s">AD8421 G20 + Sallen-Key</text>
   <text x="275" y="214" class="s">200 a 650 kHz, gain ~200</text>
   <text x="275" y="236" class="s">217 a 613 kHz : 12 classes</text>
   <text x="275" y="252" class="s">calibrées par pièce en flash</text>
 
-  <text x="500" y="96" class="h">TEMPS RÉEL</text>
+  <text x="500" y="96" class="h">CERVEAU</text>
   <rect x="500" y="106" width="200" height="166" class="box accent"/>
-  <text x="515" y="130" class="t">STM32G474 (maître)</text>
+  <text x="515" y="130" class="t">STM32G474 soudé (maître)</text>
   <text x="515" y="150" class="s">voie A : ADC 4 Méch/s + FFT</text>
   <text x="515" y="164" class="s">voie B : COMP + capture 170 MHz</text>
   <text x="515" y="184" class="s">arbitre : coups légaux, roque,</text>
   <text x="515" y="198" class="s">promotion, prise en passant</text>
   <text x="515" y="216" class="s">interlock scan / aimant</text>
-  <text x="515" y="234" class="s">A* interstices, gestion énergie</text>
-  <text x="515" y="252" class="s">autonome Pi éteint</text>
+  <text x="515" y="234" class="s">4 liaisons FPC, bus de mux</text>
+  <text x="515" y="252" class="s">jouable sans radio ni horloge</text>
 
-  <text x="750" y="96" class="h">APPLICATIF</text>
+  <text x="750" y="96" class="h">RADIO ET APPLICATIF</text>
   <rect x="750" y="106" width="180" height="100" class="box"/>
-  <text x="765" y="130" class="t">Pi Zero 2 W</text>
-  <text x="765" y="150" class="s">Stockfish, Lichess Board,</text>
-  <text x="765" y="164" class="s">PGN, UI</text>
-  <text x="765" y="182" class="s">rootfs lecture seule</text>
+  <text x="765" y="130" class="t">ESP32-S3 + embase Pi</text>
+  <text x="765" y="150" class="s">pont BLE vers l'horloge,</text>
+  <text x="765" y="164" class="s">WiFi Lichess Board, PGN</text>
+  <text x="765" y="182" class="s">Pi en option : Stockfish, UI</text>
   <text x="765" y="196" class="s">load switch + UART isolée</text>
 
-  <text x="30" y="320" class="h">MOUVEMENT</text>
+  <rect x="750" y="222" width="180" height="76" class="box"/>
+  <text x="765" y="246" class="t">Horloge à bascule</text>
+  <text x="765" y="264" class="s">ESP32-S3, 18650, écran 2,4"</text>
+  <text x="765" y="278" class="s">barre, encodeur, buzzer</text>
+  <text x="765" y="292" class="s">BLE, protocole texte commun</text>
+
+  <text x="30" y="320" class="h">MOUVEMENT (base chariot, option)</text>
   <rect x="30" y="330" width="200" height="96" class="box"/>
   <text x="45" y="354" class="t">Portique CoreXY</text>
-  <text x="45" y="372" class="s">TMC2209 StealthChop,</text>
-  <text x="45" y="386" class="s">EN haut au repos</text>
+  <text x="45" y="372" class="s">carte moteurs, deux TMC2209,</text>
+  <text x="45" y="386" class="s">EN haut au repos, ailes de capture</text>
   <text x="45" y="402" class="s">chariot : N42 sur actionneur,</text>
   <text x="45" y="416" class="s">parking hors zone de jeu</text>
 
-  <text x="500" y="320" class="h">ÉNERGIE</text>
+  <text x="500" y="320" class="h">ÉNERGIE (carte puissance)</text>
   <rect x="500" y="330" width="200" height="96" class="box"/>
-  <text x="515" y="354" class="t">3S2P 18650, 73 Wh</text>
-  <text x="515" y="372" class="s">buck 2,2 MHz forced PWM</text>
-  <text x="515" y="386" class="s">îlot analogique LDO</text>
-  <text x="515" y="402" class="s">réserve de coup 10 %,</text>
-  <text x="515" y="416" class="s">extinction propre du Pi</text>
+  <text x="515" y="354" class="t">3S1P cellules plates, 55 Wh</text>
+  <text x="515" y="372" class="s">BQ24610 sur USB-C PD 20 V,</text>
+  <text x="515" y="386" class="s">BQ76920, jauge INA219</text>
+  <text x="515" y="402" class="s">buck 2,5 MHz forced PWM,</text>
+  <text x="515" y="416" class="s">îlot analogique LDO</text>
 
   <rect x="750" y="330" width="180" height="96" class="box"/>
   <text x="765" y="354" class="t">Autonomie</text>
-  <text x="765" y="374" class="s">~68 h humain contre humain</text>
-  <text x="765" y="390" class="s">~15 h contre le moteur</text>
-  <text x="765" y="406" class="s">crête 12 W (1,1 A)</text>
+  <text x="765" y="374" class="s">~51 h humain contre humain</text>
+  <text x="765" y="390" class="s">~11 h contre le moteur</text>
+  <text x="765" y="406" class="s">plateau fin : 21 mm d'épaisseur</text>
 
   <path class="w" d="M120 178 V196"/>
   <text x="128" y="190" class="s">couplage en 1/d³</text>
-  <text x="128" y="203" class="s" font-size="10">entrefer 5,1 mm</text>
+  <text x="128" y="203" class="s" font-size="10">entrefer 5,5 mm</text>
   <path class="w" d="M210 236 H256"/>
   <path class="w" d="M450 190 H496"/>
-  <text x="456" y="182" class="s">4 ADC</text>
+  <text x="456" y="182" class="s">4 FPC</text>
   <path class="w" d="M700 160 H746"/>
   <text x="704" y="152" class="s">UART FEN</text>
+  <path class="w" d="M840 206 V218"/>
+  <text x="848" y="216" class="s" font-size="10">BLE</text>
   <path class="w" d="M560 276 C 560 336 300 340 234 366"/>
-  <text x="330" y="332" class="s">pas à pas + fins de course</text>
+  <text x="330" y="332" class="s">nappe : pas à pas, fins de course</text>
   <path class="wp" d="M600 330 V276"/>
   <path class="wp" d="M700 378 H746"/>
   <path class="wp" d="M500 378 C 380 378 300 400 234 400"/>

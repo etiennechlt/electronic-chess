@@ -75,9 +75,21 @@ Vue 3D interactive (bases, éclaté, couches, noms au survol) :
 | ![Quadrant](docs/images/quadrant.png) |
 
 Spirales, échappées vers la bande de frontal, 32 LED de camp et leur
-distribution, connecteur FPC : [détails](hardware/quadrant/README.md).
-Les cellules du frontal, le mux et la chaîne d'amplification sont le
-bloc suivant.
+distribution, connecteur FPC, et dans la bande de 20 mm le frontal
+complet (16 cellules, deux ADG1607, décodeurs, chaîne AD8421 et
+OPA2810) : [détails](hardware/quadrant/README.md).
+
+| Cerveau (STM32G474, 4 couches) | Puissance (3S, BQ24610, BQ76920) |
+|---|---|
+| ![Cerveau](docs/images/brain.png) | ![Puissance](docs/images/power.png) |
+
+| Moteurs (deux TMC2209, base chariot) | Horloge (ESP32-S3, 18650, écran) |
+|---|---|
+| ![Moteurs](docs/images/motion.png) | ![Horloge](docs/images/clock.png) |
+
+Les quatre cartes sortent du générateur générique `tools/boardgen` ;
+ce que le routeur laisse ouvert est listé dans le README de chaque
+carte et résumé dans la [note 11](docs/notes/11-cartes-du-plateau.md).
 
 ## Maquette 2 x 2 (phase 1, conçue, non construite)
 

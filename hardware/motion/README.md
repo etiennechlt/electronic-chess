@@ -1,5 +1,7 @@
 # Carte moteurs : option chariot
 
+![Carte moteurs](../../docs/images/motion.png)
+
 Générée par `tools/boardgen` (module `motion`). 90 x 60 mm, 2 couches.
 Elle vit dans la base chariot et se branche au cerveau par la nappe
 IDC 2 x 10.

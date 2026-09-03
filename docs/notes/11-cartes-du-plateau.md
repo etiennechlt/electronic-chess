@@ -138,6 +138,14 @@ ouvert se concentre sur trois familles : les broches USB-C (pas de
 puissance vers les gros connecteurs, et des descentes de masse dans
 les zones denses. Rien de ce qui est tracé ne viole les règles.
 
+| Quadrant | Cerveau |
+|---|---|
+| ![Quadrant](../images/quadrant.png) | ![Cerveau](../images/brain.png) |
+
+| Puissance | Moteurs | Horloge |
+|---|---|---|
+| ![Puissance](../images/power.png) | ![Moteurs](../images/motion.png) | ![Horloge](../images/clock.png) |
+
 ## Avant fabrication
 
 1. Ouvrir chaque projet dans KiCad 9, lancer le DRC et fermer les

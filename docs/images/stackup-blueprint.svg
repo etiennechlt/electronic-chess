@@ -20,15 +20,14 @@
   </defs>
   <rect width="920" height="620" fill="#0d2437"/>
   <rect x="8" y="8" width="904" height="604" fill="none" stroke="#3f6f9e"/>
-  <text x="30" y="40" class="t" font-size="19">Empilement vertical, coupe (p = 50, classe lourde)</text>
-  <text x="30" y="60" class="s">Cotes en millimètres, échelle 12 px/mm. Source unique : config/board.yaml.</text>
+  <text x="30" y="40" class="t" font-size="19">Empilement vertical, coupe (p = 50, plateau fin, classe lourde)</text>
+  <text x="30" y="60" class="s">Cotes en millimètres, échelle 12 px/mm. Source unique : config/board.yaml (gap, wood).</text>
 
   <!-- center line -->
-  <line x1="460" y1="80" x2="460" y2="590" class="cl"/>
+  <line x1="460" y1="80" x2="460" y2="600" class="cl"/>
 
   <!-- piece body: base d=22.5 -> 135px wide half=67 ; scale 12px/mm -->
   <!-- y reference: felt top surface at y=330 ; up = piece, down = board -->
-  <!-- piece body from y=330 (bottom) upward 14mm -> 168px to y=162 -->
   <path class="l" d="M325 330 V210 Q325 162 385 162 H535 Q595 162 595 210 V330 Z" fill="#12344f"/>
   <!-- coil (bottom 2mm of piece): d_out 18.5 -> 111px half 55 -->
   <rect x="405" y="306" width="110" height="24" fill="url(#hatch2)" stroke="#d99a3d"/>
@@ -48,44 +47,55 @@
   <rect x="325" y="330" width="270" height="6" fill="#374151"/>
   <text x="315" y="328" class="s" text-anchor="end">feutre 0,5</text>
 
-  <!-- acrylic 3mm = 36px : y336..372 -->
-  <rect x="60" y="336" width="800" height="36" fill="#173a54" stroke="#3f6f9e"/>
-  <text x="150" y="358" class="s" text-anchor="end">acrylique 3,0</text>
+  <!-- plywood 3mm = 36px : y336..372, a light well over each LED -->
+  <rect x="60" y="336" width="800" height="36" fill="#4a3620" stroke="#7a5a2e"/>
+  <rect x="300" y="336" width="18" height="36" fill="#1a2c3d" stroke="#7a5a2e"/>
+  <text x="150" y="358" class="s" text-anchor="end">contreplaqué 3,0</text>
+  <text x="326" y="350" class="s" font-size="10">point lumineux</text>
 
-  <!-- PCB 1.6mm = 19px : y372..391 with 4 copper layers -->
-  <rect x="60" y="372" width="800" height="19" fill="#1d4034" stroke="#3f6f9e"/>
-  <line x1="60" y1="374" x2="860" y2="374" stroke="#d99a3d" stroke-width="2"/>
-  <line x1="60" y1="379" x2="860" y2="379" stroke="#d99a3d" stroke-width="1.2"/>
-  <line x1="60" y1="384" x2="860" y2="384" stroke="#d99a3d" stroke-width="1.2"/>
-  <line x1="60" y1="389" x2="860" y2="389" stroke="#d99a3d" stroke-width="2"/>
-  <text x="150" y="386" class="s" text-anchor="end">PCB 1,6</text>
+  <!-- air 2mm = 24px : y372..396, LED body and front end parts live here -->
+  <rect x="60" y="372" width="800" height="24" fill="#0f1d2a" stroke="#3f6f9e" stroke-dasharray="4 3"/>
+  <rect x="302" y="380" width="14" height="16" fill="#2b4a62" stroke="#9fc6e8"/>
+  <rect x="700" y="378" width="60" height="18" fill="#2b4a62" stroke="#9fc6e8"/>
+  <text x="150" y="388" class="s" text-anchor="end">entrefer d'air 2,0</text>
+  <text x="640" y="374" class="s" font-size="10">LED WS2812B, frontal de la bande (1,8 max)</text>
+
+  <!-- PCB 1.6mm = 19px : y396..415 with 4 copper layers -->
+  <rect x="60" y="396" width="800" height="19" fill="#1d4034" stroke="#3f6f9e"/>
+  <line x1="60" y1="398" x2="860" y2="398" stroke="#d99a3d" stroke-width="2"/>
+  <line x1="60" y1="403" x2="860" y2="403" stroke="#d99a3d" stroke-width="1.2"/>
+  <line x1="60" y1="408" x2="860" y2="408" stroke="#d99a3d" stroke-width="1.2"/>
+  <line x1="60" y1="413" x2="860" y2="413" stroke="#d99a3d" stroke-width="2"/>
+  <text x="150" y="410" class="s" text-anchor="end">PCB quadrant 1,6</text>
   <!-- sense coil zone marks: d_out 40 -> 240px -->
-  <line x1="340" y1="374" x2="340" y2="391" class="l"/>
-  <line x1="580" y1="374" x2="580" y2="391" class="l"/>
-  <text x="340" y="412" class="s">spirale de case : ø 40 / 22,5, 4 x 5 tours en série, ~16 µH</text>
+  <line x1="340" y1="398" x2="340" y2="415" class="l"/>
+  <line x1="580" y1="398" x2="580" y2="415" class="l"/>
+  <text x="340" y="436" class="s">spirale de case : ø 40 / 22,5, 4 x 5 tours en série, ~16 µH</text>
 
-  <!-- air below to magnet: engage 6mm = 72px : magnet top y=463 -->
-  <rect x="400" y="463" width="120" height="60" fill="url(#hatch)" stroke="#7fb3d5"/>
-  <text x="620" y="490" class="t">aimant chariot NdFeB N42</text>
-  <text x="620" y="505" class="s">ø 15 x 5, sur coupelle réglable</text>
+  <!-- gantry base only: air below to the carriage magnet, engaged at 6 mm = 72px : magnet top y=487 -->
+  <rect x="400" y="487" width="120" height="60" fill="url(#hatch)" stroke="#7fb3d5"/>
+  <text x="620" y="500" class="t">aimant chariot NdFeB N42</text>
+  <text x="620" y="515" class="s">ø 15 x 5, sur coupelle réglable</text>
+  <text x="620" y="530" class="s">(base chariot seulement ; la base fine</text>
+  <text x="620" y="544" class="s">loge cartes et cellules plates à cet endroit)</text>
   <!-- cup -->
-  <path class="l" d="M390 463 V535 H530 V463 M390 535 H530" fill="none"/>
-  <path class="l" d="M448 535 V570 M472 535 V570"/>
-  <text x="620" y="545" class="s">vis M3 : engagé à 6, rétracté à 15,</text>
-  <text x="620" y="560" class="s">parking hors zone pendant les scans</text>
+  <path class="l" d="M390 487 V559 H530 V487 M390 559 H530" fill="none"/>
+  <path class="l" d="M448 559 V585 M472 559 V585"/>
+  <text x="620" y="570" class="s">vis M3 : engagé à 6, rétracté à 15,</text>
+  <text x="620" y="584" class="s">parking hors zone pendant les scans</text>
 
   <!-- dimensions right side -->
   <g>
-    <line x1="880" y1="330" x2="880" y2="391" class="dim" marker-start="url(#d)" marker-end="url(#d)"/>
-    <text x="893" y="352" class="dt" transform="rotate(90 893 352)">entrefer 5,1</text>
+    <line x1="880" y1="330" x2="880" y2="398" class="dim" marker-start="url(#d)" marker-end="url(#d)"/>
+    <text x="893" y="352" class="dt" transform="rotate(90 893 352)">entrefer 5,5</text>
   </g>
   <g>
-    <line x1="40" y1="391" x2="40" y2="463" class="dim" marker-start="url(#d)" marker-end="url(#d)"/>
-    <text x="34" y="430" class="dt" text-anchor="end" transform="rotate(-90 34 430)">6,0</text>
+    <line x1="40" y1="415" x2="40" y2="487" class="dim" marker-start="url(#d)" marker-end="url(#d)"/>
+    <text x="34" y="455" class="dt" text-anchor="end" transform="rotate(-90 34 455)">6,0</text>
   </g>
   <g>
-    <line x1="330" y1="600" x2="590 " y2="600" class="dim" marker-start="url(#d)" marker-end="url(#d)"/>
-    <text x="430" y="614" class="dt">couloir : r + r' &lt;= p/2, marge 2,5</text>
+    <line x1="330" y1="606" x2="590 " y2="606" class="dim" marker-start="url(#d)" marker-end="url(#d)"/>
+    <text x="430" y="618" class="dt">couloir : r + r' &lt;= p/2, marge 2,5</text>
   </g>
   <!-- corridor neighbours ghost -->
   <path class="l" d="M60 330 V240 Q60 216 90 216 H140 M860 330 V240 Q860 216 830 216 H780" stroke-dasharray="5 5" opacity="0.5"/>

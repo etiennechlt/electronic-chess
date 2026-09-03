@@ -1,5 +1,7 @@
 # Cerveau : carte principale du plateau
 
+![Carte cerveau](../../docs/images/brain.png)
+
 Carte générée par `tools/boardgen` (module `brain`) depuis
 `config/board.yaml` (ADR 0010). 120 x 80 mm, 4 couches : F.Cu
 composants et signaux, In1 plan de masse, In2 alimentations et

@@ -1,5 +1,7 @@
 # Carte puissance : pack 3S, charge, protection, jauge
 
+![Carte puissance](../../docs/images/power.png)
+
 Générée par `tools/boardgen` (module `power`). 100 x 60 mm, 2 couches,
 plan de masse en face arrière. Elle gère trois cellules plates 1S 5 Ah.
 

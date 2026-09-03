@@ -1,5 +1,7 @@
 # Quadrant 4 x 4 : carte de détection du plateau 8 x 8
 
+![Quadrant 4 x 4](../../docs/images/quadrant.png)
+
 Carte générée par `tools/quadgen` depuis `config/board.yaml`
 (ADR 0010). Quatre exemplaires identiques dallent l'aire de jeu ; la
 paire de droite est montée tournée de 180 degrés, ce qui laisse la

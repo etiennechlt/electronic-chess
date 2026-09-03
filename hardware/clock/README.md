@@ -1,5 +1,7 @@
 # Horloge à bascule : carte
 
+![Carte horloge](../../docs/images/clock.png)
+
 Générée par `tools/boardgen` (module `clock`). 110 x 60 mm, 2 couches,
 dans le boîtier de `mechanical/clock.py`.
 
