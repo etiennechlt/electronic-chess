@@ -27,6 +27,8 @@ pas.
   [0001](adr/0001-lc-resonators-for-piece-identification.md) et
   [0007](adr/0007-frequency-extraction-dual-path.md), puis le
   [protocole M1 à M11](../measurements/protocol.md).
+- **Savoir quoi faire ensuite** : la [note 07](notes/07-etat-et-reste-a-faire.md),
+  feuille de route en deux phases (sans chariot d'abord, chariot ensuite).
 - **Ouvrir, vérifier et tester les cartes** : la
   [note 13](notes/13-revue-et-verification.md) (KiCad 9, DRC, netlists,
   valeurs, simulation, commande, protocole de test).

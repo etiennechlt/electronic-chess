@@ -114,3 +114,11 @@ raisons ; le détail chiffré et la discussion sont dans la
   bois contre aile sans lèvre (0,3 mm max), blindage du frontal en
   1,8 mm de hauteur (plan de masse interne plus ruban de cuivre sous le
   bois), protocole BLE plateau contre horloge, choix chess.com.
+
+## Phasage (03/09/2026)
+
+Le porteur fixe l'ordre : la version sans chariot (base fine, cerveau,
+puissance, horloge, firmware, application) doit fonctionner de bout en
+bout avant que la base chariot, la carte moteurs et le déplacement ne
+soient commandés ou testés. Les conceptions du chariot sont conservées
+en l'état pour la phase 2. Détail dans la note 07.

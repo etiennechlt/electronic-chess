@@ -141,6 +141,16 @@ quatre commandes.
   ([note 12](12-protocole.md)), firmware du pont et de l'horloge
   écrits (`firmware/esp32`), logique de pendule testée sur PC.
 
+## 03/09/2026, phasage et livrables
+
+- Décision : phase 1 sans chariot jusqu'à une partie jouable de bout en
+  bout, chariot en phase 2 ; la carte moteurs et la base chariot
+  restent conçues mais ne sont ni commandées ni testées avant.
+- STL et STEP de `mechanical/exports/` désormais versionnés, la vue 3D
+  interactive reste régénérée à la demande ; schémas d'architecture et
+  d'empilement refaits pour le plateau 8 x 8 ; note 13 (ouvrir,
+  vérifier, tester) et note 07 réécrite en feuille de route.
+
 ## Où en est la ligne de temps
 
 Phase 0 faite ; la phase 1 (maquette) est conçue mais ne sera pas

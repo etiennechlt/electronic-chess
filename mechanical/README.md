@@ -3,7 +3,7 @@
 Modèles paramétriques pilotés par `config/board.yaml`. Construction :
 
 ```bash
-.venv/bin/python mechanical/build_all.py     # STL + STEP dans exports/
+.venv/bin/python mechanical/build_all.py     # STL + STEP dans exports/ (versionnés)
 .venv/bin/python mechanical/scenes.py        # rendus pour la doc (docs/images/)
 .venv/bin/python mechanical/viewer.py        # vue 3D interactive (exports/plateau-3d.html)
 ```

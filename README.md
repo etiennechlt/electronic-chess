@@ -155,10 +155,14 @@ décisions formelles sont dans [`docs/adr/`](docs/adr/README.md).
 
 ## État et décisions
 
-Phase 0 (socle, calculs, CI) livrée, phase 1 (maquette) conçue puis
-remplacée par le plateau 8 x 8 direct (ADR 0010) : yaml, géométrie,
-modèles 3D du plateau et de l'horloge faits, quadrant généré (bobines,
-LED, distribution) ; frontal du quadrant, cerveau et horloge à suivre. Les
+Socle, calculs et CI livrés ; le plateau 8 x 8 est conçu directement
+(ADR 0010) : yaml, géométrie, modèles 3D (STL et STEP dans
+`mechanical/exports/`), quadrant complet, cerveau, puissance, moteurs et
+horloge générés, firmware du cerveau compilé, pont et horloge écrits.
+La suite est phasée : **phase 1, tout fonctionne sans chariot** (revue,
+simulation, commande, bring-up, mesures, firmware, horloge, appli) ;
+**phase 2, le chariot**. Feuille de route dans la
+[note 07](docs/notes/07-etat-et-reste-a-faire.md). Les
 décisions d'architecture et leurs justifications sont dans
 [`docs/adr/`](docs/adr/README.md) ; conventions dans
 [`CLAUDE.md`](CLAUDE.md) : code et commentaires en anglais,
