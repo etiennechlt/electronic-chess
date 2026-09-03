@@ -157,7 +157,7 @@ Brochage FPC identique aux deux bouts.
 | Quadrant | 16 bobines, 296 composants | 10 | 734 | 361 | aucune |
 | Puissance | 82 composants | 10 | 307 | 69 | aucune |
 | Horloge | 50 composants | 6 | 178 | 51 | aucune |
-| Cerveau | 113 composants | 24 | 358 | 141 | copper_edge_clearance 4 |
+| Cerveau | 113 composants | 24 | 353 | 141 | aucune |
 <!-- /results -->
 
 Les nets ouverts restent ceux que le routeur ne ferme pas ; ils se

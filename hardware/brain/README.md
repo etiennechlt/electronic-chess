@@ -70,7 +70,7 @@ Généré par `python -m boardgen build brain` :
 
 | Composants | Segments | Vias | Nets fermés | Nets ouverts | Défauts d'isolement |
 |---|---|---|---|---|---|
-| 113 | 1085 | 414 | 76 | 24 | 0 |
+| 113 | 1076 | 410 | 76 | 24 | 0 |
 
 Nets à finir dans pcbnew (le routeur les a laissés ouverts) :
 - ADC2: 1 pad(s) left open (usable start cells 81, goal cells 36)
@@ -98,4 +98,4 @@ Nets à finir dans pcbnew (le routeur les a laissés ouverts) :
 - GND: pad at cell (462, 132) has no drop to the pour
 - GND: pad at cell (491, 132) has no drop to the pour
 
-DRC KiCad 7 (`tools/drc.py`, zones remplies) : 358 signalements, 141 éléments non connectés (les nets ouverts ci-dessus), erreurs restantes : copper_edge_clearance 4 ; avertissements sans effet sur la fabrication : via_dangling 115, lib_footprint_issues 113, silk_overlap 51, track_dangling 50, silk_over_copper 22, silk_edge_clearance 3. Le contrôle d'isolement exact du générateur ne signale aucun défaut. Les vias d'éventail des boîtiers fins font 0,45 mm (perçage 0,2 mm), dans les capacités standard de JLCPCB, à confirmer sur le devis.
+DRC KiCad 7 (`tools/drc.py`, zones remplies) : 353 signalements, 141 éléments non connectés (les nets ouverts ci-dessus), erreurs restantes : aucune ; avertissements sans effet sur la fabrication : lib_footprint_issues 113, via_dangling 112, track_dangling 52, silk_overlap 51, silk_over_copper 22, silk_edge_clearance 3. Le contrôle d'isolement exact du générateur ne signale aucun défaut. Les vias d'éventail des boîtiers fins font 0,45 mm (perçage 0,2 mm), dans les capacités standard de JLCPCB, à confirmer sur le devis.
