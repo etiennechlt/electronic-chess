@@ -38,8 +38,8 @@ GND = "GND"
 # ESP32-S3-WROOM-1 placed with rotation 270: its body runs from x - 12.75
 # to x + 12.75, the antenna occupies the last 6 mm (x + 6.75 onward), the
 # pad rows sit at y - 9 and y + 9. On the brain the antenna hangs past the
-# east edge, the module sits 1 mm inside the south edge.
-ESP32_X, ESP32_Y = 113.25, 70.0
+# east edge, the south pad row keeps the edge clearance.
+ESP32_X, ESP32_Y = 113.25, 68.5
 ESP32_ANTENNA_FROM, ESP32_ANTENNA_TO, ESP32_HALF = 6.75, 12.75, 9.5
 # GenericBoard options shared by the build and the tests
 BOARD_OPTIONS = {"overhang": ("U5",)}
@@ -618,7 +618,7 @@ def brain_placements(ckt: Circuit) -> dict[str, tuple[float, float, float]]:
         )
     )
     # the fourth hole leaves the south-east corner to the radio module
-    for i, (x, y) in enumerate(((5.0, 5.0), (W - 5.0, 5.0), (5.0, H - 5.0), (W - 5.0, 42.5)), 1):
+    for i, (x, y) in enumerate(((5.0, 5.0), (W - 5.0, 5.0), (5.0, H - 5.0), (W - 5.0, 41.0)), 1):
         out[f"H{i}"] = (x, y, 0.0)
     return out
 

@@ -192,14 +192,14 @@ class Builder:
     def via(
         self, net: str, x: float, y: float, pad: float | None = None, drill: float | None = None
     ) -> None:
-        """A via, unless one of the same net already covers this point (the
-        strip router restarts from the escape via of a cell entry and may
-        put its own a lattice cell away: two drills that close are a
-        fabrication error, and the existing pad already joins the track)."""
+        """A via, unless one of the same net already overlaps it (the strip
+        router restarts from the escape via of a cell entry and may put
+        its own a lattice cell away): two overlapping pads are one piece of
+        copper, two drills that close are a fabrication error."""
         pad = self.rt.led_via.pad_mm if pad is None else pad
         drill = self.rt.led_via.drill_mm if drill is None else drill
         for v in self.res.vias:
-            reach = min(v.pad, pad) / 2.0 - 0.02
+            reach = (v.pad + pad) / 2.0 - 0.02
             if v.net == net and (v.x - x) ** 2 + (v.y - y) ** 2 <= reach * reach:
                 return
         self.board.via(x, y, pad, drill, self.board.net(net))

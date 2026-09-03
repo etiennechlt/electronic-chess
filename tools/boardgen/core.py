@@ -182,13 +182,14 @@ class GenericBoard:
     def via(
         self, net: str, x: float, y: float, pad: float | None = None, drill: float | None = None
     ) -> None:
-        """A via, unless one of the same net already covers this point (the
-        router restarts from a fanout via and may put its own next to it;
-        two drills that close are a fabrication error)."""
+        """A via, unless one of the same net already overlaps it (the router
+        restarts from a fanout via and may put its own next to it): two
+        overlapping pads are one piece of copper, and two drills that
+        close are a fabrication error."""
         pad = self.spec.via_pad if pad is None else pad
         drill = self.spec.via_drill if drill is None else drill
         for v in self.res.vias:
-            reach = min(v.pad, pad) / 2.0 - 0.02
+            reach = (v.pad + pad) / 2.0 - 0.02
             if v.net == net and (v.x - x) ** 2 + (v.y - y) ** 2 <= reach * reach:
                 return
         self.board.via(x, y, pad, drill, self.board.net(net))
