@@ -34,17 +34,14 @@ Généré par `python -m boardgen build clock` :
 
 | Composants | Segments | Vias | Nets fermés | Nets ouverts | Défauts d'isolement |
 |---|---|---|---|---|---|
-| 46 | 285 | 163 | 29 | 6 | 0 |
+| 50 | 307 | 149 | 31 | 6 | 0 |
 
 Nets à finir dans pcbnew (le routeur les a laissés ouverts) :
-- VBAT_SENSE
-- SBU2
-- USB_DP
-- USB_DM
-- CC1
-- CC2
+- CHG_SENSE: 1 pad(s) left open (usable start cells 77, goal cells 85)
+- CC2: 2 pad(s) left open (usable start cells 8, goal cells 50)
+- GND: pad at cell (131, 39) has no drop to the pour
+- GND: pad at cell (149, 30) has no drop to the pour
+- GND: pad at cell (464, 98) has no drop to the pour
+- GND: pad at cell (542, 102) has no drop to the pour
 
-Le contrôle d'isolement exact ne signale aucun défaut : ce qui est
-tracé respecte les règles, ce qui manque est listé ci-dessus. Les vias
-d'éventail des boîtiers fins font 0,45 mm (perçage 0,2 mm), à
-confirmer avec le fabricant avant commande.
+DRC KiCad 7 (`tools/drc.py`, zones remplies) : 178 signalements, 51 éléments non connectés (les nets ouverts ci-dessus), erreurs restantes : aucune ; avertissements sans effet sur la fabrication : via_dangling 53, lib_footprint_issues 50, silk_overlap 38, track_dangling 28, silk_over_copper 8, silk_edge_clearance 1. Le contrôle d'isolement exact du générateur ne signale aucun défaut. Les vias d'éventail des boîtiers fins font 0,45 mm (perçage 0,2 mm), dans les capacités standard de JLCPCB, à confirmer sur le devis.

@@ -151,7 +151,14 @@ Brochage FPC identique aux deux bouts.
 À jour au commit de cette note ; régénérer avec le runbook et relancer
 `tools/drc.py` pour vérifier.
 
-RESULTS_TABLE
+<!-- results -->
+| Carte | Build | Nets ouverts | Signalements DRC | Éléments non connectés | Erreurs DRC hors nets ouverts |
+|---|---|---|---|---|---|
+| Quadrant | 16 bobines, 296 composants | 10 | 734 | 361 | aucune |
+| Puissance | 82 composants | 10 | 307 | 69 | aucune |
+| Horloge | 50 composants | 6 | 178 | 51 | aucune |
+| Cerveau | 113 composants | 24 | 358 | 141 | copper_edge_clearance 4 |
+<!-- /results -->
 
 Les nets ouverts restent ceux que le routeur ne ferme pas ; ils se
 terminent dans pcbnew comme prévu par la note 13, et le DRC les compte

@@ -45,21 +45,18 @@ Généré par `python -m boardgen build power` :
 
 | Composants | Segments | Vias | Nets fermés | Nets ouverts | Défauts d'isolement |
 |---|---|---|---|---|---|
-| 82 | 417 | 156 | 43 | 10 | 0 |
+| 82 | 429 | 158 | 42 | 10 | 0 |
 
 Nets à finir dans pcbnew (le routeur les a laissés ouverts) :
-- VREF
-- 3V3_BMS
-- CELL1
-- CELL2
-- SRP
-- PH
-- CELL3
-- VAD
-- PACK+
-- BAT-
+- REGN: 2 pad(s) left open (usable start cells 28, goal cells 72)
+- TS1: 2 pad(s) left open (usable start cells 43, goal cells 63)
+- SCL: 4 pad(s) left open (usable start cells 34, goal cells 314)
+- SDA: 4 pad(s) left open (usable start cells 34, goal cells 318)
+- 3V3_BMS: 1 pad(s) left open (usable start cells 534, goal cells 34)
+- SRN: 1 pad(s) left open (usable start cells 163, goal cells 84)
+- SRP: 1 pad(s) left open (usable start cells 642, goal cells 84)
+- CELL3: 6 pad(s) left open (usable start cells 30, goal cells 483)
+- PACK+: 1 pad(s) left open (usable start cells 313, goal cells 100)
+- BAT-: 16 pad(s) left open (usable start cells 39, goal cells 969)
 
-Le contrôle d'isolement exact ne signale aucun défaut : ce qui est
-tracé respecte les règles, ce qui manque est listé ci-dessus. Les vias
-d'éventail des boîtiers fins font 0,45 mm (perçage 0,2 mm), à
-confirmer avec le fabricant avant commande.
+DRC KiCad 7 (`tools/drc.py`, zones remplies) : 307 signalements, 69 éléments non connectés (les nets ouverts ci-dessus), erreurs restantes : aucune ; avertissements sans effet sur la fabrication : silk_overlap 121, lib_footprint_issues 82, via_dangling 56, silk_over_copper 36, track_dangling 12. Le contrôle d'isolement exact du générateur ne signale aucun défaut. Les vias d'éventail des boîtiers fins font 0,45 mm (perçage 0,2 mm), dans les capacités standard de JLCPCB, à confirmer sur le devis.

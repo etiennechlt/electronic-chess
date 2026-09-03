@@ -70,36 +70,32 @@ Généré par `python -m boardgen build brain` :
 
 | Composants | Segments | Vias | Nets fermés | Nets ouverts | Défauts d'isolement |
 |---|---|---|---|---|---|
-| 113 | 1062 | 655 | 76 | 25 | 0 |
+| 113 | 1085 | 414 | 76 | 24 | 0 |
 
 Nets à finir dans pcbnew (le routeur les a laissés ouverts) :
-- ADC2
-- LED_DIN1
-- AMP_OUT4
-- MUX_A2
-- MUX_EN_L
-- MUX_EN_H
-- DAMP_EN_N
-- PULSE_EN
-- 5V_LED
-- 5VA
-- VBAT (route refusée par le contrôle d'isolement)
-- VIN (route refusée par le contrôle d'isolement)
-- 3V3
-- USB_DP_C
-- LED3_K
-- BUZ_DRV
-- USB_DP
-- CC1
-- GND (descente vers le plan pour une broche)
-- GND (descente vers le plan pour une broche)
-- GND (descente vers le plan pour une broche)
-- GND (descente vers le plan pour une broche)
-- GND (descente vers le plan pour une broche)
-- GND (descente vers le plan pour une broche)
-- GND (descente vers le plan pour une broche)
+- ADC2: 1 pad(s) left open (usable start cells 81, goal cells 36)
+- AMP_OUT4: 1 pad(s) left open (usable start cells 38, goal cells 30)
+- LED_DIN1: 1 pad(s) left open (usable start cells 30, goal cells 29)
+- ENDSTOP_X: 4 pad(s) left open (usable start cells 76, goal cells 473)
+- MUX_A2: 1 pad(s) left open (usable start cells 137, goal cells 29)
+- MUX_EN_L: 4 pad(s) left open (usable start cells 41, goal cells 116)
+- MUX_EN_H: 3 pad(s) left open (usable start cells 79, goal cells 114)
+- DAMP_EN_N: 4 pad(s) left open (usable start cells 41, goal cells 116)
+- ESP_EN: 9 pad(s) left open (usable start cells 32, goal cells 874)
+- 5V_LED: 1 pad(s) left open (usable start cells 473, goal cells 38)
+- VBAT: route rejected, F.Cu: vs BUCK_SS at (91.5,21.8) gap 0.121
+- VIN: route rejected, F.Cu: vs DAMP_EN_N at (56.5,6.8) gap 0.100
+- USB_DP_C: 1 pad(s) left open (usable start cells 107, goal cells 4)
+- LED5_K: 1 pad(s) left open (usable start cells 42, goal cells 35)
+- CC1: 4 pad(s) left open (usable start cells 10, goal cells 55)
+- CC2: 4 pad(s) left open (usable start cells 8, goal cells 59)
+- GND: pad at cell (224, 336) has no drop to the pour
+- GND: pad at cell (244, 336) has no drop to the pour
+- GND: pad at cell (590, 193) has no drop to the pour
+- GND: pad at cell (433, 132) has no drop to the pour
+- GND: pad at cell (257, 93) has no drop to the pour
+- GND: pad at cell (277, 93) has no drop to the pour
+- GND: pad at cell (462, 132) has no drop to the pour
+- GND: pad at cell (491, 132) has no drop to the pour
 
-Le contrôle d'isolement exact ne signale aucun défaut : ce qui est
-tracé respecte les règles, ce qui manque est listé ci-dessus. Les vias
-d'éventail des boîtiers fins font 0,45 mm (perçage 0,2 mm), à
-confirmer avec le fabricant avant commande.
+DRC KiCad 7 (`tools/drc.py`, zones remplies) : 358 signalements, 141 éléments non connectés (les nets ouverts ci-dessus), erreurs restantes : copper_edge_clearance 4 ; avertissements sans effet sur la fabrication : via_dangling 115, lib_footprint_issues 113, silk_overlap 51, track_dangling 50, silk_over_copper 22, silk_edge_clearance 3. Le contrôle d'isolement exact du générateur ne signale aucun défaut. Les vias d'éventail des boîtiers fins font 0,45 mm (perçage 0,2 mm), dans les capacités standard de JLCPCB, à confirmer sur le devis.
