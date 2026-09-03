@@ -222,15 +222,15 @@ class Builder:
         nets = {num: (self.board.net(n), n) for num, n in pad_nets.items()}
         self.board.body.append(place_footprint(fp, ref, value, x, y, rot, nets))
         for pad in fp.pads:
-            if pad.number not in pad_nets:
-                continue
+            # an unconnected pad is copper too: an obstacle for every net
+            net = pad_nets.get(pad.number, f"__nc_{ref}_{pad.number}")
             px, py = pad_abs_pos(x, y, rot, pad)
             sw, sh = pad.size
             if abs((rot + pad.rot) % 180.0 - 90.0) < 1e-6:
                 sw, sh = sh, sw
             for layer in pad.layers:
                 if layer in COPPER_LAYERS or layer == "*.Cu":
-                    self.res.pads.append(PadItem(pad_nets[pad.number], layer, px, py, sw, sh))
+                    self.res.pads.append(PadItem(net, layer, px, py, sw, sh))
 
     # ------------------------------------------------------------ pieces
     def spirals(self) -> None:
@@ -636,7 +636,9 @@ class Builder:
             if p.x >= W + 1.0:
                 continue
             layers = COPPER_LAYERS if p.layer == "*.Cu" else [p.layer]
-            mr.rect(p.net, layers, p.x, p.y, p.w, p.h)
+            mr.rect(p.net, layers, p.x, p.y, p.w, p.h, p.rot)
+            if p.net.startswith("__"):
+                continue  # unconnected pad: painted, never routed
             for la in layers:
                 pad_cells.setdefault(p.net, []).append((la, mr.cells_of_rect(p.x, p.y, p.w, p.h)))
         for hx, hy, hd in self.res.holes:
@@ -855,6 +857,8 @@ class Builder:
                     j = int(j)
                     if j <= i or its[j][0] == net:
                         continue
+                    if net.startswith("__") and its[j][0].startswith("__"):
+                        continue  # a footprint's own unconnected pads around its holes
                     if kind == "pad" and its[j][3] == "pad" and _tie_pair(net, its[j][0]):
                         continue  # the two touching pads of a coil net tie
                     d = g.distance(geoms[j])

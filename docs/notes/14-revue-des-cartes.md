@@ -61,6 +61,7 @@ DRC de KiCad en trouvait de 400 à 1500 par carte. Les familles :
 | `clearance` à 0,13 mm | Les contrôles maison toléraient 0,02 mm sous l'isolement déclaré. | Contrôle exact (tolérance numérique 0,001 mm). |
 | `clearance`, `hole_clearance` sur le net tie des bobines (226 sur le quadrant) | La jonction In2 vers B.Cu était une pastille traversante du net A sous une pastille B.Cu du net B : KiCad n'exempte pas du dégagement de trou le cuivre d'un autre net posé sur un trou, même dans un net tie. | La jonction redevient une via ordinaire du net A ; le net tie est deux pastilles B.Cu carrées qui se touchent, 2,5 mm plus loin sur l'arc d'entrée de la dernière couche, la piste large s'arrêtant avant la pastille du net B. |
 | `items_not_allowed` | Broches du connecteur puissance dans la zone d'exclusion d'antenne. | Résolu par le nouveau placement. |
+| `solder_mask_bridge`, `clearance` sur une broche libre | Le routeur du quadrant ignorait les pastilles non connectées (les NC du mux) et faisait passer une piste de masse dessus. | Toute pastille non connectée est un obstacle, dans le routeur comme dans les contrôles. |
 
 Restent des avertissements sans effet sur la fabrication : recouvrements
 de sérigraphie (références sur des lignes), bibliothèques d'empreintes

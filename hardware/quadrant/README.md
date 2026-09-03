@@ -65,13 +65,18 @@ ou un net du frontal reste ouvert : la liste imprimée est ce qu'il reste
   5V_LED sur In2. Les lignes de mesure M{k} vers les mux et les lignes
   de grille des décodeurs sont routées par le routeur A* multicouche,
   puis un contrôle d'isolement exact valide toute la carte.
-- Les bobines sont des « net ties » (`quadgen:COIL_TIE`) : les quatre
-  couches, les trois vias d'empilement et les premiers millimètres de
-  l'arc d'entrée de la couche 4 sur C{k}_A, puis deux pastilles B.Cu
-  carrées qui se touchent (le net tie), et la suite de la couche 4 en
-  piste fine jusqu'à la borne et l'échappée B sur C{k}_B. Aucun cuivre
-  d'un net ne recouvre un trou de l'autre, ce que le DRC de KiCad
-  exige même dans un net tie. Le schéma montre le même NT{k}.
+- Les vias d'empilement des bobines sont décalées radialement hors des
+  bandes de spires (1,3 mm dans le creux ou au-delà du rayon extérieur,
+  reliées par un tronçon radial) : posées sur le rayon même, elles
+  recouvraient les spires des autres couches et court-circuitaient la
+  bobine. La dernière jonction (In2 vers B.Cu) descend à 3,5 mm dans le
+  creux et son tronçon radial porte le « net tie » (`quadgen:COIL_TIE`) :
+  couches 1 à 3, vias et début du tronçon sur C{k}_A, deux pastilles
+  B.Cu carrées qui se touchent, puis la suite du tronçon, l'arc
+  d'entrée, la spirale de la couche 4 et l'échappée B sur C{k}_B, le
+  tout à la largeur de spire. Aucun cuivre d'un net ne recouvre un trou
+  de l'autre, ce que le DRC de KiCad exige même dans un net tie. Le
+  schéma montre le même NT{k}.
 
 Sorties du build : projet KiCad avec schéma, `bom.csv`, `jlc-bom.csv`
 (lignes avec code LCSC), `jlc-cpl.csv`, `chain-spice.cir`.
