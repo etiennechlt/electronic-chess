@@ -183,6 +183,23 @@ quatre commandes.
   raisons dans `VENDORED.md`. Usage par lot dans la
   [note 15](15-skills-embarques.md).
 
+## 07/09/2026, doc alignée sur le yaml et coût des cartes
+
+- La doc était en retard sur `config/board.yaml` : le README du
+  quadrant annonçait 216 x 200 mm avec une bande de 16 mm, l'ADR 0010
+  et la note 10 un module de 420 x 420 mm avec une bordure de 10 mm,
+  l'ADG726 et une nappe IDC. Les valeurs vraies (bande et bordure de
+  20 mm, quadrant 220 x 200, module 440 x 440, deux ADG1607, nappe FPC
+  16 broches) sont maintenant dans ces trois documents et dans le
+  README de la racine ; le yaml et `tests/test_plateau.py` n'ont pas
+  bougé, la doc a rattrapé.
+- Réflexion ouverte sur le coût des cartes, le quadrant en tête
+  (220 x 200 mm, 4 couches, cinq pièces au minimum) : devis JLCPCB à
+  demander avant toute décision, différentiel vrai contre
+  single-ended à trancher avant de chiffrer, piste des tuiles
+  100 x 100 examinée et non tranchée, quadrant intelligent à
+  instruire en ADR. Le tout dans la [note 16](16-cout-des-cartes.md).
+
 ## Où en est la ligne de temps
 
 Phase 0 faite ; la phase 1 (maquette) est conçue mais ne sera pas

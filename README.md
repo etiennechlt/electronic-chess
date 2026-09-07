@@ -3,7 +3,7 @@
 Échiquier physique qui identifie chaque pièce (type et couleur) par un
 résonateur LC passif logé dans sa base, arbitre les coups (roque,
 prise en passant, promotion incluse), joue contre un moteur d'échecs
-ou en ligne, et fonctionne sur batterie. Plateau fin de 42 cm et
+ou en ligne, et fonctionne sur batterie. Plateau fin de 44 cm et
 21 mm d'épaisseur ; le déplacement des pièces par aimant sur portique
 CoreXY est une base optionnelle qui se substitue au fond plat. Le
 STM32G474 est maître, un ESP32-S3 sert de pont radio (WiFi, BLE vers

@@ -39,7 +39,8 @@ Le rapport `python -m chessboard_calc report` donne, pour le pion noir
 | Q estimé du pion noir | 13 | 33 |
 | Plancher `resonator.q_min_with_magnet` | 30 | 30 |
 | Marge de couloir, tour contre tour | 2,0 mm | 2,5 mm |
-| Quadrant | 160 x 160 mm | 200 x 200 mm |
+| Aire des bobines du quadrant (4 p) | 160 x 160 mm | 200 x 200 mm |
+| Carte du quadrant, bande de frontal de 20 mm comprise | 180 x 160 mm | 220 x 200 mm |
 | Aire de jeu | 320 mm | 400 mm |
 
 À p = 40, le pion passe sous le plancher de Q avant la première
@@ -57,15 +58,18 @@ les tests de bobinage continuent de les comparer.
 | Quatre quadrants intelligents plus un cerveau | oui | un seul design de quadrant, préampli au plus près des bobines, quatre ADC en parallèle |
 | Quadrants passifs et frontal centralisé | non | 32 lignes de microvolts par quadrant sur 20 cm de nappe avant amplification |
 
-Le quadrant embarque : ADG726 (double 16 vers 1, un boîtier), FET
+Le quadrant embarque : deux ADG1607 (double 8 vers 1, sorties en
+parallèle ; l'ADG726 envisagé ce jour-là n'a pas de symbole vérifié
+dans les bibliothèques KiCad, [note 11](11-cartes-du-plateau.md)), FET
 d'excitation par bobine derrière un décodeur 4 vers 16 (environ 50
 SOT-23, l'excitation ne peut pas traverser un mux analogique, voir
 ADR 0008), chaîne AD8421 G = 20 plus deux Sallen-Key reprise telle
 quelle, protection 330R plus BAV99. La liaison vers le cerveau est une
-nappe IDC 2 x 10 par quadrant : 5VA, AGND, 3V3, 5V LED, GND, sortie
-analogique, adresses de mux et d'excitation, PULSE_EN, DAMP, LED_DIN,
-LED_DOUT. Le brochage exact sera fixé dans le yaml avec le générateur
-de quadrant.
+nappe FPC 16 broches au pas de 0,5 mm par quadrant (l'IDC 2 x 10
+envisagé ce jour-là a été remplacé avec le générateur) : GND, 5VA,
+AMP_OUT, 3V3, adresses de mux, LED_DIN, 5V_LED, les deux enables de
+mux, LED_DOUT, PULSE_EN, DAMP_EN_N, VIN. Le brochage est fixé dans
+`plateau.quadrant.link.pinout`.
 
 ## 4. LED identiques partout
 
@@ -82,14 +86,16 @@ sommet touche quatre cases, l'indication de camp devient ambiguë.
 ## 5. Module plateau et bases interchangeables
 
 Le module plateau est l'invariant : contreplaqué de 3 mm avec ses 128
-points lumineux et les quatre quadrants en dessous, 420 x 420 mm avec
-une bordure de 10 mm, 6,6 mm d'épaisseur. Il se pose dans l'une des
+points lumineux et les quatre quadrants en dessous, 440 x 440 mm avec
+une bordure de 20 mm (`plateau.wood.border_mm`, portée de 10 à 20 mm
+le 03/09 pour couvrir la bande de frontal, [note 09](09-journal.md)),
+6,6 mm d'épaisseur. Il se pose dans l'une des
 deux bases sur quatre pions de centrage de 4 mm, et s'y relie par les
 quatre nappes.
 
 | | Base fine | Base chariot |
 |---|---|---|
-| Emprise | 420 x 420 mm | 520 x 440 mm |
+| Emprise | 440 x 440 mm | 540 x 460 mm |
 | Hauteur totale | 21 mm | 54 mm |
 | Coque | 2 mm | 2 mm |
 | Cavité électronique | 12 mm | 12 mm, au fond |
@@ -105,7 +111,7 @@ Règles qui rendent l'échange possible :
   fixation identique dans les deux bases ; changer de base, c'est
   débrancher quatre nappes et déplacer trois cartes ;
 - **les ailes appartiennent à la base chariot**, pas au module : le
-  plateau fin reste un carré de 42 cm ; dans la base chariot, la pièce
+  plateau fin reste un carré de 44 cm ; dans la base chariot, la pièce
   glisse du bois sur l'aile à travers un joint sans lèvre (0,3 mm au
   plus), et l'aimant la porte à travers l'aile comme à travers le bois ;
 - **les pions de centrage fixent le repère du chariot** : les fins de
@@ -158,7 +164,7 @@ disparaissent pas du projet : l'horloge en emporte une.
 Les WS2812B font 1,6 mm de haut sur le dessus des quadrants ; la
 maquette ne comptait pas cet air dans l'entrefer. Il est désormais
 explicite : `gap.air_mm` = 2 mm, dans lequel tiennent les LED et des
-composants de 1,8 mm au plus (TSSOP, SOIC, 0603, LFCSP de l'ADG726).
+composants de 1,8 mm au plus (TSSOP, SOIC, 0603, LFCSP de l'ADG1607).
 L'entrefer nominal passe de 5,1 à 7,1 mm pour un maximum de 8, et le
 modèle de signal en tient compte (`chessboard_calc.coupling`). Le
 blindage du frontal se fait par plan de masse interne et ruban de

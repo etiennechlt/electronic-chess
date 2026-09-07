@@ -1,6 +1,6 @@
 # 07. État de référence et chemin vers le prototype réel
 
-Dernière mise à jour : 02/09/2026. Ce qui est vrai ici est vérifiable
+Dernière mise à jour : 07/09/2026. Ce qui est vrai ici est vérifiable
 en régénérant ([runbook](08-regenerer.md)) ; les chiffres sont ceux
 imprimés par les builds de référence commités.
 
@@ -134,6 +134,13 @@ faible, et un quadrant seul suffit aux mesures pendant que les trois
 autres attendent. Le contreplaqué et les impressions se lancent en
 parallèle parce qu'ils ne dépendent pas des cartes et que leur délai
 est le plus long après celui du fabricant.
+
+**Préalable (07/09/2026).** Demander le devis JLCPCB du quadrant tel
+quel (220 x 200 mm, 4 couches, cinq pièces au minimum) avant de
+commander ou de redécouper : la réflexion sur le coût des cartes, les
+tuiles 100 x 100 et le quadrant intelligent, et l'ordre des décisions
+sont dans la [note 16](16-cout-des-cartes.md). Le choix différentiel
+vrai contre single-ended (ADR 0004) passe avant tout chiffrage.
 
 **Sortie.** Tout le matériel de la phase 1 reçu et inventorié contre
 la BOM, pièces imprimées ajustées à blanc dans le socle.

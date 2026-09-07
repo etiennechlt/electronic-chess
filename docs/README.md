@@ -29,6 +29,9 @@ pas.
   [protocole M1 à M11](../measurements/protocol.md).
 - **Savoir quoi faire ensuite** : la [note 07](notes/07-etat-et-reste-a-faire.md),
   feuille de route en deux phases (sans chariot d'abord, chariot ensuite).
+- **Baisser le coût des cartes** : la [note 16](notes/16-cout-des-cartes.md),
+  état de la réflexion sur le quadrant et le format 100 x 100, avec
+  les décisions à prendre avant tout devis.
 - **Ouvrir, vérifier et tester les cartes** : la
   [note 13](notes/13-revue-et-verification.md) (KiCad, DRC, netlists,
   valeurs, simulation, commande, protocole de test) et le bilan de la
@@ -95,6 +98,7 @@ pas.
 | [13](notes/13-revue-et-verification.md) | Ouvrir, vérifier, simuler, commander et tester les cartes |
 | [14](notes/14-revue-des-cartes.md) | Revue des cartes de la phase 1 : constats, corrections, ce qui reste |
 | [15](notes/15-skills-embarques.md) | Skills embarqués : lesquels, pour quel lot, comment les tenir à jour |
+| [16](notes/16-cout-des-cartes.md) | Coût des cartes : quadrant, format 100 x 100, décisions à prendre avant de chiffrer |
 
 Décisions formelles : [index des ADR](adr/README.md). Conventions de
 contribution : `CLAUDE.md` à la racine (langue, typographie, source

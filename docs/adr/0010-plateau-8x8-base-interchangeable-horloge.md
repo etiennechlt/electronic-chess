@@ -1,6 +1,8 @@
 # ADR 0010. Plateau 8 x 8 direct en quadrants, base interchangeable, horloge à bascule
 
-Date : 2026-09-02. Statut : acceptée.
+Date : 2026-09-02. Statut : acceptée. Cotes et références alignées le
+07/09/2026 sur `config/board.yaml` (bande de frontal et bordure de
+bois de 20 mm, deux ADG1607, nappe FPC 16 broches).
 
 ## Contexte
 
@@ -22,11 +24,15 @@ raisons ; le détail chiffré et la discussion sont dans la
    C'est aussi le format tournoi. L'ADR 0006 est tranchée ; les deux
    pas restent calculés et rapportés pour comparaison.
 2. **Quadrants 4 x 4 intelligents, quatre cartes identiques.** Chaque
-   quadrant (200 x 200 mm, 4 couches) porte ses 16 spirales, 32 LED et
-   son frontal analogique sur une bande de bord en face supérieure :
-   ADG726 (double 16 vers 1), excitation par FET par bobine derrière un
-   décodeur d'adresses, chaîne AD8421 plus Sallen-Key reprise de la
-   maquette. Quatre sorties amplifiées vers quatre ADC du STM32G474.
+   quadrant (220 x 200 mm, 4 couches : quatre colonnes de cases de
+   50 mm et une bande de frontal de 20 mm au bord extérieur,
+   `plateau.quadrant.front_end_strip_mm`) porte ses 16 spirales, 32 LED
+   et son frontal analogique sur cette bande en face supérieure : deux
+   ADG1607 (double 8 vers 1, sorties en parallèle ; l'ADG726 prévu
+   d'abord n'a pas de symbole vérifié dans les bibliothèques KiCad),
+   excitation par FET par bobine derrière un décodeur d'adresses,
+   chaîne AD8421 plus Sallen-Key reprise de la maquette. Quatre
+   sorties amplifiées vers quatre ADC du STM32G474.
    Ni 16 tuiles 2 x 2 (la carte analogique de maquette ne pilote que
    4 bobines, et les tuiles se gêneraient), ni une carte unique de
    40 cm (paliers tarifaires et signal en microvolts sur 40 cm,
@@ -37,7 +43,9 @@ raisons ; le détail chiffré et la discussion sont dans la
    quadrant n'a plus de connecteur dans les coins. Une grille de 81 LED
    partagées aux sommets est écartée : un sommet touche quatre cases.
 4. **Un module plateau invariant et deux bases interchangeables.** Le
-   module (contreplaqué plus quatre quadrants, 420 x 420 x 6,6 mm) se
+   module (contreplaqué plus quatre quadrants, 440 x 440 x 6,6 mm :
+   aire de jeu de 400 mm plus une bordure de bois de 20 mm,
+   `plateau.wood.border_mm`, qui couvre les bandes de frontal) se
    pose dans une base fine (21 mm au total) ou une base chariot
    (54 mm, avec le CoreXY). Le dessous des quadrants est vierge dans
    les deux cas. Cerveau, carte puissance et cellules sont au fond de

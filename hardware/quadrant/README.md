@@ -9,8 +9,10 @@ diagonale des LED inchangée et met la bande de frontal au bord extérieur.
 
 ## Ce que contient la carte
 
-- 216 x 200 mm, 4 couches : 16 mm de bande de frontal à l'ouest, puis
-  quatre colonnes de cases de 50 mm.
+- 220 x 200 mm, 4 couches : 20 mm de bande de frontal à l'ouest
+  (`plateau.quadrant.front_end_strip_mm`, couverte par la bordure de
+  bois de même largeur), puis quatre colonnes de cases de 50 mm, soit
+  4 p plus la bande sur 4 p.
 - 16 spirales de détection (4 couches en série, 5 tours par couche,
   piste 1,6 mm), bornes empilées au nord des rangées impaires et au
   sud des rangées paires : chaque paire de rangées s'échappe dans le
