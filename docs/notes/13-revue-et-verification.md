@@ -44,6 +44,8 @@ de référence dans `hardware/mockup-2x2/`.
 - Cellule d'excitation et amortissement : pas encore de banc SPICE ;
   à écrire sur le modèle du `chain-spice.cir` avant la commande
   (bobine 16 µH, écrêteurs, AO3400A, roue libre).
+- Sous-circuits détectés (filtres, diviseurs, gains) : le skill `spice`
+  génère et lance les bancs ngspice tout seul ([note 15](15-skills-embarques.md)).
 - Résonateurs et couplage : ce sont des calculs fermés
   (`chessboard_calc`), pas des simulations ; le rapport donne les
   largeurs de raie et la marge de séparation.
@@ -57,7 +59,11 @@ de référence dans `hardware/mockup-2x2/`.
 - Cerveau : 4 couches. Puissance, moteurs, horloge : 2 couches.
 - Les codes LCSC du BOM sont des candidats saisis hors ligne : vérifier
   chaque ligne dans la prévisualisation JLCPCB (mêmes réserves que pour
-  la [maquette](../../hardware/mockup-2x2/README.md)).
+  la [maquette](../../hardware/mockup-2x2/README.md)). Les skills
+  `release-pcba-fabrication` (version figée avec empreintes de hachage
+  et manifeste) et `operate-jlcpcb-order` (parcours de commande avec
+  contrôle de l'aperçu de placement) encadrent cette étape,
+  [note 15](15-skills-embarques.md).
 - La carte moteurs n'est utile qu'avec la base chariot : commander plus
   tard.
 

@@ -95,7 +95,8 @@ les fiches, compléter les codes LCSC.
 le banc SPICE de la cellule d'excitation et d'amortissement (bobine
 de case 16 µH, AO3400A, roue libre SS34FL, écrêteurs BAV99, 330 ohms
 devant le mux) : impulsion de 100 ns environ, retour à zéro, tension
-vue par le mux. Méthode : note 13, section 3.
+vue par le mux. Méthode : note 13, section 3, et le skill `spice` pour les bancs
+automatiques sur les sous-circuits détectés ([note 15](15-skills-embarques.md)).
 
 **Pourquoi.** La chaîne a été validée sur la maquette mais ses
 valeurs ont été reprises dans un nouveau schéma : une relecture par
@@ -121,7 +122,10 @@ plates, les aimants ferrite, le fil, le feutre ; imprimer les pièces
 de `mechanical/exports/` (socle fin, contreplaqué gabarit, pucks,
 gabarits de bobinage, boîtier d'horloge) ; percer le contreplaqué avec
 `surface-template`. Pas de carte moteurs ni de base chariot.
-Méthode : note 13, section 4.
+Méthode : note 13, section 4, avec les skills `release-pcba-fabrication`
+(version figée, empreintes de hachage, manifeste) et
+`operate-jlcpcb-order` (devis, appariement, aperçu de placement,
+panier) de la [note 15](15-skills-embarques.md).
 
 **Pourquoi.** C'est le point de non-retour financier, d'où sa place
 après la revue et la simulation. Commander les quatre quadrants d'un

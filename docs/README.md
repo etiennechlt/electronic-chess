@@ -33,6 +33,10 @@ pas.
   [note 13](notes/13-revue-et-verification.md) (KiCad, DRC, netlists,
   valeurs, simulation, commande, protocole de test) et le bilan de la
   revue des cartes, [note 14](notes/14-revue-des-cartes.md).
+- **Utiliser les skills embarqués** (analyseurs KiCad, SPICE, CEM,
+  approvisionnement, mise en fabrication, commande JLCPCB, CadQuery) :
+  la [note 15](notes/15-skills-embarques.md) dit lequel sert à quel
+  lot et comment les mettre à jour.
 - **Imprimer** : `python mechanical/build_all.py` écrit STL et STEP
   dans `mechanical/exports/` (non versionnés).
 - **Modifier une carte** :
@@ -69,6 +73,7 @@ pas.
 | `docs/adr/` | décisions d'architecture numérotées |
 | `docs/notes/` | la présente base de connaissances |
 | `docs/serie/` | série vidéo : bible, épisodes, tournage, montage |
+| `.claude/skills/` | skills tiers embarqués (kicad-happy, pcba-design-skills, cad-skill), provenance dans `VENDORED.md` |
 | `tests/` | une centaine de tests, dont le couloir bloquant en CI, l'empilement du plateau, le quadrant et la netlist de chaque schéma |
 
 ## Notes
@@ -89,6 +94,7 @@ pas.
 | [12](notes/12-protocole.md) | Protocole plateau, pont radio, horloge (lignes texte, BLE) |
 | [13](notes/13-revue-et-verification.md) | Ouvrir, vérifier, simuler, commander et tester les cartes |
 | [14](notes/14-revue-des-cartes.md) | Revue des cartes de la phase 1 : constats, corrections, ce qui reste |
+| [15](notes/15-skills-embarques.md) | Skills embarqués : lesquels, pour quel lot, comment les tenir à jour |
 
 Décisions formelles : [index des ADR](adr/README.md). Conventions de
 contribution : `CLAUDE.md` à la racine (langue, typographie, source

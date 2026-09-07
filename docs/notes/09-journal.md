@@ -174,6 +174,15 @@ quatre commandes.
   l'horloge. Détail et points restants dans la
   [note 14](14-revue-des-cartes.md).
 
+## 07/09/2026, skills embarqués
+
+- kicad-happy passé en v2.2.1 (correctifs des analyseurs et de la
+  simulation), et trois skills de pcba-design-skills embarqués pour le
+  lot 3 (`release-pcba-fabrication`, `operate-jlcpcb-order`) et la
+  relecture de routage (`pcb-layout-review`) ; les cinq autres écartés,
+  raisons dans `VENDORED.md`. Usage par lot dans la
+  [note 15](15-skills-embarques.md).
+
 ## Où en est la ligne de temps
 
 Phase 0 faite ; la phase 1 (maquette) est conçue mais ne sera pas

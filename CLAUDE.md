@@ -41,6 +41,8 @@ Ces règles s'appliquent à toute contribution, humaine ou assistée.
 
 ## Skills
 
-Les skills KiCad (revue, EMC, SPICE, sourcing, fabrication) et
-CadQuery sont embarqués dans `.claude/skills/`, voir
-`.claude/skills/VENDORED.md` pour la provenance et les licences.
+Les skills KiCad (revue, EMC, SPICE, sourcing, fabrication), les
+skills de mise en fabrication et de commande JLCPCB, et CadQuery sont
+embarqués dans `.claude/skills/`, voir `.claude/skills/VENDORED.md`
+pour la provenance et les licences, et la note 15 de `docs/notes/`
+pour l'usage de chacun selon le lot de la feuille de route.
