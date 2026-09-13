@@ -1,23 +1,31 @@
-"""Complete netlist of the quadrant board (ADR 0010).
+"""Complete netlist of the quadrant board (ADR 0010, note 17).
 
 Single source for the schematic, the strip placement, the BOM and the
 SPICE bench. Every part comes from the official KiCad symbols (pin
 numbers validated by the Circuit builder) so a typo fails loudly.
 
-Topology, per quadrant:
-- 16 coil cells reproduced from the mockup analog board (ADR 0008):
+Topology, per quadrant of n = squares^2 coils (16, or 4 for the reduced
+development quadrant, plateau.quadrant.reduced):
+- n coil cells reproduced from the mockup analog board (ADR 0008):
   bleed to VREF, 330 ohm clamps and BAV99 in front of the mux, bus
   diode plus low-side FET excitation from the shared switched rail,
-  flyback diode, P-FET plus resistor damping;
+  flyback diode to VIN, freewheel diode from GND (note 17, point 1: the
+  coil current closes through it when the low-side FET opens, whatever
+  the state of the rail switch), P-FET plus resistor damping driven
+  straight by the decoder (note 17, point 2: no pull-up, a push-pull
+  3.3 V output never lets the gate reach VIN);
 - gates from two 4 to 16 decoders: 74HC4514 (active high) inhibited
   by PULSE_EN through an inverter for the excitation, 74HC154 (active
-  low) enabled by DAMP_EN_N for the damping;
-- two ADG1607 dual 8:1 muxes, outputs paralleled, one enable each
-  (coils 1 to 8, 9 to 16) instead of the ADG726 the brief named;
+  low) enabled by DAMP_EN_N for the damping; outputs beyond n are
+  left unconnected;
+- one ADG1607 dual 8:1 mux per eight coils, outputs paralleled, one
+  enable each (coils 1 to 8, 9 to 16), instead of the ADG726 the brief
+  named; the reduced quadrant has the first one only;
 - AD8421 (G 20), Sallen-Key high-pass and low-pass, output stage, RC
   and clamp to 3V3, exactly the validated mockup chain;
 - the coils themselves are net ties on the board: the spiral copper is
-  C{k}_A, the B.Cu escape C{k}_B, joined at the stacked terminal.
+  C{k}_A, the B.Cu escape C{k}_B, joined at the stacked terminal; the
+  schematic draws them as inductors.
 """
 
 from __future__ import annotations
@@ -63,11 +71,32 @@ INV = Part(
 LED = Part(
     "LED", "WS2812B", "LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm", mpn="WS2812B", lcsc="C2761795"
 )
-NETTIE = Part("Device", "NetTie_2", "quadgen:COIL_TIE")
-R0805 = Part("Device", "R", "Resistor_SMD:R_0805_2012Metric")
+# The spiral: an inductor on the schematic, a net tie footprint on the board.
+COIL = Part("Device", "L", "quadgen:COIL_TIE")
 R0402 = Part("Device", "R", "Resistor_SMD:R_0402_1005Metric")
+R2010 = Part("Device", "R", "Resistor_SMD:R_2010_5025Metric")
 FPC16 = Part("Connector_Generic", "Conn_01x16", "")  # footprint from the yaml
 HOLE = Part("Mechanical", "MountingHole", "MountingHole:MountingHole_3.2mm_M3")
+
+# 74HC4514 output pin per decoded index, 74HC154 likewise.
+DEC_HI_OUT = {
+    0: "11", 1: "9", 2: "10", 3: "8", 4: "7", 5: "6", 6: "5", 7: "4",
+    8: "18", 9: "17", 10: "20", 11: "19", 12: "14", 13: "13", 14: "16", 15: "15",
+}  # fmt: skip
+DEC_LO_OUT = {i: str(i + 1) for i in range(11)} | {i: str(i + 2) for i in range(11, 16)}
+MUX_NC = ("11", "12", "13", "26", "28", "30", "32")
+
+
+def coil_count(cfg: BoardConfig) -> int:
+    return cfg.plateau.quadrant.squares ** 2
+
+
+def mux_refs(n: int) -> list[tuple[str, int, str]]:
+    """(reference, first coil, enable net) of every ADG1607 the quadrant needs."""
+    muxes = [("U3", 1, "MUX_EN_L")]
+    if n > 8:
+        muxes.append(("U4", 9, "MUX_EN_H"))
+    return muxes
 
 
 def cell_refs(k: int) -> dict[str, str]:
@@ -81,11 +110,11 @@ def cell_refs(k: int) -> dict[str, str]:
         "clamp_b": f"R{b + 4}",
         "gate_pd": f"R{b + 5}",
         "damp_r": f"R{b + 6}",
-        "damp_pu": f"R{b + 7}",
         "dual_a": f"D{b + 1}",
         "dual_b": f"D{b + 2}",
         "bus": f"D{b + 3}",
         "fly": f"D{b + 4}",
+        "free": f"D{b + 5}",
         "nfet": f"Q{b + 1}",
         "pfet": f"Q{b + 2}",
         "tie": f"NT{k}",
@@ -96,6 +125,7 @@ def build_quadrant_circuit(cfg: BoardConfig) -> tuple[Circuit, ChainDesign]:
     q = cfg.plateau.quadrant
     drv = cfg.mockup.drive
     chain = design_chain(cfg)
+    n = coil_count(cfg)
     ckt = Circuit()
     fpc = Part(FPC16.lib, FPC16.symbol, q.link.footprint, mpn="FH12-16S-0.5SH(55)", lcsc="C2837584")
 
@@ -118,39 +148,35 @@ def build_quadrant_circuit(cfg: BoardConfig) -> tuple[Circuit, ChainDesign]:
     c("C13", "1u", "VREF_DIV", GND)
 
     # ---------------- Shared drive rail ----------------
+    # Q1 must be off again before the listening window: R7 sets its
+    # turn-off (470 ohms against the gate capacitance, under a
+    # microsecond); the flyback no longer depends on it (note 17).
     ckt.add("Q1", PFET, "AO3401A", {"1": "Q1_G", "2": "VIN", "3": "PULSE_RAIL"})
-    r("R7", "10k", "Q1_G", "VIN")
+    r("R7", "470R", "Q1_G", "VIN")
     ckt.add("Q2", NFET, "AO3400A", {"1": "PULSE_EN", "2": GND, "3": "Q1_G"})
     r("R8", "100k", "PULSE_EN", GND)
-    r(
-        "R9",
-        "10R",
-        "PULSE_RAIL",
-        "DRIVE_BUS",
-        part=Part("Device", "R", "Resistor_SMD:R_2010_5025Metric"),
-    )
+    r("R9", "10R", "PULSE_RAIL", "DRIVE_BUS", part=R2010)
     r("R10", "100k", "DRIVE_BUS", GND)
 
     # ---------------- Coil cells ----------------
-    n = q.squares * q.squares
     for k in range(1, n + 1):
         a, b = f"C{k}_A", f"C{k}_B"
         ma, mb = f"M{k}_A", f"M{k}_B"
         cr = cell_refs(k)
-        ckt.add(cr["tie"], NETTIE, f"spirale C{k}", {"1": a, "2": b})
-        r(cr["bleed_a"], "10k", a, "VREF")
-        r(cr["bleed_b"], "10k", b, "VREF")
-        r(cr["clamp_a"], "330R", a, ma)
-        r(cr["clamp_b"], "330R", b, mb)
+        ckt.add(cr["tie"], COIL, f"spirale C{k}", {"1": a, "2": b})
+        r(cr["bleed_a"], "10k", a, "VREF", part=R0402)
+        r(cr["bleed_b"], "10k", b, "VREF", part=R0402)
+        r(cr["clamp_a"], "330R", a, ma, part=R0402)
+        r(cr["clamp_b"], "330R", b, mb, part=R0402)
         ckt.add(cr["dual_a"], DDUAL, "BAV99", {"1": GND, "3": ma, "2": "5VA"})
         ckt.add(cr["dual_b"], DDUAL, "BAV99", {"1": GND, "3": mb, "2": "5VA"})
         ckt.add(cr["bus"], DBUS, "B5819W", {"1": a, "2": "DRIVE_BUS"})  # 1=K 2=A
-        ckt.add(cr["fly"], DFLY, "SS34FL", {"1": "VIN", "2": b})  # flyback
+        ckt.add(cr["fly"], DFLY, "SS34FL", {"1": "VIN", "2": b})  # flyback to VIN
+        ckt.add(cr["free"], DBUS, "B5819W", {"1": a, "2": GND})  # freewheel from GND
         ckt.add(cr["nfet"], NFET, "AO3400A", {"1": f"DRIVE{k}", "2": GND, "3": b})
         r(cr["gate_pd"], "100k", f"DRIVE{k}", GND, part=R0402)
         ckt.add(cr["pfet"], PFET, "AO3401A", {"1": f"DAMP{k}_N", "2": a, "3": f"DMP{k}"})
-        r(cr["damp_r"], str(int(drv.damp_r_ohm)) + "R", f"DMP{k}", b, part=R0805)
-        r(cr["damp_pu"], "100k", f"DAMP{k}_N", "VIN", part=R0402)
+        r(cr["damp_r"], str(int(drv.damp_r_ohm)) + "R", f"DMP{k}", b)
 
     # ---------------- Decoders ----------------
     ckt.add("U6", INV, "74LVC1G04", {"2": "PULSE_EN", "4": "PULSE_EN_N", "5": "3V3", "3": GND})
@@ -165,27 +191,13 @@ def build_quadrant_circuit(cfg: BoardConfig) -> tuple[Circuit, ChainDesign]:
         "24": "3V3",
         "12": GND,
     }
-    q_pins = {
-        0: "11",
-        1: "9",
-        2: "10",
-        3: "8",
-        4: "7",
-        5: "6",
-        6: "5",
-        7: "4",
-        8: "18",
-        9: "17",
-        10: "20",
-        11: "19",
-        12: "14",
-        13: "13",
-        14: "16",
-        15: "15",
-    }
-    for i, pin in q_pins.items():
-        dec_hi[pin] = f"DRIVE{i + 1}"
-    ckt.add("U1", DEC_HI, q.front_end.drive_decoder, dec_hi)
+    nc_hi = []
+    for i, pin in DEC_HI_OUT.items():
+        if i < n:
+            dec_hi[pin] = f"DRIVE{i + 1}"
+        else:
+            nc_hi.append(pin)
+    ckt.add("U1", DEC_HI, q.front_end.drive_decoder, dec_hi, nc=tuple(nc_hi))
     # 74HC154: outputs active low, E0 tied low, E1 = DAMP_EN_N.
     dec_lo = {
         "18": GND,
@@ -197,15 +209,18 @@ def build_quadrant_circuit(cfg: BoardConfig) -> tuple[Circuit, ChainDesign]:
         "24": "3V3",
         "12": GND,
     }
-    s_pins = {i: str(i + 1) for i in range(11)} | {i: str(i + 2) for i in range(11, 16)}
-    for i, pin in s_pins.items():
-        dec_lo[pin] = f"DAMP{i + 1}_N"
-    ckt.add("U2", DEC_LO, q.front_end.damp_decoder, dec_lo)
+    nc_lo = []
+    for i, pin in DEC_LO_OUT.items():
+        if i < n:
+            dec_lo[pin] = f"DAMP{i + 1}_N"
+        else:
+            nc_lo.append(pin)
+    ckt.add("U2", DEC_LO, q.front_end.damp_decoder, dec_lo, nc=tuple(nc_lo))
     c("C5", "100n", "3V3", GND)
     c("C6", "100n", "3V3", GND)
 
     # ---------------- Muxes ----------------
-    for ref, first, en in (("U3", 1, "MUX_EN_L"), ("U4", 9, "MUX_EN_H")):
+    for ref, first, en in mux_refs(n):
         pins = {
             "27": "MUXA_OUT",
             "31": "MUXB_OUT",
@@ -218,12 +233,18 @@ def build_quadrant_circuit(cfg: BoardConfig) -> tuple[Circuit, ChainDesign]:
             "33": GND,
             "9": GND,
         }
+        nc = list(MUX_NC)
         for i in range(8):
-            pins[str(17 + i)] = f"M{first + i}_A"  # S1A..S8A
-            pins[str(8 - i)] = f"M{first + i}_B"  # S1B..S8B
-        ckt.add(ref, MUX8, "ADG1607", pins, nc=("11", "12", "13", "26", "28", "30", "32"))
+            coil = first + i
+            if coil <= n:
+                pins[str(17 + i)] = f"M{coil}_A"  # S1A..S8A
+                pins[str(8 - i)] = f"M{coil}_B"  # S1B..S8B
+            else:
+                nc += [str(17 + i), str(8 - i)]
+        ckt.add(ref, MUX8, "ADG1607", pins, nc=tuple(nc))
     c("C7", "100n", "5VA", GND)
-    c("C8", "100n", "5VA", GND)
+    if n > 8:
+        c("C8", "100n", "5VA", GND)
 
     # ---------------- Amplifier chain (mockup values) ----------------
     c("C14", "100n", "MUXA_OUT", "INA_INP")
@@ -327,18 +348,19 @@ STRIP_REFS_PER_CELL = (
     "clamp_b",
     "gate_pd",
     "damp_r",
-    "damp_pu",
     "dual_a",
     "dual_b",
     "bus",
     "fly",
+    "free",
     "nfet",
     "pfet",
 )
 
 
 def schematic_groups(cfg: BoardConfig) -> list[tuple[str, float, list[str]]]:
-    n = cfg.plateau.quadrant.squares**2
+    """Functional groups for the label-only emitter (analoggen.schematic)."""
+    n = coil_count(cfg)
     groups: list[tuple[str, float, list[str]]] = [
         (
             "LINK AND RAILS",
@@ -368,7 +390,7 @@ def schematic_groups(cfg: BoardConfig) -> list[tuple[str, float, list[str]]]:
         groups.append((f"COIL CELL {k}", y, [cr["tie"]] + [cr[r] for r in STRIP_REFS_PER_CELL]))
         y += 45.0
     groups.append(("DECODERS", y, ["U1", "U2", "C5", "C6"]))
-    groups.append(("MUXES", y + 60.0, ["U3", "U4", "C7", "C8"]))
+    groups.append(("MUXES", y + 60.0, [ref for ref, _f, _e in mux_refs(n)] + ["C7", "C8"]))
     groups.append(
         (
             "AMPLIFIER CHAIN",

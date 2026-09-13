@@ -259,6 +259,10 @@ plateau:                       # 8x8 board built directly from 4x4 quadrants (AD
                                # (ADG726 has no verified symbol in the KiCad 7 libraries)
     front_end_strip_mm: 20.0   # analog front end on the top side, outer x edge
     front_end_max_height_mm: 1.8   # must fit under the plywood in gap.air_mm
+    strip_overhang_mm: 0.0     # the strip floor plan fits in 4 p, no growth south
+    reduced:                   # 2 x 2 development quadrant (note 17): same circuit,
+      squares: 2               # bus and firmware, four cells, one mux, eight LEDs
+      strip_overhang_mm: 8.0   # one band, four cells: the middle zone runs past 2 p
     link:                      # to the brain board, one flat cable each
       connector: "FPC 0.5 mm, 16 broches, 1,4 mm de haut (Hirose FH12-16S-0.5SH)"
       footprint: "Connector_FFC-FPC:Hirose_FH12-16S-0.5SH_1x16-1MP_P0.50mm_Horizontal"

@@ -77,7 +77,11 @@ Vue 3D interactive (bases, éclaté, couches, noms au survol) :
 Spirales, échappées vers la bande de frontal, 32 LED de camp et leur
 distribution, connecteur FPC, et dans la bande de 20 mm le frontal
 complet (16 cellules, deux ADG1607, décodeurs, chaîne AD8421 et
-OPA2810) : [détails](hardware/quadrant/README.md).
+OPA2810) : [détails](hardware/quadrant/README.md). Le schéma est
+dessiné feuille par feuille (fonction, composants et câblage dans la
+[note 17](docs/notes/17-quadrant-fonction-et-cablage.md)) ; un
+quadrant réduit 2 x 2, même circuit et même bus, sert de banc de mise
+au point : [hardware/quadrant-2x2](hardware/quadrant-2x2/README.md).
 
 | Cerveau (STM32G474, 4 couches) | Puissance (3S, BQ24610, BQ76920) |
 |---|---|

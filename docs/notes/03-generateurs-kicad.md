@@ -63,8 +63,11 @@ main, on modifie la source et on régénère
 - `filters.py` plus `spice.py` : dimensionnement Sallen-Key en E96 et
   validation ngspice de la chaîne complète (gain ~200 à 400 kHz,
   coupures, réjections), test automatique.
-- `schematic.py` : schéma KiCad à étiquettes globales, parsé par
-  kicad-cli en test.
+- `schematic.py` : schéma KiCad à étiquettes globales (une par
+  broche, aucun fil), parsé par kicad-cli en test ; `sheets.py` est le
+  moteur de schémas dessinés (feuilles hiérarchiques, fils tracés
+  depuis des gabarits, vérification du dessin contre le circuit avant
+  écriture) que le quadrant utilise, [note 17](17-quadrant-fonction-et-cablage.md).
 - `pcb.py` : placement, routeur maison et ses garanties
   ([note 04](04-routeur-et-garanties.md)).
 - `bom.py` : BOM lisible et fichiers JLCPCB (BOM et placements, avec

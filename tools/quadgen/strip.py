@@ -31,14 +31,14 @@ Placement = tuple[float, float, float]  # x, y, rotation
 # row is one role centered in the column, or several (role, dx, rot)
 # side by side). Column heights are checked against the cell pitch.
 CELL_COLUMNS: tuple[tuple[float, tuple], ...] = (
-    # 0603 clamps and bleeds in front of the entries (A above, B below), one 0402
-    (5.4, ("clamp_a", "bleed_a", "bleed_b", "clamp_b", "damp_pu")),
+    # 0402 clamps and bleeds in front of the entries (A above, B below), the
+    # 0603 damping resistor and the 0402 gate pulldown under them
+    (5.4, ("clamp_a", "bleed_a", "bleed_b", "clamp_b", "damp_r", "gate_pd")),
     # SOT-23 pairs: the clamp diodes, then the FETs
     (8.9, ("dual_a", "dual_b")),
     (12.9, ("pfet", "nfet")),
-    # the two SOD-123 diodes, then the 0805 damping resistor beside the upright
-    # 0402 gate pulldown (the column is as wide as a SOD-123)
-    (17.4, ("bus", "fly", (("gate_pd", -1.88, 90.0), ("damp_r", 0.67, 0.0)))),
+    # the three SOD-123 diodes: bus, flyback, freewheel
+    (17.4, ("bus", "fly", "free")),
 )
 CELL_STACK_GAP = 0.1
 
@@ -198,14 +198,17 @@ def strip_placements(cfg: BoardConfig, lay: Layout, circuit: Circuit) -> dict[st
     # side by side below them, the amplifiers under the muxes, and the
     # passives in the side columns the decoder fanouts leave free
     st = q.strip
-    top = lay.cell_ys[7] + st.cell_pitch_mm / 2.0  # middle zone starts under band 0 cells
+    # middle zone starts under the cells of band 0 (2 n of them)
+    top = lay.cell_ys[2 * lay.n - 1] + st.cell_pitch_mm / 2.0
     xc = lay.strip_w / 2.0
     x_lo, x_hi = 0.8, lay.strip_w - 0.8
     out["U1"] = (xc, top + 4.6, 0.0)  # 74HC4514, TSSOP-24 upright
     out["U2"] = (xc, top + 13.2, 0.0)  # 74HC154
     # the muxes face each other: half a pitch of offset interleaves their vias
     out["U3"] = (5.4, top + 22.8, 0.0)  # ADG1607 coils 1..8
-    out["U4"] = (lay.strip_w - 5.4, top + 23.3, 0.0)  # ADG1607 coils 9..16
+    two_muxes = "U4" in by_ref
+    if two_muxes:
+        out["U4"] = (lay.strip_w - 5.4, top + 23.3, 0.0)  # ADG1607 coils 9..16
     out["U5"] = (5.0, top + 32.2, 0.0)  # AD8421
     out["U7"] = (12.6, top + 32.2, 0.0)  # OPA2810 HP + LP
     out["U8"] = (5.0, top + 38.0, 0.0)  # OPA2810 VREF buffer + output
@@ -241,7 +244,7 @@ def strip_placements(cfg: BoardConfig, lay: Layout, circuit: Circuit) -> dict[st
     # rest: side columns beside the decoders, the gaps around the muxes, the
     # rows left in the connector zone, a column beside the amplifiers and a
     # flat row under them
-    first = ["U6", "C5", "C6", "C3", "C7", "C8"]
+    first = [r for r in ("U6", "C5", "C6", "C3", "C7", "C8") if r in by_ref]
     rest = [box_of(by_ref[r]) for r in first] + sorted(
         (
             box_of(comp)
@@ -254,7 +257,8 @@ def strip_placements(cfg: BoardConfig, lay: Layout, circuit: Circuit) -> dict[st
     )
     # decoder fanout (one via row) reaches 1.5 mm past the pad tips at 3.6;
     # (x0, x1, y0, y1, upright)
-    mux_lo, mux_hi = out["U3"][1] - 3.1, out["U4"][1] + 3.1
+    mux_lo = out["U3"][1] - 3.1
+    mux_hi = (out["U4"][1] if two_muxes else out["U3"][1]) + 3.1
     columns = [
         (x_lo, xc - 5.2, top + 0.8, top + 17.6, True),
         (xc + 5.2, x_hi, top + 0.8, top + 17.6, True),
@@ -263,9 +267,14 @@ def strip_placements(cfg: BoardConfig, lay: Layout, circuit: Circuit) -> dict[st
         (16.7, x_hi, top + 29.5, top + 40.6, True),
         (x_lo, x_hi, top + 41.2, top + st.middle_zone_mm - 0.8, False),
         (x_lo, out["U3"][0] - 3.1 - 0.3, mux_lo, mux_hi, True),
-        (out["U4"][0] + 3.1 + 0.3, x_hi, mux_lo, mux_hi, True),
-        (out["U3"][0] + 3.1 + 0.3, out["U4"][0] - 3.1 - 0.3, top + 23.0, mux_hi, True),
     ]
+    if two_muxes:
+        columns += [
+            (out["U4"][0] + 3.1 + 0.3, x_hi, mux_lo, mux_hi, True),
+            (out["U3"][0] + 3.1 + 0.3, out["U4"][0] - 3.1 - 0.3, top + 23.0, mux_hi, True),
+        ]
+    else:
+        columns.append((out["U3"][0] + 3.1 + 0.3, x_hi, mux_lo, mux_hi, True))
     pending = list(rest)
     for cx0, cx1, cy0, cy1, upright in columns:
         if not pending:

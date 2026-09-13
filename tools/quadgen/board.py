@@ -390,17 +390,21 @@ class Builder:
             self.v5_lines.append(line)
         self.track(NET_5V, "In2.Cu", [(self.bus_5v_x, e5), (self.bus_5v_x, H - e5)], w)
 
-        mid = lay.corridor_ys[len(lay.corridor_ys) // 2]
-        for y in (eg, mid, H - eg):
+        # GND lines on B.Cu: the north and south edges, plus the corridors
+        # between two escape bands (every other corridor: the B escapes run
+        # on B.Cu in the odd ones). A 2 x 2 quadrant has only the edges.
+        free_ys = [y for k, y in enumerate(lay.corridor_ys, start=1) if k % 2 == 0]
+        for y in (eg, *free_ys, H - eg):
             line = [(xs, y), (W - eg, y)]
             self.track(NET_GND, "B.Cu", line, w)
             self.gnd_lines.append(line)
-        # In1 bus down the strip, tied to the B.Cu lines by vias at three points
+        # In1 bus down the strip, tied to the B.Cu lines by vias at each line
         y_top = 6.0
         # between the last cell and the 5 V line
         y_bot = self.lay.cell_ys[-1] + self.q.strip.cell_pitch_mm / 2.0 + 0.7
         self.track(NET_GND, "In1.Cu", [(self.bus_gnd_x, y_top), (self.bus_gnd_x, y_bot)], w)
-        for y, ly in ((y_top, eg), (mid + 1.5, mid), (y_bot, H - eg)):
+        ties = [(y_top, eg), *((y + 1.5, y) for y in free_ys), (y_bot, H - eg)]
+        for y, ly in ties:
             self.via(NET_GND, self.bus_gnd_x, y, 0.8, 0.4)
             pts = (
                 [(self.bus_gnd_x, y), (self.bus_gnd_x, ly), (xs, ly)]

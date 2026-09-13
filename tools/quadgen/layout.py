@@ -114,7 +114,7 @@ def make_layout(cfg: BoardConfig) -> Layout:
     r_out, r_in = geo.sense_d_out_mm / 2.0, geo.sense_d_in_mm / 2.0
     rt = q.routing
     inset = cfg.mockup.coil_board.leds.corner_inset_mm
-    board_w, board_h = strip + n * p, n * p
+    board_w, board_h = strip + n * p, n * p + q.strip_overhang_mm
 
     # Escape bands: one per pair of rows, lanes ordered top to bottom as
     # [row 2b cols 0..n-1, row 2b+1 cols n-1..0]. The free interval is
@@ -151,7 +151,7 @@ def make_layout(cfg: BoardConfig) -> Layout:
         for m in range(per_band - n_up):
             cell_ys.append(y + (m + 0.5) * pitch_c)
         zone_start = y + (per_band - n_up) * pitch_c + st.middle_zone_mm
-    if cell_ys[-1] + pitch_c / 2.0 > board_h:
+    if cell_ys[-1] + pitch_c / 2.0 > n * p:
         raise ValueError("strip floor plan overflows the board")
     for lanes in band_lanes:
         for yc in cell_ys:
@@ -238,5 +238,5 @@ def make_layout(cfg: BoardConfig) -> Layout:
         connector_xy=(5.0, 11.0),
         pin_hole_xy=(11.0, 3.0),
         # east edge, in the stretches free of LED vias and chain hops
-        mounting_holes=((board_w - 2.5, 1.4 * p), (board_w - 2.5, 3.4 * p)),
+        mounting_holes=((board_w - 2.5, 0.35 * n * p), (board_w - 2.5, 0.85 * n * p)),
     )

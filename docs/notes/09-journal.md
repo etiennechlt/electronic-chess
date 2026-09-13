@@ -216,6 +216,25 @@ quatre commandes.
 - Le commit du 02/09 sur la série vidéo (calendrier, rôles, publication
   en différé), resté sur une branche de session, est repris sur `main`.
 
+## 13/09/2026, schéma dessiné et quadrant 2 x 2
+
+- Nouveau moteur de schéma (`analoggen/sheets.py`) : feuilles
+  hiérarchiques, composants placés par gabarit et reliés par des fils,
+  étiquettes globales pour les rails et le bus, locales pour les nets
+  internes ; le dessin est vérifié contre le circuit avant écriture et
+  la netlist relue par kicad-cli est comparée au circuit en test.
+  Leçon : KiCad ne relie que des extrémités de segments, un point de
+  jonction posé au milieu d'un fil ne connecte rien tant que le fil
+  n'est pas coupé là ; et il repositionne les champs justifiés d'un
+  symbole tourné, d'où des textes centrés à position calculée.
+- Circuit du quadrant : diode de roue libre par cellule et R7 à
+  470 ohms (le rail doit être coupé avant la fenêtre d'écoute, pas
+  maintenu), rappel du P-FET d'amortissement supprimé, spirale dessinée
+  en inductance, résistances de cellule en 0402 pour loger la diode.
+- Quadrant réduit 2 x 2 (`--reduced`, `plateau.quadrant.reduced`) :
+  quatre cellules, un mux, huit LED, bande de frontal qui dépasse de
+  2 p vers le sud, même firmware.
+
 ## Où en est la ligne de temps
 
 Phase 0 faite ; la phase 1 (maquette) est conçue mais ne sera pas

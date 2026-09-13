@@ -456,12 +456,19 @@ class FrontEndCfg(_Model):
     logic_rail: str
 
 
+class ReducedQuadrantCfg(_Model):
+    squares: int
+    strip_overhang_mm: float
+
+
 class QuadrantCfg(_Model):
     squares: int
     layers: int
     mux: str
     front_end_strip_mm: float
     front_end_max_height_mm: float
+    strip_overhang_mm: float
+    reduced: ReducedQuadrantCfg
     link: QuadrantLinkCfg
     routing: QuadrantRoutingCfg
     strip: StripCfg

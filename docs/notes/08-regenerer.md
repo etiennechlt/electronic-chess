@@ -76,8 +76,18 @@ la carte qu'il accompagne.
 PYTHONPATH=tools .venv/bin/python -m quadgen build --render docs/images/quadrant.png
 ```
 
-Régénère `hardware/quadrant/quadrant.kicad_pcb`, son projet
-`quadrant.kicad_pro` et le rendu. Le build échoue (code 1) si une route
+Régénère `hardware/quadrant/quadrant.kicad_pcb`, le schéma dessiné
+(feuille racine `quadrant.kicad_sch` et ses feuilles `rails`,
+`cells-1` à `cells-4`, `select`, `chain`, `leds`), son projet
+`quadrant.kicad_pro` et le rendu. Le quadrant réduit 2 x 2 de mise au
+point ([note 17](17-quadrant-fonction-et-cablage.md)) se régénère par
+le même générateur :
+
+```bash
+PYTHONPATH=tools .venv/bin/python -m quadgen build --reduced --render docs/images/quadrant-2x2.png
+```
+
+vers `hardware/quadrant-2x2/`. Le build échoue (code 1) si une route
 de la chaîne LED ou un retour d'alimentation est ouvert, ou si le
 contrôle d'isolement exact trouve un défaut ; `tests/test_quadgen.py`
 reconstruit la carte et vérifie la source unique des LED, les

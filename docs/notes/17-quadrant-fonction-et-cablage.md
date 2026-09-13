@@ -299,7 +299,11 @@ Même architecture, même bus, même firmware, avec n = 2 :
   suppose huit cellules par bande et les trous de fixation sont posés à
   1,4 p et 3,4 p : à généraliser avant de régénérer le PCB.
 
-## 6. Points relevés en relisant le circuit
+## 6. Points relevés en relisant le circuit, et ce qui a été fait
+
+Les deux premiers points ont été tranchés le 13/09/2026 et sont dans
+le circuit (`tools/quadgen/circuit.py`) ; la décision suit chaque
+constat.
 
 1. **Le retour de roue libre passe par Q1.** Quand le N-FET s'ouvre,
    le courant de la bobine se referme par SS34FL, VIN, puis Q1, R9 et
@@ -309,17 +313,28 @@ Même architecture, même bus, même firmware, avec n = 2 :
    grille, quelques microsecondes). Si Q1 se bloquait avant la fin de
    la roue libre, le courant n'aurait plus que le 680 ohms par la diode
    de substrat du P-FET et l'écrêteur de Mk_A par ses 330 ohms : des
-   centaines de volts. Le schéma redessiné doit fixer ce point : soit
-   un retour explicite (Schottky de la masse vers Ck_A dans chaque
-   cellule), soit un maintien défini de Q1 (condensateur de grille
-   dimensionné, ou inhibition du décodeur par une copie retardée de
-   PULSE_EN).
+   centaines de volts.
+   Décision : une Schottky de roue libre par cellule, de la masse vers
+   Ck_A (B5819W, la même que la diode de bus), et R7 abaissée de 10 k à
+   470 ohms. Le condensateur de grille envisagé d'abord aurait tenu Q1
+   passant trop longtemps : le rail doit au contraire être coupé avant
+   la fenêtre d'écoute, sinon la diode de bus tire la bobine adressée
+   à 12 V pendant la mesure et les écrêteurs injectent des dizaines de
+   milliampères dans 5VA. Avec 10 k, Q1 restait passant une quinzaine
+   de microsecondes après PULSE_EN, soit le début de la fenêtre ; avec
+   470 ohms il se bloque en moins d'une microseconde, le bus se
+   décharge par les polarisations des cellules, et la roue libre ne
+   dépend plus de lui : le courant se referme par la SS34FL, VIN, le
+   condensateur C1 et la diode de roue libre. Le banc SPICE de la
+   cellule (lot 2) doit compter les capacités de ces trois diodes,
+   qui abaissent la résonance parasite de la spirale.
 2. **Le 100 k de DAMPk_N vers VIN ne sert à rien** avec une sortie
    push-pull à 3,3 V du 74HC154 : la grille reste à 3,3 V, jamais à
    VIN. Conséquence : pendant l'impulsion de la bobine adressée, sa
    source (Ck_A) est à 12 V et le P-FET conduit (18 mA dans 680 ohms,
    sans effet), mais il n'est pas « bloqué dur » comme le yaml le
-   suppose. Rappel à VREF ou à 3V3, ou suppression, à trancher.
+   suppose. Décision : résistance supprimée, la grille est tenue par la
+   sortie du décodeur.
 3. **Les noms de broches du symbole KiCad BAV99** (K, A, K) sont
    trompeurs ; c'est le dessin qui fait foi, et le câblage masse,
    signal, 5VA est le bon.
@@ -327,19 +342,39 @@ Même architecture, même bus, même firmware, avec n = 2 :
    simple à confirmer sur la fiche, le courant LED par nappe, les
    codes LCSC.
 
-## 7. Ce que le schéma redessiné doit montrer (proposition)
+## 7. Le schéma redessiné (fait le 13/09/2026)
 
-- Une feuille racine avec J1 et une feuille par bloc : rails et
-  polarisation (A, B, C, I), une feuille par cellule de bobine (D,
-  toutes issues du même gabarit, avec ses ports DRIVE, DAMP_N, M_A, M_B),
-  sélection (E et F), chaîne (G), LED (H).
-- Dans chaque feuille, les composants sont placés à des positions
-  fixées par le gabarit du bloc et reliés par des fils dessinés ;
-  seules les alimentations, VREF et le bus d'adresse passent par des
-  étiquettes.
-- Le circuit Python reste la source unique : l'émetteur vérifie que
-  chaque fil relie des broches du même net et que chaque net du circuit
-  est entièrement connecté sur les feuilles ; le test `kicad-cli` de la
-  netlist reste la porte.
-- Le 2 x 2 d'abord, puis le 4 x 4 par le même générateur avec
-  `squares: 4`.
+- `analoggen/sheets.py` est le moteur : une feuille place des unités
+  de symboles à des positions de gabarit et dessine les fils entre
+  leurs broches ; les rails, le bus d'adresse et les nets partagés
+  entre feuilles portent des étiquettes globales, les nets internes à
+  une feuille une étiquette locale. Avant d'écrire quoi que ce soit, le
+  moteur vérifie le dessin contre le circuit : chaque broche est posée,
+  chaque net est un seul composant connexe, deux nets ne se touchent
+  jamais, chaque net porte son nom. Les positions des broches passent
+  par la matrice d'orientation de KiCad, donc un symbole tourné ou
+  miroir tombe où KiCad le dessine. Chaque segment est coupé aux
+  points qui le touchent : KiCad ne relie que des extrémités, un point
+  de jonction seul ne suffit pas.
+- `quadgen/schematic.py` porte les gabarits : feuille racine avec J1
+  et les blocs, rails et polarisation, cellules (quatre par feuille,
+  même gabarit pour chacune), sélection, chaîne, LED. Le même code
+  dessine le 2 x 2 et le 4 x 4.
+- La netlist relue par `kicad-cli` est comparée au circuit pour les deux
+  variantes (`tests/test_drawn_schematic.py`), en plus du contrôle du
+  moteur. L'ancien émetteur par étiquettes reste disponible pour les
+  autres cartes.
+
+## 8. Le quadrant 2 x 2 tel que généré
+
+- `python -m quadgen build --reduced` lit `plateau.quadrant.reduced`
+  (`squares: 2`, `strip_overhang_mm`) et écrit `hardware/quadrant-2x2/`
+  : quatre cellules, un ADG1607, huit LED, décodeurs conservés avec
+  leurs sorties 4 à 15 laissées libres.
+- La carte fait 2 p plus la bande sur 2 p plus le dépassement : avec
+  une seule bande d'échappée, la bande de frontal (zone du connecteur,
+  quatre cellules, zone médiane) est plus longue que 2 p, et la carte
+  s'allonge d'autant vers le sud. Le 4 x 4 n'a pas de dépassement.
+- Dans la cellule, les quatre résistances de polarisation et
+  d'écrêtage passent en 0402 et l'amortissement en 0603 pour loger la
+  diode de roue libre dans le pas de 7,4 mm.

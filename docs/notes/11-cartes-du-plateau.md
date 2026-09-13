@@ -94,6 +94,14 @@ delà des rangées de vias d'éventail de leurs voisines : le brochage du
 yaml les tient à l'écart les unes des autres, la carte cerveau le
 reflète automatiquement.
 
+Depuis le 13/09/2026 le schéma du quadrant est dessiné, une feuille par
+bloc de la [note 17](17-quadrant-fonction-et-cablage.md), avec des fils
+entre les composants, et non plus une étiquette par broche ; la cellule
+porte une diode de roue libre et le rail d'impulsion se coupe en moins
+d'une microseconde (points 1 et 2 de la note 17). Un quadrant réduit
+2 x 2 (`hardware/quadrant-2x2/`, `--reduced`) sert de banc de mise au
+point avec le même circuit, le même bus et le même firmware.
+
 ## Cerveau
 
 STM32G474RE soudé sans quartz, USB-C, SWD, quatre liens quadrant
