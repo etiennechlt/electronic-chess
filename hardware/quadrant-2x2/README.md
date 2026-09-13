@@ -84,16 +84,16 @@ Généré par `python -m quadgen build --reduced` :
 
 | Bobines | LED | Segments | Vias | Routes LED et alimentation ouvertes | Nets du frontal ouverts | Défauts d'isolement |
 |---|---|---|---|---|---|---|
-| 4 | 8 | 8310 | 236 | 0 | 2 | 0 |
+| 4 | 8 | 8330 | 230 | 0 | 2 | 0 |
 
-Nets du frontal à finir dans pcbnew : INA_INM (une pastille), GND (la
-pastille de masse de R145).
+Nets du frontal à finir dans pcbnew : INA_INM (une pastille), GND
+(trois pastilles : D142, R145, C24).
 
-DRC KiCad 7 (`tools/drc.py`, zones remplies) : 477 signalements, 120
+DRC KiCad 7 (`tools/drc.py`, zones remplies) : 465 signalements, 117
 éléments non connectés (les deux nets ouverts ci-dessus), erreurs
 restantes : aucune ; avertissements sans effet sur la fabrication :
-silk_overlap 199, lib_footprint_issues 129, silk_over_copper 77,
-via_dangling 41, track_dangling 26, silk_edge_clearance 5. Le contrôle
+silk_overlap 185, lib_footprint_issues 129, silk_over_copper 78,
+via_dangling 41, track_dangling 27, silk_edge_clearance 5. Le contrôle
 d'isolement exact du générateur ne signale aucun défaut. Les vias
 d'éventail des boîtiers fins font 0,45 mm (perçage 0,2 mm), dans les
 capacités standard de JLCPCB, à confirmer sur le devis.
