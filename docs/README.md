@@ -42,6 +42,9 @@ pas.
   lot et comment les mettre à jour.
 - **Imprimer** : `python mechanical/build_all.py` écrit STL et STEP
   dans `mechanical/exports/` (non versionnés).
+- **Comprendre le quadrant avant de le redessiner** : la
+  [note 17](notes/17-quadrant-fonction-et-cablage.md), fonction, cycle
+  de mesure, composants et câblage bloc par bloc.
 - **Modifier une carte** :
   [générateurs KiCad](notes/03-generateurs-kicad.md),
   [routeur et garanties](notes/04-routeur-et-garanties.md),
@@ -99,6 +102,7 @@ pas.
 | [14](notes/14-revue-des-cartes.md) | Revue des cartes de la phase 1 : constats, corrections, ce qui reste |
 | [15](notes/15-skills-embarques.md) | Skills embarqués : lesquels, pour quel lot, comment les tenir à jour |
 | [16](notes/16-cout-des-cartes.md) | Coût des cartes : quadrant, format 100 x 100, décisions à prendre avant de chiffrer |
+| [17](notes/17-quadrant-fonction-et-cablage.md) | Quadrant : la fonction, les composants et leur câblage, base du schéma redessiné |
 
 Décisions formelles : [index des ADR](adr/README.md). Conventions de
 contribution : `CLAUDE.md` à la racine (langue, typographie, source

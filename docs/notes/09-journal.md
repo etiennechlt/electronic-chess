@@ -200,6 +200,22 @@ quatre commandes.
   100 x 100 examinée et non tranchée, quadrant intelligent à
   instruire en ADR. Le tout dans la [note 16](16-cout-des-cartes.md).
 
+## 13/09/2026, le quadrant relu pour être redessiné
+
+- Constat du porteur : ouvert dans KiCad, le schéma du quadrant (et du
+  cerveau) ne montre aucune liaison entre composants. Cause : le schéma
+  généré est « par étiquettes », une étiquette globale par broche et
+  aucun fil ; la netlist est juste (note 14) mais rien n'est lisible.
+- Note 17 : fonction du quadrant, cycle d'une mesure d'après le
+  firmware, composants et rôle bloc par bloc, câblage broche à broche,
+  variante 2 x 2 (4 cellules, un seul ADG1607, 120 x 100 mm) et deux
+  points de conception relevés en relisant (retour de roue libre qui
+  dépend de la lenteur de Q1, rappel du P-FET d'amortissement vers VIN
+  sans effet derrière un 74HC154). Proposition : redessiner en feuilles
+  hiérarchiques à fils depuis le même circuit Python, 2 x 2 d'abord.
+- Le commit du 02/09 sur la série vidéo (calendrier, rôles, publication
+  en différé), resté sur une branche de session, est repris sur `main`.
+
 ## Où en est la ligne de temps
 
 Phase 0 faite ; la phase 1 (maquette) est conçue mais ne sera pas
