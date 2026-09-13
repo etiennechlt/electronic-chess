@@ -377,6 +377,10 @@ constat.
   une seule bande d'échappée, la bande de frontal (zone du connecteur,
   quatre cellules, zone médiane) est plus longue que 2 p, et la carte
   s'allonge d'autant vers le sud. Le 4 x 4 n'a pas de dépassement.
-- Dans la cellule, les quatre résistances de polarisation et
-  d'écrêtage passent en 0402 et l'amortissement en 0603 pour loger la
-  diode de roue libre dans le pas de 7,4 mm.
+- Dans la cellule, les deux BAV99 passent en SOT-323 (BAV99W, même
+  brochage) : avec la résistance d'amortissement 0805 ils tiennent dans
+  une seule colonne, ce qui libère la colonne des diodes SOD-123 pour la
+  roue libre dans le pas de 7,4 mm. Les résistances restent en 0603 :
+  passées en 0402 dans un premier essai, leurs pastilles ne laissaient
+  plus de point de départ au routeur sur grille (44 pastilles de VREF
+  ouvertes sur le 4 x 4).

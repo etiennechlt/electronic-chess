@@ -41,9 +41,14 @@ ou un net du frontal reste ouvert : la liste imprimée est ce qu'il reste
 
 - 16 cellules de 7,4 mm en face de leur bobine, réparties de part et
   d'autre de chaque bande d'échappée : bleed 10 k vers VREF, 330 ohms
-  et BAV99 devant le mux, diode de bus B5819W et AO3400A d'excitation,
-  SS34FL de roue libre (SOD-123F, 1 mm de haut), AO3401A et 680 ohms
-  d'amortissement, pulldowns 0402. Les colonnes de la cellule sont
+  et BAV99W (SOT-323) devant le mux, diode de bus B5819W et AO3400A
+  d'excitation, SS34FL de roue libre vers VIN (SOD-123F, 1 mm de haut),
+  B5819W de roue libre depuis la masse (point 1 de la
+  [note 17](../../docs/notes/17-quadrant-fonction-et-cablage.md) : le
+  courant de la bobine se referme par elle quand le N-FET s'ouvre, et
+  R7 de 470 ohms coupe le rail en moins d'une microseconde), AO3401A et
+  680 ohms d'amortissement pilotés directement par le décodeur (point 2,
+  plus de rappel vers VIN), pulldown de grille 0402. Les colonnes de la cellule sont
   empilées à partir des cours réelles des empreintes et contrôlées
   contre le pas de 7,4 mm. L'entrée A arrive sur F.Cu à y - 0,6,
   l'entrée B sur B.Cu à y + 0,6 avec sa via.
@@ -80,7 +85,11 @@ ou un net du frontal reste ouvert : la liste imprimée est ce qu'il reste
   de l'autre, ce que le DRC de KiCad exige même dans un net tie. Le
   schéma montre le même NT{k}.
 
-Sorties du build : projet KiCad avec schéma, `bom.csv`, `jlc-bom.csv`
+Sorties du build : projet KiCad avec son schéma dessiné (feuille racine
+`quadrant.kicad_sch` avec J1 et les blocs, puis `rails`, `cells-1` à
+`cells-4`, `select`, `chain`, `leds`, fils tracés entre les composants,
+fonction et câblage dans la note 17 ; aperçus dans le
+[README du 2 x 2](../quadrant-2x2/README.md)), `bom.csv`, `jlc-bom.csv`
 (lignes avec code LCSC), `jlc-cpl.csv`, `chain-spice.cir`.
 
 ## Régénérer

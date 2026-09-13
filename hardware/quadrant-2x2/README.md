@@ -38,13 +38,13 @@ dans la [note 17](../../docs/notes/17-quadrant-fonction-et-cablage.md).
 Le même que sur le 4 x 4, avec les deux points de la note 17 intégrés :
 
 - 4 cellules de 7,4 mm en face de leur bobine : polarisation 10 k vers
-  VREF, 330 ohms et BAV99 devant le mux, diode de bus B5819W et
-  AO3400A d'excitation, SS34FL de roue libre vers VIN, **B5819W de
+  VREF, 330 ohms et BAV99W (SOT-323) devant le mux, diode de bus B5819W
+  et AO3400A d'excitation, SS34FL de roue libre vers VIN, **B5819W de
   roue libre depuis la masse** (le courant de la bobine se referme par
   elle quand le N-FET s'ouvre, quel que soit l'état du commutateur de
   rail), AO3401A et 680 ohms d'amortissement pilotés directement par
-  le décodeur (plus de rappel vers VIN). Résistances de polarisation,
-  d'écrêtage et de grille en 0402, amortissement en 0603.
+  le décodeur (plus de rappel vers VIN). Résistances de polarisation et
+  d'écrêtage en 0603, amortissement en 0805, rappel de grille en 0402.
 - Décodeurs 74HC4514 (excitation, inhibé par PULSE_EN à travers un
   74LVC1G04) et 74HC154 (amortissement, validé par DAMP_EN_N), sorties
   4 à 15 laissées libres ; un seul ADG1607 (bobines 1 à 4, enable

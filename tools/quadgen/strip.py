@@ -31,11 +31,12 @@ Placement = tuple[float, float, float]  # x, y, rotation
 # row is one role centered in the column, or several (role, dx, rot)
 # side by side). Column heights are checked against the cell pitch.
 CELL_COLUMNS: tuple[tuple[float, tuple], ...] = (
-    # 0402 clamps and bleeds in front of the entries (A above, B below), the
-    # 0603 damping resistor and the 0402 gate pulldown under them
-    (5.4, ("clamp_a", "bleed_a", "bleed_b", "clamp_b", "damp_r", "gate_pd")),
-    # SOT-23 pairs: the clamp diodes, then the FETs
-    (8.9, ("dual_a", "dual_b")),
+    # 0603 clamps and bleeds in front of the entries (A above, B below), the
+    # 0402 gate pulldown under them
+    (5.4, ("clamp_a", "bleed_a", "bleed_b", "clamp_b", "gate_pd")),
+    # the two SOT-323 clamp diodes and the 0805 damping resistor
+    (8.9, ("dual_a", "dual_b", "damp_r")),
+    # SOT-23 FETs
     (12.9, ("pfet", "nfet")),
     # the three SOD-123 diodes: bus, flyback, freewheel
     (17.4, ("bus", "fly", "free")),

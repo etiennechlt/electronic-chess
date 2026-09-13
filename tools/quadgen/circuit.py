@@ -73,7 +73,13 @@ LED = Part(
 )
 # The spiral: an inductor on the schematic, a net tie footprint on the board.
 COIL = Part("Device", "L", "quadgen:COIL_TIE")
+# BAV99 in SOT-323 (same pinning as the SOT-23 part the mockup used): two of
+# them and the damping resistor fit one cell column, which frees the
+# diode column for the freewheel diode without shrinking the resistors
+# below 0603, the smallest pads the grid router escapes reliably.
+DDUAL_W = Part("Diode", "BAV99", "Package_TO_SOT_SMD:SOT-323_SC-70", mpn="BAV99W", lcsc="")
 R0402 = Part("Device", "R", "Resistor_SMD:R_0402_1005Metric")
+R0805 = Part("Device", "R", "Resistor_SMD:R_0805_2012Metric")
 R2010 = Part("Device", "R", "Resistor_SMD:R_2010_5025Metric")
 FPC16 = Part("Connector_Generic", "Conn_01x16", "")  # footprint from the yaml
 HOLE = Part("Mechanical", "MountingHole", "MountingHole:MountingHole_3.2mm_M3")
@@ -164,19 +170,19 @@ def build_quadrant_circuit(cfg: BoardConfig) -> tuple[Circuit, ChainDesign]:
         ma, mb = f"M{k}_A", f"M{k}_B"
         cr = cell_refs(k)
         ckt.add(cr["tie"], COIL, f"spirale C{k}", {"1": a, "2": b})
-        r(cr["bleed_a"], "10k", a, "VREF", part=R0402)
-        r(cr["bleed_b"], "10k", b, "VREF", part=R0402)
-        r(cr["clamp_a"], "330R", a, ma, part=R0402)
-        r(cr["clamp_b"], "330R", b, mb, part=R0402)
-        ckt.add(cr["dual_a"], DDUAL, "BAV99", {"1": GND, "3": ma, "2": "5VA"})
-        ckt.add(cr["dual_b"], DDUAL, "BAV99", {"1": GND, "3": mb, "2": "5VA"})
+        r(cr["bleed_a"], "10k", a, "VREF")
+        r(cr["bleed_b"], "10k", b, "VREF")
+        r(cr["clamp_a"], "330R", a, ma)
+        r(cr["clamp_b"], "330R", b, mb)
+        ckt.add(cr["dual_a"], DDUAL_W, "BAV99W", {"1": GND, "3": ma, "2": "5VA"})
+        ckt.add(cr["dual_b"], DDUAL_W, "BAV99W", {"1": GND, "3": mb, "2": "5VA"})
         ckt.add(cr["bus"], DBUS, "B5819W", {"1": a, "2": "DRIVE_BUS"})  # 1=K 2=A
         ckt.add(cr["fly"], DFLY, "SS34FL", {"1": "VIN", "2": b})  # flyback to VIN
         ckt.add(cr["free"], DBUS, "B5819W", {"1": a, "2": GND})  # freewheel from GND
         ckt.add(cr["nfet"], NFET, "AO3400A", {"1": f"DRIVE{k}", "2": GND, "3": b})
         r(cr["gate_pd"], "100k", f"DRIVE{k}", GND, part=R0402)
         ckt.add(cr["pfet"], PFET, "AO3401A", {"1": f"DAMP{k}_N", "2": a, "3": f"DMP{k}"})
-        r(cr["damp_r"], str(int(drv.damp_r_ohm)) + "R", f"DMP{k}", b)
+        r(cr["damp_r"], str(int(drv.damp_r_ohm)) + "R", f"DMP{k}", b, part=R0805)
 
     # ---------------- Decoders ----------------
     ckt.add("U6", INV, "74LVC1G04", {"2": "PULSE_EN", "4": "PULSE_EN_N", "5": "3V3", "3": GND})

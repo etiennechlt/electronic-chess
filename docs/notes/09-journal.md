@@ -230,7 +230,10 @@ quatre commandes.
 - Circuit du quadrant : diode de roue libre par cellule et R7 à
   470 ohms (le rail doit être coupé avant la fenêtre d'écoute, pas
   maintenu), rappel du P-FET d'amortissement supprimé, spirale dessinée
-  en inductance, résistances de cellule en 0402 pour loger la diode.
+  en inductance, écrêteurs BAV99W en SOT-323 pour loger la diode de
+  roue libre dans la cellule ; les résistances restent en 0603, un
+  essai en 0402 laissait le routeur sans point de départ sur 44
+  pastilles de VREF du 4 x 4.
 - Quadrant réduit 2 x 2 (`--reduced`, `plateau.quadrant.reduced`) :
   quatre cellules, un mux, huit LED, bande de frontal qui dépasse de
   2 p vers le sud, même firmware.
