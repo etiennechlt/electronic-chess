@@ -104,8 +104,10 @@ Généré par `python -m quadgen build` :
 
 | Bobines | LED | Segments | Vias | Routes LED et alimentation ouvertes | Nets du frontal ouverts | Défauts d'isolement |
 |---|---|---|---|---|---|---|
-| 16 | 32 | 31885 | 496 | 0 | 10 | 0 |
+| 16 | 32 | 31954 | 468 | 0 | 9 | 0 |
 
-Nets du frontal à finir dans pcbnew : MUXB_OUT, RG_A, INA_INM, RG_B, INA_INP, VREF_DIV, OUT_STAGE, AMP_OUT, 5VA, GND.
+Nets du frontal à finir dans pcbnew (20 pastilles) : MUXB_OUT, RG_A,
+INA_INM, RG_B, INA_INP, LP_OUT, OUT_STAGE, 5VA (4 pastilles), GND
+(7 pastilles, les broches de masse des BAV99W surtout).
 
-DRC KiCad 7 (`tools/drc.py`, zones remplies) : 734 signalements, 361 éléments non connectés (les nets ouverts ci-dessus), erreurs restantes : aucune ; avertissements sans effet sur la fabrication : lib_footprint_issues 199, silk_over_copper 199, silk_overlap 199, via_dangling 73, track_dangling 59, silk_edge_clearance 5. Le contrôle d'isolement exact du générateur ne signale aucun défaut. Les vias d'éventail des boîtiers fins font 0,45 mm (perçage 0,2 mm), dans les capacités standard de JLCPCB, à confirmer sur le devis.
+DRC KiCad 7 (`tools/drc.py`, zones remplies) : 733 signalements, 347 éléments non connectés (les nets ouverts ci-dessus), erreurs restantes : aucune ; avertissements sans effet sur la fabrication : lib_footprint_issues 199, silk_over_copper 199, silk_overlap 199, via_dangling 73, track_dangling 58, silk_edge_clearance 5. Le contrôle d'isolement exact du générateur ne signale aucun défaut. Les vias d'éventail des boîtiers fins font 0,45 mm (perçage 0,2 mm), dans les capacités standard de JLCPCB, à confirmer sur le devis.
