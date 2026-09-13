@@ -217,3 +217,27 @@ def test_escape_stubs_only_on_fine_pitch():
     assert all(s[4] for s in stubs)
     sot = load_footprint("Package_TO_SOT_SMD:SOT-23")
     assert escape_stubs(sot, 0.0, 0.0, 0.0, {"1": "A", "2": "B", "3": "C"}) == []
+
+
+def test_reduced_layout_fits_its_board(cfg):
+    """The 2 x 2 development quadrant: same generator, one band, the strip
+    floor plan running past the coil grid into the overhang."""
+    from quadgen.circuit import build_quadrant_circuit
+    from quadgen.strip import strip_placements
+    from quadgen.variant import reduced_config
+
+    small = reduced_config(cfg)
+    q = small.plateau.quadrant
+    lay = make_layout(small)
+    p = small.pitch.plateau_mm
+    assert lay.n == 2 and len(lay.coils) == 4 and len(lay.leds) == 8
+    assert (lay.board_w, lay.board_h) == (q.front_end_strip_mm + 2 * p, 2 * p + q.strip_overhang_mm)
+    assert len(lay.band_lanes) == 1 and sorted(c.cell for c in lay.coils) == [0, 1, 2, 3]
+    for x, y in lay.mounting_holes:
+        assert 0.0 < x < lay.board_w and 0.0 < y < 2 * p
+    ckt, _chain = build_quadrant_circuit(small)
+    placements = strip_placements(small, lay, ckt)
+    assert "U4" not in placements and "U3" in placements
+    for ref, (x, y, _rot) in placements.items():
+        assert 0.0 < x < q.front_end_strip_mm, ref
+        assert 0.0 < y < lay.board_h, ref

@@ -344,6 +344,8 @@ constat.
 
 ## 7. Le schéma redessiné (fait le 13/09/2026)
 
+![Cellule de bobine du quadrant 2 x 2](../images/quadrant-2x2-cellule.png)
+
 - `analoggen/sheets.py` est le moteur : une feuille place des unités
   de symboles à des positions de gabarit et dessine les fils entre
   leurs broches ; les rails, le bus d'adresse et les nets partagés
