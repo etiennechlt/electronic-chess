@@ -238,6 +238,25 @@ quatre commandes.
   quatre cellules, un mux, huit LED, bande de frontal qui dépasse de
   2 p vers le sud, même firmware.
 
+## 17/09/2026, carte de banc fermée, cœur de boardgen corrigé
+
+- Carte de banc (shield Nucleo du quadrant 2 x 2) fermée jusqu'au
+  bout : 29 nets, zéro ouvert, DRC KiCad zéro défaut. Le DRC comptait
+  31 connexions manquantes là où le build en annonçait six : couloirs
+  de sortie des vias d'éventail sans cuivre, routes finissant sur le
+  coin arrondi d'une pastille, pastille déclarée atteinte sans preuve,
+  piste de puissance refusée le long d'une piste d'envol, seeds d'un
+  net jamais rejoints. Tous corrigés dans le cœur, qui vérifie
+  maintenant la connexité exacte de chaque net après routage
+  ([note 04](04-routeur-et-garanties.md)).
+- Les liaisons que le routeur ne trouve pas sont dessinées comme dans
+  pcbnew mais dans le générateur : éventail du FH12 à seize broches sur
+  les deux faces, sorties du buck, longues liaisons 3V3, 5V_LED et
+  AMP_OUT1 en face avant ([note 05](05-seeds-et-couloirs.md), README
+  de la carte). KiCad 7.0.11 installé dans l'environnement pour le
+  DRC ; les empreintes posées reçoivent des `tstamp` uniques, sans
+  quoi le rapport DRC nomme les mauvais éléments.
+
 ## Où en est la ligne de temps
 
 Phase 0 faite ; la phase 1 (maquette) est conçue mais ne sera pas

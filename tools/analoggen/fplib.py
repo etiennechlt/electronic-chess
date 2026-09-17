@@ -14,8 +14,10 @@ the stored pad angle is absolute.
 from __future__ import annotations
 
 import functools
+import itertools
 import math
 import re
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -35,6 +37,7 @@ class PadSpec:
     size: tuple[float, float]
     drill: float | None
     layers: tuple[str, ...]
+    rratio: float = 0.0  # corner radius of a roundrect pad, as a ratio of its smaller side
 
 
 @dataclass(frozen=True)
@@ -65,6 +68,7 @@ def load_footprint(lib_id: str) -> Footprint:
         size = find_one(pad, "size")
         drill = find_one(pad, "drill")
         layers = find_one(pad, "layers")
+        rratio = find_one(pad, "roundrect_rratio")
         drill_val = None
         if drill is not None:
             nums = [
@@ -84,6 +88,7 @@ def load_footprint(lib_id: str) -> Footprint:
                 size=(float(size[1]), float(size[2])),
                 drill=drill_val,
                 layers=tuple(str(atom(x)) for x in layers[1:]),
+                rratio=float(rratio[1]) if rratio is not None else 0.0,
             )
         )
     return Footprint(lib_id=lib_id, raw=raw, pads=tuple(pads))
@@ -108,6 +113,15 @@ def place_footprint(
 ) -> str:
     """Instance block for a .kicad_pcb (top side only)."""
     text = fp.raw
+    # the library block carries its own tstamps, the same in every instance
+    # of the footprint: KiCad names DRC items by them, so give each placed
+    # footprint its own (deterministic: the reference and the item rank)
+    rank = itertools.count()
+    text = re.sub(
+        r"\(tstamp [0-9a-fA-F-]+\)",
+        lambda m: f"(tstamp {uuid.uuid5(uuid.NAMESPACE_URL, f'{ref}/{next(rank)}')})",
+        text,
+    )
 
     # Drop any stray placement the library file might carry, then add ours.
     header_match = re.match(r'\((?:footprint|module)\s+("[^"]+"|\S+)', text)

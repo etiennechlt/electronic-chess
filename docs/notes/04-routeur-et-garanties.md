@@ -48,6 +48,52 @@ l'entrée libre dans une cellule cible (raccords par les marques qui ne
 touchaent pas le cuivre réel) et sa variante bornée ; le pré-contrôle
 de contact réel les a remplacées.
 
+## Les trous de connexité, trouvés au DRC de la carte de banc
+
+Le DRC de KiCad sur la carte de banc (17/09/2026) comptait 31
+connexions manquantes là où le bilan du build de `boardgen` n'en
+voyait que six. Cinq mécanismes, corrigés dans `boardgen/core.py` :
+
+1. **Couloir de sortie sans cuivre.** Le couloir réclamé derrière un
+   via d'éventail était une réservation de cellules, pas du cuivre :
+   une route qui commençait ou finissait dedans laissait jusqu'à 2 mm
+   de vide entre le via et la piste. Le build dessine désormais le
+   cuivre du couloir (0,2 mm, il passe l'autre rangée de vias au pas
+   des pastilles) jusqu'au point où la route s'arrête, et le vérifie.
+2. **Pastilles rondes et arrondies prises pour des rectangles.** Les
+   cellules d'arrivée couvraient la boîte englobante : une route
+   pouvait finir sur le coin d'une pastille ronde d'embase ou d'une
+   pastille `roundrect` (presque toutes les CMS), coin que KiCad ne
+   dessine pas. Les cellules d'arrivée et le contrôle d'isolement
+   utilisent la forme réelle (`pad_copper`).
+3. **Pastille supposée atteinte.** Quand aucun groupe en attente
+   n'était reconnu au bout d'une route (route finie par un via, ou sur
+   une pastille traversante vue en deux groupes), le premier groupe
+   était déclaré atteint sans preuve. Les vias comptent dans la
+   détection, une pastille traversante est un seul groupe sur toutes
+   les couches, et une route qui n'atteint rien laisse le net ouvert.
+4. **Piste de puissance le long d'une piste d'envol.** Une piste de
+   0,6 mm posée sur une piste d'envol de 0,2 mm frôlait le moignon
+   voisin à 0,10 mm ; refusée par le contrôle exact, le net restait
+   ouvert. Une route large refusée est rejouée fine avant abandon.
+5. **Seeds d'un même net vus comme déjà reliés.** Deux seeds disjoints
+   d'un net formaient d'emblée l'ensemble « relié » ; le routeur ne
+   les rejoignait jamais. Chaque seed est une pièce de cuivre comme
+   une pastille : ceux qui se touchent fusionnent sans route, les
+   autres sont routés.
+
+Le build lui-même porte maintenant la vérification que le DRC
+faisait : un contrôle de connexité exact (shapely) sur le résultat,
+chaque net une seule pièce de cuivre, le plan de masse comptant pour
+une pièce sur sa couche ; un net en morceaux est listé ouvert quoi
+qu'ait cru le routeur. Les chutes de masse choisissent une cellule
+avec 0,9 mm de cuivre libre autour, pour que le plan les atteigne, et
+chaque empreinte posée reçoit ses propres `tstamp` (les mêmes dans
+toutes les instances d'une empreinte de bibliothèque, ce qui faussait
+la lecture du rapport DRC). Les cartes de la phase 1 ont été générées
+avant ces correctifs : elles portent les mêmes trous cachés jusqu'à
+leur régénération ([note 07](07-etat-et-reste-a-faire.md)).
+
 ## Les trois garanties formelles
 
 Ordre d'exécution dans `build_pcb` : routage, puis

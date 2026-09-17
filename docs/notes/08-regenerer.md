@@ -16,7 +16,7 @@ netlists, `pcbnew` pour le DRC), ngspice, arm-none-eabi-gcc, CadQuery.
 
 ```bash
 /usr/bin/python3 tools/drc.py hardware/quadrant/quadrant.kicad_pcb hardware/brain/brain.kicad_pcb \
-    hardware/power/power.kicad_pcb hardware/clock/clock.kicad_pcb
+    hardware/power/power.kicad_pcb hardware/clock/clock.kicad_pcb hardware/bench/bench.kicad_pcb
 ```
 
 Avec le Python qui porte le module `pcbnew` de KiCad (celui du système
@@ -154,7 +154,10 @@ PYTHONPATH=tools .venv/bin/python -m boardgen build bench --render docs/images/b
 
 Régénère `hardware/bench/` (projet KiCad, BOM, placements) depuis la
 section `bench` du yaml : embases Arduino sur l'empreinte officielle
-`Arduino_UNO_R3`, bus du quadrant sur les broches de `bench.signals`.
+`Arduino_UNO_R3`, bus du quadrant sur les broches de `bench.signals`,
+routes manuelles de l'éventail FPC et du buck redessinées et vérifiées
+à chaque build ; le build échoue si un net reste ouvert ou si une
+route manuelle ne passe plus.
 
 ## Firmware
 

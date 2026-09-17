@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from analoggen.circuit import C1206, CP, DSS34, DTVS, FB, JACK, LDO, TP, C, Circuit, Part, R
 from analoggen.fplib import load_footprint
+from quadgen.escape import FANOUT_VIA_DRILL_MM, FANOUT_VIA_PAD_MM, STUB_BEYOND_MM, STUB_WIDTH_MM
 
 from chessboard_calc.config import BoardConfig
 
@@ -224,7 +225,8 @@ def bench_placements(ckt: Circuit) -> dict[str, tuple[float, float, float]]:
     out["J1"] = (66.0, 13.5, 180.0)  # plug from the east
     out["J2"] = (72.75, 50.5, 0.0)  # cable leaves south, pads face north
     # east strip: LED buffer and the LED_END test point under the jack
-    out.update(shelf(["U3", "R5", "C12", "TP1"], ckt, 64.0, 79.5, 20.0, upright=True))
+    out.update(shelf(["U3", "R5", "C12"], ckt, 64.0, 79.5, 20.0, upright=True))
+    out["TP1"] = (78.5, 40.0, 0.0)  # LED_END, by the FPC: its lane reaches it from the fan
     # centre column: ADC filter under A0, 12 V input under the jack, analog island by the link
     out.update(shelf(["R6", "C13", "TP7"], ckt, 44.0, 63.0, 8.0, upright=True))
     out.update(shelf(["C1", "D2", "D1"], ckt, 40.0, 63.0, 12.5, upright=True))
@@ -238,6 +240,294 @@ def bench_placements(ckt: Circuit) -> dict[str, tuple[float, float, float]]:
     return out
 
 
+# The FPC row is fanned out by hand (no fanout via in the ground pour):
+BOARD_OPTIONS = {"plain_fanout": ("J2",)}
+FAN_PITCH_MM = 0.6  # lane pitch of the fans: 0.3 mm tracks, 0.3 mm apart
+FAN_STAGGER_MM = 1.2  # a lane ends this much past the one below: room for a via at its end
+FAN_GND_VIA_MM = 47.4  # the ground pins drop to the pour at their runway end
+FAN_VIA_ROWS_MM = (46.9, 46.2)  # the fanout via rows of the escape module, past the stubs
+# west fan on the top layer: pin, first lane, first lane end
+FAN_WEST = ((2, 4, 5, 10), 46.8, 66.0)
+# east fan on the top layer, then north along the east strip
+FAN_EAST = ((14, 13, 12, 11), 45.6, 78.2)
+FAN_EAST_PITCH_MM = 0.75  # a via fits at every lane end
+# south fan on the back layer, under the connector, to the digital header
+FAN_SOUTH = ((6, 8, 9, 15), 49.8, 66.2, 53.4)
+FAN_SOUTH_ROW = {6: 0, 8: 0, 9: 1, 15: 0}  # via row of each pin
+J4_ROW_Y_MM = 2.4  # a lane north of the analog header pads, above the row
+VIN_LANE_Y_MM = 30.0  # VIN crosses the board on the back, between the link and the input
+LED_DIN1_UP_MM = 32.0  # LED_DIN1 comes back to the top layer here, under the VIN lane
+U1_5V_EXIT_MM = 2.15  # the 5 V pad of the north side leaves along its corridor
+
+
+def hand_routes(gb: GenericBoard) -> None:
+    """Escapes the router cannot find, drawn before it runs (seeds); the
+    router starts from them and finishes every net. What a human draws in
+    pcbnew, kept in the generator so every build redraws and checks it.
+
+    J2, sixteen FPC pads at 0.5 mm facing north. Every pin leaves its
+    stub on a 0.2 mm column. West pins turn into 0.3 mm lanes heading
+    west, the outermost first and the next a lane higher, so no lane
+    crosses a column; the lanes end staggered so a via fits past each
+    end. The pins bound for the digital header get a small via at the
+    fanout rows and run south on the back layer, under the connector,
+    then along the board edge below the header into their pads; VIN and
+    LED_DIN1 likewise north. The pins bound for the analog header and
+    the test point fan out east, then north along the east strip:
+    MUX_EN_L along the pad row into the last pin, MUX_EN_H above the row
+    on the top layer, PULSE_EN on the back layer (the two would cross
+    otherwise), LED_END into its test point by the connector. The ground
+    pins drop to the pour at their runway end.
+
+    The long links the router loses once the rest is routed, on the top
+    layer so the pour stays whole: 3V3 up west of C9, under the headers
+    into J3, then west and down between C6 and R3 to its test point and
+    capacitor; 5V_LED and AMP_OUT1 one lane lower each, to the LED fuse
+    and the ADC filter (5V_LED hops to the back layer past the 3V3
+    rise); VIN across the board on the back layer to its test point.
+
+    U1, the QFN of the buck: a 0.2 mm bar across the stub ends ties the
+    three SW pads, another the three VIN pads (the wide power track the
+    router draws along a runway brushes the neighbouring stub). SW leaves
+    from its fanout via on the back layer to the inductor, VIN from its
+    fanout via east to a via by C4 and on to the input capacitor, the
+    5 V pad of the north side along its exit corridor, thin where it
+    passes the fanout vias; the ground pins are bridged to the thermal
+    pad. U2: its two VIN pins tied around the ground pin, LDO_BP around
+    the bead to its capacitor. The ground pads of U2 and R4, walled in
+    by their neighbours, get a short stub and a small via to the pour.
+    """
+    pads = {(p.ref, p.number): p for p in gb.res.pads}
+    thin, lane, back = STUB_WIDTH_MM, gb.spec.track, gb.spec.gnd_layer
+    small = (FANOUT_VIA_PAD_MM, FANOUT_VIA_DRILL_MM)
+
+    def T(net, layer, pts, width):
+        gb.seed(net, layer, [(round(x, 3), round(y, 3)) for x, y in pts], width)
+
+    def V(net, x, y, size=None):
+        gb.seed_via(net, round(x, 3), round(y, 3), *(size or (None, None)))
+
+    # ---- J2 fans
+    j2 = {int(p.number): p for (ref, _n), p in pads.items() if ref == "J2" and p.number.isdigit()}
+    top = {k: p.y - (p.h / 2.0 + STUB_BEYOND_MM) for k, p in j2.items()}  # stub ends
+    for k, p in j2.items():
+        if p.net == GND:
+            T(GND, "F.Cu", [(p.x, top[k]), (p.x, FAN_GND_VIA_MM)], thin)
+            V(GND, p.x, FAN_GND_VIA_MM, small)
+    ends = {}  # lane end of every fanned pin, by net
+    pins, y0, x0 = FAN_WEST
+    for i, k in enumerate(pins):
+        p, y = j2[k], y0 - FAN_PITCH_MM * i
+        T(p.net, "F.Cu", [(p.x, top[k]), (p.x, y)], thin)
+        T(p.net, "F.Cu", [(p.x, y), (x0 - FAN_STAGGER_MM * i, y)], lane)
+        ends[p.net] = (x0 - FAN_STAGGER_MM * i, y)
+    pins, y0, x_turn0, y_low0 = FAN_SOUTH
+    header = {p.net: p for (ref, _n), p in pads.items() if ref == "J5"}
+    for i, k in enumerate(pins):
+        p = j2[k]
+        y_via = FAN_VIA_ROWS_MM[FAN_SOUTH_ROW[k]]
+        y_lane, x_turn, y_low = (v + FAN_PITCH_MM * i for v in (y0, x_turn0, y_low0))
+        T(p.net, "F.Cu", [(p.x, top[k]), (p.x, y_via)], thin)
+        V(p.net, p.x, y_via, small)
+        T(p.net, back, [(p.x, y_via), (p.x, y_lane)], thin)
+        h = header[p.net]
+        T(
+            p.net,
+            back,
+            [(p.x, y_lane), (x_turn, y_lane), (x_turn, y_low), (h.x, y_low), (h.x, h.y)],
+            lane,
+        )
+    p16 = j2[16]  # VIN: a small via at the second row, north then west on the back
+    T(p16.net, "F.Cu", [(p16.x, top[16]), (p16.x, FAN_VIA_ROWS_MM[1])], thin)
+    V(p16.net, p16.x, FAN_VIA_ROWS_MM[1], small)
+    tp6 = pads[("TP6", "1")]  # layer to its test point, by the input filter
+    x_tp6 = round(tp6.x + 1.0, 3)
+    T(
+        p16.net,
+        back,
+        [(p16.x, FAN_VIA_ROWS_MM[1]), (p16.x, VIN_LANE_Y_MM), (x_tp6, VIN_LANE_Y_MM)],
+        0.4,
+    )
+    V(p16.net, x_tp6, VIN_LANE_Y_MM)
+    T(p16.net, "F.Cu", [(x_tp6, VIN_LANE_Y_MM), (tp6.x, tp6.y + 0.4)], 0.4)
+    p7 = j2[7]  # LED_DIN1: a small via at the second row, north on the back layer,
+    # then on the top layer past C12 into R5 (the west lanes cross its column)
+    T(p7.net, "F.Cu", [(p7.x, top[7]), (p7.x, FAN_VIA_ROWS_MM[1])], thin)
+    V(p7.net, p7.x, FAN_VIA_ROWS_MM[1], small)
+    T(p7.net, back, [(p7.x, FAN_VIA_ROWS_MM[1]), (p7.x, LED_DIN1_UP_MM)], lane)
+    V(p7.net, p7.x, LED_DIN1_UP_MM)
+    r5 = pads[("R5", "2")]
+    x_r5 = round(r5.x + r5.h / 2.0 + 1.0, 3)  # between R5 and C12
+    T(
+        p7.net,
+        "F.Cu",
+        [
+            (p7.x, LED_DIN1_UP_MM),
+            (p7.x, 26.0),
+            (x_r5, 26.0 - (p7.x - x_r5)),
+            (x_r5, r5.y),
+            (r5.x, r5.y),
+        ],
+        lane,
+    )
+    pins, y0, x0 = FAN_EAST
+    for i, k in enumerate(pins):
+        p, y, x_end = j2[k], y0 - FAN_EAST_PITCH_MM * i, x0 - FAN_PITCH_MM * i
+        T(p.net, "F.Cu", [(p.x, top[k]), (p.x, y)], thin)
+        T(p.net, "F.Cu", [(p.x, y), (x_end, y)], lane)
+        ends[p.net] = (x_end, y)
+    analog = {p.net: p for (ref, _n), p in pads.items() if ref == "J4"}
+    x, y = ends["PULSE_EN"]  # back layer along the east edge, above the row, into its pin
+    V("PULSE_EN", x, y)
+    h = analog["PULSE_EN"]
+    T(
+        "PULSE_EN",
+        back,
+        [(x, y), (x + 0.3, y - 0.3), (x + 0.3, J4_ROW_Y_MM), (h.x, J4_ROW_Y_MM), (h.x, h.y)],
+        lane,
+    )
+    x, y = ends["MUX_EN_H"]
+    h = analog["MUX_EN_H"]
+    T("MUX_EN_H", "F.Cu", [(x, y), (x, J4_ROW_Y_MM), (h.x, J4_ROW_Y_MM), (h.x, h.y)], lane)
+    x, y = ends["MUX_EN_L"]
+    h = analog["MUX_EN_L"]  # the last pin of the row, entered along the row
+    T("MUX_EN_L", "F.Cu", [(x, y), (x, h.y), (h.x, h.y)], lane)
+    x, y = ends["LED_END"]
+    tp = pads[("TP1", "1")]
+    T("LED_END", "F.Cu", [(x, y), (x, tp.y + 1.5), (tp.x, tp.y + 0.6)], lane)
+    # ---- U1, the buck
+    sw = [pads[("U1", n)] for n in ("1", "2", "3")]  # west side, stubs run west
+    x_bar = round(sw[0].x - sw[0].w / 2.0 - STUB_BEYOND_MM + 0.09, 3)  # on the stub end caps
+    T("SW", "F.Cu", [(x_bar, sw[0].y), (x_bar, sw[-1].y)], thin)
+    sw_via = (round(x_bar - 0.09 - 1.5, 3), sw[-1].y)  # fanout via of pad 3 (runway 1.5 mm)
+    inductor = pads[("L1", "1")]
+    y_sw = 13.25  # between the 5 V and the LED rail the router lays on the back
+    x_up = round(inductor.x + inductor.h / 2.0 + 1.3, 3)  # a via east of the inductor pad
+    T("SW", back, [sw_via, (sw_via[0] - 0.6, y_sw), (x_up, y_sw)], 0.4)
+    V("SW", x_up, y_sw)
+    T("SW", "F.Cu", [(x_up, y_sw), (inductor.x + inductor.h / 2.0 - 0.2, y_sw)], 0.4)
+    vin = [pads[("U1", n)] for n in ("10", "11", "12")]  # east side, stubs run east
+    x_bar = round(vin[0].x + vin[0].w / 2.0 + STUB_BEYOND_MM - 0.09, 3)
+    T("VIN", "F.Cu", [(x_bar, vin[-1].y), (x_bar, vin[0].y)], thin)
+    vin_via = (round(x_bar + 0.09 + 0.8, 3), vin[-1].y)  # fanout via of pad 12 (runway 0.8 mm)
+    c4 = pads[("C4", "2")]
+    x_out = round(c4.x + c4.h / 2.0 + 0.9, 3)  # east of C4
+    T("VIN", back, [vin_via, (x_out, vin_via[1])], 0.4)
+    V("VIN", x_out, vin_via[1])
+    c1 = pads[("C1", "1")]  # then to the input capacitor, along its north edge
+    y_c1 = round(c1.y - c1.w / 2.0, 3)
+    T(
+        "VIN",
+        "F.Cu",
+        [(x_out, vin_via[1]), (x_out, y_c1), (c1.x, y_c1), (c1.x, c1.y)],
+        gb.spec.power_track,
+    )
+    p14 = pads[("U1", "14")]  # north side, stub runs north, via 0.8 mm past the stub
+    v14 = (p14.x, round(p14.y - p14.h / 2.0 - STUB_BEYOND_MM - 0.8, 3))
+    y_top = round(v14[1] - U1_5V_EXIT_MM, 3)
+    T("5V", back, [v14, (v14[0], y_top)], thin)
+    T("5V", back, [(v14[0], y_top), (v14[0] - 5.0, y_top)], 0.4)
+    # ---- VIN: the two input pins of the LDO, either side of its ground pin,
+    # tied by a bar south of the package
+    u2_1, u2_3 = pads[("U2", "1")], pads[("U2", "3")]
+    y_bar = round(u2_1.y + u2_1.w / 2.0 + 0.85, 3)
+    T("VIN", "F.Cu", [(u2_1.x, u2_1.y), (u2_1.x, y_bar), (u2_3.x, y_bar), (u2_3.x, u2_3.y)], 0.4)
+    # ---- 3V3: from its lane end north between C9 and the input diodes, then
+    # under the analog header into J3, and west under the analog island to
+    # its test point and its capacitor
+    x_3v3, y_3v3 = ends["3V3"]
+    c9 = pads[("C9", "1")]
+    x_up = round(c9.x - c9.h / 2.0 - 0.6, 3)
+    j3 = pads[("J3", "4")]
+    y_row = round(j3.y + j3.h / 2.0 + 1.3, 3)
+    T(
+        "3V3",
+        "F.Cu",
+        [(x_3v3, y_3v3), (x_up, y_3v3), (x_up, y_row), (j3.x, y_row), (j3.x, j3.y)],
+        lane,
+    )
+    tp4, c14, tp5 = pads[("TP4", "1")], pads[("C14", "1")], pads[("TP5", "1")]
+    c6 = pads[("C6", "2")]
+    x_west = round(c6.x + c6.h / 2.0 + 0.55, 3)  # down between C6 and R3
+    y_tp = round(tp5.y + tp5.h / 2.0 + 0.75, 3)  # below the ground test point
+    T(
+        "3V3",
+        "F.Cu",
+        [(j3.x, y_row), (x_west, y_row), (x_west, y_tp), (tp4.x, y_tp), (tp4.x, tp4.y)],
+        lane,
+    )
+    T("3V3", "F.Cu", [(tp4.x, y_tp), (c14.x, y_tp), (c14.x, c14.y)], lane)
+    # ---- 5V_LED and AMP_OUT1: from their lane ends north along the link side
+    # of the board, then west under the headers (5V_LED to the LED fuse, the
+    # analog signal to its filter), on the top layer: the ground pour under
+    # the analog header stays whole
+    x_led, y_led = ends["5V_LED"]
+    x_led_up = round(c9.x + c9.h / 2.0 + 0.6, 3)  # east of C9
+    y_led_row = round(y_row + 0.78, 3)
+    wide = gb.spec.power_track
+    # the 3V3 rise stands between the LED rail and its fuse: a hop on the back
+    x_hop = (round(x_up + 0.85, 3), round(x_up - 1.55, 3))
+    T(
+        "5V_LED",
+        "F.Cu",
+        [(x_led, y_led), (x_led_up, y_led), (x_led_up, y_led_row), (x_hop[0], y_led_row)],
+        wide,
+    )
+    V("5V_LED", x_hop[0], y_led_row)
+    T("5V_LED", back, [(x_hop[0], y_led_row), (x_hop[1], y_led_row)], wide)
+    V("5V_LED", x_hop[1], y_led_row)
+    f2 = pads[("F2", "2")]
+    T("5V_LED", "F.Cu", [(x_hop[1], y_led_row), (f2.x, y_led_row), (f2.x, f2.y)], wide)
+    x_amp, y_amp = ends["AMP_OUT1"]  # its lane lies under the 3V3 lane: west of the 3V3 rise
+    x_amp_up = round(x_up - 0.6, 3)
+    y_amp_row = round(y_led_row + 0.8, 3)
+    r6 = pads[("R6", "1")]
+    x_r6 = round(r6.x - r6.h / 2.0 - 0.7, 3)  # west of R6, past its ADC pad
+    T(
+        "AMP_OUT1",
+        "F.Cu",
+        [
+            (x_amp, y_amp),
+            (x_amp_up, y_amp),
+            (x_amp_up, y_amp_row),
+            (x_r6, y_amp_row),
+            (x_r6, r6.y),
+            (r6.x, r6.y),
+        ],
+        lane,
+    )
+    # ---- LDO_BP: the bypass pin of the LDO to its capacitor, around the bead
+    u2_4, c8 = pads[("U2", "4")], pads[("C8", "1")]
+    fb1 = pads[("FB1", "1")]
+    y_over = round(pads[("FB1", "2")].y - pads[("FB1", "2")].h / 2.0 - 0.5, 3)
+    x_pass = round(fb1.x + fb1.h / 2.0 + 0.7, 3)
+    y_under = round(c8.y + c8.h / 2.0 + 0.7, 3)
+    T(
+        "LDO_BP",
+        "F.Cu",
+        [
+            (u2_4.x, u2_4.y),
+            (u2_4.x, y_over),
+            (x_pass, y_over),
+            (x_pass, y_under),
+            (c8.x, y_under),
+            (c8.x, c8.y),
+        ],
+        lane,
+    )
+    # ---- the ground pins of the QFN reach its thermal pad by a short bridge
+    # (their fanout vias sit in pockets the buck's tracks cut out of the pour)
+    ep = pads[("U1", "17")]
+    for num in ("6", "7", "15", "16"):
+        p = pads[("U1", num)]
+        T(GND, "F.Cu", [(p.x, p.y), (p.x, ep.y)], thin)
+    # ---- ground pads walled in by their neighbours
+    for ref, num, dy in (("U2", "2", -1.15), ("R4", "2", -1.05)):
+        p = pads[(ref, num)]
+        T(GND, "F.Cu", [(p.x, p.y), (p.x, p.y + dy)], thin)
+        V(GND, p.x, p.y + dy, small)
+
+
 def build_bench(cfg: BoardConfig):
     ckt = build_bench_circuit(cfg)
     if (
@@ -245,8 +535,9 @@ def build_bench(cfg: BoardConfig):
         or cfg.bench.shield.layers != SPEC.layers
     ):
         raise ValueError("bench.shield.board_mm / layers disagree with boardgen.bench.SPEC")
-    gb = GenericBoard(SPEC, ckt, bench_placements(ckt), generator="boardgen")
+    gb = GenericBoard(SPEC, ckt, bench_placements(ckt), generator="boardgen", **BOARD_OPTIONS)
     gb.place_all()
+    hand_routes(gb)
     gb.route_all()
     return gb.finish(
         texts=[

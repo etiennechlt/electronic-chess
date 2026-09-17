@@ -89,6 +89,15 @@ fermer les nets ouverts, trancher le LDO 5VA, la CTN des cellules, le
 plafond de luminosité et le type des nappes, confirmer trois points sur
 les fiches, compléter les codes LCSC.
 
+**Complément du 17/09/2026.** La fermeture de la carte de banc
+([note 19](19-cerveau-et-banc-nucleo.md)) a montré que le bilan de
+`boardgen` sous-comptait les nets ouverts (couloirs de sortie sans
+cuivre, pastilles rondes, voir la
+[note 04](04-routeur-et-garanties.md)) ; le cœur est corrigé et
+vérifie désormais la connexité exacte. Cerveau, puissance, moteurs et
+horloge ont été générés avant : à régénérer avec le runbook, relire
+leurs nets ouverts, puis `tools/drc.py`.
+
 ### 2. Simulation
 
 **Quoi.** Lancer `chain-spice.cir` (AD8421 puis Sallen-Key) et écrire

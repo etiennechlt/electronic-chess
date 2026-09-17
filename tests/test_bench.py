@@ -79,3 +79,19 @@ def test_shield_rows_sit_on_the_uno_pattern(cfg):
             px, py = pad_abs_pos(x, y, rot, pad)
             ux, uy = uno[str(int(first) + k)]
             assert abs(px - (ox + ux)) < 0.01 and abs(py - (oy + uy)) < 0.01, (ref, k, labels[k])
+
+
+@pytest.mark.skipif(not FOOTPRINT_DIR.exists(), reason="KiCad libraries not installed")
+def test_bench_board_is_closed(cfg):
+    """The bench board routes to the end: every net one piece of copper
+    (the exact connectivity check of the core), no clearance error, and the
+    hand routes of the FPC fan and the buck drawn where the generator says."""
+    from boardgen.bench import build_bench
+
+    res = build_bench(cfg)
+    assert res.open_nets == []
+    assert res.unconnected == []
+    assert res.clearance_errors == []
+    seeded = {t.net for t in res.tracks}
+    assert {"MUX_EN_L", "PULSE_EN", "3V3", "SW", "VIN", "AMP_OUT1", "5V_LED"} <= seeded
+    assert res.routed_nets == len({p.net for p in res.pads if p.net}) - 0  # every net closed

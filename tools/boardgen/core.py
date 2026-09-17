@@ -30,6 +30,7 @@ from quadgen.escape import (
     escape_stubs,
     exit_cells,
     free_stubs,
+    plain_stub,
     reclaim_stubs,
     runway_end,
     stub_cells,
@@ -119,9 +120,33 @@ class PadItem:
     ref: str
     number: str
     drill: float = 0.0  # plated hole of a through pad, 0 for SMD
+    shape: str = "rect"  # KiCad pad shape: rect, roundrect, oval, circle, custom
+    rratio: float = 0.0  # corner radius of a roundrect pad over its smaller side
+
+
+def pad_copper(p: PadItem):
+    """The copper of a pad as a shapely shape: the stadium of an oval or
+    circular pad (a through pad of a pin header), the rounded rectangle of
+    a roundrect pad (most SMD pads), else its rectangle. A track that ends
+    on a corner the shape cuts off is open for KiCad."""
+    from shapely import affinity
+
+    if p.shape in ("circle", "oval"):
+        r = min(p.w, p.h) / 2.0
+        if p.w >= p.h:
+            g = LineString([(-p.w / 2.0 + r, 0.0), (p.w / 2.0 - r, 0.0)]).buffer(r)
+        else:
+            g = LineString([(0.0, -p.h / 2.0 + r), (0.0, p.h / 2.0 - r)]).buffer(r)
+    elif p.shape == "roundrect" and p.rratio > 0:
+        r = min(p.w, p.h) * p.rratio
+        g = box(-p.w / 2.0 + r, -p.h / 2.0 + r, p.w / 2.0 - r, p.h / 2.0 - r).buffer(r)
+    else:
+        g = box(-p.w / 2.0, -p.h / 2.0, p.w / 2.0, p.h / 2.0)
+    return affinity.translate(affinity.rotate(g, -p.rot, origin=(0, 0)), p.x, p.y)
 
 
 HOLE_TO_HOLE_MM = 0.25  # fabrication: drill edge to drill edge
+POUR_REACH_MM = 0.9  # free lattice around a ground drop so the pour reaches it
 CHECK_SLOP_MM = 0.001  # numerical slop of the exact clearance checks
 
 
@@ -138,6 +163,7 @@ class Result:
     open_nets: list[str] = field(default_factory=list)
     routed_nets: int = 0
     clearance_errors: list[str] = field(default_factory=list)
+    unconnected: list[str] = field(default_factory=list)  # nets in pieces after routing
 
 
 class GenericBoard:
@@ -149,8 +175,12 @@ class GenericBoard:
         generator: str = "boardgen",
         overhang: tuple[str, ...] = (),
         courtyards: dict[str, tuple[float, float, float, float]] | None = None,
+        plain_fanout: tuple[str, ...] = (),
     ) -> None:
         self.spec = spec
+        # fine-pitch parts whose stubs get no fanout via: their escapes are
+        # drawn by hand as seeds (a connector row fanned out on the top layer)
+        self.plain_fanout = set(plain_fanout)
         self.circuit = circuit
         self.placements = placements
         # parts whose courtyard may leave the board: a radio module whose
@@ -167,6 +197,7 @@ class GenericBoard:
         self.res = Result(board=self.board, spec=spec, circuit=circuit, placements=placements)
         self.by_ref = {c.ref: c for c in circuit.components}
         self.seeds: list[tuple[str, str, float, list]] = []
+        self.seed_vias: list[tuple[str, float, float, float | None, float | None]] = []
         self.stubs: list[tuple[str, list, float, bool]] = []
         # fanout exits continue on the first inner signal layer (or the back)
         self.exit_layer = "In2.Cu" if "In2.Cu" in self.layers else self.layers[-1]
@@ -196,7 +227,16 @@ class GenericBoard:
         self.res.vias.append(Via(net, float(x), float(y), pad, drill))
 
     def seed(self, net: str, layer: str, pts, width: float | None = None) -> None:
+        """A track drawn by hand before routing: the router starts from it
+        and connects the net's pads to it (an escape the lattice cannot
+        find, a corridor kept free for a net routed late)."""
         self.seeds.append((net, layer, width or self.spec.power_track, list(pts)))
+
+    def seed_via(
+        self, net: str, x: float, y: float, pad: float | None = None, drill: float | None = None
+    ) -> None:
+        """A via drawn by hand before routing, part of the net's seed."""
+        self.seed_vias.append((net, float(x), float(y), pad, drill))
 
     def hole(self, x: float, y: float, d: float, ref: str) -> None:
         self.board.npth_hole(x, y, d, ref=ref)
@@ -233,13 +273,27 @@ class GenericBoard:
                 for layer in pad.layers:
                     if layer in self.layers or layer == "*.Cu":
                         item = PadItem(
-                            net, layer, px, py, sw, sh, rot + pad.rot, comp.ref, pad.number, drill
+                            net,
+                            layer,
+                            px,
+                            py,
+                            sw,
+                            sh,
+                            rot + pad.rot,
+                            comp.ref,
+                            pad.number,
+                            drill,
+                            pad.shape,
+                            pad.rratio,
                         )
                         self.res.pads.append(item)
                         break
                 if pad.kind == "np_thru_hole" and pad.drill:
                     self.res.holes.append((px, py, pad.drill))
-            pending.extend(escape_stubs(fp, x, y, rot, dict(comp.pins)))
+            stubs = escape_stubs(fp, x, y, rot, dict(comp.pins))
+            if comp.ref in self.plain_fanout:
+                stubs = [plain_stub(st) for st in stubs]
+            pending.extend(stubs)
         self._check_courtyards()
         sp = self.spec
         kept = free_stubs(
@@ -326,15 +380,37 @@ class GenericBoard:
         self.keepout_rects.append((x0, y0, x1, y1, name))
         self.board.keepout_zone(self.layers, [(x0, y0), (x1, y0), (x1, y1), (x0, y1)], name)
 
+    def _pad_cells(self, mr: MultiRouter, p: PadItem) -> list[tuple[int, int]]:
+        """Lattice cells a route may start or end on inside the pad: cells
+        of its copper, never a corner of the bounding box of a round pad."""
+        cells = mr.cells_of_rect(p.x, p.y, p.w, p.h, p.rot)
+        if p.shape in ("circle", "oval") or (p.shape == "roundrect" and p.rratio > 0):
+            g = pad_copper(p).buffer(-0.02)
+            cells = [
+                (i, j)
+                for i, j in cells
+                if g.covers(Point(mr.x0 + i * mr.grid, mr.y0 + j * mr.grid))
+            ]
+        return cells
+
     def route_all(
-        self, gnd: str = "GND", max_nodes: int = 1_500_000, only: set[str] | None = None
+        self,
+        gnd: str = "GND",
+        max_nodes: int = 1_500_000,
+        only: set[str] | None = None,
+        first: tuple[str, ...] = (),
     ) -> None:
         """Power nets first on a lattice inflated for the wide track, then
         the signals on a lattice inflated for the thin one; every result is
-        painted into both so the two views never disagree."""
+        painted into both so the two views never disagree. `first` names
+        nets routed before every other (a net the fanout of its package
+        walls in once its neighbours are out)."""
         sp = self.spec
+        self.route_first = tuple(first)
         for net, layer, width, pts in self.seeds:
             self.track(net, layer, pts, width)
+        for net, x, y, pad, drill in self.seed_vias:
+            self.via(net, x, y, pad, drill)
         routers = {
             "power": self._new_router(sp.power_track / 2.0),
             "signal": self._new_router(sp.track / 2.0),
@@ -350,29 +426,60 @@ class GenericBoard:
             if p.net == "":
                 continue
             layers = self.layers if p.layer == "*.Cu" else [p.layer]
-            for la in layers:
-                cells = ref.cells_of_rect(p.x, p.y, p.w, p.h, p.rot)
-                # an escape stub joins its pad's group: the router may start
-                # or end anywhere along it, in particular at the free end
-                stub = stub_at.get((round(p.x, 2), round(p.y, 2)))
-                attached: list = []  # same group, other layers (fanout via)
-                if stub is not None and la == "F.Cu":
-                    pts, rw, via = stub
-                    cells = cells + stub_cells(ref, pts, rw)
-                    if via:
-                        vc = ref.cell(*runway_end(pts, rw))
-                        attached = [(other, [vc]) for other in self.layers if other != la]
-                        attached.append((self.exit_layer, exit_cells(ref, pts, rw)))
-                if cells:
-                    pad_cells.setdefault(p.net, []).append((la, cells, attached))
+            cells = self._pad_cells(ref, p)
+            if not cells:
+                continue
+            la = layers[0]
+            # a through pad is one piece of copper on every layer: one group
+            attached: list = [(other, list(cells)) for other in layers[1:]]
+            # an escape stub joins its pad's group: the router may start
+            # or end anywhere along it, in particular at the free end
+            stub = stub_at.get((round(p.x, 2), round(p.y, 2)))
+            if stub is not None and la == "F.Cu":
+                pts, rw, via = stub
+                cells = cells + stub_cells(ref, pts, rw)
+                if via:
+                    vc = ref.cell(*runway_end(pts, rw))
+                    attached = [(other, [vc]) for other in self.layers if other != la]
+                    attached.append((self.exit_layer, exit_cells(ref, pts, rw)))
+            pad_cells.setdefault(p.net, []).append((la, cells, attached))
         seed_cells: dict[str, list] = {}
         for net, layer, _w, pts in self.seeds:
             for a, b in zip(pts, pts[1:], strict=False):
-                cells = [
-                    ref.cell(a[0] + (b[0] - a[0]) * k / 30.0, a[1] + (b[1] - a[1]) * k / 30.0)
-                    for k in range(31)
-                ]
+                n = max(30, int(math.hypot(b[0] - a[0], b[1] - a[1]) / sp.grid * 2))
+                cells = sorted(
+                    {
+                        ref.cell(a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n)
+                        for k in range(n + 1)
+                    }
+                )
                 seed_cells.setdefault(net, []).append((layer, cells, []))
+        for net, x, y, _pad, _drill in self.seed_vias:
+            cell = [ref.cell(x, y)]
+            attached = [(la, cell) for la in self.layers[1:]]
+            seed_cells.setdefault(net, []).append((self.layers[0], cell, attached))
+        # like the stubs, a seed keeps its own cells whatever the neighbours'
+        # inflation says: a fan drawn by hand at the pad pitch is legal for
+        # the exact rule, not for the lattice, whose slack exceeds the pitch
+        seed_claims = [
+            (net, la, cells) for net, groups in seed_cells.items() for la, cells, _a in groups
+        ]
+
+        def reclaim_seeds(mr):
+            for net, la, cells in seed_claims:
+                nid = mr.nid(net)
+                own = mr.own[la]
+                for i, j in cells:
+                    own[j, i] = nid
+
+        for mr in routers.values():
+            reclaim_seeds(mr)
+        # fanout vias of every net: a route that starts or ends inside the
+        # exit corridor of one gets the corridor's copper drawn to the via
+        fanout: dict[str, list] = {}
+        for net, pts, rw, via in self.stubs:
+            if via:
+                fanout.setdefault(net, []).append((runway_end(pts, rw), pts, rw))
 
         def span(net):
             pts = [(p.x, p.y) for p in self.res.pads if p.net == net]
@@ -388,6 +495,7 @@ class GenericBoard:
                 for x, y in vias:
                     mr.disc(net, self.layers, x, y, sp.via_pad / 2.0)
                 reclaim_stubs(mr, self.stubs, exit_layer=self.exit_layer)
+                reclaim_seeds(mr)
 
         power = [n for n in pad_cells if n in sp.power_nets and n != gnd]
         signals = [n for n in pad_cells if n not in sp.power_nets and n != gnd]
@@ -400,6 +508,9 @@ class GenericBoard:
         first = [n for n in signals if n in fine]
         rest = [n for n in signals if n not in fine]
         order = sorted(first, key=span) + sorted(power, key=span) + sorted(rest, key=span)
+        order = [n for n in self.route_first if n in order] + [
+            n for n in order if n not in self.route_first
+        ]
         if only is not None:
             order = [n for n in order if n in only]
         for net in order:
@@ -408,8 +519,12 @@ class GenericBoard:
             groups = list(pad_cells.get(net, []))
             if len(groups) + len(seed_cells.get(net, [])) < 2:
                 continue
-            connected = list(seed_cells.get(net, [])) or [groups.pop(0)]
-            pending = groups
+            # the seeds are pieces of copper like the pads: two seeds of a
+            # net that do not touch get routed together (touching ones merge
+            # without a route)
+            seeds_of = list(seed_cells.get(net, []))
+            connected = [seeds_of.pop(0)] if seeds_of else [groups.pop(0)]
+            pending = seeds_of + groups
             ok = True
             while pending:
                 starts: dict[str, list] = {}
@@ -417,6 +532,18 @@ class GenericBoard:
                     starts.setdefault(la, []).extend(cells)
                     for ola, ocells in attached:
                         starts.setdefault(ola, []).extend(ocells)
+                # a pad the connected copper already touches (a seed drawn
+                # from its stub, a via in it) needs no route
+                touching = []
+                for k, (pla, cells, attached) in enumerate(pending):
+                    if set(cells) & set(starts.get(pla, [])) or any(
+                        set(oc) & set(starts.get(ola, [])) for ola, oc in attached
+                    ):
+                        touching.append(k)
+                if touching:
+                    for k in sorted(touching, reverse=True):
+                        connected.append(pending.pop(k))
+                    continue
                 goals: dict[str, list] = {}
                 for la, cells, attached in pending:
                     goals.setdefault(la, []).extend(cells)
@@ -447,49 +574,118 @@ class GenericBoard:
                     break
                 tracks, vias = found
                 clash = self._route_clash(net, tracks, vias, width)
+                if clash and mr is routers["power"]:
+                    # the wide track brushes a pad or a stub of the fine-pitch
+                    # package it leaves: finish thin
+                    mr, width = routers["signal"], sp.track
+                    found = mr.route(net, starts, goals, max_nodes=max_nodes)
+                    if found is not None:
+                        tracks, vias = found
+                        clash = self._route_clash(net, tracks, vias, width)
                 if clash:
                     # the lattice is conservative but not exact: a route that
                     # would fail the real clearance is dropped, never drawn
                     self.res.open_nets.append(f"{net}: route rejected, {clash}")
                     ok = False
                     break
+                exits = self._exit_copper(mr, net, tracks, fanout.get(net, []))
+                clash = self._route_clash(net, exits, [], STUB_WIDTH_MM) if exits else None
+                if clash:
+                    self.res.open_nets.append(f"{net}: exit corridor blocked, {clash}")
+                    ok = False
+                    break
                 for la, pts in tracks:
                     self.track(net, la, pts, width)
                     connected.append((la, [mr.cell(x, y) for x, y in pts], []))
+                for la, pts in exits:
+                    self.track(net, la, pts, STUB_WIDTH_MM)
                 for x, y in vias:
                     self.via(net, x, y)
                 paint(net, tracks, vias, width)
-                reached = set()
+                if exits:
+                    paint(net, exits, [], STUB_WIDTH_MM)
+                ends: dict[str, set] = {}
                 for la, pts in tracks:
-                    ends = {mr.cell(*pts[0]), mr.cell(*pts[-1])}
-                    for k, (pla, cells, attached) in enumerate(pending):
-                        if pla == la and ends & set(cells):
+                    ends.setdefault(la, set()).update({mr.cell(*pts[0]), mr.cell(*pts[-1])})
+                via_cells = {mr.cell(x, y) for x, y in vias}
+                reached = set()
+                for k, (pla, cells, attached) in enumerate(pending):
+                    own = set(cells)
+                    if (ends.get(pla, set()) | via_cells) & own:
+                        reached.add(k)
+                        continue
+                    for ola, oc in attached:
+                        if (ends.get(ola, set()) | via_cells) & set(oc):
                             reached.add(k)
-                        elif any(ola == la and ends & set(oc) for ola, oc in attached):
-                            reached.add(k)
+                            break
                 if not reached:
-                    reached.add(0)
+                    # a goal cell of nobody's group: never assume a pad was reached
+                    last = tracks[-1][1][-1] if tracks else vias[-1]
+                    self.res.open_nets.append(f"{net}: route ended off every pad at {last}")
+                    ok = False
+                    break
                 for k in sorted(reached, reverse=True):
                     connected.append(pending.pop(k))
             if ok:
                 self.res.routed_nets += 1
         if sp.gnd_layer in self.layers:
-            self._route_gnd(routers["signal"], gnd, pad_cells.get(gnd, []), sp.track, paint)
+            hand = {c for _la, cells, _a in seed_cells.get(gnd, []) for c in cells}
+            self._route_gnd(routers["signal"], gnd, pad_cells.get(gnd, []), sp.track, paint, hand)
         self._gnd_pour(gnd)
 
-    def _route_gnd(self, mr: MultiRouter, gnd: str, groups, width: float, paint) -> None:
+    def _exit_copper(self, mr: MultiRouter, net: str, tracks, fanout) -> list:
+        """The exit corridor of a fanout via is a claim on lattice cells,
+        not copper: a route that starts or ends inside it gets a thin track
+        from the via along the corridor axis to that point (thin: it
+        passes the other via row of the fanout at the pad pitch)."""
+        out = []
+        seen = set()
+        for la, pts in tracks:
+            if la != self.exit_layer:
+                continue
+            for end in (pts[0], pts[-1]):
+                ce = mr.cell(*end)
+                for (vx, vy), spts, rw in fanout:
+                    if ce == mr.cell(vx, vy) or ce not in exit_cells(mr, spts, rw):
+                        continue
+                    key = (ce, (vx, vy))
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    dx, dy = spts[1][0] - spts[0][0], spts[1][1] - spts[0][1]
+                    n = math.hypot(dx, dy)
+                    dx, dy = dx / n, dy / n
+                    t = (end[0] - vx) * dx + (end[1] - vy) * dy
+                    on_axis = (round(vx + dx * t, 3), round(vy + dy * t, 3))
+                    path = [(vx, vy), on_axis]
+                    if math.hypot(on_axis[0] - end[0], on_axis[1] - end[1]) > 0.001:
+                        path.append(end)
+                    out.append((la, path))
+        return out
+
+    def _route_gnd(
+        self, mr: MultiRouter, gnd: str, groups, width: float, paint, hand: set | None = None
+    ) -> None:
         """Every GND pad gets its own short drop to the pour layer: goal is
-        any free cell of that layer near the pad, the router puts the via."""
+        any free cell of that layer near the pad, the router puts the via.
+        `hand` holds the cells of the ground seeds: a pad one of them
+        starts on has its drop drawn by hand."""
         sp = self.spec
         gl = sp.gnd_layer
         n = mr.nid(gnd)
+        drops = {mr.cell(v.x, v.y) for v in self.res.vias if v.net == gnd}
         for la, cells, attached in groups:
             if la == gl or not cells:
                 continue
             if any(ola == gl for ola, _c in attached):
                 continue  # the fanout via already reaches the pour layer
+            if drops & set(cells) or (hand and hand & set(cells)):
+                continue  # a via or a seed drawn by hand on the pad or its stub
             free = (mr.own[gl] == MultiRouter.FREE) | (mr.own[gl] == n)
             free &= (mr.own_via[gl] == MultiRouter.FREE) | (mr.own_via[gl] == n)
+            # the pour must reach the via: keep the spots with free copper
+            # around them (a via boxed in by tracks stays an island)
+            free = _erode(free, int(round(POUR_REACH_MM / sp.grid)))
             i0 = max(0, min(c[0] for c in cells) - 60)
             i1 = min(mr.nx, max(c[0] for c in cells) + 60)
             j0 = max(0, min(c[1] for c in cells) - 60)
@@ -522,8 +718,6 @@ class GenericBoard:
     # ------------------------------------------------------------ checks
     def _copper_items(self) -> list[tuple[str, str, object]]:
         """(net, layer, geometry) of every copper item drawn so far."""
-        from shapely import affinity
-
         items = []
         for t in self.res.tracks:
             items.append((t.net, t.layer, LineString(t.pts).buffer(t.width / 2.0)))
@@ -532,8 +726,7 @@ class GenericBoard:
                 items.append((v.net, layer, Point(v.x, v.y).buffer(v.pad / 2.0)))
         for p in self.res.pads:
             layers = self.layers if p.layer == "*.Cu" else [p.layer]
-            g = box(-p.w / 2, -p.h / 2, p.w / 2, p.h / 2)
-            g = affinity.translate(affinity.rotate(g, -p.rot, origin=(0, 0)), p.x, p.y)
+            g = pad_copper(p)
             for layer in layers:
                 items.append((p.net or f"__nc_{p.ref}_{p.number}", layer, g))
         for hx, hy, hd in self.res.holes:
@@ -585,10 +778,7 @@ class GenericBoard:
                 items.append((v.net, layer, Point(v.x, v.y).buffer(v.pad / 2.0)))
         for p in self.res.pads:
             layers = self.layers if p.layer == "*.Cu" else [p.layer]
-            g = box(-p.w / 2, -p.h / 2, p.w / 2, p.h / 2)
-            from shapely import affinity
-
-            g = affinity.translate(affinity.rotate(g, -p.rot, origin=(0, 0)), p.x, p.y)
+            g = pad_copper(p)
             for layer in layers:
                 items.append((p.net or f"__nc_{p.ref}_{p.number}", layer, g))
         for hx, hy, hd in self.res.holes:
@@ -617,6 +807,49 @@ class GenericBoard:
                         )
         return sorted(set(errors))
 
+    def connectivity_check(self, gnd: str = "GND") -> list[str]:
+        """Every net with two pads or more must be one piece of copper:
+        pads, tracks and vias that touch on a layer, vias and through pads
+        joining the layers, the ground pour joining everything of `gnd` on
+        its layer. What KiCad reports as unconnected items, computed here
+        so a build never claims a net closed that a track ends short of."""
+        by_net: dict[str, list] = {}
+        for t in self.res.tracks:
+            g = LineString(t.pts).buffer(t.width / 2.0)
+            by_net.setdefault(t.net, []).append(([t.layer], g, None))
+        for v in self.res.vias:
+            g = Point(v.x, v.y).buffer(v.pad / 2.0)
+            by_net.setdefault(v.net, []).append((list(self.layers), g, None))
+        for p in self.res.pads:
+            if not p.net:
+                continue
+            layers = self.layers if p.layer == "*.Cu" else [p.layer]
+            by_net.setdefault(p.net, []).append((layers, pad_copper(p), f"{p.ref}.{p.number}"))
+        out = []
+        for net, items in sorted(by_net.items()):
+            pads = [k for k, it in enumerate(items) if it[2]]
+            if len(pads) < 2:
+                continue
+            parent = list(range(len(items) + 1))
+            plane = len(items)  # the ground pour, one more node
+            tree = STRtree([g for _l, g, _r in items])
+            for k, (layers, g, _ref) in enumerate(items):
+                if net == gnd and self.spec.gnd_layer in layers:
+                    _union(parent, k, plane)
+                for j in tree.query(g):
+                    j = int(j)
+                    if j <= k or not set(layers) & set(items[j][0]):
+                        continue
+                    if g.distance(items[j][1]) <= CHECK_SLOP_MM:
+                        _union(parent, k, j)
+            pieces: dict[int, list[str]] = {}
+            for k in pads:
+                pieces.setdefault(_find(parent, k), []).append(items[k][2])
+            if len(pieces) > 1:
+                parts = "; ".join(" ".join(sorted(v)) for v in pieces.values())
+                out.append(f"{net}: {len(pieces)} pieces ({parts})")
+        return out
+
     # ------------------------------------------------------------ finish
     def finish(self, texts: list[tuple[str, float, float, str, float]] = ()) -> Result:
         sp = self.spec
@@ -624,7 +857,49 @@ class GenericBoard:
         for text, x, y, layer, size in texts:
             self.board.gr_text(text, x, y, layer, size)
         self.res.clearance_errors = self.clearance_check()
+        self.res.unconnected = self.connectivity_check()
+        # a net in pieces is open whatever the router believed
+        listed = {line.split(":", 1)[0] for line in self.res.open_nets}
+        for line in self.res.unconnected:
+            net = line.split(":", 1)[0]
+            if net not in listed:
+                self.res.open_nets.append(line)
+                self.res.routed_nets = max(0, self.res.routed_nets - 1)
+                listed.add(net)
         return self.res
+
+
+def _erode(mask, r: int):
+    """The cells whose whole disc of radius r (in cells) is inside the mask."""
+    import numpy as np
+
+    out = mask.copy()
+    ny, nx = mask.shape
+    for dy in range(-r, r + 1):
+        for dx in range(-r, r + 1):
+            if dx * dx + dy * dy > r * r:
+                continue
+            shifted = np.zeros_like(mask)
+            ys = slice(max(0, dy), min(ny, ny + dy))
+            xs = slice(max(0, dx), min(nx, nx + dx))
+            ys_src = slice(max(0, -dy), min(ny, ny - dy))
+            xs_src = slice(max(0, -dx), min(nx, nx - dx))
+            shifted[ys, xs] = mask[ys_src, xs_src]
+            out &= shifted
+    return out
+
+
+def _find(parent: list[int], a: int) -> int:
+    while parent[a] != a:
+        parent[a] = parent[parent[a]]
+        a = parent[a]
+    return a
+
+
+def _union(parent: list[int], a: int, b: int) -> None:
+    ra, rb = _find(parent, a), _find(parent, b)
+    if ra != rb:
+        parent[ra] = rb
 
 
 def _strip_courtyard(raw: str) -> str:

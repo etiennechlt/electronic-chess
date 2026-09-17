@@ -30,6 +30,26 @@ bobines.
    - un seed qui ferme une liaison peut en déplacer deux : mesurer le
      bilan global sur une génération complète avant d'adopter.
 
+## Les seeds de `boardgen` (cartes du plateau et banc)
+
+Le même outil existe dans le cœur générique des cartes du plateau
+(`tools/boardgen/core.py`) : `seed(net, couche, points, largeur)` et
+`seed_via(net, x, y, pastille, perçage)` posent du cuivre avant le
+routage, le routeur en part et rejoint les pastilles ; deux seeds
+d'un net qui ne se touchent pas sont routés l'un vers l'autre. Les
+cellules d'un seed lui restent acquises comme celles des moignons
+d'envol (un éventail dessiné au pas des pastilles est légal pour la
+règle exacte, pas pour la marge de la grille). `plain_fanout`
+retire les vias d'éventail d'une empreinte dont les échappées sont
+dessinées à la main. La carte de banc en est le premier usage
+complet (`hand_routes` de `boardgen/bench.py`, décrit dans son
+[README](../../hardware/bench/README.md)) : l'éventail d'un FH12 à
+seize broches sur deux faces, puis les longues liaisons que le
+routeur ne trouvait pas une fois les autres posées. Méthode : un
+script de répétition hors build pose la carte, applique les seeds et
+mesure chacun contre le cuivre déjà là ; un seed en défaut est un
+échec de build, jamais un chevauchement silencieux.
+
 ## Les couloirs LED de la carte bobines
 
 Contexte : à p = 50 les quatre spirales remplissent la carte ; le

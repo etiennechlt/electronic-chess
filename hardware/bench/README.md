@@ -42,10 +42,11 @@ par des barrettes mâles montées côté cuivre, corps sous la carte.
   vers le sud, pastilles vers le nord ; tampon 74AHCT1G125 (3,3 V vers
   5 V) et 470 ohms devant LED_DIN, LED_DOUT sur un point de test ;
   49,9 ohms et 1 nF devant A0, le filtre du cerveau.
-- **Points de test** : TP1 LED_END, TP2 5VA, TP3 5V, TP4 3V3, TP5 GND,
-  TP6 VIN, TP7 ADC1 (AMP_OUT filtré). Le bus de commande (PULSE_EN,
-  DAMP_EN_N, adresses du mux) se sonde sur les broches Morpho de la
-  Nucleo, qui doublent chaque broche Arduino.
+- **Points de test** : TP1 LED_END (au coin sud-est, contre le
+  connecteur FPC), TP2 5VA, TP3 5V, TP4 3V3, TP5 GND, TP6 VIN, TP7 ADC1
+  (AMP_OUT filtré). Le bus de commande (PULSE_EN, DAMP_EN_N, adresses
+  du mux) se sonde sur les broches Morpho de la Nucleo, qui doublent
+  chaque broche Arduino.
 
 ## Ce qui se soude à la main
 
@@ -69,26 +70,71 @@ le net que dit le yaml, que la nappe reprend le brochage du quadrant,
 et que chaque broche de barrette tombe sur la pastille de l'empreinte
 Uno qu'elle représente.
 
+## Routes manuelles
+
+Le routeur seul laissait six nets ouverts et, au DRC de KiCad, une
+trentaine de connexions manquantes que son propre bilan ne voyait pas
+(couloirs de sortie des vias d'éventail sans cuivre, pistes finissant
+sur le coin arrondi d'une pastille, voir la
+[note 04](../../docs/notes/04-routeur-et-garanties.md)). La carte se
+finit donc comme dans pcbnew, mais dans le générateur, par des routes
+manuelles (`hand_routes` de `tools/boardgen/bench.py`) que chaque
+build redessine et vérifie :
+
+- **Éventail du FPC** (J2, seize pastilles au pas de 0,5 mm) : pas de
+  via d'éventail dans le plan de masse ; chaque broche quitte son
+  moignon sur une colonne de 0,2 mm et tourne à sa hauteur dans une
+  voie de 0,3 mm, vers l'ouest pour 5VA, AMP_OUT1, 3V3 et 5V_LED, vers
+  l'est pour MUX_EN_L, MUX_EN_H, LED_END et PULSE_EN, la broche la
+  plus extérieure d'abord, la suivante une voie plus haut, si bien
+  qu'aucune voie ne croise une colonne ; les fins de voies sont
+  décalées pour laisser un via au bout de chacune. MUX_A0, MUX_A1,
+  MUX_A2 et DAMP_EN_N prennent un petit via aux rangées d'éventail et
+  passent en face arrière sous le connecteur, puis sous l'embase J5
+  jusqu'à leurs broches ; VIN et LED_DIN1 de même vers le nord. Les
+  deux broches de masse tombent au plan par un via au bout de leur
+  piste d'envol.
+- **Bande est** : MUX_EN_L monte en face avant jusqu'à la rangée de J4
+  et entre dans la dernière broche par le bout de la rangée, MUX_EN_H
+  passe au-dessus de la rangée, PULSE_EN monte en face arrière le long
+  du bord (les deux se croiseraient sinon), LED_END rejoint TP1.
+- **Face nord** : 3V3 monte à l'ouest de C9, passe sous les embases
+  jusqu'à J3, continue vers l'ouest et redescend entre C6 et R3 vers
+  TP4 et C14 ; 5V_LED et AMP_OUT1 suivent, une voie plus bas chacune,
+  jusqu'au fusible des LED et au filtre de l'ADC, 5V_LED sautant en
+  face arrière sur deux millimètres pour franchir la montée de 3V3 ;
+  VIN traverse la carte en face arrière à mi-hauteur jusqu'à TP6.
+- **Buck** : une barrette de 0,2 mm sur les bouts de moignons relie
+  les trois pastilles SW, une autre les trois VIN (le routeur posait
+  une piste de puissance le long d'une piste d'envol, à 0,10 mm du
+  moignon voisin) ; SW part en face arrière vers l'inductance, VIN vers
+  un via à l'est de C4 puis le condensateur d'entrée, la pastille 5 V
+  du côté nord suit son couloir de sortie ; les quatre pastilles de
+  masse du QFN sont pontées à son pad thermique.
+- **Masses murées** : la pastille de masse du LDO (entre ses deux
+  VIN) et celle de R4 ont un moignon et un petit via vers le plan.
+
+Chaque route manuelle est vérifiée au build par le contrôle
+d'isolement exact contre le cuivre déjà posé ; le routeur part de ces
+routes et termine chaque net. Un déplacement de composant qui les
+rendrait fausses fait échouer le build.
+
 ## Résultat du build
 
 Généré par `python -m boardgen build bench` :
 
 | Composants | Segments | Vias | Nets fermés | Nets ouverts | Défauts d'isolement |
 |---|---|---|---|---|---|
-| 43 | 193 | 89 | 23 | 6 | 0 |
+| 43 | 267 | 72 | 29 | 0 | 0 |
 
-Nets à finir dans pcbnew (le routeur les a laissés ouverts) :
-- LED_DIN1: 1 pad(s) left open (usable start cells 42, goal cells 29)
-- MUX_EN_L: 2 pad(s) left open (usable start cells 29, goal cells 264)
-- AMP_OUT1: 1 pad(s) left open (usable start cells 38, goal cells 30)
-- SW: route rejected, F.Cu: vs BUCK_PG at (23.4,13.7) gap 0.100
-- VIN: route rejected, F.Cu: vs BUCK_SS at (27.3,13.7) gap 0.100
-- 3V3: 4 pad(s) left open (usable start cells 29, goal cells 378)
+Tous les nets sont fermés : le contrôle de connexité du cœur
+(chaque net une seule pièce de cuivre, plan de masse compris) ne
+signale rien, `tests/test_bench.py` le vérifie à chaque exécution.
 
-Quatre sont des sorties de l'éventail du FPC (LED_DIN1, MUX_EN_L,
-AMP_OUT1, 3V3 : la pastille de J2 est murée par les vias de ses
-voisines), deux des pistes de puissance refusées à 0,05 mm près contre
-les pastilles du QFN du buck (SW, VIN) : le même lot que sur le
-cerveau, quelques minutes dans pcbnew, chevelu affiché, puis DRC
-KiCad 7 (`tools/drc.py`). Le contrôle d'isolement exact ne signale
-aucun défaut sur ce qui est routé.
+DRC KiCad 7.0.11 (`/usr/bin/python3 tools/drc.py
+hardware/bench/bench.kicad_pcb`, zones remplies) : zéro erreur, zéro
+élément non connecté ; 83 avertissements, tous ignorables : 43
+chemins de bibliothèque des empreintes (la configuration de KiCad ne
+connaît pas les bibliothèques par leur nom), 35 de sérigraphie
+(références sur une ligne ou une pastille), 5 vias d'éventail du QFN
+raccordés d'un seul côté (la route est partie en face avant).

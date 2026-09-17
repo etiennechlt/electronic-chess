@@ -42,6 +42,13 @@ def _variant(stub: Stub, beyond: float, runway: float, via: bool) -> Stub:
     return (net, num, [a, end], runway, via)
 
 
+def plain_stub(stub: Stub) -> Stub:
+    """The same stub without its fanout via: a plain runway, for a package
+    whose escapes are drawn by hand (a connector row fanned out on the top
+    layer, no via in the ground pour under it)."""
+    return _variant(stub, STUB_BEYOND_MM, STUB_RUNWAY_MIN_MM, False)
+
+
 def pad_pitch(fp: Footprint) -> float:
     """Smallest center distance between two SMD pads of the footprint."""
     pads = [p for p in fp.pads if p.kind == "smd"]
