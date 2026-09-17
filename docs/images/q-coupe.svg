@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="docfig" viewBox="0 0 900 340" role="img" aria-label="Coupe verticale : la bobine plate dans la base de la piece, le feutre, le contreplaque, la lame d air, puis la spirale de la case dans le circuit imprime, 7.1 mm en tout">
+<style>
+svg.docfig{font-family:"IBM Plex Sans", "Segoe UI", "DejaVu Sans", Helvetica, Arial, sans-serif;color:#1a1e1d}
+.lbl{font-size:12.5px;fill:#1a1e1d}
+.lbl.small{font-size:11px}
+.lbl.strong{font-weight:600}
+.muted{fill:#4f5754}
+.mono{font-family:"IBM Plex Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace}
+.glyph{font-size:20px;font-family:"Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2", "DejaVu Sans", sans-serif}
+.title{font-size:14px;font-weight:600;fill:#1a1e1d}
+.axis{stroke:currentColor;stroke-width:1.2;fill:none;opacity:.55}
+.tick{stroke:currentColor;stroke-width:1;opacity:.55}
+.grid{stroke:currentColor;stroke-width:1;opacity:.12}
+.dash{stroke:currentColor;stroke-width:1;stroke-dasharray:5 4;opacity:.5;fill:none}
+.brk{stroke:currentColor;stroke-width:1.2;opacity:.6;fill:none}
+.trace{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.trace.ghost{opacity:.35;stroke-dasharray:3 3}
+.env{fill:none;stroke-width:1.2;stroke-dasharray:4 4;opacity:.7}
+.q-high{stroke:#2a78d6}
+.q-low{stroke:#eb6834}
+.q-high-t{fill:#2a78d6;font-weight:600}
+.q-low-t{fill:#eb6834;font-weight:600}
+.mark{stroke-width:1.6}
+.dot{fill:#ffffff;stroke-width:2.5}
+.band{fill:rgba(42,120,214,.09)}
+.peak-black{fill:#2a78d6;stroke:#2a78d6;stroke-width:1.5;stroke-linejoin:round;opacity:.9}
+.peak-white{fill:#ffffff;stroke:#2a78d6;stroke-width:1.8;stroke-linejoin:round}
+.tipbox{fill:#ffffff;stroke:#d3d8d4}
+.lay-pcb{fill:#c4d9c0} .lay-air{fill:#f7f9f7} .lay-wood{fill:#e6d3b1} .lay-felt{fill:#c9ccc4}
+.copper{fill:#c8843a}
+.piece{fill:#efe6d6;stroke:currentColor;stroke-width:1.2;opacity:.95}
+.bundle{fill:url(#wire);stroke:currentColor;stroke-width:1}
+.cap{fill:#eb6834;stroke:none}
+.magnet{fill:#8b8f92;opacity:.75}
+.field{fill:none;stroke:#2a78d6;stroke-width:1.6;opacity:.8}
+.seg{fill:#e9eef4;stroke:#d3d8d4}
+.seg-pulse{fill:#eb6834;opacity:.35;stroke:#eb6834}
+.seg-listen{fill:rgba(42,120,214,.09);stroke:#2a78d6}
+.box{fill:#ffffff;stroke:#d3d8d4;stroke-width:1.2}
+.box-piece{stroke:#2a78d6;stroke-width:1.8}
+.box-mcu{fill:#e9eef4;stroke:#2a78d6;stroke-width:1.8}
+.box-soft{fill:#e9eef4;stroke:#d3d8d4;stroke-width:1.2}
+.box-warm{fill:#ffffff;stroke:#eb6834;stroke-width:1.6}
+.wire{stroke:currentColor;stroke-width:1.4;fill:none;opacity:.7}
+.wire-a{stroke:#2a78d6;stroke-width:2;fill:none}
+.wire-p{stroke:#eb6834;stroke-width:2;fill:none}
+.zone{fill:none;stroke:#d3d8d4;stroke-width:1.2;stroke-dasharray:6 4}
+.coil{fill:none;stroke:#c8843a;stroke-width:2}
+.puck{fill:#efe6d6;stroke:currentColor;stroke-width:1.2}
+</style>
+<rect width="900" height="340" fill="#ffffff"/>
+<defs><marker id="arr5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker><pattern id="wire" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="currentColor" stroke-width="1.6"/></pattern></defs>
+<rect class="lay-pcb" x="60" y="274.4" width="780" height="25.6"/>
+<rect class="lay-air" x="60" y="242.4" width="780" height="32.0"/>
+<rect class="lay-wood" x="60" y="194.4" width="780" height="48.0"/>
+<rect class="lay-felt" x="60" y="186.4" width="780" height="8.0"/>
+<rect class="copper" x="244.4" y="275.9" width="25.6" height="3"/>
+<rect class="copper" x="630.0" y="275.9" width="25.6" height="3"/>
+<rect class="copper" x="216.4" y="275.9" width="25.6" height="3"/>
+<rect class="copper" x="658.0" y="275.9" width="25.6" height="3"/>
+<rect class="copper" x="188.4" y="275.9" width="25.6" height="3"/>
+<rect class="copper" x="686.0" y="275.9" width="25.6" height="3"/>
+<rect class="copper" x="160.4" y="275.9" width="25.6" height="3"/>
+<rect class="copper" x="714.0" y="275.9" width="25.6" height="3"/>
+<rect class="copper" x="132.4" y="275.9" width="25.6" height="3"/>
+<rect class="copper" x="742.0" y="275.9" width="25.6" height="3"/>
+<rect class="copper" x="244.4" y="282.4" width="25.6" height="3"/>
+<rect class="copper" x="630.0" y="282.4" width="25.6" height="3"/>
+<rect class="copper" x="216.4" y="282.4" width="25.6" height="3"/>
+<rect class="copper" x="658.0" y="282.4" width="25.6" height="3"/>
+<rect class="copper" x="188.4" y="282.4" width="25.6" height="3"/>
+<rect class="copper" x="686.0" y="282.4" width="25.6" height="3"/>
+<rect class="copper" x="160.4" y="282.4" width="25.6" height="3"/>
+<rect class="copper" x="714.0" y="282.4" width="25.6" height="3"/>
+<rect class="copper" x="132.4" y="282.4" width="25.6" height="3"/>
+<rect class="copper" x="742.0" y="282.4" width="25.6" height="3"/>
+<rect class="copper" x="244.4" y="289.0" width="25.6" height="3"/>
+<rect class="copper" x="630.0" y="289.0" width="25.6" height="3"/>
+<rect class="copper" x="216.4" y="289.0" width="25.6" height="3"/>
+<rect class="copper" x="658.0" y="289.0" width="25.6" height="3"/>
+<rect class="copper" x="188.4" y="289.0" width="25.6" height="3"/>
+<rect class="copper" x="686.0" y="289.0" width="25.6" height="3"/>
+<rect class="copper" x="160.4" y="289.0" width="25.6" height="3"/>
+<rect class="copper" x="714.0" y="289.0" width="25.6" height="3"/>
+<rect class="copper" x="132.4" y="289.0" width="25.6" height="3"/>
+<rect class="copper" x="742.0" y="289.0" width="25.6" height="3"/>
+<rect class="copper" x="244.4" y="295.5" width="25.6" height="3"/>
+<rect class="copper" x="630.0" y="295.5" width="25.6" height="3"/>
+<rect class="copper" x="216.4" y="295.5" width="25.6" height="3"/>
+<rect class="copper" x="658.0" y="295.5" width="25.6" height="3"/>
+<rect class="copper" x="188.4" y="295.5" width="25.6" height="3"/>
+<rect class="copper" x="686.0" y="295.5" width="25.6" height="3"/>
+<rect class="copper" x="160.4" y="295.5" width="25.6" height="3"/>
+<rect class="copper" x="714.0" y="295.5" width="25.6" height="3"/>
+<rect class="copper" x="132.4" y="295.5" width="25.6" height="3"/>
+<rect class="copper" x="742.0" y="295.5" width="25.6" height="3"/>
+<path class="piece" d="M310.0 186.4 v-114.0 q0 -14 14 -14 h252.0 q14 0 14 14 v114.0 z"/>
+<path class="piece" d="M416 58.4 q34 -30 68 0 z"/>
+<rect class="bundle" x="342.0" y="150.4" width="64.8" height="32.0"/>
+<rect class="bundle" x="493.2" y="150.4" width="64.8" height="32.0"/>
+<rect class="cap" x="438" y="158.4" width="24" height="12" rx="2"/>
+<rect class="magnet" x="350.0" y="80.4" width="200.0" height="64.0" rx="3"/>
+<text class="lbl" x="450.0" y="116.4" text-anchor="middle">aimant ferrite (isolant)</text>
+<path class="field" d="M398 276.4 C335.6 242.4, 335.6 194.4, 398 148.4" marker-end="url(#arr5)"/>
+<path class="field" d="M450 276.4 C450.0 242.4, 450.0 194.4, 450 148.4" marker-end="url(#arr5)"/>
+<path class="field" d="M502 276.4 C564.4 242.4, 564.4 194.4, 502 148.4" marker-end="url(#arr5)"/>
+<text class="lbl" x="66.0" y="291.2">circuit imprimé 1,6 mm, spirale de la case sur 4 couches</text>
+<text class="lbl" x="66.0" y="262.4">air 2 mm (LED et bande de frontal)</text>
+<text class="lbl" x="66.0" y="222.4">contreplaqué 3 mm</text>
+<text class="lbl" x="66.0" y="194.4">feutre 0,5 mm</text>
+<text class="lbl" x="302.0" y="170.4" text-anchor="end">bobine 45 µH, 75 tours</text>
+<text class="lbl" x="598.0" y="170.4">condensateur C0G au centre</text>
+<text class="lbl q-high-t" x="550.0" y="238.4">champ magnétique partagé</text>
+<text class="lbl muted" x="550.0" y="254.4">k ≈ 0,12 : un huitième du flux</text>
+<line class="mark" x1="852" y1="186.4" x2="852" y2="300" marker-start="url(#arr5)" marker-end="url(#arr5)"/>
+<text class="lbl" x="846.0" y="239.2" text-anchor="end">7,1 mm</text>
+<text class="lbl muted" x="846.0" y="255.2" text-anchor="end">en tout</text>
+<text class="lbl muted" x="60.0" y="52.4">base d'un pion, 17,5 mm de diamètre ; épaisseurs de cuivre exagérées</text>
+</svg>

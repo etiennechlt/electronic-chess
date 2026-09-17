@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="docfig" viewBox="0 0 960 500" role="img" aria-label="Le banc : une Nucleo-G474RE sous une carte de banc, une nappe vers le quadrant 2 x 2, les pucks de test sur le contreplaque, l alimentation de laboratoire, l oscilloscope, le LCR-metre et l analyseur logique">
+<style>
+svg.docfig{font-family:"IBM Plex Sans", "Segoe UI", "DejaVu Sans", Helvetica, Arial, sans-serif;color:#1a1e1d}
+.lbl{font-size:12.5px;fill:#1a1e1d}
+.lbl.small{font-size:11px}
+.lbl.strong{font-weight:600}
+.muted{fill:#4f5754}
+.mono{font-family:"IBM Plex Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace}
+.glyph{font-size:20px;font-family:"Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2", "DejaVu Sans", sans-serif}
+.title{font-size:14px;font-weight:600;fill:#1a1e1d}
+.axis{stroke:currentColor;stroke-width:1.2;fill:none;opacity:.55}
+.tick{stroke:currentColor;stroke-width:1;opacity:.55}
+.grid{stroke:currentColor;stroke-width:1;opacity:.12}
+.dash{stroke:currentColor;stroke-width:1;stroke-dasharray:5 4;opacity:.5;fill:none}
+.brk{stroke:currentColor;stroke-width:1.2;opacity:.6;fill:none}
+.trace{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.trace.ghost{opacity:.35;stroke-dasharray:3 3}
+.env{fill:none;stroke-width:1.2;stroke-dasharray:4 4;opacity:.7}
+.q-high{stroke:#2a78d6}
+.q-low{stroke:#eb6834}
+.q-high-t{fill:#2a78d6;font-weight:600}
+.q-low-t{fill:#eb6834;font-weight:600}
+.mark{stroke-width:1.6}
+.dot{fill:#ffffff;stroke-width:2.5}
+.band{fill:rgba(42,120,214,.09)}
+.peak-black{fill:#2a78d6;stroke:#2a78d6;stroke-width:1.5;stroke-linejoin:round;opacity:.9}
+.peak-white{fill:#ffffff;stroke:#2a78d6;stroke-width:1.8;stroke-linejoin:round}
+.tipbox{fill:#ffffff;stroke:#d3d8d4}
+.lay-pcb{fill:#c4d9c0} .lay-air{fill:#f7f9f7} .lay-wood{fill:#e6d3b1} .lay-felt{fill:#c9ccc4}
+.copper{fill:#c8843a}
+.piece{fill:#efe6d6;stroke:currentColor;stroke-width:1.2;opacity:.95}
+.bundle{fill:url(#wire);stroke:currentColor;stroke-width:1}
+.cap{fill:#eb6834;stroke:none}
+.magnet{fill:#8b8f92;opacity:.75}
+.field{fill:none;stroke:#2a78d6;stroke-width:1.6;opacity:.8}
+.seg{fill:#e9eef4;stroke:#d3d8d4}
+.seg-pulse{fill:#eb6834;opacity:.35;stroke:#eb6834}
+.seg-listen{fill:rgba(42,120,214,.09);stroke:#2a78d6}
+.box{fill:#ffffff;stroke:#d3d8d4;stroke-width:1.2}
+.box-piece{stroke:#2a78d6;stroke-width:1.8}
+.box-mcu{fill:#e9eef4;stroke:#2a78d6;stroke-width:1.8}
+.box-soft{fill:#e9eef4;stroke:#d3d8d4;stroke-width:1.2}
+.box-warm{fill:#ffffff;stroke:#eb6834;stroke-width:1.6}
+.wire{stroke:currentColor;stroke-width:1.4;fill:none;opacity:.7}
+.wire-a{stroke:#2a78d6;stroke-width:2;fill:none}
+.wire-p{stroke:#eb6834;stroke-width:2;fill:none}
+.zone{fill:none;stroke:#d3d8d4;stroke-width:1.2;stroke-dasharray:6 4}
+.coil{fill:none;stroke:#c8843a;stroke-width:2}
+.puck{fill:#efe6d6;stroke:currentColor;stroke-width:1.2}
+</style>
+<rect width="960" height="500" fill="#ffffff"/>
+<defs><marker id="arr10" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker><marker id="arr10b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+<rect class="box" x="20.0" y="30.0" width="200.0" height="56.0" rx="6"/>
+<text class="lbl strong" x="120.0" y="47.0" text-anchor="middle">alimentation de labo 12 V</text>
+<text class="lbl small" x="120.0" y="62.0" text-anchor="middle">limitée en courant,</text>
+<text class="lbl small" x="120.0" y="77.0" text-anchor="middle">linéaire ou batterie</text>
+<line class="wire-p" x1="120.0" y1="86.0" x2="120.0" y2="118.0" marker-end="url(#arr10)"/>
+<text class="lbl small q-low-t" x="128.0" y="106.0">12 V</text>
+<rect class="box-soft" x="20.0" y="120.0" width="220.0" height="78.0" rx="6"/>
+<text class="lbl strong" x="130.0" y="148.0" text-anchor="middle">carte de banc (shield)</text>
+<text class="lbl small" x="130.0" y="163.0" text-anchor="middle">jack 12 V, LDO 5VA, rail 5V_LED,</text>
+<text class="lbl small" x="130.0" y="178.0" text-anchor="middle">tampon LED, connecteur FPC 16</text>
+<rect class="box-mcu" x="20.0" y="212.0" width="220.0" height="96.0" rx="6"/>
+<text class="lbl strong" x="130.0" y="241.5" text-anchor="middle">Nucleo-G474RE</text>
+<text class="lbl small" x="130.0" y="256.5" text-anchor="middle">le même MCU que le cerveau</text>
+<text class="lbl small" x="130.0" y="271.5" text-anchor="middle">ST-Link et port série intégrés</text>
+<text class="lbl small" x="130.0" y="286.5" text-anchor="middle">brochage Arduino = bus du cerveau</text>
+<text class="lbl small muted" x="24.0" y="320.0">emboîtées : la carte de banc se pose sur les connecteurs Arduino</text>
+<rect class="box" x="20.0" y="380.0" width="220.0" height="62.0" rx="6"/>
+<text class="lbl strong" x="130.0" y="400.0" text-anchor="middle">PC</text>
+<text class="lbl small" x="130.0" y="415.0" text-anchor="middle">console série 115200 bauds, CSV,</text>
+<text class="lbl small" x="130.0" y="430.0" text-anchor="middle">notebook d'analyse M1 à M11</text>
+<line class="wire" x1="120.0" y1="308.0" x2="120.0" y2="378.0" marker-end="url(#arr10b)"/>
+<text class="lbl small" x="128.0" y="348.0">USB</text>
+<path class="wire-a" d="M240 160 C330 160, 330 250, 396 250"/>
+<text class="lbl small q-high-t" x="250.0" y="126.0">nappe FPC, 16 fils :</text>
+<text class="lbl small q-high-t" x="250.0" y="140.0">bus, AMP_OUT, LED,</text>
+<text class="lbl small q-high-t" x="250.0" y="154.0">et les rails</text>
+<rect class="box" x="396" y="120" width="264.0" height="237.6" rx="4"/>
+<rect class="box-soft" x="396" y="120" width="44.0" height="237.6" rx="4"/>
+<text class="lbl small" transform="translate(422.0 238.8) rotate(-90)" text-anchor="middle">bande de frontal : cellules, mux, ampli, filtre</text>
+<circle class="coil" cx="495.0" cy="175.0" r="44.0"/>
+<circle class="coil" cx="495.0" cy="175.0" r="34.4"/>
+<circle class="coil" cx="495.0" cy="175.0" r="24.8"/>
+<circle class="puck" cx="495.0" cy="175.0" r="22.8"/>
+<text class="lbl small" x="495.0" y="173.0" text-anchor="middle">pion</text>
+<text class="lbl small mono" x="495.0" y="185.0" text-anchor="middle">12 nF</text>
+<circle class="coil" cx="605.0" cy="175.0" r="44.0"/>
+<circle class="coil" cx="605.0" cy="175.0" r="34.4"/>
+<circle class="coil" cx="605.0" cy="175.0" r="24.8"/>
+<circle class="puck" cx="605.0" cy="175.0" r="22.8"/>
+<text class="lbl small" x="605.0" y="173.0" text-anchor="middle">cavalier</text>
+<text class="lbl small mono" x="605.0" y="185.0" text-anchor="middle">10 nF</text>
+<circle class="coil" cx="495.0" cy="285.0" r="44.0"/>
+<circle class="coil" cx="495.0" cy="285.0" r="34.4"/>
+<circle class="coil" cx="495.0" cy="285.0" r="24.8"/>
+<circle class="puck" cx="495.0" cy="285.0" r="22.8"/>
+<text class="lbl small" x="495.0" y="283.0" text-anchor="middle">fou</text>
+<text class="lbl small mono" x="495.0" y="295.0" text-anchor="middle">8,2 nF</text>
+<circle class="coil" cx="605.0" cy="285.0" r="44.0"/>
+<circle class="coil" cx="605.0" cy="285.0" r="34.4"/>
+<circle class="coil" cx="605.0" cy="285.0" r="24.8"/>
+<circle class="puck" cx="605.0" cy="285.0" r="22.8"/>
+<text class="lbl small" x="605.0" y="283.0" text-anchor="middle">tour</text>
+<text class="lbl small mono" x="605.0" y="295.0" text-anchor="middle">6,8 nF</text>
+<text class="lbl small muted" x="396.0" y="375.6">quadrant 2 x 2, 120 x 108 mm, 4 couches, même circuit et même bus que le 4 x 4</text>
+<text class="lbl small muted" x="396.0" y="391.6">pucks de test posés sur le contreplaqué de 3 mm et le feutre : entrefer nominal 7,1 mm</text>
+<text class="lbl small muted" x="396.0" y="407.6">pucks du bas de bande, l'espacement le plus serré : pion 217, cavalier 237, fou 262, tour 288 kHz</text>
+<rect class="box" x="720.0" y="120.0" width="220.0" height="62.0" rx="6"/>
+<text class="lbl strong" x="830.0" y="140.0" text-anchor="middle">oscilloscope 2 voies</text>
+<text class="lbl small" x="830.0" y="155.0" text-anchor="middle">sondes sur TP1 (AMP_OUT)</text>
+<text class="lbl small" x="830.0" y="170.0" text-anchor="middle">et TP3 (bus d'impulsion)</text>
+<rect class="box" x="720.0" y="210.0" width="220.0" height="48.0" rx="6"/>
+<text class="lbl strong" x="830.0" y="230.5" text-anchor="middle">LCR-mètre</text>
+<text class="lbl small" x="830.0" y="245.5" text-anchor="middle">L et Q des bobines nues (M1)</text>
+<rect class="box" x="720.0" y="286.0" width="220.0" height="48.0" rx="6"/>
+<text class="lbl strong" x="830.0" y="306.5" text-anchor="middle">analyseur logique</text>
+<text class="lbl small" x="830.0" y="321.5" text-anchor="middle">adresses, PULSE_EN, DAMP_EN_N</text>
+<line class="wire" x1="660.0" y1="128.0" x2="718.0" y2="150.0" marker-end="url(#arr10b)"/>
+<line class="wire" x1="660.0" y1="327.6" x2="718.0" y2="234.0" marker-end="url(#arr10b)"/>
+<line class="wire" x1="240.0" y1="250.0" x2="300.0" y2="250.0" marker-end="url(#arr10b)"/>
+<path class="wire" d="M300 250 V412 H830 V336" marker-end="url(#arr10)"/>
+<text class="lbl small muted" x="306.0" y="428.0">bus de commande observé en parallèle</text>
+<text class="lbl small muted" x="20.0" y="470.0">ce qui manque par rapport au plateau : le cerveau, la carte puissance, les cellules, la radio, l'horloge ; rien de tout cela n'est nécessaire pour mesurer</text>
+</svg>

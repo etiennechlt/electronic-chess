@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="docfig" viewBox="0 0 960 340" role="img" aria-label="Cycle du firmware : pour chaque quadrant et chaque bobine, adresser, frapper, blanking, ecouter, FFT ; puis plus proche voisin contre la calibration, etat des 64 cases, comparaison avec le balayage precedent, arbitre, LED et message radio">
+<style>
+svg.docfig{font-family:"IBM Plex Sans", "Segoe UI", "DejaVu Sans", Helvetica, Arial, sans-serif;color:#1a1e1d}
+.lbl{font-size:12.5px;fill:#1a1e1d}
+.lbl.small{font-size:11px}
+.lbl.strong{font-weight:600}
+.muted{fill:#4f5754}
+.mono{font-family:"IBM Plex Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace}
+.glyph{font-size:20px;font-family:"Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2", "DejaVu Sans", sans-serif}
+.title{font-size:14px;font-weight:600;fill:#1a1e1d}
+.axis{stroke:currentColor;stroke-width:1.2;fill:none;opacity:.55}
+.tick{stroke:currentColor;stroke-width:1;opacity:.55}
+.grid{stroke:currentColor;stroke-width:1;opacity:.12}
+.dash{stroke:currentColor;stroke-width:1;stroke-dasharray:5 4;opacity:.5;fill:none}
+.brk{stroke:currentColor;stroke-width:1.2;opacity:.6;fill:none}
+.trace{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.trace.ghost{opacity:.35;stroke-dasharray:3 3}
+.env{fill:none;stroke-width:1.2;stroke-dasharray:4 4;opacity:.7}
+.q-high{stroke:#2a78d6}
+.q-low{stroke:#eb6834}
+.q-high-t{fill:#2a78d6;font-weight:600}
+.q-low-t{fill:#eb6834;font-weight:600}
+.mark{stroke-width:1.6}
+.dot{fill:#ffffff;stroke-width:2.5}
+.band{fill:rgba(42,120,214,.09)}
+.peak-black{fill:#2a78d6;stroke:#2a78d6;stroke-width:1.5;stroke-linejoin:round;opacity:.9}
+.peak-white{fill:#ffffff;stroke:#2a78d6;stroke-width:1.8;stroke-linejoin:round}
+.tipbox{fill:#ffffff;stroke:#d3d8d4}
+.lay-pcb{fill:#c4d9c0} .lay-air{fill:#f7f9f7} .lay-wood{fill:#e6d3b1} .lay-felt{fill:#c9ccc4}
+.copper{fill:#c8843a}
+.piece{fill:#efe6d6;stroke:currentColor;stroke-width:1.2;opacity:.95}
+.bundle{fill:url(#wire);stroke:currentColor;stroke-width:1}
+.cap{fill:#eb6834;stroke:none}
+.magnet{fill:#8b8f92;opacity:.75}
+.field{fill:none;stroke:#2a78d6;stroke-width:1.6;opacity:.8}
+.seg{fill:#e9eef4;stroke:#d3d8d4}
+.seg-pulse{fill:#eb6834;opacity:.35;stroke:#eb6834}
+.seg-listen{fill:rgba(42,120,214,.09);stroke:#2a78d6}
+.box{fill:#ffffff;stroke:#d3d8d4;stroke-width:1.2}
+.box-piece{stroke:#2a78d6;stroke-width:1.8}
+.box-mcu{fill:#e9eef4;stroke:#2a78d6;stroke-width:1.8}
+.box-soft{fill:#e9eef4;stroke:#d3d8d4;stroke-width:1.2}
+.box-warm{fill:#ffffff;stroke:#eb6834;stroke-width:1.6}
+.wire{stroke:currentColor;stroke-width:1.4;fill:none;opacity:.7}
+.wire-a{stroke:#2a78d6;stroke-width:2;fill:none}
+.wire-p{stroke:#eb6834;stroke-width:2;fill:none}
+.zone{fill:none;stroke:#d3d8d4;stroke-width:1.2;stroke-dasharray:6 4}
+.coil{fill:none;stroke:#c8843a;stroke-width:2}
+.puck{fill:#efe6d6;stroke:currentColor;stroke-width:1.2}
+</style>
+<rect width="960" height="340" fill="#ffffff"/>
+<defs><marker id="arr9" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+<rect class="zone" x="14" y="26" width="932" height="96" rx="8"/>
+<text class="lbl mono muted" x="24.0" y="44.0">POUR CHAQUE QUADRANT (4) ET CHAQUE BOBINE (16) : environ 2 ms par case avec le moyennage x16</text>
+<rect class="box" x="24.0" y="56.0" width="138.0" height="52.0" rx="6"/>
+<text class="lbl strong" x="93.0" y="78.5" text-anchor="middle">adresser</text>
+<text class="lbl small" x="93.0" y="93.5" text-anchor="middle">mux et décodeurs</text>
+<line class="wire" x1="163.0" y1="82.0" x2="177.0" y2="82.0" marker-end="url(#arr9)"/>
+<rect class="box-warm" x="178.0" y="56.0" width="138.0" height="52.0" rx="6"/>
+<text class="lbl strong" x="247.0" y="78.5" text-anchor="middle">frapper</text>
+<text class="lbl small" x="247.0" y="93.5" text-anchor="middle">1 µs, 12 V</text>
+<line class="wire" x1="317.0" y1="82.0" x2="331.0" y2="82.0" marker-end="url(#arr9)"/>
+<rect class="box" x="332.0" y="56.0" width="138.0" height="52.0" rx="6"/>
+<text class="lbl strong" x="401.0" y="78.5" text-anchor="middle">blanking</text>
+<text class="lbl small" x="401.0" y="93.5" text-anchor="middle">2 µs, case étouffée</text>
+<line class="wire" x1="471.0" y1="82.0" x2="485.0" y2="82.0" marker-end="url(#arr9)"/>
+<rect class="box" x="486.0" y="56.0" width="138.0" height="52.0" rx="6"/>
+<text class="lbl strong" x="555.0" y="78.5" text-anchor="middle">écouter</text>
+<text class="lbl small" x="555.0" y="93.5" text-anchor="middle">512 points, 136 µs</text>
+<line class="wire" x1="625.0" y1="82.0" x2="639.0" y2="82.0" marker-end="url(#arr9)"/>
+<rect class="box" x="640.0" y="56.0" width="138.0" height="52.0" rx="6"/>
+<text class="lbl strong" x="709.0" y="78.5" text-anchor="middle">FFT</text>
+<text class="lbl small" x="709.0" y="93.5" text-anchor="middle">interpolation du pic</text>
+<line class="wire" x1="779.0" y1="82.0" x2="793.0" y2="82.0" marker-end="url(#arr9)"/>
+<rect class="box" x="794.0" y="56.0" width="138.0" height="52.0" rx="6"/>
+<text class="lbl strong" x="863.0" y="78.5" text-anchor="middle">f0 de la case</text>
+<text class="lbl small" x="863.0" y="93.5" text-anchor="middle">à 1 kHz près</text>
+<rect class="box" x="24.0" y="150.0" width="210.0" height="66.0" rx="6"/>
+<text class="lbl strong" x="129.0" y="172.0" text-anchor="middle">table de calibration</text>
+<text class="lbl small" x="129.0" y="187.0" text-anchor="middle">la note de chaque pièce,</text>
+<text class="lbl small" x="129.0" y="202.0" text-anchor="middle">mesurée une fois, en flash</text>
+<line class="wire" x1="235.0" y1="183.0" x2="255.0" y2="183.0" marker-end="url(#arr9)"/>
+<rect class="box" x="256.0" y="150.0" width="210.0" height="66.0" rx="6"/>
+<text class="lbl strong" x="361.0" y="172.0" text-anchor="middle">plus proche voisin</text>
+<text class="lbl small" x="361.0" y="187.0" text-anchor="middle">quelle pièce, quel camp,</text>
+<text class="lbl small" x="361.0" y="202.0" text-anchor="middle">ou case vide</text>
+<line class="wire" x1="467.0" y1="183.0" x2="487.0" y2="183.0" marker-end="url(#arr9)"/>
+<rect class="box" x="488.0" y="150.0" width="210.0" height="66.0" rx="6"/>
+<text class="lbl strong" x="593.0" y="172.0" text-anchor="middle">état des 64 cases</text>
+<text class="lbl small" x="593.0" y="187.0" text-anchor="middle">balayage complet en 0,13 s</text>
+<text class="lbl small" x="593.0" y="202.0" text-anchor="middle">5 fois par seconde au repos</text>
+<line class="wire" x1="699.0" y1="183.0" x2="719.0" y2="183.0" marker-end="url(#arr9)"/>
+<rect class="box" x="720.0" y="150.0" width="210.0" height="66.0" rx="6"/>
+<text class="lbl strong" x="825.0" y="172.0" text-anchor="middle">comparer au balayage</text>
+<text class="lbl small" x="825.0" y="187.0" text-anchor="middle">précédent : une case vidée,</text>
+<text class="lbl small" x="825.0" y="202.0" text-anchor="middle">une case remplie = un coup</text>
+<path class="wire" d="M863.0 108 V130 H361.0 V148" marker-end="url(#arr9)"/>
+<rect class="box" x="24.0" y="250.0" width="300.0" height="52.0" rx="6"/>
+<text class="lbl strong" x="174.0" y="272.5" text-anchor="middle">arbitre</text>
+<text class="lbl small" x="174.0" y="287.5" text-anchor="middle">coup légal ? roque, promotion, prise en passant</text>
+<rect class="box" x="356.0" y="250.0" width="260.0" height="52.0" rx="6"/>
+<text class="lbl strong" x="486.0" y="272.5" text-anchor="middle">LED de camp</text>
+<text class="lbl small" x="486.0" y="287.5" text-anchor="middle">deux points par case, 128 en tout</text>
+<rect class="box" x="648.0" y="250.0" width="288.0" height="52.0" rx="6"/>
+<text class="lbl strong" x="792.0" y="272.5" text-anchor="middle">ligne texte vers le pont radio</text>
+<text class="lbl small" x="792.0" y="287.5" text-anchor="middle">B occupation, M coup, F position, S état</text>
+<path class="wire" d="M825.0 216 V232 H174 V248" marker-end="url(#arr9)"/>
+<line class="wire" x1="324.0" y1="276.0" x2="354.0" y2="276.0" marker-end="url(#arr9)"/>
+<line class="wire" x1="616.0" y1="276.0" x2="646.0" y2="276.0" marker-end="url(#arr9)"/>
+<text class="lbl small muted" x="24.0" y="326.0">la mesure et la classification existent dans le firmware du cerveau ; l'arbitre et les messages de partie sont le lot 6 de la note 07</text>
+</svg>

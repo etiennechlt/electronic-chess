@@ -32,6 +32,18 @@ signalements dans la [note 14](14-revue-des-cartes.md).
 .venv/bin/python -m chessboard_calc.report
 ```
 
+## Schémas de la documentation (~2 s)
+
+```bash
+PYTHONPATH=tools .venv/bin/python -m docfig build
+```
+
+Réécrit les SVG de `docs/images/` que les notes 18 et 19 embarquent
+(ringdown, largeur de raie, plan de fréquences, Q selon la fréquence,
+coupe, cycle de mesure, chaîne, cerveau, banc) depuis
+`config/board.yaml` ; `tests/test_docfig.py` vérifie qu'ils se
+construisent et portent les nombres du modèle.
+
 ## Carte bobines (~10 s)
 
 ```bash

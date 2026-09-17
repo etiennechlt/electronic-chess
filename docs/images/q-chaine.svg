@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="docfig" viewBox="0 0 980 140" role="img" aria-label="Chaine de mesure de la piece au resultat en huit etapes">
+<style>
+svg.docfig{font-family:"IBM Plex Sans", "Segoe UI", "DejaVu Sans", Helvetica, Arial, sans-serif;color:#1a1e1d}
+.lbl{font-size:12.5px;fill:#1a1e1d}
+.lbl.small{font-size:11px}
+.lbl.strong{font-weight:600}
+.muted{fill:#4f5754}
+.mono{font-family:"IBM Plex Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace}
+.glyph{font-size:20px;font-family:"Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2", "DejaVu Sans", sans-serif}
+.title{font-size:14px;font-weight:600;fill:#1a1e1d}
+.axis{stroke:currentColor;stroke-width:1.2;fill:none;opacity:.55}
+.tick{stroke:currentColor;stroke-width:1;opacity:.55}
+.grid{stroke:currentColor;stroke-width:1;opacity:.12}
+.dash{stroke:currentColor;stroke-width:1;stroke-dasharray:5 4;opacity:.5;fill:none}
+.brk{stroke:currentColor;stroke-width:1.2;opacity:.6;fill:none}
+.trace{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.trace.ghost{opacity:.35;stroke-dasharray:3 3}
+.env{fill:none;stroke-width:1.2;stroke-dasharray:4 4;opacity:.7}
+.q-high{stroke:#2a78d6}
+.q-low{stroke:#eb6834}
+.q-high-t{fill:#2a78d6;font-weight:600}
+.q-low-t{fill:#eb6834;font-weight:600}
+.mark{stroke-width:1.6}
+.dot{fill:#ffffff;stroke-width:2.5}
+.band{fill:rgba(42,120,214,.09)}
+.peak-black{fill:#2a78d6;stroke:#2a78d6;stroke-width:1.5;stroke-linejoin:round;opacity:.9}
+.peak-white{fill:#ffffff;stroke:#2a78d6;stroke-width:1.8;stroke-linejoin:round}
+.tipbox{fill:#ffffff;stroke:#d3d8d4}
+.lay-pcb{fill:#c4d9c0} .lay-air{fill:#f7f9f7} .lay-wood{fill:#e6d3b1} .lay-felt{fill:#c9ccc4}
+.copper{fill:#c8843a}
+.piece{fill:#efe6d6;stroke:currentColor;stroke-width:1.2;opacity:.95}
+.bundle{fill:url(#wire);stroke:currentColor;stroke-width:1}
+.cap{fill:#eb6834;stroke:none}
+.magnet{fill:#8b8f92;opacity:.75}
+.field{fill:none;stroke:#2a78d6;stroke-width:1.6;opacity:.8}
+.seg{fill:#e9eef4;stroke:#d3d8d4}
+.seg-pulse{fill:#eb6834;opacity:.35;stroke:#eb6834}
+.seg-listen{fill:rgba(42,120,214,.09);stroke:#2a78d6}
+.box{fill:#ffffff;stroke:#d3d8d4;stroke-width:1.2}
+.box-piece{stroke:#2a78d6;stroke-width:1.8}
+.box-mcu{fill:#e9eef4;stroke:#2a78d6;stroke-width:1.8}
+.box-soft{fill:#e9eef4;stroke:#d3d8d4;stroke-width:1.2}
+.box-warm{fill:#ffffff;stroke:#eb6834;stroke-width:1.6}
+.wire{stroke:currentColor;stroke-width:1.4;fill:none;opacity:.7}
+.wire-a{stroke:#2a78d6;stroke-width:2;fill:none}
+.wire-p{stroke:#eb6834;stroke-width:2;fill:none}
+.zone{fill:none;stroke:#d3d8d4;stroke-width:1.2;stroke-dasharray:6 4}
+.coil{fill:none;stroke:#c8843a;stroke-width:2}
+.puck{fill:#efe6d6;stroke:currentColor;stroke-width:1.2}
+</style>
+<rect width="980" height="140" fill="#ffffff"/>
+<defs><marker id="arr7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+<rect class="box box-piece" x="8" y="30" width="110" height="72" rx="6"/>
+<text class="lbl strong" x="63.0" y="54.0" text-anchor="middle">pièce</text>
+<text class="lbl small" x="63.0" y="74.0" text-anchor="middle">bobine 45 µH</text>
+<text class="lbl small" x="63.0" y="90.0" text-anchor="middle">et son C0G</text>
+<path class="field" d="M119 58 q7 8 0 16 q-7 8 0 16"/>
+<path class="field" d="M125 58 q7 8 0 16 q-7 8 0 16"/>
+<rect class="box" x="130" y="30" width="110" height="72" rx="6"/>
+<text class="lbl strong" x="185.0" y="54.0" text-anchor="middle">spirale de la case</text>
+<text class="lbl small" x="185.0" y="74.0" text-anchor="middle">16 µH</text>
+<text class="lbl small" x="185.0" y="90.0" text-anchor="middle">20 tours</text>
+<line class="axis" x1="241" y1="66.0" x2="251" y2="66.0" marker-end="url(#arr7)"/>
+<rect class="box" x="252" y="30" width="110" height="72" rx="6"/>
+<text class="lbl strong" x="307.0" y="54.0" text-anchor="middle">aiguilleur</text>
+<text class="lbl small" x="307.0" y="74.0" text-anchor="middle">une case</text>
+<text class="lbl small" x="307.0" y="90.0" text-anchor="middle">à la fois</text>
+<line class="axis" x1="363" y1="66.0" x2="373" y2="66.0" marker-end="url(#arr7)"/>
+<rect class="box" x="374" y="30" width="110" height="72" rx="6"/>
+<text class="lbl strong" x="429.0" y="54.0" text-anchor="middle">amplificateur</text>
+<text class="lbl small" x="429.0" y="74.0" text-anchor="middle">gain ≈ 230</text>
+<text class="lbl small" x="429.0" y="90.0" text-anchor="middle"></text>
+<line class="axis" x1="485" y1="66.0" x2="495" y2="66.0" marker-end="url(#arr7)"/>
+<rect class="box" x="496" y="30" width="110" height="72" rx="6"/>
+<text class="lbl strong" x="551.0" y="54.0" text-anchor="middle">filtre</text>
+<text class="lbl small" x="551.0" y="74.0" text-anchor="middle">200 à 650 kHz</text>
+<text class="lbl small" x="551.0" y="90.0" text-anchor="middle"></text>
+<line class="axis" x1="607" y1="66.0" x2="617" y2="66.0" marker-end="url(#arr7)"/>
+<rect class="box" x="618" y="30" width="110" height="72" rx="6"/>
+<text class="lbl strong" x="673.0" y="54.0" text-anchor="middle">convertisseur</text>
+<text class="lbl small" x="673.0" y="74.0" text-anchor="middle">512 points</text>
+<text class="lbl small" x="673.0" y="90.0" text-anchor="middle">3,78 Méch/s</text>
+<line class="axis" x1="729" y1="66.0" x2="739" y2="66.0" marker-end="url(#arr7)"/>
+<rect class="box" x="740" y="30" width="110" height="72" rx="6"/>
+<text class="lbl strong" x="795.0" y="54.0" text-anchor="middle">calcul</text>
+<text class="lbl small" x="795.0" y="74.0" text-anchor="middle">FFT ou comptage</text>
+<text class="lbl small" x="795.0" y="90.0" text-anchor="middle">des périodes</text>
+<line class="axis" x1="851" y1="66.0" x2="861" y2="66.0" marker-end="url(#arr7)"/>
+<rect class="box" x="862" y="30" width="110" height="72" rx="6"/>
+<text class="lbl strong" x="917.0" y="54.0" text-anchor="middle">résultat</text>
+<text class="lbl small" x="917.0" y="74.0" text-anchor="middle">f0 à 1 kHz près,</text>
+<text class="lbl small" x="917.0" y="90.0" text-anchor="middle">donc la pièce</text>
+<text class="lbl muted" x="8.0" y="126.0">entre la pièce et la spirale : pas de fil, seulement le champ magnétique à travers le bois</text>
+</svg>

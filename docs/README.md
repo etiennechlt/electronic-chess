@@ -45,6 +45,11 @@ pas.
 - **Comprendre le quadrant avant de le redessiner** : la
   [note 17](notes/17-quadrant-fonction-et-cablage.md), fonction, cycle
   de mesure, composants et câblage bloc par bloc.
+- **Expliquer le projet à un non-spécialiste** : la
+  [note 18](notes/18-facteur-q.md) (le facteur Q, avec les chiffres du
+  projet) et la [note 19](notes/19-cerveau-et-banc-nucleo.md) (le
+  cerveau, le banc Nucleo, théorie contre réalité) ; leurs schémas
+  sont générés par `python -m docfig build`.
 - **Modifier une carte** :
   [générateurs KiCad](notes/03-generateurs-kicad.md),
   [routeur et garanties](notes/04-routeur-et-garanties.md),
@@ -69,6 +74,7 @@ pas.
 | `tools/analoggen/` | générateur complet de la carte analogique (schéma, PCB routé, BOM, SPICE) |
 | `tools/quadgen/` | générateur du quadrant 4 x 4 : spirales, échappées, LED, frontal complet (schéma, placement, routage) |
 | `tools/boardgen/` | générateur générique et les quatre cartes du plateau : cerveau, puissance, moteurs, horloge |
+| `tools/docfig/` | schémas explicatifs de `docs/images/` (notes 18 et 19), dessinés depuis le yaml |
 | `hardware/quadrant/`, `hardware/brain/`, `hardware/power/`, `hardware/motion/`, `hardware/clock/` | projets KiCad générés, BOM, placements, README de chaque carte |
 | `hardware/quadrant-2x2/` | quadrant réduit 2 x 2 de mise au point, même circuit et même bus, schéma dessiné par feuilles |
 | `hardware/mockup-2x2/` | artefacts générés : KiCad, gerbers, BOM JLC, guides |

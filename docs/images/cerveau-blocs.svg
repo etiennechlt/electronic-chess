@@ -1,0 +1,162 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="docfig" viewBox="0 0 960 640" role="img" aria-label="Schema bloc de la carte cerveau : alimentation en haut, microcontroleur au centre, quatre nappes de quadrant a gauche, radio et liaisons a droite, interface humaine et connecteurs en bas">
+<style>
+svg.docfig{font-family:"IBM Plex Sans", "Segoe UI", "DejaVu Sans", Helvetica, Arial, sans-serif;color:#1a1e1d}
+.lbl{font-size:12.5px;fill:#1a1e1d}
+.lbl.small{font-size:11px}
+.lbl.strong{font-weight:600}
+.muted{fill:#4f5754}
+.mono{font-family:"IBM Plex Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace}
+.glyph{font-size:20px;font-family:"Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2", "DejaVu Sans", sans-serif}
+.title{font-size:14px;font-weight:600;fill:#1a1e1d}
+.axis{stroke:currentColor;stroke-width:1.2;fill:none;opacity:.55}
+.tick{stroke:currentColor;stroke-width:1;opacity:.55}
+.grid{stroke:currentColor;stroke-width:1;opacity:.12}
+.dash{stroke:currentColor;stroke-width:1;stroke-dasharray:5 4;opacity:.5;fill:none}
+.brk{stroke:currentColor;stroke-width:1.2;opacity:.6;fill:none}
+.trace{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.trace.ghost{opacity:.35;stroke-dasharray:3 3}
+.env{fill:none;stroke-width:1.2;stroke-dasharray:4 4;opacity:.7}
+.q-high{stroke:#2a78d6}
+.q-low{stroke:#eb6834}
+.q-high-t{fill:#2a78d6;font-weight:600}
+.q-low-t{fill:#eb6834;font-weight:600}
+.mark{stroke-width:1.6}
+.dot{fill:#ffffff;stroke-width:2.5}
+.band{fill:rgba(42,120,214,.09)}
+.peak-black{fill:#2a78d6;stroke:#2a78d6;stroke-width:1.5;stroke-linejoin:round;opacity:.9}
+.peak-white{fill:#ffffff;stroke:#2a78d6;stroke-width:1.8;stroke-linejoin:round}
+.tipbox{fill:#ffffff;stroke:#d3d8d4}
+.lay-pcb{fill:#c4d9c0} .lay-air{fill:#f7f9f7} .lay-wood{fill:#e6d3b1} .lay-felt{fill:#c9ccc4}
+.copper{fill:#c8843a}
+.piece{fill:#efe6d6;stroke:currentColor;stroke-width:1.2;opacity:.95}
+.bundle{fill:url(#wire);stroke:currentColor;stroke-width:1}
+.cap{fill:#eb6834;stroke:none}
+.magnet{fill:#8b8f92;opacity:.75}
+.field{fill:none;stroke:#2a78d6;stroke-width:1.6;opacity:.8}
+.seg{fill:#e9eef4;stroke:#d3d8d4}
+.seg-pulse{fill:#eb6834;opacity:.35;stroke:#eb6834}
+.seg-listen{fill:rgba(42,120,214,.09);stroke:#2a78d6}
+.box{fill:#ffffff;stroke:#d3d8d4;stroke-width:1.2}
+.box-piece{stroke:#2a78d6;stroke-width:1.8}
+.box-mcu{fill:#e9eef4;stroke:#2a78d6;stroke-width:1.8}
+.box-soft{fill:#e9eef4;stroke:#d3d8d4;stroke-width:1.2}
+.box-warm{fill:#ffffff;stroke:#eb6834;stroke-width:1.6}
+.wire{stroke:currentColor;stroke-width:1.4;fill:none;opacity:.7}
+.wire-a{stroke:#2a78d6;stroke-width:2;fill:none}
+.wire-p{stroke:#eb6834;stroke-width:2;fill:none}
+.zone{fill:none;stroke:#d3d8d4;stroke-width:1.2;stroke-dasharray:6 4}
+.coil{fill:none;stroke:#c8843a;stroke-width:2}
+.puck{fill:#efe6d6;stroke:currentColor;stroke-width:1.2}
+</style>
+<rect width="960" height="640" fill="#ffffff"/>
+<defs><marker id="arr8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker><marker id="arr8b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+<text class="lbl mono muted" x="20.0" y="22.0">ALIMENTATION</text>
+<rect class="box" x="20.0" y="34.0" width="170.0" height="62.0" rx="6"/>
+<text class="lbl strong" x="105.0" y="54.0" text-anchor="middle">VBAT 9 à 12,6 V</text>
+<text class="lbl small" x="105.0" y="69.0" text-anchor="middle">depuis la carte puissance (J10)</text>
+<text class="lbl small" x="105.0" y="84.0" text-anchor="middle">fusible 2 A</text>
+<rect class="box-soft" x="215.0" y="34.0" width="170.0" height="62.0" rx="6"/>
+<text class="lbl strong" x="300.0" y="54.0" text-anchor="middle">buck 5 V</text>
+<text class="lbl small" x="300.0" y="69.0" text-anchor="middle">TPS62130, PWM forcé</text>
+<text class="lbl small" x="300.0" y="84.0" text-anchor="middle">logique, LED, buzzer</text>
+<rect class="box-soft" x="400.0" y="34.0" width="170.0" height="62.0" rx="6"/>
+<text class="lbl strong" x="485.0" y="54.0" text-anchor="middle">LDO 3,3 V</text>
+<text class="lbl small" x="485.0" y="69.0" text-anchor="middle">AP2112K</text>
+<text class="lbl small" x="485.0" y="84.0" text-anchor="middle">MCU et décodeurs</text>
+<rect class="box-soft" x="585.0" y="34.0" width="170.0" height="62.0" rx="6"/>
+<text class="lbl strong" x="670.0" y="54.0" text-anchor="middle">LDO 5VA analogique</text>
+<text class="lbl small" x="670.0" y="69.0" text-anchor="middle">LP2985 et perle de ferrite</text>
+<text class="lbl small" x="670.0" y="84.0" text-anchor="middle">îlot propre des frontaux</text>
+<rect class="box-soft" x="770.0" y="34.0" width="170.0" height="62.0" rx="6"/>
+<text class="lbl strong" x="855.0" y="54.0" text-anchor="middle">VIN 12 V impulsions</text>
+<text class="lbl small" x="855.0" y="69.0" text-anchor="middle">fusible 1 A, 100 µF</text>
+<text class="lbl small" x="855.0" y="84.0" text-anchor="middle">rail d'excitation des cases</text>
+<line class="wire" x1="190.0" y1="65.0" x2="213.0" y2="65.0" marker-end="url(#arr8)"/>
+<line class="wire" x1="385.0" y1="65.0" x2="398.0" y2="65.0" marker-end="url(#arr8)"/>
+<path class="wire" d="M190 80 H200 V110 H580 V96" marker-end="url(#arr8)"/>
+<path class="wire" d="M200 110 H765 V96" marker-end="url(#arr8)"/>
+<text class="lbl muted small" x="420.0" y="124.0">le 5 V descend vers les LED des quadrants par un second fusible</text>
+<rect class="box-mcu" x="330.0" y="250.0" width="300.0" height="160.0" rx="6"/>
+<text class="lbl strong" x="480.0" y="304.0" text-anchor="middle">STM32G474RE, 170 MHz, sans quartz</text>
+<text class="lbl small" x="480.0" y="319.0" text-anchor="middle">quatre convertisseurs, un par quadrant</text>
+<text class="lbl small" x="480.0" y="334.0" text-anchor="middle">FFT et capture de période</text>
+<text class="lbl small" x="480.0" y="349.0" text-anchor="middle">calibration des 64 cases en flash</text>
+<text class="lbl small" x="480.0" y="364.0" text-anchor="middle">arbitre de la partie (à écrire)</text>
+<text class="lbl mono muted" x="20.0" y="160.0">QUADRANTS</text>
+<rect class="box" x="20.0" y="172.0" width="180.0" height="62.0" rx="6"/>
+<text class="lbl strong" x="110.0" y="192.0" text-anchor="middle">quadrant 1</text>
+<text class="lbl small" x="110.0" y="207.0" text-anchor="middle">nappe FPC 16 broches</text>
+<text class="lbl small" x="110.0" y="222.0" text-anchor="middle">16 cases, 32 LED, frontal</text>
+<line class="wire-a" x1="200.0" y1="192.0" x2="330.0" y2="270.0" marker-end="url(#arr8)"/>
+<rect class="box" x="20.0" y="256.0" width="180.0" height="62.0" rx="6"/>
+<text class="lbl strong" x="110.0" y="276.0" text-anchor="middle">quadrant 2</text>
+<text class="lbl small" x="110.0" y="291.0" text-anchor="middle">nappe FPC 16 broches</text>
+<text class="lbl small" x="110.0" y="306.0" text-anchor="middle">16 cases, 32 LED, frontal</text>
+<line class="wire-a" x1="200.0" y1="276.0" x2="330.0" y2="300.0" marker-end="url(#arr8)"/>
+<rect class="box" x="20.0" y="340.0" width="180.0" height="62.0" rx="6"/>
+<text class="lbl strong" x="110.0" y="360.0" text-anchor="middle">quadrant 3</text>
+<text class="lbl small" x="110.0" y="375.0" text-anchor="middle">nappe FPC 16 broches</text>
+<text class="lbl small" x="110.0" y="390.0" text-anchor="middle">16 cases, 32 LED, frontal</text>
+<line class="wire-a" x1="200.0" y1="360.0" x2="330.0" y2="330.0" marker-end="url(#arr8)"/>
+<rect class="box" x="20.0" y="424.0" width="180.0" height="62.0" rx="6"/>
+<text class="lbl strong" x="110.0" y="444.0" text-anchor="middle">quadrant 4</text>
+<text class="lbl small" x="110.0" y="459.0" text-anchor="middle">nappe FPC 16 broches</text>
+<text class="lbl small" x="110.0" y="474.0" text-anchor="middle">16 cases, 32 LED, frontal</text>
+<line class="wire-a" x1="200.0" y1="444.0" x2="330.0" y2="360.0" marker-end="url(#arr8)"/>
+<text class="lbl small q-high-t" x="214.0" y="166.0">AMP_OUT 1 à 4 : un signal analogique par quadrant</text>
+<line class="wire-p" x1="330" y1="392" x2="262" y2="392"/>
+<line class="wire-p" x1="262" y1="216" x2="262" y2="468"/>
+<line class="wire-p" x1="262.0" y1="216.0" x2="202.0" y2="216.0" marker-end="url(#arr8)"/>
+<line class="wire-p" x1="262.0" y1="300.0" x2="202.0" y2="300.0" marker-end="url(#arr8)"/>
+<line class="wire-p" x1="262.0" y1="384.0" x2="202.0" y2="384.0" marker-end="url(#arr8)"/>
+<line class="wire-p" x1="262.0" y1="468.0" x2="202.0" y2="468.0" marker-end="url(#arr8)"/>
+<text class="lbl small q-low-t" x="270.0" y="432.0">bus de commande commun aux quatre nappes :</text>
+<text class="lbl small q-low-t" x="270.0" y="446.0">adresse A0 à A2, EN_L, EN_H, PULSE_EN, DAMP_EN_N</text>
+<text class="lbl small muted" x="270.0" y="460.0">plus les rails 5VA, 3V3, 5V_LED et VIN sur chaque nappe</text>
+<rect class="box-soft" x="20.0" y="508.0" width="196.0" height="40.0" rx="6"/>
+<text class="lbl strong" x="118.0" y="524.5" text-anchor="middle">tampon LED</text>
+<text class="lbl small" x="118.0" y="539.5" text-anchor="middle">74AHCT1G125, 3,3 V vers 5 V</text>
+<path class="wire" d="M20 528 H8 V203 H18" marker-end="url(#arr8)"/>
+<line class="wire" x1="30.0" y1="235.0" x2="30.0" y2="255.0" marker-end="url(#arr8)"/>
+<line class="wire" x1="30.0" y1="319.0" x2="30.0" y2="339.0" marker-end="url(#arr8)"/>
+<line class="wire" x1="30.0" y1="403.0" x2="30.0" y2="423.0" marker-end="url(#arr8)"/>
+<text class="lbl small muted" x="224.0" y="522.0">chaîne LED : 128 LED en série,</text>
+<text class="lbl small muted" x="224.0" y="536.0">entre par le quadrant 1, ressort par le 4</text>
+<text class="lbl mono muted" x="700.0" y="160.0">LIAISONS</text>
+<rect class="box" x="740.0" y="172.0" width="200.0" height="62.0" rx="6"/>
+<text class="lbl strong" x="840.0" y="192.0" text-anchor="middle">module ESP32-S3</text>
+<text class="lbl small" x="840.0" y="207.0" text-anchor="middle">WiFi et BLE : horloge, Lichess</text>
+<text class="lbl small" x="840.0" y="222.0" text-anchor="middle">pont radio, pas d'arbitrage</text>
+<rect class="box" x="740.0" y="262.0" width="200.0" height="48.0" rx="6"/>
+<text class="lbl strong" x="840.0" y="282.5" text-anchor="middle">embase Pi Zero (option)</text>
+<text class="lbl small" x="840.0" y="297.5" text-anchor="middle">cavalier JP1 : ESP ou Pi</text>
+<rect class="box" x="740.0" y="330.0" width="200.0" height="48.0" rx="6"/>
+<text class="lbl strong" x="840.0" y="350.5" text-anchor="middle">USB-C</text>
+<text class="lbl small" x="840.0" y="365.5" text-anchor="middle">avec protection ESD</text>
+<rect class="box" x="740.0" y="398.0" width="200.0" height="48.0" rx="6"/>
+<text class="lbl strong" x="840.0" y="418.5" text-anchor="middle">SWD 10 broches</text>
+<text class="lbl small" x="840.0" y="433.5" text-anchor="middle">programmation et débogage</text>
+<line class="wire" x1="630.0" y1="280.0" x2="738.0" y2="203.0" marker-end="url(#arr8b)"/>
+<text class="lbl small" x="640.0" y="176.0">UART isolée</text>
+<text class="lbl small muted" x="640.0" y="190.0">ADuM1201</text>
+<text class="lbl small muted" x="640.0" y="204.0">115200 bauds</text>
+<text class="lbl small muted" x="640.0" y="218.0">5 V commuté</text>
+<line class="wire" x1="630.0" y1="330.0" x2="738.0" y2="286.0" marker-end="url(#arr8b)"/>
+<line class="wire" x1="630.0" y1="360.0" x2="738.0" y2="354.0" marker-end="url(#arr8b)"/>
+<line class="wire" x1="630.0" y1="390.0" x2="738.0" y2="422.0" marker-end="url(#arr8b)"/>
+<text class="lbl mono muted" x="20.0" y="560.0">INTERFACE ET CONNECTEURS</text>
+<rect class="box" x="20.0" y="568.0" width="130.0" height="58.0" rx="6"/>
+<text class="lbl strong" x="85.0" y="593.5" text-anchor="middle">buzzer</text>
+<text class="lbl small" x="85.0" y="608.5" text-anchor="middle">sur 5 V, FET</text>
+<rect class="box" x="160.0" y="568.0" width="130.0" height="58.0" rx="6"/>
+<text class="lbl strong" x="225.0" y="593.5" text-anchor="middle">4 LED d'état</text>
+<text class="lbl small" x="225.0" y="608.5" text-anchor="middle">et un bouton</text>
+<rect class="box" x="500.0" y="568.0" width="210.0" height="58.0" rx="6"/>
+<text class="lbl strong" x="605.0" y="586.0" text-anchor="middle">J10 vers la carte puissance</text>
+<text class="lbl small" x="605.0" y="601.0" text-anchor="middle">I2C : jauge INA219, BMS BQ76920</text>
+<text class="lbl small" x="605.0" y="616.0" text-anchor="middle">CHG_STAT, PWR_KEY</text>
+<rect class="box" x="730.0" y="568.0" width="210.0" height="58.0" rx="6"/>
+<text class="lbl strong" x="835.0" y="586.0" text-anchor="middle">J9 vers la carte moteurs (phase 2)</text>
+<text class="lbl small" x="835.0" y="601.0" text-anchor="middle">STEP, DIR, UART TMC2209</text>
+<text class="lbl small" x="835.0" y="616.0" text-anchor="middle">fins de course, servo</text>
+</svg>
