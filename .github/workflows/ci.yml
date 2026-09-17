@@ -35,6 +35,8 @@ jobs:
         run: make -C firmware/mockup
       - name: Build brain firmware
         run: make -C firmware/board
+      - name: Build brain firmware, Nucleo bench variant
+        run: make -C firmware/board NUCLEO=1
       - name: Host test of the clock logic
         run: |
           cc -Wall -Wextra -Werror -Ifirmware/esp32/clock/main \

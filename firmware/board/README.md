@@ -12,6 +12,7 @@ commande les 128 LED de camp en série.
 
 ```bash
 make            # build/board.bin (arm-none-eabi-gcc)
+make NUCLEO=1   # build/nucleo/board-nucleo.bin, variante banc (section ci-dessous)
 make pins       # regénère src/board_pins.h depuis config/board.yaml
                 # (PYTHONPATH=tools, la chaîne LED vient de quadgen.layout)
 make flash      # rappel de la procédure ST-Link sur le connecteur SWD
@@ -64,3 +65,46 @@ montés tournés).
   partie du protocole (`B`, `M`, `F`, `S`, [note 12](../../docs/notes/12-protocole.md)) :
   la console n'émet encore que les CSV de mesure, que le pont ESP32
   relaie tels quels.
+
+## Variante banc : `make NUCLEO=1`
+
+Le même firmware, compilé pour le banc de la
+[note 19](../../docs/notes/19-cerveau-et-banc-nucleo.md) : une
+Nucleo-G474RE (même MCU que le cerveau) reliée au quadrant réduit 2 x 2
+par la carte de banc. Le bus, le cycle de mesure, la FFT, le
+comparateur, la calibration et la CLI sont identiques ; ce qui change
+vient de `board.h` et des constantes générées dans `board_pins.h` :
+
+| | cerveau (`make`) | banc (`make NUCLEO=1`) |
+|---|---|---|
+| Quadrants | 4, de 16 bobines | 1, de 4 bobines (`plateau.quadrant.reduced`) |
+| Console | USART1, PA9 et PA10, à travers l'ADuM1201 | USART2, PA2 et PA3, port série virtuel de la sonde ST-Link (`bench.console` du yaml) |
+| Convertisseurs | ADC1 à ADC4 | ADC1 seul (PA0, comparateur COMP3 inchangé) |
+| Chaîne LED | 128, quatre quadrants en série | 8, ordre du 2 x 2 (`NUCLEO_LED_CHAIN_SQ`) |
+| Cases dans le CSV | a1 à h8 | a1, b1, a2, b2, soit 0, 1, 8, 9 |
+| Commandes `2` à `4` | balayent un quadrant | refusées avec un commentaire |
+| Sortie | `build/board.bin` | `build/nucleo/board-nucleo.bin` |
+
+Câblage du quadrant sur la Nucleo-64 : le bus du cerveau
+(`plateau.brain.mcu_pins`) tombe sur l'embase Arduino, sauf
+DAMP_EN_N.
+
+| Signal de la nappe | Broche | Sur la Nucleo |
+|---|---|---|
+| AMP_OUT | PA0 | A0 |
+| PULSE_EN | PA4 | A2 |
+| MUX_A0, MUX_A1, MUX_A2 | PB3, PB5, PB4 | D3, D4, D5 |
+| MUX_EN_L | PC0 | A5 |
+| MUX_EN_H | PC1 | A4 |
+| DAMP_EN_N | PC2 | connecteur Morpho CN7, broche 35 (à vérifier sur l'UM2505) |
+| LED_DIN | PA5 | D13 |
+| 3V3, GND | | 3V3 et GND de la Nucleo |
+| 5VA, 5V_LED, VIN | | la carte de banc (LDO 5 V, rail LED, jack 12 V) |
+
+Flasher : copier `board-nucleo.bin` sur le lecteur NUCLEO, ou
+`st-flash write build/nucleo/board-nucleo.bin 0x8000000`. Console : le
+port série de la sonde, 115200 bauds, commande `h`. Deux broches ont
+une seconde vie sur la Nucleo : PC13 (LED_STAT1 du cerveau) est le
+bouton B1, PA5 (LED_DIN) la LED verte LD2 ; les LED d'état ne sont pas
+pilotées par cette version et LD2 clignote au rythme des trames LED,
+sans conséquence.

@@ -152,6 +152,10 @@ power:
 
 mcu: { part: STM32G474RE, sysclk_mhz: 170, mounting: soldered }  # LQFP64 on the brain board, SWD header (ADR 0010)
 
+bench:                         # NUCLEO=1 build of firmware/board (note 19): a Nucleo-G474RE
+  board: "Nucleo-G474RE"       # drives one reduced quadrant over the brain's bus pins
+  console: { usart: 2, tx: PA2, rx: PA3 }   # ST-Link virtual COM port (UM2505), 115200 bauds
+
 mockup:
   # 2 x 2 mockup, phase 1. Two boards (ADR 0008): a script-generated
   # 4-layer coil board and a Nucleo-shield analog board, joined edge to

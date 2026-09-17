@@ -188,4 +188,24 @@
 #define LED_COLOR_WHITE 0xFFAA3Cu
 #define LED_COLOR_BLACK 0x283CFFu
 
+/* grid: coils per quadrant row on the plateau and on the reduced bench quadrant */
+#define QUADRANT_SQUARES 4u
+#define REDUCED_SQUARES 2u
+#define PLATEAU_QUADRANTS 4u
+
+/* NUCLEO=1 bench: Nucleo-G474RE, console on the ST-Link virtual COM port */
+#define NUCLEO_CONSOLE_USART 2u
+#define NUCLEO_CONSOLE_TX_PORT GPIOA
+#define NUCLEO_CONSOLE_TX_PIN 2u
+/* NUCLEO_CONSOLE_TX: PA2 */
+
+#define NUCLEO_CONSOLE_RX_PORT GPIOA
+#define NUCLEO_CONSOLE_RX_PIN 3u
+/* NUCLEO_CONSOLE_RX: PA3 */
+
+#define NUCLEO_LED_COUNT 8u
+/* zero-based 8x8 square index per chain position */
+#define NUCLEO_LED_CHAIN_SQ { \
+    0u, 0u, 1u, 1u, 9u, 9u, 8u, 8u }
+
 #endif

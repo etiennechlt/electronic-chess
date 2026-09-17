@@ -4,7 +4,8 @@
  * selected converter. Clocked from PLL P at 56.67 MHz: 2.5 cycles of
  * sampling plus 12.5 of conversion, 3.78 Msps. The four converters are
  * used one at a time (sequential quadrant scan); simultaneous capture
- * is a later firmware step. */
+ * is a later firmware step. Only the first N_QUADRANTS converters are
+ * brought up: one on the Nucleo bench, four on the brain. */
 
 #include "app.h"
 
@@ -21,7 +22,7 @@ typedef struct {
     uint32_t dmamux_req;   /* RM0440 DMAMUX request numbers: ADC1 5, ADC2 36, ADC3 37, ADC4 38 */
 } adc_slot_t;
 
-static const adc_slot_t slots[N_QUADRANTS] = {
+static const adc_slot_t slots[4] = {
     {ADC1, ADC1_PORT, ADC1_PIN, 1u, 5u},
     {ADC2, ADC2_PORT, ADC2_PIN, 3u, 36u},
     {ADC3, ADC3_PORT, ADC3_PIN, 12u, 37u},

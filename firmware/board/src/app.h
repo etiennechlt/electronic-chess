@@ -11,7 +11,7 @@
 /* clock.c */
 void clock_init_170mhz(void);
 
-/* uart.c: USART1 = isolated console (ESP32 or Pi header). */
+/* uart.c: console, USART1 (isolated link) on the brain, the ST-Link port with NUCLEO=1. */
 void uart_init(void);
 void uart_putc(char c);
 void uart_puts(const char *s);
@@ -51,8 +51,8 @@ typedef struct {
     uint32_t snr_db10;   /* 10 x SNR in dB */
 } measure_t;
 void measure_init(void);
-measure_t measure_coil(uint32_t quadrant, uint32_t coil); /* 0..3, 0..15 */
-measure_t measure_square(uint32_t square);                /* 0..63, quadrant-major */
+measure_t measure_coil(uint32_t quadrant, uint32_t coil); /* quadrant, coil on its bus */
+measure_t measure_square(uint32_t square);                /* 0..N_SQUARES-1, quadrant-major */
 void measure_set_drive_pulse_ns(uint32_t ns);
 
 /* led.c */

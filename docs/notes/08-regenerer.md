@@ -150,8 +150,9 @@ Le gabarit de perçage du bois est la pièce `surface-template` dans
 
 ```bash
 cd firmware/board
-make pins    # regénère src/board_pins.h (PYTHONPATH=tools, chaîne LED depuis quadgen)
-make         # build/board.elf
+make pins       # regénère src/board_pins.h (PYTHONPATH=tools, chaîne LED depuis quadgen)
+make            # build/board.elf
+make NUCLEO=1   # build/nucleo/board-nucleo.elf, banc Nucleo de la note 19
 ```
 
 Maquette, pour référence :
@@ -163,7 +164,10 @@ make         # build/mockup.elf
 ```
 
 `board_pins.h` est commité : refaire `make pins` après toute édition
-de `mockup.nucleo_pins` ou `mockup.coil_board.leds` dans le yaml.
+de `plateau.brain.mcu_pins`, `plateau.quadrant`, `bench` ou
+`mockup.coil_board.leds` dans le yaml ; `tests/test_firmware_pins.py`
+échoue tant que l'en-tête commité du cerveau ne correspond pas au yaml
+(la maquette n'a pas ce garde-fou).
 
 ## Où vivent les artefacts
 

@@ -4,7 +4,7 @@
  *   h        help
  *   s        one scan of the 64 squares, CSV lines
  *   m / x    start / stop a repeating scan
- *   1..4     scan one quadrant (16 coils)
+ *   1..N     scan one quadrant (N_QUADRANTS of COILS_PER_QUADRANT coils)
  *   c        calibration pass: measure all squares, store to flash
  *   i        classify each square against the stored calibration
  *   r        raw ADC dump of quadrant 1 coil 1 (512 samples, CSV)
@@ -14,6 +14,7 @@
  *   o        all camp LEDs off
  *
  * CSV: q,coil,sq,fa_hz,fb_hz,amp_mv,snr_db10 with sq = file + 8 * rank
+ * (on the bench the single reduced quadrant sits at a1: squares 0, 1, 8, 9)
  */
 
 #include "app.h"
@@ -22,15 +23,17 @@ static bool monitor;
 static uint32_t pulse_ns = DRIVE_PULSE_NS;
 
 /* Quadrant-major index to the 8x8 square (file + 8 * rank): quadrants
- * 1 and 3 are the west half, 2 and 4 the east half mounted rotated. */
+ * 1 and 3 are the west half, 2 and 4 the east half mounted rotated.
+ * Coil index = row * COILS_PER_ROW + col, as the quadrant layout numbers
+ * its cells (quadgen.layout). */
 static uint32_t square_of(uint32_t quadrant, uint32_t coil) {
-    uint32_t col = coil % 4u, row = coil / 4u;
+    uint32_t col = coil % COILS_PER_ROW, row = coil / COILS_PER_ROW;
     if (quadrant & 1u) {
-        col = 3u - col;
-        row = 3u - row;
+        col = COILS_PER_ROW - 1u - col;
+        row = COILS_PER_ROW - 1u - row;
     }
-    uint32_t file = (quadrant & 1u) ? 4u + col : col;
-    uint32_t rank = (quadrant >= 2u) ? 4u + row : row;
+    uint32_t file = (quadrant & 1u) ? COILS_PER_ROW + col : col;
+    uint32_t rank = (quadrant >= 2u) ? COILS_PER_ROW + row : row;
     return file + 8u * rank;
 }
 
@@ -139,8 +142,10 @@ void cli_poll(void) {
     }
     switch (c) {
     case 'h':
-        uart_puts("# s scan | m/x monitor | 1..4 quadrant | c calibrate | "
-                  "i identify | r raw | p/P pulse\n");
+        uart_puts("# s scan | m/x monitor | 1..");
+        uart_put_uint(N_QUADRANTS);
+        uart_puts(" quadrant | c calibrate | i identify | r raw | p/P pulse | "
+                  "l light | o off\n");
         break;
     case 's':
         scan_all();
@@ -155,6 +160,10 @@ void cli_poll(void) {
     case '2':
     case '3':
     case '4':
+        if ((uint32_t)(c - '1') >= N_QUADRANTS) {
+            uart_puts("# no such quadrant on this target\n");
+            break;
+        }
         for (uint32_t k = 0; k < COILS_PER_QUADRANT; k++) {
             uint32_t sq = (uint32_t)(c - '1') * COILS_PER_QUADRANT + k;
             print_meas(sq, measure_square(sq));

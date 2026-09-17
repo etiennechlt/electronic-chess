@@ -107,7 +107,7 @@ le chemin retenu est 2 x 2 comme banc, quadrants 4 x 4 pour le plateau.
 
 | Élément | Rôle | État |
 |---|---|---|
-| Nucleo-G474RE | le MCU, la programmation, la console série | du commerce |
+| Nucleo-G474RE | le MCU, la programmation, la console série | du commerce ; firmware `make NUCLEO=1` |
 | Quadrant 2 x 2 assemblé | quatre cases, frontal complet, huit LED | généré ; deux nets à fermer, codes LCSC et devis à faire ([README](../../hardware/quadrant-2x2/README.md)) |
 | Carte de banc au format shield Nucleo-64 | jack 12 V avec protection, LDO 5VA, rail 5V_LED, tampon 74AHCT1G125 pour LED_DIN, connecteur FPC 16, pont AMP_OUT vers A0, points de test | à générer par `boardgen` avec les blocs déjà écrits pour la maquette (`mockup.power`, `mockup.analog_board.format`) ; solution de repli sans carte : breakout FPC 0,5 mm vers 2,54 mm, fils Dupont, module LDO 5 V |
 | Alimentation de laboratoire 12 V limitée en courant | le rail d'impulsion et le 5VA ; linéaire ou batterie, jamais un chargeur à découpage près des bobines | outillage, [note 10](10-plateau-8x8-et-horloge.md) section 12 |
@@ -133,13 +133,15 @@ connecteur Arduino de la Nucleo-64 :
 | 3V3, GND | | 3V3, GND de la Nucleo |
 | 5VA, 5V_LED, VIN | | la carte de banc |
 
-La console du firmware du cerveau est sur USART1 (PA9 et PA10, D8 et
-D2 sur la Nucleo), pas sur le port série virtuel de la sonde
-(USART2). Deux options : un adaptateur USB-UART sur D8 et D2, ou une
-variante de build `NUCLEO=1` de `firmware/board` qui déplace la
-console sur USART2 et fixe un quadrant de quatre bobines. Le firmware
-de maquette (`firmware/mockup`) ne convient pas : il pilote des lignes
-d'excitation individuelles, pas le bus à décodeurs du quadrant.
+Le firmware du cerveau se compile pour le banc avec `make NUCLEO=1`
+dans `firmware/board` ([README](../../firmware/board/README.md)) : la
+console passe sur USART2 (PA2 et PA3, le port série virtuel de la
+sonde ST-Link, section `bench.console` du yaml), un seul quadrant de
+quatre bobines est balayé sur ADC1, la chaîne LED est celle du 2 x 2 ;
+le bus, le cycle de mesure, la FFT, le comparateur, la calibration et
+les commandes sont ceux du cerveau. Le firmware de maquette
+(`firmware/mockup`) ne convient pas : il pilote des lignes d'excitation
+individuelles, pas le bus à décodeurs du quadrant.
 
 ## 6. Théorie contre réalité : ce que le banc mesure
 

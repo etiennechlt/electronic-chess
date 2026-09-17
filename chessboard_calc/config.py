@@ -395,6 +395,19 @@ class NucleoPinCfg(_Model):
     mcu: str
 
 
+class BenchConsoleCfg(_Model):
+    usart: int
+    tx: str
+    rx: str
+
+
+class BenchCfg(_Model):
+    """The Nucleo bench of note 19: NUCLEO=1 build of the brain firmware."""
+
+    board: str
+    console: BenchConsoleCfg
+
+
 class MockupCfg(_Model):
     test_pieces: tuple[TestPieceCfg, ...]
     coil_board: CoilBoardCfg
@@ -611,6 +624,7 @@ class BoardConfig(_Model):
     friction: FrictionCfg
     power: PowerCfg
     mcu: McuCfg
+    bench: BenchCfg
     mockup: MockupCfg
     plateau: PlateauCfg
     clock: ClockCfg
