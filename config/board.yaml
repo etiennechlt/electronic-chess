@@ -152,9 +152,49 @@ power:
 
 mcu: { part: STM32G474RE, sysclk_mhz: 170, mounting: soldered }  # LQFP64 on the brain board, SWD header (ADR 0010)
 
-bench:                         # NUCLEO=1 build of firmware/board (note 19): a Nucleo-G474RE
-  board: "Nucleo-G474RE"       # drives one reduced quadrant over the brain's bus pins
+bench:                         # the Nucleo bench of note 19: NUCLEO=1 build of firmware/board
+  board: "Nucleo-G474RE"       # and the bench shield of boardgen (module bench)
   console: { usart: 2, tx: PA2, rx: PA3 }   # ST-Link virtual COM port (UM2505), 115200 bauds
+  arduino_pins:                # Arduino Uno V3 connectors of the Nucleo-64 (UM2505)
+    A0: PA0
+    A1: PA1
+    A2: PA4
+    A3: PB0
+    A4: PC1
+    A5: PC0
+    D0: PC5
+    D1: PC4
+    D2: PA10
+    D3: PB3
+    D4: PB5
+    D5: PB4
+    D6: PB10
+    D7: PA8
+    D8: PA9
+    D9: PC7
+    D10: PB6
+    D11: PA7
+    D12: PA6
+    D13: PA5
+    D14: PB9
+    D15: PB8
+  # Quadrant bus on those connectors, keyed like plateau.brain.mcu_pins.
+  # Every signal sits on the brain's own pin (tests/test_bench.py) except
+  # DAMP_EN_N: PC2 only reaches a Morpho connector, so the bench moves it
+  # to D6 and the shield needs no Morpho socket; board.h applies the move.
+  signals:
+    ADC1: A0
+    PULSE_EN: A2
+    MUX_A0: D3
+    MUX_A1: D4
+    MUX_A2: D5
+    MUX_EN_L: A5
+    MUX_EN_H: A4
+    DAMP_EN_N: D6
+    LED_DIN_MCU: D13
+  shield:                      # boardgen.bench: Uno V3 header pattern, parts between the rows
+    board_mm: [80.0, 56.0]     # the Uno outline is 68.6 x 53.3, the east strip holds the jack and the FPC
+    layers: 2
 
 mockup:
   # 2 x 2 mockup, phase 1. Two boards (ADR 0008): a script-generated

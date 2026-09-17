@@ -43,6 +43,45 @@
 #else
 #error "bench.console.usart in config/board.yaml: only USART2 is wired here"
 #endif
+/* The bus rides the Arduino connectors of the Nucleo (bench.signals in the
+ * yaml): the brain's own pins, except DAMP_EN_N which leaves PC2 (a Morpho
+ * only pin) for D6 so the bench shield needs no Morpho socket. */
+#undef ADC1_PORT
+#undef ADC1_PIN
+#define ADC1_PORT NUCLEO_ADC1_PORT
+#define ADC1_PIN NUCLEO_ADC1_PIN
+#undef PULSE_EN_PORT
+#undef PULSE_EN_PIN
+#define PULSE_EN_PORT NUCLEO_PULSE_EN_PORT
+#define PULSE_EN_PIN NUCLEO_PULSE_EN_PIN
+#undef MUX_A0_PORT
+#undef MUX_A0_PIN
+#define MUX_A0_PORT NUCLEO_MUX_A0_PORT
+#define MUX_A0_PIN NUCLEO_MUX_A0_PIN
+#undef MUX_A1_PORT
+#undef MUX_A1_PIN
+#define MUX_A1_PORT NUCLEO_MUX_A1_PORT
+#define MUX_A1_PIN NUCLEO_MUX_A1_PIN
+#undef MUX_A2_PORT
+#undef MUX_A2_PIN
+#define MUX_A2_PORT NUCLEO_MUX_A2_PORT
+#define MUX_A2_PIN NUCLEO_MUX_A2_PIN
+#undef MUX_EN_L_PORT
+#undef MUX_EN_L_PIN
+#define MUX_EN_L_PORT NUCLEO_MUX_EN_L_PORT
+#define MUX_EN_L_PIN NUCLEO_MUX_EN_L_PIN
+#undef MUX_EN_H_PORT
+#undef MUX_EN_H_PIN
+#define MUX_EN_H_PORT NUCLEO_MUX_EN_H_PORT
+#define MUX_EN_H_PIN NUCLEO_MUX_EN_H_PIN
+#undef DAMP_EN_N_PORT
+#undef DAMP_EN_N_PIN
+#define DAMP_EN_N_PORT NUCLEO_DAMP_EN_N_PORT
+#define DAMP_EN_N_PIN NUCLEO_DAMP_EN_N_PIN
+#undef LED_DIN_MCU_PORT
+#undef LED_DIN_MCU_PIN
+#define LED_DIN_MCU_PORT NUCLEO_LED_DIN_MCU_PORT
+#define LED_DIN_MCU_PIN NUCLEO_LED_DIN_MCU_PIN
 #else
 #define BOARD_NAME "brain"
 #define N_QUADRANTS PLATEAU_QUADRANTS

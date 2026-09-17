@@ -86,8 +86,11 @@ vient de `board.h` et des constantes générées dans `board_pins.h` :
 | Sortie | `build/board.bin` | `build/nucleo/board-nucleo.bin` |
 
 Câblage du quadrant sur la Nucleo-64 : le bus du cerveau
-(`plateau.brain.mcu_pins`) tombe sur l'embase Arduino, sauf
-DAMP_EN_N.
+(`plateau.brain.mcu_pins`) tombe sur l'embase Arduino, à une exception
+près, DAMP_EN_N, dont le PC2 du cerveau n'atteint qu'un connecteur
+Morpho : la variante le prend sur D6 (section `bench.signals` du yaml,
+appliquée par `board.h`), ce qui permet une carte de banc sans
+connecteur Morpho (`hardware/bench/`).
 
 | Signal de la nappe | Broche | Sur la Nucleo |
 |---|---|---|
@@ -96,7 +99,7 @@ DAMP_EN_N.
 | MUX_A0, MUX_A1, MUX_A2 | PB3, PB5, PB4 | D3, D4, D5 |
 | MUX_EN_L | PC0 | A5 |
 | MUX_EN_H | PC1 | A4 |
-| DAMP_EN_N | PC2 | connecteur Morpho CN7, broche 35 (à vérifier sur l'UM2505) |
+| DAMP_EN_N | PB10 (PC2 sur le cerveau) | D6 |
 | LED_DIN | PA5 | D13 |
 | 3V3, GND | | 3V3 et GND de la Nucleo |
 | 5VA, 5V_LED, VIN | | la carte de banc (LDO 5 V, rail LED, jack 12 V) |

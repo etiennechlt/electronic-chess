@@ -146,6 +146,16 @@ dans n'importe quel navigateur.
 Le gabarit de perçage du bois est la pièce `surface-template` dans
 `mechanical/exports/`.
 
+## Carte de banc Nucleo (~1 min)
+
+```bash
+PYTHONPATH=tools .venv/bin/python -m boardgen build bench --render docs/images/bench.png
+```
+
+Régénère `hardware/bench/` (projet KiCad, BOM, placements) depuis la
+section `bench` du yaml : embases Arduino sur l'empreinte officielle
+`Arduino_UNO_R3`, bus du quadrant sur les broches de `bench.signals`.
+
 ## Firmware
 
 ```bash

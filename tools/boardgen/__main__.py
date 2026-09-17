@@ -1,4 +1,4 @@
-"""CLI: python -m boardgen build <brain|power|motion|clock> [--out DIR] [--render PATH]."""
+"""CLI: python -m boardgen build <brain|power|motion|clock|bench> [--out DIR] [--render PATH]."""
 
 from __future__ import annotations
 
@@ -23,11 +23,12 @@ def _register():
 
     BOARDS["brain"] = (brain.build_brain, brain.SPEC, brain.schematic_groups)
     try:
-        from . import clock, motion, power
+        from . import bench, clock, motion, power
 
         BOARDS["power"] = (power.build_power, power.SPEC, power.schematic_groups)
         BOARDS["motion"] = (motion.build_motion, motion.SPEC, motion.schematic_groups)
         BOARDS["clock"] = (clock.build_clock, clock.SPEC, clock.schematic_groups)
+        BOARDS["bench"] = (bench.build_bench, bench.SPEC, bench.schematic_groups)
     except ImportError:
         pass
 

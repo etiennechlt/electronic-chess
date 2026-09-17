@@ -77,6 +77,7 @@ pas.
 | `tools/docfig/` | schémas explicatifs de `docs/images/` (notes 18 et 19), dessinés depuis le yaml |
 | `hardware/quadrant/`, `hardware/brain/`, `hardware/power/`, `hardware/motion/`, `hardware/clock/` | projets KiCad générés, BOM, placements, README de chaque carte |
 | `hardware/quadrant-2x2/` | quadrant réduit 2 x 2 de mise au point, même circuit et même bus, schéma dessiné par feuilles |
+| `hardware/bench/` | carte de banc, shield Nucleo-64 qui alimente et relie le quadrant 2 x 2 (note 19) |
 | `hardware/mockup-2x2/` | artefacts générés : KiCad, gerbers, BOM JLC, guides |
 | `firmware/board/` | firmware du cerveau (STM32G474, quatre quadrants, 128 LED) en CMSIS nu |
 | `firmware/esp32/` | pont radio du cerveau et horloge (ESP-IDF, NimBLE), logique d'horloge testée sur PC |

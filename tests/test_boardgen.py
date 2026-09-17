@@ -12,7 +12,7 @@ from analoggen.fplib import FOOTPRINT_DIR
 
 pytestmark = pytest.mark.skipif(not FOOTPRINT_DIR.exists(), reason="KiCad libraries not installed")
 
-BOARDS = ["brain", "power", "motion", "clock"]
+BOARDS = ["brain", "power", "motion", "clock", "bench"]
 
 
 def _module(name):

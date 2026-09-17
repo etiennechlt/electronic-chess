@@ -203,6 +203,43 @@
 #define NUCLEO_CONSOLE_RX_PIN 3u
 /* NUCLEO_CONSOLE_RX: PA3 */
 
+/* quadrant bus on the Arduino connectors (bench.signals); board.h applies them */
+#define NUCLEO_ADC1_PORT GPIOA
+#define NUCLEO_ADC1_PIN 0u
+/* NUCLEO_ADC1: PA0 */
+
+#define NUCLEO_PULSE_EN_PORT GPIOA
+#define NUCLEO_PULSE_EN_PIN 4u
+/* NUCLEO_PULSE_EN: PA4 */
+
+#define NUCLEO_MUX_A0_PORT GPIOB
+#define NUCLEO_MUX_A0_PIN 3u
+/* NUCLEO_MUX_A0: PB3 */
+
+#define NUCLEO_MUX_A1_PORT GPIOB
+#define NUCLEO_MUX_A1_PIN 5u
+/* NUCLEO_MUX_A1: PB5 */
+
+#define NUCLEO_MUX_A2_PORT GPIOB
+#define NUCLEO_MUX_A2_PIN 4u
+/* NUCLEO_MUX_A2: PB4 */
+
+#define NUCLEO_MUX_EN_L_PORT GPIOC
+#define NUCLEO_MUX_EN_L_PIN 0u
+/* NUCLEO_MUX_EN_L: PC0 */
+
+#define NUCLEO_MUX_EN_H_PORT GPIOC
+#define NUCLEO_MUX_EN_H_PIN 1u
+/* NUCLEO_MUX_EN_H: PC1 */
+
+#define NUCLEO_DAMP_EN_N_PORT GPIOB
+#define NUCLEO_DAMP_EN_N_PIN 10u
+/* NUCLEO_DAMP_EN_N: PB10 */
+
+#define NUCLEO_LED_DIN_MCU_PORT GPIOA
+#define NUCLEO_LED_DIN_MCU_PIN 5u
+/* NUCLEO_LED_DIN_MCU: PA5 */
+
 #define NUCLEO_LED_COUNT 8u
 /* zero-based 8x8 square index per chain position */
 #define NUCLEO_LED_CHAIN_SQ { \

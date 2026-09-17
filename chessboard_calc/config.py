@@ -401,11 +401,27 @@ class BenchConsoleCfg(_Model):
     rx: str
 
 
+class BenchShieldCfg(_Model):
+    board_mm: tuple[float, float]
+    layers: int
+
+
 class BenchCfg(_Model):
-    """The Nucleo bench of note 19: NUCLEO=1 build of the brain firmware."""
+    """The Nucleo bench of note 19: NUCLEO=1 build of the brain firmware and
+    the bench shield of boardgen."""
 
     board: str
     console: BenchConsoleCfg
+    arduino_pins: dict[str, str]
+    signals: dict[str, str]
+    shield: BenchShieldCfg
+
+    @model_validator(mode="after")
+    def _signals_sit_on_known_connectors(self) -> BenchCfg:
+        unknown = [s for s, label in self.signals.items() if label not in self.arduino_pins]
+        if unknown:
+            raise ValueError(f"bench.signals on unknown Arduino pins: {unknown}")
+        return self
 
 
 class MockupCfg(_Model):

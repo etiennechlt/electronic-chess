@@ -106,6 +106,11 @@ def main(cfg_path: str, out_path: str) -> None:
     lines.append(f"#define NUCLEO_CONSOLE_USART {bench['console']['usart']}u")
     lines.extend(pin_defines("NUCLEO_CONSOLE_TX", bench["console"]["tx"]))
     lines.extend(pin_defines("NUCLEO_CONSOLE_RX", bench["console"]["rx"]))
+    lines.append(
+        "/* quadrant bus on the Arduino connectors (bench.signals); board.h applies them */"
+    )
+    for signal, label in bench["signals"].items():
+        lines.extend(pin_defines(f"NUCLEO_{signal.upper()}", bench["arduino_pins"][label]))
     nchain = led_chain(cfg_path, reduced=True)
     lines.extend(chain_defines("NUCLEO_", nchain))
     lines.append("")
