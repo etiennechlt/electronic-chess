@@ -17,6 +17,7 @@ placed, then a global clearance check validates the whole board.
 from __future__ import annotations
 
 import dataclasses
+import functools
 import math
 import sys
 from dataclasses import dataclass, field
@@ -33,17 +34,24 @@ from shapely.strtree import STRtree
 from chessboard_calc.config import BoardConfig
 
 from .circuit import build_quadrant_circuit
+from .connect import (
+    CHECK_SLOP_MM,
+    close_net,
+    connectivity_check,
+    exit_copper,
+    net_pieces,
+    pad_copper,
+    track_cells,
+)
 from .escape import (
     FANOUT_VIA_DRILL_MM,
     FANOUT_VIA_PAD_MM,
     STUB_WIDTH_MM,
     claim_stubs,
     escape_stubs,
-    exit_cells,
     free_stubs,
     reclaim_stubs,
     runway_end,
-    stub_cells,
 )
 from .layout import LED_ROLES, Layout, Led, make_layout
 from .router import MultiRouter, Raster
@@ -56,7 +64,6 @@ CAP_VIA_DY = 1.5  # cap vias, toward the square center
 PIN_VIA_STEP = 1.2  # staggered vias behind the FPC pads
 FP_LED = "LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm"
 FP_CAP = "Capacitor_SMD:C_0603_1608Metric"
-CHECK_SLOP_MM = 0.001  # numerical slop of the exact clearance checks
 # Stacking vias sit radially off the turn bands: a via at the inner or
 # outer radius lands in the turns of the two other layers (the next turn
 # is a quarter turn away, 0.4 mm further out) and shorts the coil. Each
@@ -101,16 +108,15 @@ class PadItem:
     w: float
     h: float
     rot: float = 0.0  # degrees, KiCad sense (counterclockwise on screen)
+    ref: str = ""
+    number: str = ""
+    drill: float = 0.0  # plated hole of a through pad, 0 for SMD
+    shape: str = "rect"  # KiCad pad shape: rect, roundrect, oval, circle
+    rratio: float = 0.0  # corner radius of a roundrect pad over its smaller side
 
     def geometry(self):
-        """Exact outline as a shapely polygon."""
-        from shapely import affinity
-        from shapely.geometry import box
-
-        g = box(-self.w / 2, -self.h / 2, self.w / 2, self.h / 2)
-        if self.rot:
-            g = affinity.rotate(g, -self.rot, origin=(0, 0))
-        return affinity.translate(g, self.x, self.y)
+        """Exact copper as a shapely polygon, the shape as KiCad draws it."""
+        return pad_copper(self)
 
 
 @dataclass
@@ -145,6 +151,7 @@ class BuildResult:
     circuit: Circuit | None = None
     open_nets: list[str] = field(default_factory=list)
     routed_nets: int = 0
+    unconnected: list[str] = field(default_factory=list)  # nets in pieces after routing
     chain: object = None
 
 
@@ -157,7 +164,8 @@ class Builder:
         self.lay = make_layout(cfg)
         self.circuit, self.chain_design = build_quadrant_circuit(cfg)
         self.board = Board(
-            thickness_mm=cfg.gap.pcb_mm, title="Damier LC, quadrant 4x4, bobines et frontal"
+            thickness_mm=cfg.gap.pcb_mm,
+            title=f"Damier LC, quadrant {self.lay.n}x{self.lay.n}, bobines et frontal",
         )
         self.res = BuildResult(
             board=self.board,
@@ -175,19 +183,25 @@ class Builder:
         # obstacle rasters keyed by (layer, excluded net), painted incrementally
         self.base: dict[tuple[str, str], Raster] = {}
         self.by_ref = {c.ref: c for c in self.circuit.components}
+        # tracks and vias drawn by hand before the strip is routed (seed, seed_via)
+        self.seeds: list[tuple[str, str, float, list]] = []
+        self.seed_vias: list[tuple[str, float, float, float | None, float | None]] = []
+        self._pre_strip = 0  # tracks drawn before the strip's parts lead their nets
 
     # ------------------------------------------------------------ emitters
-    def track(self, net: str, layer: str, pts, width: float | None = None) -> None:
+    def track(self, net: str, layer: str, pts, width: float | None = None) -> Track:
         width = self.w if width is None else width
         pts = [(float(x), float(y)) for x, y in pts]
         self.board.polyline(pts, width, layer, self.board.net(net))
-        self.res.tracks.append(Track(net, layer, width, pts))
+        item = Track(net, layer, width, pts)
+        self.res.tracks.append(item)
         self.res.led_tracks.append((net, layer, width, pts))
         r = width / 2.0 + self.inflate
         for (rl, excl), ras in self.base.items():
             if rl == layer and excl != net:
                 for a, b in zip(pts, pts[1:], strict=False):
                     ras.segment(a[0], a[1], b[0], b[1], r)
+        return item
 
     def via(
         self, net: str, x: float, y: float, pad: float | None = None, drill: float | None = None
@@ -226,11 +240,32 @@ class Builder:
             net = pad_nets.get(pad.number, f"__nc_{ref}_{pad.number}")
             px, py = pad_abs_pos(x, y, rot, pad)
             sw, sh = pad.size
-            if abs((rot + pad.rot) % 180.0 - 90.0) < 1e-6:
-                sw, sh = sh, sw
+            total = (rot + pad.rot) % 360.0
+            quarter = round(total / 90.0)
+            if abs(total - quarter * 90.0) < 1e-6:
+                # square to the board: the LED raster paints plain rectangles
+                if quarter % 2:
+                    sw, sh = sh, sw
+                total = 0.0
+            drill = pad.drill if pad.kind == "thru_hole" and pad.drill else 0.0
             for layer in pad.layers:
                 if layer in COPPER_LAYERS or layer == "*.Cu":
-                    self.res.pads.append(PadItem(net, layer, px, py, sw, sh))
+                    self.res.pads.append(
+                        PadItem(
+                            net,
+                            layer,
+                            px,
+                            py,
+                            sw,
+                            sh,
+                            total,
+                            ref,
+                            pad.number,
+                            drill,
+                            pad.shape,
+                            pad.rratio,
+                        )
+                    )
 
     # ------------------------------------------------------------ pieces
     def spirals(self) -> None:
@@ -340,8 +375,10 @@ class Builder:
         th = np.radians(rot)
         ax = x + TIE_STEP_MM * float(np.cos(th))
         ay = y - TIE_STEP_MM * float(np.sin(th))
-        self.res.pads.append(PadItem(net_a, "B.Cu", round(ax, 4), round(ay, 4), pad, pad, rot))
-        self.res.pads.append(PadItem(net_b, "B.Cu", x, y, pad, pad, rot))
+        self.res.pads.append(
+            PadItem(net_a, "B.Cu", round(ax, 4), round(ay, 4), pad, pad, rot, ref, "1")
+        )
+        self.res.pads.append(PadItem(net_b, "B.Cu", x, y, pad, pad, rot, ref, "2"))
 
     def escapes(self) -> None:
         """Both terminals follow the same lane; A (F.Cu) enters its cell at
@@ -576,6 +613,7 @@ class Builder:
 
     # ------------------------------------------------------------ strip
     def strip_parts(self) -> None:
+        self._pre_strip = len(self.res.tracks)
         lay = self.lay
         placements = strip_placements(self.cfg, lay, self.circuit)
         self.stubs: list[tuple[str, list, float, bool]] = []
@@ -619,20 +657,51 @@ class Builder:
         net, x, w = BUS_3V3_IN2
         self.track(net, "In2.Cu", [(x, y0), (x, y1)], w)
 
-    def strip_routing(self) -> None:
-        """Every net with a pad in the strip, shortest span first, on all
-        four layers; what the router cannot close is listed for pcbnew."""
+    # ------------------------------------------------------------ strip routing
+    STRIP_GRID_MM = 0.1
+    STRIP_WIDE_MM = 0.4  # the supplies and the pulse rail
+    STRIP_THIN_MM = 0.25  # every other net of the strip
+    WIDE_NETS = ("VIN", "5VA", "3V3", "DRIVE_BUS", "PULSE_RAIL", NET_GND)
+    EXIT_LAYER = "In2.Cu"  # the fanout exits of the fine-pitch packages continue here
+    STRIP_MAX_NODES = 2_000_000
+
+    def seed(self, net: str, layer: str, pts, width: float | None = None) -> None:
+        """A track drawn by hand before the strip is routed: the router
+        starts from it and joins the net's other pieces to it (an escape
+        the lattice cannot find, a corridor kept for a net routed late)."""
+        pts = [(float(x), float(y)) for x, y in pts]
+        self.seeds.append((net, layer, width or self.STRIP_THIN_MM, pts))
+
+    def seed_via(
+        self, net: str, x: float, y: float, pad: float | None = None, drill: float | None = None
+    ) -> None:
+        """A via drawn by hand before the strip is routed, part of its net's seed."""
+        self.seed_vias.append((net, float(x), float(y), pad, drill))
+
+    def _strip_router(self, track_half: float) -> MultiRouter:
+        """The lattice of the strip inflated for one track width, painted
+        with everything drawn so far inside the strip and the escape claims
+        of its fine-pitch packages; the board edges are closed."""
         lay, rt = self.lay, self.rt
-        W, H = lay.strip_w, lay.board_h
+        W, H, g = lay.strip_w, lay.board_h, self.STRIP_GRID_MM
         mr = MultiRouter(
-            COPPER_LAYERS, 0.0, 0.0, W, H, 0.1, self.clr, rt.led_via.pad_mm, h_weight=1.3
+            COPPER_LAYERS,
+            0.0,
+            0.0,
+            W,
+            H,
+            g,
+            self.clr,
+            rt.led_via.pad_mm,
+            track_half=track_half,
+            h_weight=1.3,
         )
-        edge = rt.edge_clearance_mm
+        m = int(rt.edge_clearance_mm / g) + 3
         for la in COPPER_LAYERS:
-            mr.own[la][:, : int(edge / 0.1) + 3] = MultiRouter.MULTI
-            mr.own[la][: int(edge / 0.1) + 3, :] = MultiRouter.MULTI
-            mr.own[la][-(int(edge / 0.1) + 3) :, :] = MultiRouter.MULTI
-            mr.own_via[la][:, : int(edge / 0.1) + 5] = MultiRouter.MULTI
+            mr.own[la][:, :m] = MultiRouter.MULTI
+            mr.own[la][:m, :] = MultiRouter.MULTI
+            mr.own[la][-m:, :] = MultiRouter.MULTI
+            mr.own_via[la][:, : m + 2] = MultiRouter.MULTI
         for t in self.res.tracks:
             for a, b in zip(t.pts, t.pts[1:], strict=False):
                 if min(a[0], b[0]) < W + 1.0:
@@ -640,118 +709,174 @@ class Builder:
         for v in self.res.vias:
             if v.x < W + 1.0:
                 mr.disc(v.net, COPPER_LAYERS, v.x, v.y, v.pad / 2.0)
-        pad_cells: dict[str, list[tuple[str, list]]] = {}
         for p in self.res.pads:
-            if p.x >= W + 1.0:
-                continue
-            layers = COPPER_LAYERS if p.layer == "*.Cu" else [p.layer]
-            mr.rect(p.net, layers, p.x, p.y, p.w, p.h, p.rot)
-            if p.net.startswith("__"):
-                continue  # unconnected pad: painted, never routed
-            for la in layers:
-                pad_cells.setdefault(p.net, []).append((la, mr.cells_of_rect(p.x, p.y, p.w, p.h)))
+            if p.x < W + 1.0:
+                layers = COPPER_LAYERS if p.layer == "*.Cu" else [p.layer]
+                mr.rect(p.net, layers, p.x, p.y, p.w, p.h, p.rot)
         for hx, hy, hd in self.res.holes:
             if hx < W + 1.0:
                 mr.keepout(hx, hy, hd / 2.0 + 0.5)
-        claim_stubs(mr, self.stubs, exit_layer="In2.Cu")
-        # existing copper of a net inside the strip counts as connected
-        track_cells: dict[str, list[tuple[str, list]]] = {}
-        for net, pts, runway, via in self.stubs:
-            track_cells.setdefault(net, []).append(("F.Cu", stub_cells(mr, pts, runway)))
-            if via:
-                vc = mr.cell(*runway_end(pts, runway))
-                for la in COPPER_LAYERS:
-                    track_cells.setdefault(net, []).append((la, [vc]))
-                track_cells.setdefault(net, []).append(("In2.Cu", exit_cells(mr, pts, runway)))
+        claim_stubs(mr, self.stubs, exit_layer=self.EXIT_LAYER)
+        return mr
+
+    def strip_routing(self) -> None:
+        """Every net with a pad in the strip, as pieces of copper joined one
+        route at a time (quadgen.connect): a pad with its escape stub, a
+        bus, an escape from the coils, a track drawn by hand. The supplies
+        wide on a lattice inflated for the wide track, the rest thin on a
+        lattice inflated for the thin one, every route painted into both;
+        shortest span first, ground last; what cannot be closed is listed
+        with its reason, for pcbnew."""
+        lay, rt = self.lay, self.rt
+        W = lay.strip_w
+        seed_tracks: dict[str, list[Track]] = {}
+        for net, layer, width, pts in self.seeds:
+            seed_tracks.setdefault(net, []).append(self.track(net, layer, pts, width))
+        for net, x, y, pad, drill in self.seed_vias:
+            self.via(net, x, y, pad, drill)
+        routers = {
+            "wide": self._strip_router(self.STRIP_WIDE_MM / 2.0),
+            "thin": self._strip_router(self.STRIP_THIN_MM / 2.0),
+        }
+        self._routers = routers  # kept for inspection after a run
+        ref = routers["thin"]
+        pads_of: dict[str, list[PadItem]] = {}
+        for p in self.res.pads:
+            if p.x < W + 1.0 and p.net and not p.net.startswith("__"):
+                pads_of.setdefault(p.net, []).append(p)
+        tracks_of: dict[str, list[Track]] = {}
         for t in self.res.tracks:
-            for a, b in zip(t.pts, t.pts[1:], strict=False):
-                if min(a[0], b[0]) < W + 1.0:
-                    cells = [
-                        mr.cell(px, py)
-                        for k in range(41)
-                        for px, py in [
-                            (a[0] + (b[0] - a[0]) * k / 40.0, a[1] + (b[1] - a[1]) * k / 40.0)
-                        ]
-                        if px < W + 0.5
-                    ]
-                    if cells:
-                        track_cells.setdefault(t.net, []).append((t.layer, cells))
+            tracks_of.setdefault(t.net, []).append(t)
+        vias_of: dict[str, list[Via]] = {}
+        for v in self.res.vias:
+            vias_of.setdefault(v.net, []).append(v)
+        # the copper laid before the strip's parts (buses, coil escapes, the
+        # link's own pins) leads its net's pieces, the seeds before it
+        pre_strip: dict[str, list[Track]] = {}
+        for t in self.res.tracks[: self._pre_strip]:
+            pre_strip.setdefault(t.net, []).append(t)
+        skip = {"", NET_5V, "LED_DIN", "LED_DOUT", NET_GND}
+        nets = [n for n in pads_of if n not in skip and not n.startswith("LED_L")]
+        if NET_GND in pads_of:
+            nets.append(NET_GND)
+        pieces_of = {
+            net: net_pieces(
+                ref,
+                COPPER_LAYERS,
+                pads_of[net],
+                tracks_of.get(net, []),
+                vias_of.get(net, []),
+                self.stubs,
+                self.EXIT_LAYER,
+                first=seed_tracks.get(net, []) + pre_strip.get(net, []),
+            )
+            for net in nets
+        }
+        # a seed keeps its own cells whatever the neighbours' inflation says
+        # (a fan drawn by hand at the pad pitch is legal for the exact rule,
+        # not for the lattice), like the escape stubs
+        seed_claims = [
+            (net, layer, track_cells(ref, pts)) for net, layer, _w, pts in self.seeds
+        ] + [
+            (net, la, [ref.cell(x, y)])
+            for net, x, y, _pad, _drill in self.seed_vias
+            for la in COPPER_LAYERS
+        ]
+
+        def reclaim_seeds(mr):
+            for net, la, cells in seed_claims:
+                nid = mr.nid(net)
+                own = mr.own[la]
+                for i, j in cells:
+                    own[j, i] = nid
+
+        for mr in routers.values():
+            reclaim_seeds(mr)
+        # fanout vias of every net: a route that starts or ends inside the
+        # exit corridor of one gets the corridor's copper drawn to the via
+        fanout: dict[str, list] = {}
+        for net, pts, rw, via in self.stubs:
+            if via:
+                fanout.setdefault(net, []).append((runway_end(pts, rw), pts, rw))
 
         def span(net):
-            pts = [(p.x, p.y) for p in self.res.pads if p.net == net and p.x < W + 1.0]
+            pts = [(p.x, p.y) for p in pads_of[net]]
             return (max(x for x, _ in pts) - min(x for x, _ in pts)) + (
                 max(y for _, y in pts) - min(y for _, y in pts)
             )
 
-        nets = [
-            n
-            for n in pad_cells
-            if n not in ("", NET_5V, NET_GND, "LED_DIN", "LED_DOUT") and not n.startswith("LED_L")
-        ]
-        nets.sort(key=span)
-        nets += [NET_GND]
-        width_of = {n: 0.4 for n in ("VIN", "5VA", "3V3", "DRIVE_BUS", "PULSE_RAIL", NET_GND)}
-        for net in nets:
-            groups = list(pad_cells.get(net, []))
-            if len(groups) + len(track_cells.get(net, [])) < 2:
-                continue
-            connected = list(track_cells.get(net, []))
-            if not connected:
-                connected = [groups.pop(0)]
-            pending = groups
-            width = width_of.get(net, 0.25)
-            while pending:
-                starts: dict[str, list] = {}
-                for la, cells in connected:
-                    starts.setdefault(la, []).extend(cells)
-                goals: dict[str, list] = {}
-                for la, cells in pending:
-                    goals.setdefault(la, []).extend(cells)
-                found = mr.route(net, starts, goals, max_nodes=2_000_000)
-                if found is None:
-                    nid = mr.nid(net)
-                    usable = [
-                        sum(
-                            1
-                            for la, cells in groups
-                            for i, j in cells
-                            if mr.own[la][j, i] in (mr.FREE, nid)
-                        )
-                        for groups in (connected, pending)
-                    ]
-                    self.res.open_nets.append(
-                        f"{net}: {len(pending)} pad(s) left open "
-                        f"(usable start cells {usable[0]}, goal cells {usable[1]})"
-                    )
-                    break
-                tracks, vias = found
-                clash = self._route_clash(net, tracks, vias, width, rt.led_via.pad_mm)
-                if clash:
-                    # the lattice is conservative but not exact: a route that
-                    # would fail the real clearance is dropped, never drawn
-                    self.res.open_nets.append(f"{net}: route rejected, {clash}")
-                    break
+        def paint(net, tracks, vias, width):
+            for mr in routers.values():
                 for la, pts in tracks:
-                    self.track(net, la, pts, width)
                     for a, b in zip(pts, pts[1:], strict=False):
                         mr.segment(net, la, a[0], a[1], b[0], b[1], width)
-                    connected.append((la, [mr.cell(x, y) for x, y in pts]))
                 for x, y in vias:
-                    self.via(net, x, y)
                     mr.disc(net, COPPER_LAYERS, x, y, rt.led_via.pad_mm / 2.0)
-                reclaim_stubs(mr, self.stubs, exit_layer="In2.Cu")
-                # pads reached by the new copper are connected now
-                reached = set()
-                for la, pts in tracks:
-                    end_cells = {mr.cell(*pts[0]), mr.cell(*pts[-1])}
-                    for k, (pla, cells) in enumerate(pending):
-                        if pla == la and end_cells & set(cells):
-                            reached.add(k)
-                if not reached:
-                    reached.add(0)
-                for k in sorted(reached, reverse=True):
-                    connected.append(pending.pop(k))
-            else:
+                reclaim_stubs(mr, self.stubs, exit_layer=self.EXIT_LAYER)
+                reclaim_seeds(mr)
+
+        def usable(mr, net, cells):
+            nid = mr.nid(net)
+            return sum(
+                1 for la, cs in cells.items() for i, j in cs if mr.own[la][j, i] in (mr.FREE, nid)
+            )
+
+        via_pad = rt.led_via.pad_mm
+
+        def attempt(net, starts, goals):
+            """One route of `net` between two sets of cells, drawn and
+            painted when legal: wide on the wide lattice for a supply, thin
+            again when the wide track finds no way or brushes a pad or a
+            stub of the fine-pitch package it leaves."""
+            wide = net in self.WIDE_NETS
+            mr = routers["wide"] if wide else routers["thin"]
+            width = self.STRIP_WIDE_MM if wide else self.STRIP_THIN_MM
+            found = mr.route(net, starts, goals, max_nodes=self.STRIP_MAX_NODES)
+            if found is None and wide:
+                mr, width = routers["thin"], self.STRIP_THIN_MM
+                found = mr.route(net, starts, goals, max_nodes=self.STRIP_MAX_NODES)
+            if found is None:
+                return (
+                    f"no route (usable start cells {usable(mr, net, starts)}, "
+                    f"goal cells {usable(mr, net, goals)})"
+                )
+            tracks, vias = found
+            clash = self._route_clash(net, tracks, vias, width, via_pad)
+            if clash and mr is routers["wide"]:
+                mr, width = routers["thin"], self.STRIP_THIN_MM
+                found = mr.route(net, starts, goals, max_nodes=self.STRIP_MAX_NODES)
+                if found is not None:
+                    tracks, vias = found
+                    clash = self._route_clash(net, tracks, vias, width, via_pad)
+            if clash:
+                # the lattice is conservative but not exact: a route that
+                # would fail the real clearance is dropped, never drawn
+                return f"route rejected, {clash}"
+            exits = exit_copper(mr, self.EXIT_LAYER, tracks, fanout.get(net, []))
+            clash = self._route_clash(net, exits, [], STUB_WIDTH_MM, via_pad) if exits else None
+            if clash:
+                return f"exit corridor blocked, {clash}"
+            for la, pts in tracks:
+                self.track(net, la, pts, width)
+            for la, pts in exits:
+                self.track(net, la, pts, STUB_WIDTH_MM)
+            for x, y in vias:
+                self.via(net, x, y)
+            paint(net, tracks, vias, width)
+            if exits:
+                paint(net, exits, [], STUB_WIDTH_MM)
+            return tracks, vias, mr
+
+        order = sorted([n for n in nets if n != NET_GND], key=span)
+        if NET_GND in nets:
+            order.append(NET_GND)
+        for net in order:
+            pieces = pieces_of[net]
+            if len(pieces) < 2:
+                if len(pads_of[net]) >= 2:
+                    self.res.routed_nets += 1  # one piece already
+                continue
+            if close_net(net, pieces, functools.partial(attempt, net), self.res.open_nets):
                 self.res.routed_nets += 1
 
     # ------------------------------------------------------------ drawing
@@ -764,7 +889,7 @@ class Builder:
             b.gr_text(coil.net, cx, cy - 3.0, "F.SilkS", 2.0)
             b.gr_circle(cx, cy, 1.0, "F.SilkS", 0.15)
         b.gr_text(
-            "DAMIER LC / QUADRANT 4x4 / p50",
+            f"DAMIER LC / QUADRANT {lay.n}x{lay.n} / p{lay.pitch:g}",
             lay.strip_w + 2.0 * lay.pitch,
             lay.board_h - 3.0,
             "F.SilkS",
@@ -904,6 +1029,17 @@ class Builder:
             self.strip_routing()
         self.outline()
         self.res.clearance_errors = self.clearance_check()
+        # every net one piece of copper, whatever the router believed
+        self.res.unconnected = connectivity_check(
+            self.res.tracks, self.res.vias, self.res.pads, COPPER_LAYERS
+        )
+        listed = {line.split(":", 1)[0] for line in self.res.open_nets}
+        for line in self.res.unconnected:
+            net = line.split(":", 1)[0]
+            if net not in listed:
+                self.res.open_nets.append(line)
+                self.res.routed_nets = max(0, self.res.routed_nets - 1)
+                listed.add(net)
         return self.res
 
 
@@ -987,7 +1123,7 @@ def summary(result: BuildResult) -> str:
     return (
         f"{len(result.coils)} coils, {len(result.leds)} LEDs, {n_tracks} segments, "
         f"{len(result.vias)} vias, open routes {len(result.open_routes)}, "
-        f"clearance errors {len(result.clearance_errors)}"
+        f"open nets {len(result.open_nets)}, clearance errors {len(result.clearance_errors)}"
     )
 
 

@@ -137,11 +137,12 @@ Généré par `python -m boardgen build bench` :
 
 | Composants | Segments | Vias | Nets fermés | Nets ouverts | Défauts d'isolement |
 |---|---|---|---|---|---|
-| 43 | 267 | 72 | 29 | 0 | 0 |
+| 43 | 263 | 72 | 29 | 0 | 0 |
 
-Tous les nets sont fermés : le contrôle de connexité du cœur
-(chaque net une seule pièce de cuivre, plan de masse compris) ne
-signale rien, `tests/test_bench.py` le vérifie à chaque exécution.
+Tous les nets sont fermés : le contrôle de connexité partagé des
+générateurs (`tools/quadgen/connect.py`, chaque net une seule pièce de
+cuivre, plan de masse compris, [note 04](../../docs/notes/04-routeur-et-garanties.md))
+ne signale rien, `tests/test_bench.py` le vérifie à chaque exécution.
 
 DRC KiCad 7.0.11 (`/usr/bin/python3 tools/drc.py
 hardware/bench/bench.kicad_pcb`, zones remplies) : zéro erreur, zéro

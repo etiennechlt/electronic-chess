@@ -94,6 +94,45 @@ la lecture du rapport DRC). Les cartes de la phase 1 ont été générées
 avant ces correctifs : elles portent les mêmes trous cachés jusqu'à
 leur régénération ([note 07](07-etat-et-reste-a-faire.md)).
 
+## La comptabilité de connexité, partagée (`tools/quadgen/connect.py`)
+
+Le quadrant (`quadgen`, bande de frontal) et les cartes génériques
+(`boardgen`) routent avec le même treillis mais tenaient chacun leur
+propre comptabilité de ce qui est relié ; celle du quadrant avait les
+trois défauts corrigés sur le banc (tout le cuivre déjà tracé compté
+comme une pièce, pastilles prises pour des rectangles, pastille
+supposée atteinte), d'où deux nets ouverts annoncés pour 117
+connexions manquantes au DRC. Depuis le 18/09/2026 cette comptabilité
+n'existe qu'en un exemplaire, importé par les deux générateurs :
+
+- **Pièces de cuivre** (`net_pieces`) : avant de router un net, ses
+  pastilles, tronçons d'échappée, bus, seeds et vias sont groupés par
+  contact réel (géométrie exacte, union-find) ; chaque composante est
+  une pièce, avec les cellules du treillis où une route peut partir ou
+  arriver : le cuivre réel de la pastille (jamais un coin arrondi), son
+  tronçon d'échappée et sa piste d'envol, le couloir de sortie de son
+  via d'éventail, les échantillons d'une piste, un via sur toutes les
+  couches. La composante du premier seed, ou du premier bus, mène.
+- **Boucle de fermeture** (`close_net`) : le routeur part des pièces
+  reliées vers les pièces en attente ; une pièce que le cuivre relié
+  touche déjà n'a pas besoin de route ; une pièce ne compte atteinte
+  que si une route y finit ou qu'un via y tombe (`reached`) ; une route
+  qui n'atteint rien laisse le net ouvert avec sa raison.
+- **Cuivre de couloir** (`exit_copper`) : la route qui part ou finit
+  dans le couloir d'un via d'éventail reçoit la piste fine qui la relie
+  au via.
+- **Contrôle final** (`connectivity_check`) : chaque net une seule
+  pièce, un plan de masse comptant pour une pièce sur sa couche, les
+  îlots de piste comptés comme des pièces ; le compte du build est
+  celui que KiCad fera.
+
+Le banc régénéré avec cette version reste fermé (29 nets, DRC KiCad
+sans erreur ni élément non connecté) ; le routage de la bande du
+quadrant a été réécrit dessus, avec deux treillis (pistes larges pour
+les alimentations, fines pour le reste) comme sur les cartes
+génériques, et des routes manuelles (`seed`, `seed_via`) pour ce que
+le routeur ne trouve pas.
+
 ## Les trois garanties formelles
 
 Ordre d'exécution dans `build_pcb` : routage, puis
