@@ -19,7 +19,9 @@ from __future__ import annotations
 import dataclasses
 import functools
 import math
+import os
 import sys
+import time
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -870,14 +872,23 @@ class Builder:
         order = sorted([n for n in nets if n != NET_GND], key=span)
         if NET_GND in nets:
             order.append(NET_GND)
+        verbose = bool(os.environ.get("QUADGEN_VERBOSE"))  # progress of the minutes-long routing
         for net in order:
             pieces = pieces_of[net]
             if len(pieces) < 2:
                 if len(pads_of[net]) >= 2:
                     self.res.routed_nets += 1  # one piece already
                 continue
+            t0 = time.time()
+            n_open = len(self.res.open_nets)
             if close_net(net, pieces, functools.partial(attempt, net), self.res.open_nets):
                 self.res.routed_nets += 1
+            if verbose:
+                state = "closed" if len(self.res.open_nets) == n_open else self.res.open_nets[-1]
+                print(
+                    f"  {net}: {len(pieces)} pieces, {time.time() - t0:.0f} s, {state}",
+                    file=sys.stderr,
+                )
 
     # ------------------------------------------------------------ drawing
     def outline(self) -> None:
