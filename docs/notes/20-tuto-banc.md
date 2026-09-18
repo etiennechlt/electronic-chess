@@ -15,8 +15,8 @@ les générateurs dans `hardware/bench/` et `hardware/quadrant-2x2/`.
   de quatre cases relié par une nappe, et quatre pucks de test. Plus
   du bois, du feutre et une alimentation 12 V.
 - On ne commande rien tant que la section 1 n'est pas verte. Le
-  18/09/2026 la carte de banc est prête ; le quadrant 2 x 2 n'est plus
-  qu'à sept liaisons de l'être (contre 117 le matin même) ; les
+  18/09/2026 la carte de banc et le quadrant 2 x 2 sont tous deux au
+  DRC zéro, éléments non connectés compris (117 le matin même) ; les
   composants passifs n'ont pas de code fournisseur.
 - On monte le banc par échelons, un test par échelon, jamais deux
   nouveautés à la fois. La mesure qui décide de la suite du projet est
@@ -27,7 +27,7 @@ les générateurs dans `hardware/bench/` et `hardware/quadrant-2x2/`.
 | Élément | État au 18/09/2026 | Ce qui débloque |
 |---|---|---|
 | Carte de banc (`hardware/bench/`) | générée, 29 nets fermés, DRC KiCad 7 : zéro erreur, zéro élément non connecté ([README](../../hardware/bench/README.md)) | rien : exporter les gerbers (section 3.1) |
-| Quadrant 2 x 2 (`hardware/quadrant-2x2/`) | reroutée le 18/09/2026 sur la comptabilité de connexité partagée ([note 04](04-routeur-et-garanties.md)) : bus réespacés pour qu'un via puisse les atteindre, plan de masse à la place du bus de masse, prises des cellules et sorties de la chaîne LED dessinées dans le générateur. DRC KiCad 7 : 7 éléments non connectés, contre 117 le matin même, et le compte du build dit la même chose que celui de KiCad. Les sept sont listés un par un dans le [README](../../hardware/quadrant-2x2/README.md) | fermer ces sept liaisons, dans `tools/quadgen/hand.py` de préférence, DRC à zéro, puis exporter |
+| Quadrant 2 x 2 (`hardware/quadrant-2x2/`) | reroutée le 18/09/2026 sur la comptabilité de connexité partagée ([note 04](04-routeur-et-garanties.md)) : bus réespacés pour qu'un via puisse les atteindre, plan de masse à la place du bus de masse, prises des cellules, sorties de la chaîne LED et les sept liaisons hors de portée du routeur dessinées dans le générateur. DRC KiCad 7 : zéro erreur, zéro élément non connecté, contre 117 le matin même, et le compte du build dit la même chose que celui de KiCad ([README](../../hardware/quadrant-2x2/README.md)) | rien : exporter les gerbers (section 3.1) |
 | Codes fournisseur (LCSC) | présents pour les circuits intégrés, transistors, diodes, connecteurs, LED et inductance ; absents pour résistances, condensateurs, fusibles, barrettes, cavalier et points de test | une session avec accès au réseau (lot sourcing, [note 15](15-skills-embarques.md)) ; en attendant, les passifs se commandent par valeur et boîtier (section 3) |
 | Devis de fabrication | à faire ([note 16](16-cout-des-cartes.md) pour les options) | même session réseau |
 | Deux points de fiche technique | l'aiguilleur ADG1607 alimenté en 5 V, les vias de 0,45 mm chez le fabricant ([note 14](14-revue-des-cartes.md)) | lecture des fiches, devis |

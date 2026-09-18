@@ -149,15 +149,17 @@ Brochage FPC identique aux deux bouts.
 ## 3. Résultats des builds et du DRC
 
 À jour au commit de cette note pour le cerveau, la puissance et
-l'horloge ; les deux quadrants sont ceux du 13/09/2026 (schéma dessiné,
-diode de roue libre, BAV99W, [note 17](17-quadrant-fonction-et-cablage.md)).
+l'horloge ; le quadrant 4 x 4 est celui du 13/09/2026 (schéma dessiné,
+diode de roue libre, BAV99W, [note 17](17-quadrant-fonction-et-cablage.md)),
+le 2 x 2 celui du 18/09/2026 (comptabilité de connexité partagée et
+liaisons tracées à la main, [note 04](04-routeur-et-garanties.md)).
 Régénérer avec le runbook et relancer `tools/drc.py` pour vérifier.
 
 <!-- results -->
 | Carte | Build | Nets ouverts | Signalements DRC | Éléments non connectés | Erreurs DRC hors nets ouverts |
 |---|---|---|---|---|---|
 | Quadrant | 16 bobines, 344 composants | 9 | 733 | 347 | aucune |
-| Quadrant 2 x 2 | 4 bobines, 126 composants | 2 | 465 | 117 | aucune |
+| Quadrant 2 x 2 | 4 bobines, 126 composants | 0 | 395 | 0 | aucune |
 | Puissance | 82 composants | 10 | 307 | 69 | aucune |
 | Horloge | 50 composants | 6 | 178 | 51 | aucune |
 | Cerveau | 113 composants | 24 | 353 | 141 | aucune |

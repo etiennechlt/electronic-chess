@@ -16,6 +16,12 @@ def reduced_config(cfg: BoardConfig) -> BoardConfig:
     return BoardConfig.model_validate(raw)
 
 
+def is_reduced(cfg: BoardConfig) -> bool:
+    """Whether a config is the reduced quadrant's, grid included."""
+    quad = cfg.plateau.quadrant
+    return quad.squares == quad.reduced.squares
+
+
 def project_name(cfg: BoardConfig, reduced: bool) -> str:
     s = cfg.plateau.quadrant.squares
     return f"quadrant-{s}x{s}" if reduced else "quadrant"

@@ -105,10 +105,17 @@ reroutée dessus : bus réespacés pour qu'un via puisse les atteindre,
 plan de masse à la place du bus de masse, prises des cellules et
 sorties de la chaîne LED dessinées dans le générateur
 ([note 04](04-routeur-et-garanties.md)). Le quadrant 2 x 2 passe de
-117 éléments non connectés au DRC à une poignée, listés dans son
+117 éléments non connectés au DRC à sept, puis à **zéro** : les sept
+demandaient des passages hors de portée du routeur (un chas de
+0,475 mm dans le champ d'échappées du connecteur, deux nappes longues
+comme la bande, quatre pastilles que les rails analogiques enjambent,
+une crique du plan de masse) et sont tracées dans
+`tools/quadgen/hand.py`, avant le routage, donc redessinées et
+vérifiées à chaque build. Bilan dans son
 [README](../../hardware/quadrant-2x2/README.md). Le quadrant 4 x 4
 n'a pas été régénéré : même générateur, mêmes correctifs, mais sa
-bande est deux fois plus longue et son bilan reste à refaire.
+bande est deux fois plus longue, ses liaisons à la main lui sont
+propres et son bilan reste à refaire.
 
 ### 2. Simulation
 

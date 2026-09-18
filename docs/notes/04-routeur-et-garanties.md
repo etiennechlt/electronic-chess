@@ -172,6 +172,87 @@ le routeur comme deux pastilles d'un même net. Le contrôle de
 connexité compte un nœud par îlot, donc un plan coupé ne masque plus
 rien.
 
+## Ce que le routeur ne peut pas trouver (quadrant 2 x 2)
+
+Le compte du build et celui de KiCad étant devenus le même, la liste des
+liaisons restantes était exacte : sept, et chacune a pu être expliquée
+avant d'être tracée. Aucune ne vient d'un mauvais réglage du routeur ;
+chacune demande un passage que sa grille ne sait pas voir. Elles sont
+dans `tools/quadgen/hand.py`, dessinées avant le routage comme les
+prises des cellules, donc le routeur route tout le reste autour d'elles.
+
+1. **PULSE_EN, quatre pièces** : broche 14 du connecteur, grille du FET
+   d'impulsion, sa résistance de rappel, entrée de l'inverseur du bloc
+   central. Le champ d'échappées du connecteur est fait de vias au pas
+   de 0,5 mm sur deux rangées, plus le via de la chaîne LED de la
+   broche voisine, à pastille de 0,6 mm : il reste 0,475 mm de libre à
+   l'est de la broche 14, là où une piste de 0,25 avec ses deux gardes
+   de 0,15 en demande 0,55. La route à la main enfile ce chas en
+   plongeant au nord d'un via puis en passant au sud de l'autre,
+   0,21 mm de marge au pire point. Elle atterrit dans la pastille de
+   grille, seul endroit où un via tient, et de ce via partent les deux
+   autres branches, une nappe In1 qui descend le bord ouest de la bande
+   jusqu'à l'inverseur (43 mm) et une autre vers l'est jusqu'à la
+   résistance de rappel, dans la rangée libre sous la rangée de pads.
+2. **M2_A et DAMP4_N, un signal par cellule.** Les deux sortent de leur
+   cellule par le couloir de via entre la diode double et la colonne
+   des FET, puis il leur faut une nappe sur toute la longueur de la
+   bande (47 et 42 mm) pour rejoindre le multiplexeur au sud et le
+   décodeur au centre. Le routeur paie chaque via et chaque coude : une
+   nappe qui traverse la carte n'est jamais le choix local le moins
+   cher, et quand vient leur tour, les couloirs pris par leurs voisines
+   ne laissent plus de chemin continu. Les nappes sont donc posées :
+   In1 à x = 11,45 (entre les vias de grille des cellules et le rail
+   3V3), In2 à x = 3,1 (à l'ouest des cellules et des couloirs de
+   sortie des blocs centraux).
+3. **La colonne d'amplification, quatre pastilles** : l'entrée positive
+   de l'amplificateur d'instrumentation, le diviseur de référence et
+   les deux bouts de la résistance de gain. Les deux rails analogiques
+   montent toute la bande sur les couches internes et traversent cette
+   colonne : entre eux ils laissent 0,5 mm là où un via avec son
+   isolement en demande 0,75, et aucun via ne tient dans les pastilles
+   qu'ils enjambent. Les quatre se prennent donc sur la couche avant,
+   par la rangée libre que leurs voisines laissent, exactement comme
+   les cellules : l'entrée positive par la rangée entre les deux
+   pastilles de son condensateur de liaison, le diviseur par la rangée
+   entre les filtres et les amplificateurs, la paire de gain par cette
+   même rangée puis par le couloir entre les deux colonnes de broches
+   de l'amplificateur, sous son boîtier. La paire se croise une fois,
+   en sortant de la colonne : une extrémité descend sur la couche
+   avant, l'autre par un via et In2.
+4. **La colonne de découplage du bloc central**, deux pastilles d'un
+   même condensateur. Sa masse tombait dans une crique du plan que les
+   routes autour du condensateur isolaient : le via n'atteignait que du
+   cuivre que le remplisseur de KiCad retire, faute d'être relié. Elle
+   se raccorde maintenant sur In2 à la pastille de masse du
+   condensateur d'en dessous, dans la même colonne, dont la descente
+   atteint le plan. La colonne fait 0,95 mm de large et un via perce
+   toutes les couches : la nappe de masse longe son bord ouest et le
+   5VA du condensateur du milieu garde à l'est la place d'un via, posé
+   là lui aussi puisque c'est la place qui compte, le routeur venant le
+   chercher ensuite.
+
+Trois de ces liaisons ne sont apparues qu'après le tracé des premières :
+chaque nappe posée déplace les choix du routeur. Les ressources rares
+de cette bande sont le couloir ouest du bloc central, une bande de
+2,7 mm où passent une dizaine de nappes, et la fenêtre de via à l'ouest
+des rails, large d'un seul via. Une nappe intérieure qui traverse la
+zone d'amplification y coupe quatre liaisons locales pour en fermer une,
+d'où la version finale de la paire de gain sur la couche avant. Neuf
+routages complets ont été nécessaires, et deux garde-fous les ont rendus
+tenables : la vérification de géométrie avant routage
+(`test_reduced_strip_geometry_is_legal_before_routing`, cinq secondes)
+dit si le tracé est légal, et seul le routage complet (trois à quatre
+minutes) dit ce que le tracé a déplacé. Résultat :
+**zéro liaison ouverte, zéro élément non connecté au DRC de KiCad**.
+
+Ces routes appartiennent au quadrant réduit, la carte en fabrication :
+elles sont placées depuis ses pastilles réelles, mais quelles pièces
+restent ouvertes dépend de l'agencement de la bande, et le 4 x 4
+l'agence autrement (sa colonne d'amplification et ses multiplexeurs
+sont ailleurs, et ses broches de multiplexeur échappent sans via). Il
+aura ses propres liaisons quand viendra son tour d'être routé.
+
 ## Les trois garanties formelles
 
 Ordre d'exécution dans `build_pcb` : routage, puis

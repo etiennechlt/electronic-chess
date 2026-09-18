@@ -17,6 +17,13 @@ taps deterministic:
   the free rows between them, where the top layer carries no pad, and
   the ground of the freewheel diode drops there too.
 
+Seven joints stay out of the router's reach and are drawn here as well:
+the connector pin whose only way out is a half-millimetre gap in a
+fan-out field, the two cell signals whose lane runs the length of the
+strip, the amplifier input whose pad a bus straddles, and the decoupling
+capacitor whose ground drop lands in a pocket of the pour. Note 04 of
+docs/notes tells what makes each of them unreachable.
+
 Everything is placed from the real pads, so the four cells of the
 reduced quadrant and the sixteen of the full one are drawn the same way.
 """
@@ -25,8 +32,9 @@ from __future__ import annotations
 
 from .board import NET_GND, Builder
 from .circuit import cell_refs
-from .escape import STUB_WIDTH_MM
+from .escape import STUB_WIDTH_MM, runway_end
 from .strip import BUSES_IN1
+from .variant import is_reduced
 
 # the via column of a cell, between the resistor column (pads end at
 # x = 6.63) and the dual diodes (pads start at 7.55)
@@ -47,10 +55,45 @@ CELL_GATE_LANE_MM = 1.1  # the gate's lane under the cell, that far below its pa
 NFET_VIA_X = 10.77  # between the damping resistor and the source of the N-FET
 BUS_X = {net: x for net, x, _w in BUSES_IN1}
 
+# ---- the lanes of the links below. The x layout of the strip does not
+# depend on the cell pitch, so they are fixed columns like those of a cell.
+LINK_MUX_X = 11.45  # a mux input running south: east of the gate vias, west of the logic rail
+LINK_DAMP_X = 3.1  # a damping gate running south: west of the cells and of the exit corridors
+# The exit of the PULSE_EN pin threads the only gap of its fan-out field:
+# it dips north of the via of the next pin, then passes south of the chain
+# via of the pin before it. 0.21 mm of clearance at the worst point.
+LINK_PULSE_DIP = (9.35, 13.65)
+LINK_PULSE_RISE = (9.95, 13.9)
+# The gain pair runs on the top layer, in the free row between the filter
+# resistors and the amplifiers and then down the corridor between the two
+# pin columns of the package, under its body. Only one column of the top
+# layer gets out of the amplifier column, so the pad the other end takes
+# goes down an inner layer to the same row.
+LINK_GAIN_COL_X = 11.925  # the one free column of the top layer, east of the filters
+LINK_GAIN_VIA_X = 10.9  # the inner-layer descent, west of the lane of the second cell
+LINK_GAIN_ROWS = (87.1, 87.7)  # the two lanes of the pair, north one to the near pin
+LINK_GAIN_DOWN_X = (4.5, 5.4)  # where each turns down, under the body of the amplifier
+
 
 def _gap(a, b) -> float:
     """Middle of the free row between two pad rows of the east column."""
     return (a.y + a.h / 2.0 + b.y - b.h / 2.0) / 2.0
+
+
+def _escape_via(b: Builder, net: str) -> tuple[float, float]:
+    """The fan-out via ending the escape stub of a net. Every net linked
+    below has exactly one fine-pitch pad, so one stub."""
+    ends = [runway_end(pts, run) for n, pts, run, via, *_ in b.stubs if n == net and via]
+    if len(ends) != 1:
+        raise AssertionError(f"{net}: {len(ends)} escape vias, one expected")
+    return ends[0]
+
+
+def _channel_x(pads, cr) -> float:
+    """The via channel of a cell east of the dual diodes, between their pad
+    column and the FET column: the only spot of that row a via fits in."""
+    diode, fet = pads[(cr["dual_a"], "3")], pads[(cr["pfet"], "1")]
+    return (diode.x + diode.w / 2.0 + fet.x - fet.w / 2.0) / 2.0
 
 
 def hand_routes(b: Builder) -> None:
@@ -176,3 +219,158 @@ def hand_routes(b: Builder) -> None:
         V("VREF", SPINE_VREF_X, y_turn)
         T("VREF", "F.Cu", [(SPINE_VREF_X, y_turn), (BUS_X["VREF"], y_turn)], lane)
         V("VREF", BUS_X["VREF"], y_turn)
+    # The links below belong to the reduced quadrant, the board being
+    # made: they are placed from its real pads, but which pieces stay open
+    # depends on how the strip is packed, and the full quadrant packs it
+    # differently (its amplifier column and its muxes sit elsewhere, and
+    # its mux pins escape without a via). It will get its own links when
+    # its turn to be routed comes.
+    if is_reduced(b.cfg):
+        _links(b, pads, T, V)
+
+
+def _links(b: Builder, pads: dict, T, V) -> None:
+    """The joints the lattice router leaves open on the reduced quadrant,
+    each out of its reach for a reason of its own (note 04): a channel
+    narrower than the router's own track, a lane the length of the strip
+    that no cost function would pick, a pad a bus straddles, a pocket of
+    the pour. Drawn before it runs, so it routes the board around them."""
+    thin, lane = STUB_WIDTH_MM, b.STRIP_THIN_MM
+
+    # ---- PULSE_EN, in four pieces: the connector pin, the gate of the
+    # pulse FET, its pull-down east of the LED rail, and the inverter of
+    # the middle zone that makes the complement. The pin escapes east
+    # through the gap of its fan-out field into the gate pad, the only
+    # place a via fits; from that via one lane runs down the west edge of
+    # the strip to the inverter and one runs east to the pull-down, under
+    # the pad row of the zone.
+    esc = _escape_via(b, "PULSE_EN")
+    gate, pull, inv = pads[("Q2", "1")], pads[("R8", "1")], pads[("U6", "2")]
+    # the via sits as far south in the gate pad as it fits: the chain lane
+    # of the connector runs on In1 just north of it
+    y_gate = gate.y + gate.h / 2.0 - b.STRIP_VIA_MM[0] / 2.0
+    T("PULSE_EN", "In1.Cu", [esc, LINK_PULSE_DIP, LINK_PULSE_RISE, (gate.x, y_gate)], lane)
+    V("PULSE_EN", gate.x, y_gate)
+    y_cross = _gap(pads[("J1", "MP")], pads[("TP1", "1")])  # free row under the connector
+    y_inv = _gap(pads[("U6", "4")], inv)  # between the two pad rows of the inverter
+    # On In1: In2 west of the strip is the one layer the west pins of the
+    # middle zone escape on, and a lane there walls them in.
+    T(
+        "PULSE_EN",
+        "In1.Cu",
+        [(gate.x, y_gate), (gate.x, y_cross), (inv.x, y_cross), (inv.x, y_inv)],
+        lane,
+    )
+    V("PULSE_EN", inv.x, y_inv)
+    T("PULSE_EN", "F.Cu", [(inv.x, y_inv), (inv.x, inv.y)], lane)
+    y_east = _gap(gate, pads[("R10", "2")])
+    # the middle of the room the LED rail leaves in the pull-down pad
+    x_pull = (b.bus_5v_x + b.rt.ring_track_mm / 2.0 + b.clr + pull.x + pull.w / 2.0) / 2.0
+    T("PULSE_EN", "In1.Cu", [(gate.x, y_gate), (gate.x, y_east), (x_pull, y_east)], lane)
+    V("PULSE_EN", x_pull, y_east)
+    T("PULSE_EN", "F.Cu", [(x_pull, y_east), (x_pull, pull.y)], lane)
+
+    # ---- the mux input of the second cell: out of the cell by the via
+    # channel east of its dual diode, then one lane south, at the width of
+    # a stub because it ends between two vias of the mux fan-out field.
+    cr = cell_refs(2)
+    diode, mux = pads[(cr["dual_a"], "3")], _escape_via(b, "M2_A")
+    x_ch = _channel_x(pads, cr)
+    T("M2_A", "F.Cu", [(diode.x, diode.y), (x_ch, diode.y)], lane)
+    V("M2_A", x_ch, diode.y)
+    T("M2_A", "In1.Cu", [(x_ch, diode.y), (LINK_MUX_X, diode.y), (LINK_MUX_X, mux[1]), mux], thin)
+
+    # ---- the damping gate of the fourth cell, from its decoder: the same
+    # channel, then the row the via column of the cell leaves free, then
+    # one lane down the west of the strip to the escape of the decoder pin.
+    cr = cell_refs(4)
+    fet, dec = pads[(cr["pfet"], "1")], _escape_via(b, "DAMP4_N")
+    x_ch = _channel_x(pads, cr)
+    y_row = (pads[(cr["dual_a"], "1")].y + pads[(cr["dual_a"], "2")].y) / 2.0
+    T("DAMP4_N", "F.Cu", [(fet.x, fet.y), (x_ch, fet.y)], lane)
+    V("DAMP4_N", x_ch, fet.y)
+    T(
+        "DAMP4_N",
+        "In2.Cu",
+        [(x_ch, fet.y), (x_ch, y_row), (LINK_DAMP_X, y_row), (LINK_DAMP_X, dec[1]), dec],
+        lane,
+    )
+
+    # ---- the column of the amplifiers, three pads. The two analog rails
+    # run the length of the strip on the inner layers and cross that
+    # column: between them they leave 0.5 mm, where a via with its
+    # clearance needs 0.75, and no via fits in the pads they straddle. The
+    # three are reached on the top layer instead, each by the free row its
+    # own neighbours leave, exactly as the cells are.
+    # the positive input, out by the row between the two pads of its
+    # coupling capacitor, east to the resistor that biases it
+    cap, below = pads[("C14", "2")], pads[("C14", "1")]
+    bias = pads[("R12", "1")]
+    y_row = _gap(cap, below)
+    T(
+        "INA_INP",
+        "F.Cu",
+        [(cap.x, cap.y), (cap.x, y_row), (bias.x, y_row), (bias.x, bias.y)],
+        lane,
+    )
+    # the reference divider, south into the row between the filter
+    # resistors and the amplifier, then east to the other pad of the net
+    div, other = pads[("R16", "2")], pads[("R18", "2")]
+    y_row = _gap(pads[("R17", "1")], pads[("U7", "8")])
+    T("VREF", "F.Cu", [(div.x, div.y), (div.x, y_row), (other.x, y_row), (other.x, other.y)], lane)
+    # the two ends of the gain resistor: no pad of either net is within
+    # reach on the top layer, and the amplifier is ten millimetres west, so
+    # the pair leaves the column, runs the free row above the amplifiers
+    # and turns down between its two pin columns, under its body. The pad
+    # above the resistor goes to the pin below and the other way round;
+    # they cross once, in the descent out of the column, where one takes
+    # the top layer and the other an inner one.
+    near, far = pads[("U5", "2")], pads[("U5", "3")]
+    gain_near, gain_far = pads[("R14", "1")], pads[("R14", "2")]
+    y_near, y_far = LINK_GAIN_ROWS
+    x_near, x_far = LINK_GAIN_DOWN_X
+    T(
+        "RG_A",
+        "F.Cu",
+        [
+            (gain_near.x, gain_near.y),
+            (LINK_GAIN_COL_X, gain_near.y),
+            (LINK_GAIN_COL_X, y_near),
+            (x_near, y_near),
+            (x_near, near.y),
+            (near.x, near.y),
+        ],
+        lane,
+    )
+    T("RG_B", "F.Cu", [(gain_far.x, gain_far.y), (LINK_GAIN_VIA_X, gain_far.y)], lane)
+    V("RG_B", LINK_GAIN_VIA_X, gain_far.y)
+    T("RG_B", "In2.Cu", [(LINK_GAIN_VIA_X, gain_far.y), (LINK_GAIN_VIA_X, y_far)], lane)
+    V("RG_B", LINK_GAIN_VIA_X, y_far)
+    T(
+        "RG_B",
+        "F.Cu",
+        [(LINK_GAIN_VIA_X, y_far), (x_far, y_far), (x_far, far.y), (far.x, far.y)],
+        lane,
+    )
+
+    # ---- the ground of the 5VA decoupling capacitor of the middle zone:
+    # its own drop lands in a pocket of the pour that the routes around the
+    # capacitor cut off from the plane. It ties instead to the ground pad
+    # of the capacitor below it, in the same column, whose drop reaches it.
+    top, bottom = pads[("C7", "2")], pads[("C5", "2")]
+    # The lane crosses the 5VA pad of the capacitor between the two, and a
+    # via bores every layer: it hugs the west edge of the column so that
+    # pad keeps, east of it, the room its own via needs.
+    x_col = top.x - top.w / 2.0 + lane / 2.0
+    V(NET_GND, x_col, top.y)
+    T(NET_GND, "In2.Cu", [(x_col, top.y), (x_col, bottom.y)], lane)
+    V(NET_GND, x_col, bottom.y)
+
+    # ---- the 5VA of that same capacitor needs no route, only its via, and
+    # the room for it: the column is 0.95 mm wide, the ground lane takes
+    # its west side, and what is left holds exactly one via. Placed here,
+    # it survives the routing of the lanes around it, and it gives the
+    # router what the pad alone never had, a landing on all four layers
+    # (the top one is walled in by the pads of the zone).
+    rail = pads[("C7", "1")]
+    V("5VA", rail.x + rail.w / 2.0 - b.STRIP_VIA_MM[0] / 2.0, rail.y)

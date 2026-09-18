@@ -85,37 +85,35 @@ Généré par `python -m quadgen build --reduced` (18/09/2026) :
 
 | Bobines | LED | Segments | Vias | Nets ouverts | Pastilles ouvertes | Défauts d'isolement |
 |---|---|---|---|---|---|---|
-| 4 | 8 | 8669 | 367 | 5 | 8 | 0 |
+| 4 | 8 | 8706 | 371 | 0 | 0 | 0 |
 
-DRC KiCad 7 (`tools/drc.py`, zones remplies) : 394 signalements, dont
-**7 éléments non connectés**, contre 117 le matin du même jour. Le
-compte du build et celui de KiCad disent la même chose à une pièce
-près (le modèle du plan de masse du build est le plus prudent des
-deux) : c'est la comptabilité partagée de la
-[note 04](../../docs/notes/04-routeur-et-garanties.md) qui le permet.
-Erreurs restantes : aucune autre ; avertissements sans effet sur la
-fabrication : silk_overlap 151, lib_footprint_issues 129,
-silk_over_copper 75, track_dangling 24, via_dangling 11,
+DRC KiCad 7 (`tools/drc.py`, zones remplies) : 395 signalements,
+**zéro erreur et zéro élément non connecté**, contre 117 éléments non
+connectés le matin du même jour et sept après le reroutage. Le compte du
+build et celui de KiCad disent la même chose, c'est ce que permet la
+comptabilité de connexité partagée de la
+[note 04](../../docs/notes/04-routeur-et-garanties.md). Avertissements
+sans effet sur la fabrication : silk_overlap 151, lib_footprint_issues
+129, silk_over_copper 75, track_dangling 25, via_dangling 11,
 silk_edge_clearance 4. Le contrôle d'isolement exact du générateur ne
 signale aucun défaut.
 
-Ce qui reste à fermer, dans pcbnew ou, mieux, dans
-`tools/quadgen/hand.py` pour que le build le redessine :
+Les sept dernières liaisons ne relevaient pas du routeur mais de la
+géométrie : un chas de 0,475 mm dans le champ d'échappées du connecteur
+là où une piste avec ses gardes demande 0,55, deux nappes longues comme
+la bande, quatre pastilles de la colonne d'amplification que les deux
+rails analogiques enjambent sans laisser la place d'un via, et une
+crique du plan de masse. Elles sont tracées dans
+`tools/quadgen/hand.py`, avant le routage comme les prises des
+cellules, donc le build les redessine et les vérifie à chaque fois, et
+le routeur route le reste autour d'elles. Le détail de chacune est dans
+la [note 04](../../docs/notes/04-routeur-et-garanties.md).
 
-| Net | Ce qui manque | Où |
-|---|---|---|
-| PULSE_EN | trois pastilles : la grille de Q2, son rappel R8 et l'entrée de l'inverseur U6 ; l'échappée de la broche 14 du FPC est tracée, rien ne la rejoint | zone du connecteur, y de 13 à 66 |
-| M2_A | l'entrée A de la cellule 2 vers l'aiguilleur, la piste s'arrête au tiers du chemin | de (6,35) à (8,83) |
-| DAMP4_N | la sortie du décodeur d'amortissement vers la grille du P-FET de la cellule 4 | de (7,70) à (12,28) |
-| INA_INP | C14 vers l'entrée non inverseuse de l'AD8421 | (12,79) à (10,81) |
-| GND | un via de masse isolé dans une crique du plan | (1.6,59.6) |
-
-Les quatre premiers sont des liaisons longues que le routeur n'a plus
-su glisser une fois la bande pleine ; le dernier est une crique du
-plan que les échappées et une piste de la couche arrière referment sur
-elle-même. Un humain les trace en un quart d'heure dans pcbnew ; les
-garder dans `hand.py` vaut mieux, le build les redessinera et les
-vérifiera à chaque fois.
+Deux garde-fous encadrent ces tracés :
+`tests/test_quadgen.py::test_reduced_strip_geometry_is_legal_before_routing`
+redessine tout le cuivre posé avant le routage et lui applique le
+contrôle d'isolement exact en cinq secondes, et le build complet
+échoue s'il reste une liaison ouverte.
 
 ## Régénérer
 

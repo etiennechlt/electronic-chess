@@ -217,11 +217,11 @@ def test_supply_buses_have_a_via_channel(cfg):
                 assert abs(x - ox) >= reach + ow / 2.0 - 1e-9, f"{net} via vs {other}"
 
 
-def test_strip_geometry_is_legal_before_routing(cfg):
+def _strip_before_routing(cfg):
     """Everything the strip draws before its router runs: the placement, the
     escapes of the fine-pitch packages, the LED chain and its two lanes out
-    of the strip, the supply spurs and the routes drawn by hand in the
-    cells. Seconds, where the full build takes minutes."""
+    of the strip, the supply spurs and the routes drawn by hand. Seconds,
+    where the full build takes minutes."""
     from quadgen.board import Builder
     from quadgen.hand import hand_routes
 
@@ -243,10 +243,27 @@ def test_strip_geometry_is_legal_before_routing(cfg):
         b.track(net, layer, pts, width)
     for net, x, y, pad, drill in b.seed_vias:
         b.via(net, x, y, pad, drill)
+    return b
+
+
+def test_strip_geometry_is_legal_before_routing(cfg):
+    b = _strip_before_routing(cfg)
     assert b.clearance_check() == []
     # every cell taps the four rails it needs, by hand and the same way
     seeded = {net for net, _layer, _w, _pts in b.seeds}
     assert {"GND", "5VA", "VIN", "DRIVE_BUS"} <= seeded
+
+
+def test_reduced_strip_geometry_is_legal_before_routing(cfg):
+    """The reduced quadrant is the board being made, and it carries the
+    links that close what its router leaves open: those seven joints are
+    drawn by hand and must clear the copper already there."""
+    from quadgen.variant import reduced_config
+
+    b = _strip_before_routing(reduced_config(cfg))
+    assert b.clearance_check() == []
+    seeded = {net for net, _layer, _w, _pts in b.seeds}
+    assert {"PULSE_EN", "M2_A", "DAMP4_N", "INA_INP"} <= seeded
 
 
 def test_escape_stubs_only_on_fine_pitch():
