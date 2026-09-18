@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monter le banc</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f3f5f2; --surface:#ffffff; --ink:#1a1e1d; --ink-2:#4f5754; --ink-3:#7d8582; --rule:#d3d8d4;
+  --q-high:#2a78d6; --q-low:#eb6834; --band:rgba(42,120,214,.09); --tint:#e9eef4;
+  --wood:#e6d3b1; --felt:#c9ccc4; --air:#f7f9f7; --pcb:#c4d9c0; --copper:#c8843a; --magnet:#8b8f92; --piece:#efe6d6;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15191a; --surface:#1e2324; --ink:#e8ecea; --ink-2:#a8b0ac; --ink-3:#7c8582; --rule:#343d3b;
+    --q-high:#3987e5; --q-low:#d95926; --band:rgba(57,135,229,.14); --tint:#232b30;
+    --wood:#6b5836; --felt:#4a4f4b; --air:#1b2021; --pcb:#2f4a33; --copper:#d0894a; --magnet:#6b7073; --piece:#3a3630;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15191a; --surface:#1e2324; --ink:#e8ecea; --ink-2:#a8b0ac; --ink-3:#7c8582; --rule:#343d3b;
+  --q-high:#3987e5; --q-low:#d95926; --band:rgba(57,135,229,.14); --tint:#232b30;
+  --wood:#6b5836; --felt:#4a4f4b; --air:#1b2021; --pcb:#2f4a33; --copper:#d0894a; --magnet:#6b7073; --piece:#3a3630;
+  color-scheme:dark;
+}
+body{background:var(--bg); color:var(--ink); font-family:"IBM Plex Sans","Segoe UI",Roboto,Helvetica,Arial,sans-serif; font-size:16px; line-height:1.55; margin:0;}
+.wrap{max-width:920px; margin:0 auto; padding-block:40px 64px; padding-inline:16px;}
+h1,h2{font-family:"Bricolage Grotesque","IBM Plex Sans",Helvetica,Arial,sans-serif; text-wrap:balance; line-height:1.1; margin:0;}
+h1{font-size:clamp(2.4rem,6vw,3.6rem); font-weight:700; letter-spacing:-.01em;}
+h2{font-size:clamp(1.45rem,3vw,1.9rem); font-weight:600; margin-top:.2em;}
+.eyebrow{font-family:"IBM Plex Mono",Menlo,Consolas,monospace; font-size:.74rem; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); margin:0 0 .5rem;}
+.lede{font-size:1.2rem; line-height:1.5; color:var(--ink-2); max-width:62ch; margin:1rem 0 0;}
+p{max-width:68ch; margin:.9rem 0;}
+ul,ol{max-width:68ch; padding-left:1.2rem;}
+li{margin:.35rem 0;}
+section{margin-top:3.2rem; padding-top:2rem; border-top:1px solid var(--rule);}
+.keep{margin-top:2rem; background:var(--surface); border:1px solid var(--rule); border-left:4px solid var(--q-high); padding:1rem 1.2rem; border-radius:6px; max-width:68ch;}
+.keep p{margin:.3rem 0;}
+.keep strong{color:var(--q-high);}
+figure{margin:1.6rem 0 0;}
+.fig-scroll{overflow-x:auto; position:relative; background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:12px 8px;}
+.fig-scroll svg{display:block; width:100%; min-width:640px; height:auto; color:var(--ink); font-family:"IBM Plex Sans",Helvetica,Arial,sans-serif;}
+figcaption{font-size:.92rem; color:var(--ink-2); margin-top:.6rem; max-width:72ch;}
+figcaption b{color:var(--ink);}
+svg .lbl{font-size:12.5px; fill:var(--ink);}
+svg .lbl.small{font-size:11px;}
+svg .lbl.strong{font-weight:600;}
+svg .muted{fill:var(--ink-2);}
+svg .mono{font-family:"IBM Plex Mono",Menlo,Consolas,monospace;}
+svg .glyph{font-size:20px; font-family:"Segoe UI Symbol","Apple Symbols","Noto Sans Symbols 2","DejaVu Sans",sans-serif;}
+svg .title{font-size:14px; font-weight:600; fill:var(--ink);}
+svg .axis{stroke:currentColor; stroke-width:1.2; fill:none; opacity:.55;}
+svg .tick{stroke:currentColor; stroke-width:1; opacity:.55;}
+svg .grid{stroke:currentColor; stroke-width:1; opacity:.12;}
+svg .dash{stroke:currentColor; stroke-width:1; stroke-dasharray:5 4; opacity:.5; fill:none;}
+svg .brk{stroke:currentColor; stroke-width:1.2; opacity:.6; fill:none;}
+svg .trace{fill:none; stroke-width:2; stroke-linejoin:round; stroke-linecap:round;}
+svg .trace.ghost{opacity:.35; stroke-dasharray:3 3;}
+svg .env{fill:none; stroke-width:1.2; stroke-dasharray:4 4; opacity:.7;}
+svg .q-high{stroke:var(--q-high);}
+svg .q-low{stroke:var(--q-low);}
+svg .q-high-t{fill:var(--q-high); font-weight:600;}
+svg .q-low-t{fill:var(--q-low); font-weight:600;}
+svg .mark{stroke-width:1.6;}
+svg .dot{fill:var(--surface); stroke-width:2.5;}
+svg .band{fill:var(--band);}
+svg .peak-black{fill:var(--q-high); stroke:var(--q-high); stroke-width:1.5; stroke-linejoin:round; opacity:.9;}
+svg .peak-white{fill:var(--surface); stroke:var(--q-high); stroke-width:1.8; stroke-linejoin:round;}
+svg .peak{cursor:default;}
+svg .peak:hover .peak-black, svg .peak:hover .peak-white{stroke:var(--q-low);}
+svg .tipbox{fill:var(--surface); stroke:var(--rule);}
+svg .lay-pcb{fill:var(--pcb);} svg .lay-air{fill:var(--air);} svg .lay-wood{fill:var(--wood);} svg .lay-felt{fill:var(--felt);}
+svg .copper{fill:var(--copper);}
+svg .piece{fill:var(--piece); stroke:currentColor; stroke-width:1.2; opacity:.95;}
+svg .bundle{fill:url(#wire); stroke:currentColor; stroke-width:1;}
+svg .cap{fill:var(--q-low); stroke:none;}
+svg .magnet{fill:var(--magnet); opacity:.75;}
+svg .field{fill:none; stroke:var(--q-high); stroke-width:1.6; opacity:.8;}
+svg .seg{fill:var(--tint); stroke:var(--rule);}
+svg .seg-pulse{fill:var(--q-low); opacity:.35; stroke:var(--q-low);}
+svg .seg-listen{fill:var(--band); stroke:var(--q-high);}
+svg .box{fill:var(--surface); stroke:var(--rule); stroke-width:1.2;}
+svg .box-piece{stroke:var(--q-high); stroke-width:1.8;}
+svg .box-mcu{fill:var(--tint); stroke:var(--q-high); stroke-width:1.8;}
+svg .box-soft{fill:var(--tint); stroke:var(--rule); stroke-width:1.2;}
+svg .box-warm{fill:var(--surface); stroke:var(--q-low); stroke-width:1.6;}
+svg .wire{stroke:currentColor; stroke-width:1.4; fill:none; opacity:.7;}
+svg .wire-a{stroke:var(--q-high); stroke-width:2; fill:none;}
+svg .wire-p{stroke:var(--q-low); stroke-width:2; fill:none;}
+svg .zone{fill:none; stroke:var(--rule); stroke-width:1.2; stroke-dasharray:6 4;}
+svg .coil{fill:none; stroke:var(--copper); stroke-width:2;}
+svg .puck{fill:var(--piece); stroke:currentColor; stroke-width:1.2;}
+.tip{position:absolute; pointer-events:none; background:var(--surface); color:var(--ink); border:1px solid var(--rule); border-radius:6px; padding:.45rem .6rem; font-size:.84rem; line-height:1.35; box-shadow:0 4px 14px rgba(0,0,0,.12); max-width:260px; z-index:2;}
+.formulas{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; margin:1.2rem 0; max-width:900px;}
+.formula{background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:.8rem .95rem;}
+.formula .f{font-family:"IBM Plex Mono",Menlo,Consolas,monospace; font-size:1.02rem; margin:0 0 .35rem; color:var(--ink);}
+.formula .d{font-size:.88rem; color:var(--ink-2); margin:0;}
+table{border-collapse:collapse; width:100%; font-size:.9rem; margin-top:1rem; font-variant-numeric:tabular-nums;}
+th,td{padding:.42rem .55rem; border-bottom:1px solid var(--rule); text-align:left; vertical-align:top;}
+td.n,th.n{text-align:right; white-space:nowrap;}
+th{font-family:"IBM Plex Mono",Menlo,Consolas,monospace; font-size:.74rem; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); font-weight:500;}
+.tbl{overflow-x:auto;}
+dl{display:grid; grid-template-columns:max-content 1fr; gap:.5rem 1.2rem; max-width:80ch; margin:1rem 0 0;}
+dt{font-weight:600; color:var(--ink);}
+dd{margin:0; color:var(--ink-2);}
+@media (max-width:560px){ dl{grid-template-columns:1fr;} dd{margin-bottom:.5rem;} }
+.foot{margin-top:3rem; padding-top:1rem; border-top:1px solid var(--rule); font-size:.84rem; color:var(--ink-3); max-width:72ch;}
+code{font-family:"IBM Plex Mono",Menlo,Consolas,monospace; font-size:.9em; background:var(--tint); padding:.05em .3em; border-radius:3px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<p class="eyebrow">Échiquier à résonateurs LC</p>
+<h1>Monter le banc</h1>
+<p class="lede">Suite des pages sur le facteur Q et sur le cerveau, pour le même lecteur : quoi faire, quoi commander, quels composants, comment les assembler et comment tester, pour passer du dépôt à un banc qui mesure.</p>
+
+<div class="keep">
+<p><strong>Le banc, c'est quatre objets.</strong> Une carte de développement Nucleo du commerce, une petite carte de banc qui s'emboîte dessus, un quadrant de quatre cases relié par une nappe, et quatre pucks de test. Plus du bois, du feutre et une alimentation 12 V.</p>
+<p><strong>On ne commande rien tant que la première section n'est pas verte.</strong> Au 18 septembre 2026 la carte de banc est prête ; le quadrant 2 x 2 ne l'est pas encore ; les composants passifs n'ont pas de code fournisseur.</p>
+<p><strong>On monte le banc par échelons</strong>, un test par échelon, jamais deux nouveautés à la fois. La mesure qui décide de la suite du projet est M2 : le Q avec l'aimant ferrite doit rester au-dessus de 30.</p>
+</div>
+
+<section>
+<p class="eyebrow">Avant de commander</p>
+<h2>Ce qui est prêt, ce qui ne l'est pas</h2>
+<div class="tbl">
+<table>
+<thead><tr><th>élément</th><th>état au 18 septembre 2026</th><th>ce qui débloque</th></tr></thead>
+<tbody>
+<tr><td>Carte de banc</td><td>générée, 29 nets fermés, DRC KiCad : zéro erreur, zéro élément non connecté</td><td>rien : exporter les fichiers de fabrication</td></tr>
+<tr><td>Quadrant 2 x 2</td><td>généré ; DRC KiCad : 117 éléments non connectés, deux nets connus du README et des trous de connexité de la même famille que ceux corrigés sur la carte de banc</td><td>fermer les nets dans le générateur du quadrant, DRC à zéro, puis exporter</td></tr>
+<tr><td>Codes fournisseur (LCSC)</td><td>présents pour les circuits intégrés, transistors, diodes, connecteurs, LED et inductance ; absents pour résistances, condensateurs, fusibles, barrettes, cavalier et points de test</td><td>une session avec accès au réseau ; en attendant, les passifs se commandent par valeur et boîtier</td></tr>
+<tr><td>Devis de fabrication</td><td>à faire</td><td>même session</td></tr>
+<tr><td>Deux points de fiche technique</td><td>l'aiguilleur ADG1607 alimenté en 5 V ; les vias de 0,45 mm chez le fabricant</td><td>lecture des fiches, devis</td></tr>
+</tbody>
+</table>
+</div>
+<p>Le compte d'éléments non connectés doit être à zéro sur les deux cartes avant toute commande (<code>tools/drc.py</code> dans le dépôt). Le reste de cette page est écrit pour le moment où ce sera le cas ; tout ce qui concerne la carte de banc, la Nucleo, les pucks et le bois peut se préparer dès maintenant.</p>
+</section>
+
+<section>
+<p class="eyebrow">Ce qu'on construit</p>
+<h2>Deux côtés et une nappe</h2>
+<figure>
+<div class="fig-scroll"><svg class="docfig" viewBox="0 0 960 600" role="img" aria-label="Ce que reunit le banc : a gauche la Nucleo sous la carte de banc reliee au 12 V et au PC, a droite le quadrant 2 x 2 sous le contreplaque et le feutre avec les quatre pucks de test, la nappe entre les deux">
+<defs><marker id="arr20" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker><marker id="arr20b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+<text class="lbl mono muted" x="20.0" y="24.0">LE CÔTÉ MESURE</text>
+<rect class="lay-pcb" x="170" y="330" width="300" height="14"/>
+<rect class="box-soft" x="180" y="304" width="46" height="26" rx="3"/>
+<text class="lbl small" x="203.0" y="321.0" text-anchor="middle">USB</text>
+<rect class="box" x="270" y="312" width="34" height="18" rx="2"/>
+<rect class="box" x="320" y="312" width="34" height="18" rx="2"/>
+<rect class="box" x="370" y="312" width="34" height="18" rx="2"/>
+<rect class="box" x="420" y="312" width="34" height="18" rx="2"/>
+<text class="lbl strong" x="170.0" y="364.0" text-anchor="start">Nucleo-G474RE</text>
+<text class="lbl small muted" x="170.0" y="378.0" text-anchor="start">le même microcontrôleur que le cerveau,</text>
+<text class="lbl small muted" x="170.0" y="392.0" text-anchor="start">sa sonde de programmation, son port série</text>
+<rect class="lay-pcb" x="230" y="240" width="270" height="14"/>
+<rect class="box" x="276" y="254" width="22" height="12" rx="1"/>
+<line class="wire" x1="280" y1="266" x2="280" y2="286"/>
+<line class="wire" x1="287" y1="266" x2="287" y2="286"/>
+<line class="wire" x1="294" y1="266" x2="294" y2="286"/>
+<rect class="box" x="326" y="254" width="22" height="12" rx="1"/>
+<line class="wire" x1="330" y1="266" x2="330" y2="286"/>
+<line class="wire" x1="337" y1="266" x2="337" y2="286"/>
+<line class="wire" x1="344" y1="266" x2="344" y2="286"/>
+<rect class="box" x="376" y="254" width="22" height="12" rx="1"/>
+<line class="wire" x1="380" y1="266" x2="380" y2="286"/>
+<line class="wire" x1="387" y1="266" x2="387" y2="286"/>
+<line class="wire" x1="394" y1="266" x2="394" y2="286"/>
+<rect class="box" x="426" y="254" width="22" height="12" rx="1"/>
+<line class="wire" x1="430" y1="266" x2="430" y2="286"/>
+<line class="wire" x1="437" y1="266" x2="437" y2="286"/>
+<line class="wire" x1="444" y1="266" x2="444" y2="286"/>
+<rect class="box" x="236" y="222" width="48" height="18" rx="2"/>
+<text class="lbl small" x="260.0" y="234.0" text-anchor="middle">jack 12 V</text>
+<rect class="box" x="300" y="222" width="26" height="18" rx="2"/>
+<text class="lbl small" x="313.0" y="234.0" text-anchor="middle">buck 5 V</text>
+<rect class="box" x="356" y="222" width="26" height="18" rx="2"/>
+<text class="lbl small" x="369.0" y="234.0" text-anchor="middle">LDO 5VA</text>
+<rect class="box" x="410" y="222" width="26" height="18" rx="2"/>
+<text class="lbl small" x="423.0" y="234.0" text-anchor="middle">tampon</text>
+<rect class="box" x="460" y="222" width="36" height="18" rx="2"/>
+<text class="lbl small" x="478.0" y="234.0" text-anchor="middle">FPC</text>
+<line class="wire" x1="360.0" y1="290.0" x2="360.0" y2="306.0" marker-end="url(#arr20)"/>
+<text class="lbl small muted" x="368.0" y="310.0">s'emboîte sur les embases Arduino</text>
+<text class="lbl strong" x="230.0" y="178.0" text-anchor="start">Carte de banc, 80 x 56 mm</text>
+<text class="lbl small muted" x="230.0" y="192.0" text-anchor="start">le 12 V protégé, le 5 V des LED, le 5 V analogique,</text>
+<text class="lbl small muted" x="230.0" y="206.0" text-anchor="start">le tampon LED et le connecteur de nappe</text>
+<rect class="box-warm" x="20.0" y="210.0" width="130.0" height="54.0" rx="6"/>
+<text class="lbl strong" x="85.0" y="226.0" text-anchor="middle">Alimentation 12 V</text>
+<text class="lbl small" x="85.0" y="241.0" text-anchor="middle">de laboratoire,</text>
+<text class="lbl small" x="85.0" y="256.0" text-anchor="middle">limitée en courant</text>
+<path class="wire-p" d="M150 237 H210 V231 H232" marker-end="url(#arr20)"/>
+<rect class="box-soft" x="20.0" y="304.0" width="130.0" height="54.0" rx="6"/>
+<text class="lbl strong" x="85.0" y="320.0" text-anchor="middle">PC</text>
+<text class="lbl small" x="85.0" y="335.0" text-anchor="middle">console série 115200</text>
+<text class="lbl small" x="85.0" y="350.0" text-anchor="middle">make NUCLEO=1</text>
+<line class="wire" x1="150.0" y1="317.0" x2="178.0" y2="317.0" marker-end="url(#arr20)"/>
+<text class="lbl mono muted" x="540.0" y="24.0">LE CÔTÉ ÉCHIQUIER</text>
+<rect class="lay-pcb" x="540" y="420" width="380" height="14"/>
+<rect class="box-soft" x="540" y="404" width="63" height="16" rx="2"/>
+<text class="lbl small" x="571.7" y="415.0" text-anchor="middle">frontal</text>
+<rect class="box" x="542" y="390" width="30" height="14" rx="2"/>
+<text class="lbl small" x="557.0" y="400.0" text-anchor="middle">FPC</text>
+<ellipse class="coil" cx="682.5" cy="427" rx="66.5" ry="4"/>
+<ellipse class="coil" cx="682.5" cy="427" rx="47.5" ry="4"/>
+<ellipse class="coil" cx="682.5" cy="427" rx="28.5" ry="4"/>
+<ellipse class="coil" cx="840.8" cy="427" rx="66.5" ry="4"/>
+<ellipse class="coil" cx="840.8" cy="427" rx="47.5" ry="4"/>
+<ellipse class="coil" cx="840.8" cy="427" rx="28.5" ry="4"/>
+<text class="lbl strong" x="540.0" y="454.0" text-anchor="start">Quadrant 2 x 2, 120 x 108 mm, 4 couches</text>
+<text class="lbl small muted" x="540.0" y="468.0" text-anchor="start">quatre spirales gravées dans le circuit, huit LED,</text>
+<text class="lbl small muted" x="540.0" y="482.0" text-anchor="start">le frontal analogique complet sur sa bande</text>
+<rect class="lay-wood" x="603.3333333333334" y="328" width="317" height="18"/>
+<rect class="lay-felt" x="603.3333333333334" y="324.0" width="317" height="4.0"/>
+<text class="lbl small muted" x="611.3" y="368.0">contreplaqué 3 mm et feutre 0,5 mm sur des entretoises :</text>
+<text class="lbl small muted" x="611.3" y="382.0">2 mm d'air pour les LED, 7,1 mm d'entrefer sous la pièce,</text>
+<text class="lbl small muted" x="611.3" y="396.0">deux trous de 2,5 mm par case au droit des LED</text>
+<path class="puck" d="M646.9 323.0 v-14 q0 -10 10 -10 h51.2 q10 0 10 10 v14 z"/>
+<text class="glyph" x="682.5" y="315.0" text-anchor="middle">♟</text>
+<path class="puck" d="M805.2 323.0 v-14 q0 -10 10 -10 h51.2 q10 0 10 10 v14 z"/>
+<text class="glyph" x="840.8" y="315.0" text-anchor="middle">♞</text>
+<text class="lbl strong" x="633.3" y="140.0" text-anchor="start">Quatre pucks de test imprimés</text>
+<text class="lbl small muted" x="633.3" y="154.0" text-anchor="start">bobine bobinée sur gabarit, condensateur C0G,</text>
+<text class="lbl small muted" x="633.3" y="168.0" text-anchor="start">aimant ferrite ; pion, cavalier, fou, tour noirs :</text>
+<text class="lbl small muted" x="633.3" y="182.0" text-anchor="start">♟ 12 nF, ♞ 10 nF, ♝ 8,2 nF, ♜ 6,8 nF</text>
+<path class="wire-a" d="M478 220 C478 150 500 260 557 388" marker-end="url(#arr20b)"/>
+<text class="lbl small q-high-t" x="500.0" y="92.0">nappe FPC 16 conducteurs, pas 0,5 mm :</text>
+<text class="lbl small muted" x="500.0" y="106.0">le bus de commande, le signal amplifié, les rails</text>
+<text class="lbl small muted" x="20.0" y="560.0">Rien de tout cela n'est le plateau final : le cerveau et la carte puissance attendent que ce banc ait mesuré</text>
+<text class="lbl small muted" x="20.0" y="574.0">ce qui n'a été que calculé (note 19). Le firmware, le bus de commande et le quadrant sont ceux du plateau.</text>
+</svg></div>
+<figcaption><b>Ce que réunit le banc.</b> À gauche le côté mesure, la Nucleo sous la carte de banc reliée au 12 V et au PC ; à droite le côté échiquier, le quadrant sous le contreplaqué et le feutre avec les quatre pucks ; la nappe entre les deux.</figcaption>
+</figure>
+<p>Le côté mesure est une Nucleo-G474RE, la carte de développement de ST qui porte le même microcontrôleur que le cerveau du plateau, sa sonde de programmation et son port série. La carte de banc (80 x 56 mm) s'emboîte dessus comme un shield Arduino et lui apporte ce que le cerveau aurait donné au quadrant : un 12 V protégé pour frapper les bobines, un 5 V pour les LED, un 5 V analogique propre pour le frontal, un tampon pour la chaîne LED, et le connecteur de nappe.</p>
+<p>Le côté échiquier est le quadrant réduit 2 x 2 (120 x 108 mm, quatre couches) : quatre spirales gravées dans le circuit imprimé, huit LED de camp et le frontal analogique complet sur sa bande, le même circuit que les quadrants du plateau. Une nappe FPC de seize conducteurs relie les deux côtés. Par dessus le quadrant, le contreplaqué et le feutre reconstituent l'entrefer réel de 7,1 mm ; les quatre pucks de test jouent les pièces.</p>
+</section>
+
+<section>
+<p class="eyebrow">Quoi commander</p>
+<h2>Les deux circuits imprimés</h2>
+<div class="tbl">
+<table>
+<thead><tr><th>carte</th><th>format</th><th>couches</th><th>particularités</th></tr></thead>
+<tbody>
+<tr><td>Carte de banc</td><td>80 x 56 mm, 1,6 mm</td><td class="n">2</td><td>rien de spécial ; finition HASL sans plomb ou ENIG</td></tr>
+<tr><td>Quadrant 2 x 2</td><td>120 x 108 mm, 1,6 mm</td><td class="n">4</td><td>vias de 0,45 mm à perçage 0,2 mm sous les boîtiers fins : cocher l'option de perçage minimal 0,2 mm, à confirmer sur le devis ; un pochoir rend la pose du frontal beaucoup plus sûre</td></tr>
+</tbody>
+</table>
+</div>
+<p>Cinq exemplaires sont le minimum chez JLCPCB et suffisent largement. Les projets KiCad sont dans <code>hardware/bench/</code> et <code>hardware/quadrant-2x2/</code> ; le dépôt ne versionne pas leurs gerbers. Pour les produire : ouvrir le projet dans KiCad 7 ou plus récent, lancer le contrôle des règles, puis Fichier, Tracer (toutes les couches de cuivre, les masques, la sérigraphie et le contour, format Gerber) et Générer les fichiers de perçage. Compresser le dossier et le déposer sur le site du fabricant. Les fichiers <code>jlc-bom.csv</code> et <code>jlc-cpl.csv</code> de chaque carte servent si l'on choisit l'assemblage en usine des composants qui ont un code ; les autres se soudent à la main.</p>
+
+<h2>Les composants de la carte de banc</h2>
+<p>La nomenclature <code>hardware/bench/bom.csv</code>, telle que le générateur l'écrit : 43 composants. Les lignes sans code se commandent par valeur et boîtier ; prendre deux exemplaires de chaque petit CMS, un 0603 qui saute de la pince ne se retrouve pas.</p>
+<div class="tbl">
+<table>
+<thead><tr><th>repères</th><th class="n">qté</th><th>valeur</th><th>boîtier</th><th>référence, code LCSC</th></tr></thead>
+<tbody><tr><td>C1</td><td class='n'>1</td><td>100u/25V</td><td>CP Elec 6.3x7.7</td><td>par valeur</td></tr><tr><td>C10</td><td class='n'>1</td><td>10u/10V</td><td>1206</td><td>par valeur</td></tr><tr><td>C13</td><td class='n'>1</td><td>1n</td><td>0603</td><td>par valeur</td></tr><tr><td>C2</td><td class='n'>1</td><td>10u/25V</td><td>1206</td><td>par valeur</td></tr><tr><td>C11, C12, C14, C3</td><td class='n'>4</td><td>100n</td><td>0603</td><td>par valeur</td></tr><tr><td>C4</td><td class='n'>1</td><td>3n3</td><td>0603</td><td>par valeur</td></tr><tr><td>C5, C6</td><td class='n'>2</td><td>22u/10V</td><td>1206</td><td>par valeur</td></tr><tr><td>C7</td><td class='n'>1</td><td>100u/10V</td><td>CP Elec 6.3x7.7</td><td>par valeur</td></tr><tr><td>C8</td><td class='n'>1</td><td>10n</td><td>0603</td><td>par valeur</td></tr><tr><td>C9</td><td class='n'>1</td><td>2u2</td><td>0603</td><td>par valeur</td></tr><tr><td>D1</td><td class='n'>1</td><td>SS34</td><td>D SMA</td><td>SS34, C8678</td></tr><tr><td>D2</td><td class='n'>1</td><td>SMBJ15A</td><td>D SMB</td><td>SMBJ15A, C113962</td></tr><tr><td>F1</td><td class='n'>1</td><td>1A</td><td>fusible 1206</td><td>par valeur</td></tr><tr><td>F2</td><td class='n'>1</td><td>2A</td><td>fusible 1206</td><td>par valeur</td></tr><tr><td>FB1</td><td class='n'>1</td><td>BLM21PG221</td><td>0805</td><td>BLM21PG221SN1D, C18305</td></tr><tr><td>J1</td><td class='n'>1</td><td>12V</td><td>BarrelJack Horizontal</td><td>DC-005-5.5x2.1, C381118</td></tr><tr><td>J2</td><td class='n'>1</td><td>QUADRANT</td><td>Hirose FH12-16S-0.5SH 1x16-1MP P0.50mm Horizontal</td><td>FH12-16S-0.5SH(55), C2837584</td></tr><tr><td>J3</td><td class='n'>1</td><td>POWER</td><td>PinHeader 1x08 P2.54mm Vertical</td><td>par valeur</td></tr><tr><td>J4</td><td class='n'>1</td><td>ANALOG</td><td>PinHeader 1x06 P2.54mm Vertical</td><td>par valeur</td></tr><tr><td>J5</td><td class='n'>1</td><td>DIGITAL 0-7</td><td>PinHeader 1x08 P2.54mm Vertical</td><td>par valeur</td></tr><tr><td>J6</td><td class='n'>1</td><td>DIGITAL 8-15</td><td>PinHeader 1x10 P2.54mm Vertical</td><td>par valeur</td></tr><tr><td>JP1</td><td class='n'>1</td><td>5VA: 1 LDO / 3 BUCK</td><td>PinHeader 1x03 P2.54mm Vertical</td><td>par valeur</td></tr><tr><td>L1</td><td class='n'>1</td><td>2u2</td><td>L Bourns SRN6045TA</td><td>SRN6045TA-2R2M, C167219</td></tr><tr><td>R1, R2, R4</td><td class='n'>3</td><td>100k</td><td>0603</td><td>par valeur</td></tr><tr><td>R3</td><td class='n'>1</td><td>523k</td><td>0603</td><td>par valeur</td></tr><tr><td>R5</td><td class='n'>1</td><td>470R</td><td>0603</td><td>par valeur</td></tr><tr><td>R6</td><td class='n'>1</td><td>49R9</td><td>0603</td><td>par valeur</td></tr><tr><td>TP1</td><td class='n'>1</td><td>LED_END</td><td>TestPoint Pad 1.5x1.5mm</td><td>pastille nue</td></tr><tr><td>TP2</td><td class='n'>1</td><td>5VA</td><td>TestPoint Pad 1.5x1.5mm</td><td>pastille nue</td></tr><tr><td>TP3</td><td class='n'>1</td><td>5V</td><td>TestPoint Pad 1.5x1.5mm</td><td>pastille nue</td></tr><tr><td>TP4</td><td class='n'>1</td><td>3V3</td><td>TestPoint Pad 1.5x1.5mm</td><td>pastille nue</td></tr><tr><td>TP5</td><td class='n'>1</td><td>GND</td><td>TestPoint Pad 1.5x1.5mm</td><td>pastille nue</td></tr><tr><td>TP6</td><td class='n'>1</td><td>VIN</td><td>TestPoint Pad 1.5x1.5mm</td><td>pastille nue</td></tr><tr><td>TP7</td><td class='n'>1</td><td>ADC1</td><td>TestPoint Pad 1.5x1.5mm</td><td>pastille nue</td></tr><tr><td>U1</td><td class='n'>1</td><td>TPS62130</td><td>QFN-16-1EP 3x3mm P0.5mm EP1.75x1.75mm</td><td>TPS62130RGTR, C74016</td></tr><tr><td>U2</td><td class='n'>1</td><td>LP2985-5.0</td><td>SOT-23-5</td><td>LP2985AIM5-5.0, C129541</td></tr><tr><td>U3</td><td class='n'>1</td><td>74AHCT1G125</td><td>SOT-23-5</td><td>SN74AHCT1G125DBVR, C350557</td></tr></tbody>
+</table>
+</div>
+
+<h2>Les composants du quadrant 2 x 2</h2>
+<p>La nomenclature <code>hardware/quadrant-2x2/bom.csv</code>, 44 lignes ; la fonction de chaque bloc est dans la note 17 du dépôt. Prendre aussi des 1 kΩ et 2 kΩ pour R14, la résistance de gain de l'amplificateur d'instrumentation, au cas où la chaîne écrête.</p>
+<div class="tbl">
+<table>
+<thead><tr><th>repères</th><th class="n">qté</th><th>valeur</th><th>boîtier</th><th>référence, code LCSC</th></tr></thead>
+<tbody><tr><td>C1</td><td class='n'>1</td><td>10u/25V</td><td>1206</td><td>par valeur</td></tr><tr><td>C13, C23</td><td class='n'>2</td><td>1u</td><td>0603</td><td>par valeur</td></tr><tr><td>C17, C18, C24</td><td class='n'>3</td><td>1n</td><td>0603</td><td>par valeur</td></tr><tr><td>C19, C20</td><td class='n'>2</td><td>330p</td><td>0603</td><td>par valeur</td></tr><tr><td>C2</td><td class='n'>1</td><td>10u/10V</td><td>1206</td><td>par valeur</td></tr><tr><td>C14, C15, C16, C21, C22, C3, C4, C5, C6, C7, CL1, CL2, CL3, CL4, CL5, CL6, CL7, CL8</td><td class='n'>18</td><td>100n</td><td>0603</td><td>par valeur</td></tr><tr><td>D111, D112, D121, D122, D131, D132, D141, D142</td><td class='n'>8</td><td>BAV99W</td><td>SOT-323 SC-70</td><td>BAV99W</td></tr><tr><td>D113, D115, D123, D125, D133, D135, D143, D145</td><td class='n'>8</td><td>B5819W</td><td>D SOD-123</td><td>B5819W, C8598</td></tr><tr><td>D114, D124, D134, D144</td><td class='n'>4</td><td>SS34FL</td><td>D SOD-123F</td><td>SS34FL, C2480216</td></tr><tr><td>D3</td><td class='n'>1</td><td>BAV99</td><td>SOT-23</td><td>BAV99, C2500</td></tr><tr><td>J1</td><td class='n'>1</td><td>FPC 16</td><td>Hirose FH12-16S-0.5SH 1x16-1MP P0.50mm Horizontal</td><td>FH12-16S-0.5SH(55), C2837584</td></tr><tr><td>LD1, LD2, LD3, LD4, LD5, LD6, LD7, LD8</td><td class='n'>8</td><td>WS2812B</td><td>LED WS2812B PLCC4 5.0x5.0mm P3.2mm</td><td>WS2812B, C2761795</td></tr><tr><td>NT1</td><td class='n'>1</td><td>spirale C1</td><td>COIL TIE</td><td>gravée dans le circuit</td></tr><tr><td>NT2</td><td class='n'>1</td><td>spirale C2</td><td>COIL TIE</td><td>gravée dans le circuit</td></tr><tr><td>NT3</td><td class='n'>1</td><td>spirale C3</td><td>COIL TIE</td><td>gravée dans le circuit</td></tr><tr><td>NT4</td><td class='n'>1</td><td>spirale C4</td><td>COIL TIE</td><td>gravée dans le circuit</td></tr><tr><td>Q1, Q112, Q122, Q132, Q142</td><td class='n'>5</td><td>AO3401A</td><td>SOT-23</td><td>AO3401A, C15127</td></tr><tr><td>Q111, Q121, Q131, Q141, Q2</td><td class='n'>5</td><td>AO3400A</td><td>SOT-23</td><td>AO3400A, C20917</td></tr><tr><td>R113, R114, R123, R124, R133, R134, R143, R144</td><td class='n'>8</td><td>330R</td><td>0603</td><td>par valeur</td></tr><tr><td>R115, R125, R135, R145</td><td class='n'>4</td><td>100k</td><td>0402</td><td>par valeur</td></tr><tr><td>R116, R126, R136, R146</td><td class='n'>4</td><td>680R</td><td>0805</td><td>par valeur</td></tr><tr><td>R14</td><td class='n'>1</td><td>523R</td><td>0603</td><td>par valeur</td></tr><tr><td>R15, R16</td><td class='n'>2</td><td>787R</td><td>0603</td><td>par valeur</td></tr><tr><td>R17, R21</td><td class='n'>2</td><td>590R</td><td>0603</td><td>par valeur</td></tr><tr><td>R18, R22, R24</td><td class='n'>3</td><td>1k</td><td>0603</td><td>par valeur</td></tr><tr><td>R19, R20</td><td class='n'>2</td><td>750R</td><td>0603</td><td>par valeur</td></tr><tr><td>R23</td><td class='n'>1</td><td>3.57k</td><td>0603</td><td>par valeur</td></tr><tr><td>R25</td><td class='n'>1</td><td>49R9</td><td>0603</td><td>par valeur</td></tr><tr><td>R5</td><td class='n'>1</td><td>20k5</td><td>0603</td><td>par valeur</td></tr><tr><td>R111, R112, R121, R122, R131, R132, R141, R142, R6</td><td class='n'>9</td><td>10k</td><td>0603</td><td>par valeur</td></tr><tr><td>R7</td><td class='n'>1</td><td>470R</td><td>0603</td><td>par valeur</td></tr><tr><td>R10, R12, R13, R8</td><td class='n'>4</td><td>100k</td><td>0603</td><td>par valeur</td></tr><tr><td>R9</td><td class='n'>1</td><td>10R</td><td>2010</td><td>par valeur</td></tr><tr><td>TP1</td><td class='n'>1</td><td>AMP_OUT</td><td>TestPoint Pad 1.5x1.5mm</td><td>pastille nue</td></tr><tr><td>TP2</td><td class='n'>1</td><td>VREF</td><td>TestPoint Pad 1.5x1.5mm</td><td>pastille nue</td></tr><tr><td>TP3</td><td class='n'>1</td><td>DRIVE_BUS</td><td>TestPoint Pad 1.5x1.5mm</td><td>pastille nue</td></tr><tr><td>TP4</td><td class='n'>1</td><td>GND</td><td>TestPoint Pad 1.5x1.5mm</td><td>pastille nue</td></tr><tr><td>U1</td><td class='n'>1</td><td>74HC4514</td><td>TSSOP-24 4.4x7.8mm P0.65mm</td><td>74HC4514PW, C5615</td></tr><tr><td>U2</td><td class='n'>1</td><td>74HC154</td><td>TSSOP-24 4.4x7.8mm P0.65mm</td><td>74HC154PW, C5613</td></tr><tr><td>U3</td><td class='n'>1</td><td>ADG1607</td><td>LFCSP-32-1EP 5x5mm P0.5mm EP3.1x3.1mm</td><td>ADG1607BCPZ</td></tr><tr><td>U5</td><td class='n'>1</td><td>AD8421</td><td>SOIC-8 3.9x4.9mm P1.27mm</td><td>AD8421ARZ, C462186</td></tr><tr><td>U6</td><td class='n'>1</td><td>74LVC1G04</td><td>SOT-23-5</td><td>SN74LVC1G04DBVR, C7477</td></tr><tr><td>U7, U8</td><td class='n'>2</td><td>OPA2810</td><td>SOIC-8 3.9x4.9mm P1.27mm</td><td>OPA2810IDR, C2059830</td></tr></tbody>
+</table>
+</div>
+
+<h2>La Nucleo, les câbles, l'alimentation</h2>
+<ul>
+<li><b>NUCLEO-G474RE</b> de ST, avec sa sonde ST-Link intégrée ; un câble USB micro-B vers le PC : il programme la carte et porte la console série.</li>
+<li><b>Nappe FFC/FPC</b> de 16 conducteurs au pas de 0,5 mm, 100 à 150 mm, contacts du même côté aux deux bouts (dite « type A ») : les deux connecteurs sont identiques, montés côté composants, contacts vers le bas ; posée à plat entre les deux cartes, la nappe présente ses contacts vers le bas aux deux extrémités. En prendre deux.</li>
+<li><b>Alimentation 12 V</b> de laboratoire, limitée en courant (100 mA suffisent au banc à vide, 500 mA avec les LED allumées), linéaire ou batterie : jamais un chargeur à découpage près des bobines. Un cordon à fiche 5,5 x 2,1 mm, positif au centre.</li>
+</ul>
+
+<h2>De quoi faire les quatre pucks</h2>
+<figure>
+<div class="fig-scroll"><svg class="docfig" viewBox="0 0 960 560" role="img" aria-label="Fabriquer un puck de test : bobiner le fil sur le gabarit imprime, coller, souder le condensateur, glisser bobine et aimant ferrite dans le puck ; tableau des quatre pucks avec condensateur, note attendue, diametres, tours et fil">
+<defs><marker id="arr22" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+<circle class="dot q-high" cx="34.0" cy="40.0" r="13.0"/><text class="lbl strong q-high-t" x="34.0" y="44.5" text-anchor="middle">1</text>
+<text class="lbl strong" x="56.0" y="45.0">Bobiner sur le gabarit imprimé</text>
+<rect class="box-soft" x="60" y="120" width="150" height="8" rx="2"/>
+<rect class="box-soft" x="60" y="80" width="150" height="8" rx="2"/>
+<rect class="box" x="115" y="80" width="40" height="48"/>
+<line class="wire" x1="135" y1="50" x2="135" y2="150"/>
+<text class="lbl small muted" x="142.0" y="62.0">axe M3, dans une perceuse</text>
+<rect class="copper" x="72" y="88.0" width="43" height="3" rx="1.5"/>
+<rect class="copper" x="155" y="88.0" width="43" height="3" rx="1.5"/>
+<rect class="copper" x="72" y="92.5" width="43" height="3" rx="1.5"/>
+<rect class="copper" x="155" y="92.5" width="43" height="3" rx="1.5"/>
+<rect class="copper" x="72" y="97.0" width="43" height="3" rx="1.5"/>
+<rect class="copper" x="155" y="97.0" width="43" height="3" rx="1.5"/>
+<rect class="copper" x="72" y="101.5" width="43" height="3" rx="1.5"/>
+<rect class="copper" x="155" y="101.5" width="43" height="3" rx="1.5"/>
+<rect class="copper" x="72" y="106.0" width="43" height="3" rx="1.5"/>
+<rect class="copper" x="155" y="106.0" width="43" height="3" rx="1.5"/>
+<rect class="copper" x="72" y="110.5" width="43" height="3" rx="1.5"/>
+<rect class="copper" x="155" y="110.5" width="43" height="3" rx="1.5"/>
+<text class="lbl small" x="60.0" y="170.0">fenêtre de 2 mm entre les flasques,</text>
+<text class="lbl small" x="60.0" y="184.0">fil émaillé, spires serrées, vernis, puis retirer la rondelle</text>
+<circle class="dot q-high" cx="34.0" cy="240.0" r="13.0"/><text class="lbl strong q-high-t" x="34.0" y="244.5" text-anchor="middle">2</text>
+<text class="lbl strong" x="56.0" y="245.0">Souder le condensateur, une note par pièce</text>
+<circle class="coil" cx="110" cy="320" r="34"/>
+<circle class="coil" cx="110" cy="320" r="26"/>
+<circle class="coil" cx="110" cy="320" r="18"/>
+<circle class="coil" cx="110" cy="320" r="10"/>
+<line class="wire" x1="144" y1="318" x2="200" y2="308"/>
+<line class="wire" x1="120" y1="320" x2="200" y2="332"/>
+<rect class="cap" x="198" y="304" width="14" height="32" rx="2"/>
+<text class="lbl small" x="220.0" y="324.0">C0G 1 %, boîtier 0805</text>
+<text class="lbl small muted" x="220.0" y="338.0">aux deux bouts du fil dénudé</text>
+<text class="lbl small" x="60.0" y="380.0">bobine et condensateur font le résonateur :</text>
+<text class="lbl small" x="60.0" y="394.0">L = 45 µH pour toutes les pièces, C change la note</text>
+<circle class="dot q-high" cx="34.0" cy="440.0" r="13.0"/><text class="lbl strong q-high-t" x="34.0" y="444.5" text-anchor="middle">3</text>
+<text class="lbl strong" x="56.0" y="445.0">Glisser dans le puck, aimant au-dessus</text>
+<path class="puck" d="M70 540 v-58 q0 -12 12 -12 h116 q12 0 12 12 v58 z"/>
+<rect class="magnet" x="100" y="492" width="80" height="18"/>
+<text class="lbl small" x="140.0" y="505.0" text-anchor="middle">aimant ferrite</text>
+<rect class="copper" x="94" y="518" width="9" height="9" rx="2"/>
+<rect class="copper" x="107" y="518" width="9" height="9" rx="2"/>
+<rect class="copper" x="120" y="518" width="9" height="9" rx="2"/>
+<rect class="copper" x="133" y="518" width="9" height="9" rx="2"/>
+<rect class="copper" x="146" y="518" width="9" height="9" rx="2"/>
+<rect class="copper" x="159" y="518" width="9" height="9" rx="2"/>
+<rect class="copper" x="172" y="518" width="9" height="9" rx="2"/>
+<text class="lbl small muted" x="220.0" y="499.0">fente latérale pour le condensateur</text>
+<text class="lbl small muted" x="220.0" y="513.0">poche d'aimant ajustée</text>
+<text class="lbl small muted" x="220.0" y="527.0">bobine dans les 2 mm du bas</text>
+<text class="lbl mono muted" x="470.0" y="38.0">LES QUATRE PUCKS DU BANC</text>
+<text class="lbl small muted" x="470.0" y="60.0">pièce</text>
+<text class="lbl small muted" x="600.0" y="60.0">C</text>
+<text class="lbl small muted" x="665.0" y="60.0">note</text>
+<text class="lbl small muted" x="735.0" y="60.0">bobine</text>
+<text class="lbl small muted" x="830.0" y="60.0">tours</text>
+<text class="lbl small muted" x="875.0" y="60.0">fil</text>
+<line class="axis" x1="470" y1="66" x2="915" y2="66"/>
+<text class="lbl" x="470.0" y="90.0">♟ pion noir</text>
+<text class="lbl mono" x="600.0" y="90.0">12 nF</text>
+<text class="lbl mono q-high-t" x="665.0" y="90.0">217 kHz</text>
+<text class="lbl mono" x="735.0" y="90.0">ø 13,5 / 5,4</text>
+<text class="lbl mono" x="830.0" y="90.0">75</text>
+<text class="lbl mono" x="875.0" y="90.0">0,25</text>
+<text class="lbl" x="470.0" y="116.0">♞ cavalier noir</text>
+<text class="lbl mono" x="600.0" y="116.0">10 nF</text>
+<text class="lbl mono q-high-t" x="665.0" y="116.0">237 kHz</text>
+<text class="lbl mono" x="735.0" y="116.0">ø 16 / 6,4</text>
+<text class="lbl mono" x="830.0" y="116.0">67</text>
+<text class="lbl mono" x="875.0" y="116.0">0,25</text>
+<text class="lbl" x="470.0" y="142.0">♝ fou noir</text>
+<text class="lbl mono" x="600.0" y="142.0">8,2 nF</text>
+<text class="lbl mono q-high-t" x="665.0" y="142.0">262 kHz</text>
+<text class="lbl mono" x="735.0" y="142.0">ø 16 / 6,4</text>
+<text class="lbl mono" x="830.0" y="142.0">67</text>
+<text class="lbl mono" x="875.0" y="142.0">0,25</text>
+<text class="lbl" x="470.0" y="168.0">♜ tour noire</text>
+<text class="lbl mono" x="600.0" y="168.0">6,8 nF</text>
+<text class="lbl mono q-high-t" x="665.0" y="168.0">288 kHz</text>
+<text class="lbl mono" x="735.0" y="168.0">ø 18,5 / 7,4</text>
+<text class="lbl mono" x="830.0" y="168.0">62</text>
+<text class="lbl mono" x="875.0" y="168.0">0,315</text>
+<text class="lbl small muted" x="470.0" y="200.0">bobine : diamètres extérieur et intérieur, mm ; fil : diamètre du cuivre, mm ;</text>
+<text class="lbl small muted" x="470.0" y="214.0">tours calculés pour 45 µH (± 5 % à la main, soit ± 2,5 % sur la note) ;</text>
+<text class="lbl small muted" x="470.0" y="228.0">aimants ferrite SrFe, épaisseur 4 mm, diamètres 12,5, 15, 17,5 mm selon la pièce.</text>
+<text class="lbl small" x="470.0" y="262.0">Pourquoi ces quatre-là : le bas de la bande, là où les notes</text>
+<text class="lbl small" x="470.0" y="276.0">sont les plus serrées. Si le banc les distingue sans erreur,</text>
+<text class="lbl small" x="470.0" y="290.0">les huit autres classes, plus espacées, suivront.</text>
+<text class="lbl small muted" x="470.0" y="324.0">La pièce sonne à travers 7,1 mm : le circuit imprimé, l'air,</text>
+<text class="lbl small muted" x="470.0" y="338.0">le bois et le feutre. Le banc mesure ce que cet entrefer laisse passer.</text>
+</svg></div>
+<figcaption><b>Fabriquer un puck de test.</b> Bobiner sur le gabarit imprimé, souder le condensateur qui fixe la note, glisser bobine et aimant ferrite dans le puck. Le tableau donne, pour les quatre pucks du banc, le condensateur, la note attendue, les diamètres de la bobine, le nombre de tours et le fil, calculés depuis le yaml du dépôt.</figcaption>
+</figure>
+<div class="tbl">
+<table>
+<thead><tr><th>puck</th><th class="n">condensateur</th><th class="n">note</th><th class="n">bobine ext. / int.</th><th class="n">tours</th><th class="n">fil</th><th class="n">aimant</th></tr></thead>
+<tbody><tr><td>♟ pion noir</td><td class='n'>12 nF</td><td class='n'>217 kHz</td><td class='n'>13,5 / 5,4 mm</td><td class='n'>75</td><td class='n'>0,25 mm</td><td class='n'>12,5 mm</td></tr><tr><td>♞ cavalier noir</td><td class='n'>10 nF</td><td class='n'>237 kHz</td><td class='n'>16 / 6,4 mm</td><td class='n'>67</td><td class='n'>0,25 mm</td><td class='n'>15 mm</td></tr><tr><td>♝ fou noir</td><td class='n'>8,2 nF</td><td class='n'>262 kHz</td><td class='n'>16 / 6,4 mm</td><td class='n'>67</td><td class='n'>0,25 mm</td><td class='n'>15 mm</td></tr><tr><td>♜ tour noire</td><td class='n'>6,8 nF</td><td class='n'>288 kHz</td><td class='n'>18,5 / 7,4 mm</td><td class='n'>62</td><td class='n'>0,315 mm</td><td class='n'>17,5 mm</td></tr></tbody>
+</table>
+</div>
+<ul>
+<li><b>Fil émaillé</b> de 0,25 et 0,315 mm de diamètre de cuivre ; compter 4 m par bobine, une bobine de 10 m de chaque diamètre laisse de quoi recommencer.</li>
+<li><b>Condensateurs C0G 1 %</b>, boîtier 0805, 50 V, un de chaque valeur plus rechange. C0G est le diélectrique qui ne bouge ni avec la température ni avec le temps : c'est lui qui tient la note.</li>
+<li><b>Aimants ferrite</b> (SrFe), épaisseur 4 mm, au diamètre de la table ou au diamètre du commerce le plus proche ; la poche du puck se règle dans <code>mechanical/</code>. Pas de néodyme dans les pucks : la page sur le facteur Q explique pourquoi, et la mesure M3 le vérifie.</li>
+<li><b>Impression 3D</b> : les quatre pucks, les trois gabarits de bobinage et leurs rondelles, produits par <code>python mechanical/build_all.py</code>. Vis M3 x 30 avec deux écrous pour l'axe du gabarit, vernis ou colle cyanoacrylate.</li>
+</ul>
+
+<h2>Le bois, la quincaillerie, l'outillage</h2>
+<ul>
+<li>Contreplaqué sec de 3 mm et feutre autocollant de 0,5 mm, environ 130 x 130 mm pour couvrir les quatre cases. L'entrefer de 7,1 mm se décompose en 1,6 mm de circuit, 2 mm d'air, 3 mm de bois et 0,5 mm de feutre.</li>
+<li>Entretoises nylon M3 : 2 mm entre la carte et le bois (l'air des LED), 10 mm sous la carte ; vis et écrous M3 ; le gabarit de perçage <code>surface-template</code> donne les trous de fixation et les deux points lumineux de 2,5 mm par case.</li>
+</ul>
+<div class="tbl">
+<table>
+<thead><tr><th>outil</th><th>pour quoi</th><th>indispensable</th></tr></thead>
+<tbody>
+<tr><td>fer à souder à pointe fine, flux, tresse à dessouder, loupe</td><td>tout le CMS courant, le connecteur FPC</td><td>oui</td></tr>
+<tr><td>station à air chaud ou plaque chauffante, pâte à braser, pochoir</td><td>le buck QFN de la carte de banc, l'aiguilleur LFCSP du quadrant (plage thermique sous le boîtier, impossible au fer)</td><td>oui pour ces deux boîtiers</td></tr>
+<tr><td>multimètre</td><td>continuité, tensions des points de test</td><td>oui</td></tr>
+<tr><td>alimentation 12 V limitée en courant</td><td>le rail d'impulsion et le 5 V analogique</td><td>oui</td></tr>
+<tr><td>oscilloscope 2 voies, 100 Méch/s</td><td>voir le signal avant de croire le firmware</td><td>oui pour les mesures, pas pour les premiers échelons</td></tr>
+<tr><td>LCR-mètre</td><td>L et Q des bobines nues</td><td>conseillé</td></tr>
+<tr><td>perceuse ou petit tour</td><td>bobiner</td><td>oui</td></tr>
+<tr><td>imprimante 3D, ou un service d'impression</td><td>pucks et gabarits</td><td>oui</td></tr>
+<tr><td>analyseur logique</td><td>le bus de commande, en cas de doute</td><td>non</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section>
+<p class="eyebrow">Assembler</p>
+<h2>Le quadrant 2 x 2</h2>
+<p>Rien à bobiner : les spirales sont dans le circuit imprimé. Tout se joue sur la bande de frontal, 20 mm de large, et dans les coins des cases pour les LED.</p>
+<ol>
+<li>L'aiguilleur U3 (LFCSP, plage thermique) : pâte à braser au pochoir ou à la seringue, plaque chauffante ou air chaud, repère de la broche 1 sur la sérigraphie. Vérifier à la loupe qu'aucune broche n'est pontée.</li>
+<li>Les décodeurs TSSOP U1 et U2, l'AD8421 et les deux OPA2810 en SOIC, l'inverseur : fer fin, une broche d'ancrage puis les autres, tresse en cas de pont.</li>
+<li>Les transistors et les diodes : la bague de cathode des diodes en face du trait de la sérigraphie ; les BAV99W (SOT-323) sont les plus petits boîtiers de la carte.</li>
+<li>Les résistances et condensateurs, par valeur, en cochant la nomenclature au fur et à mesure.</li>
+<li>Les huit WS2812B en dernier, à température modérée (elles supportent mal la chaleur), avec leurs 100 nF ; respecter le coin biseauté du boîtier.</li>
+<li>Le connecteur FPC : les pattes de 0,5 mm se soudent avec beaucoup de flux, en glissant la pointe le long de la rangée ; contrôler les ponts à la loupe. Le volet s'ouvre vers le haut, la nappe se glisse contacts vers le bas, le volet se referme.</li>
+<li>Nettoyer le flux à l'alcool isopropylique : le frontal traite des microvolts, les résidus font des fuites.</li>
+</ol>
+
+<h2>La carte de banc</h2>
+<figure>
+<div class="fig-scroll"><svg class="docfig" viewBox="0 0 960 520" role="img" aria-label="Coupe de la carte de banc emboitee sur la Nucleo : composants dessus, barrettes males soudees cote cuivre avec le corps sous la carte, et l'ordre de soudure en six etapes">
+<defs><marker id="arr21" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+<text class="lbl mono muted" x="20.0" y="24.0">EN COUPE, UNE FOIS EMBOÎTÉE</text>
+<rect class="lay-pcb" x="60" y="290" width="520" height="16"/>
+<text class="lbl small muted" x="588.0" y="302.0">Nucleo</text>
+<rect class="lay-pcb" x="100" y="200" width="480" height="16"/>
+<text class="lbl small muted" x="588.0" y="212.0">carte de banc</text>
+<rect class="box" x="170" y="260" width="60" height="30" rx="2"/>
+<rect class="box-soft" x="176" y="216" width="48" height="10" rx="1"/>
+<line class="wire" x1="182" y1="194" x2="182" y2="282"/>
+<line class="wire" x1="194" y1="194" x2="194" y2="282"/>
+<line class="wire" x1="206" y1="194" x2="206" y2="282"/>
+<line class="wire" x1="218" y1="194" x2="218" y2="282"/>
+<rect class="box" x="340" y="260" width="60" height="30" rx="2"/>
+<rect class="box-soft" x="346" y="216" width="48" height="10" rx="1"/>
+<line class="wire" x1="352" y1="194" x2="352" y2="282"/>
+<line class="wire" x1="364" y1="194" x2="364" y2="282"/>
+<line class="wire" x1="376" y1="194" x2="376" y2="282"/>
+<line class="wire" x1="388" y1="194" x2="388" y2="282"/>
+<rect class="box" x="480" y="260" width="60" height="30" rx="2"/>
+<rect class="box-soft" x="486" y="216" width="48" height="10" rx="1"/>
+<line class="wire" x1="492" y1="194" x2="492" y2="282"/>
+<line class="wire" x1="504" y1="194" x2="504" y2="282"/>
+<line class="wire" x1="516" y1="194" x2="516" y2="282"/>
+<line class="wire" x1="528" y1="194" x2="528" y2="282"/>
+<rect class="box" x="110" y="182" width="44" height="18" rx="2"/>
+<text class="lbl small" x="132.0" y="177.0" text-anchor="middle">jack 12 V</text>
+<rect class="box" x="190" y="188" width="26" height="12" rx="2"/>
+<text class="lbl small" x="203.0" y="183.0" text-anchor="middle">buck</text>
+<rect class="box" x="245" y="190" width="20" height="10" rx="2"/>
+<text class="lbl small" x="255.0" y="185.0" text-anchor="middle">LDO</text>
+<rect class="box" x="300" y="190" width="30" height="10" rx="2"/>
+<text class="lbl small" x="315.0" y="185.0" text-anchor="middle">FPC</text>
+<rect class="box" x="410" y="190" width="14" height="10" rx="2"/>
+<text class="lbl small" x="417.0" y="185.0" text-anchor="middle">tampon</text>
+<rect class="box" x="460" y="184" width="26" height="16" rx="2"/>
+<text class="lbl small" x="473.0" y="179.0" text-anchor="middle">JP1</text>
+<path class="wire-a" d="M330 195 H360 V154" marker-end="url(#arr21)"/>
+<text class="lbl small q-high-t" x="366.0" y="160.0">nappe vers le quadrant</text>
+<line class="dash" x1="80" y1="216" x2="80" y2="290"/>
+<text class="lbl small muted" x="72.0" y="257.0" text-anchor="end">~11 mm</text>
+<text class="lbl small" x="60.0" y="330.0">Les barrettes mâles : corps sous la carte de banc, broches vers le bas, soudées côté cuivre (dessous) ;</text>
+<text class="lbl small" x="60.0" y="344.0">leurs pointes dépassent à peine sur le dessus. Les embases femelles sont celles de la Nucleo.</text>
+<text class="lbl small muted" x="60.0" y="382.0">Pourquoi cet ordre : les petits boîtiers plats se posent sur une carte encore vide ; les barrettes viennent</text>
+<text class="lbl small muted" x="60.0" y="396.0">en dernier parce qu'une fois soudées la carte ne se pose plus à plat. Les emboîter dans la Nucleo avant de</text>
+<text class="lbl small muted" x="60.0" y="410.0">les souder garantit qu'elles restent perpendiculaires et au bon pas.</text>
+<text class="lbl small" x="60.0" y="446.0">Le cavalier JP1 : broches 1 et 2, le 5VA vient du LDO (position de départ) ; 2 et 3, il vient du buck (mesure M8).</text>
+<text class="lbl mono muted" x="660.0" y="24.0">L'ORDRE DE SOUDURE</text>
+<circle class="dot q-high" cx="674.0" cy="70.0" r="13.0"/><text class="lbl strong q-high-t" x="674.0" y="74.5" text-anchor="middle">1</text>
+<text class="lbl strong" x="696.0" y="66.0">buck TPS62130, boîtier QFN</text>
+<text class="lbl small muted" x="696.0" y="82.0">air chaud ou plaque, pâte à braser</text>
+<circle class="dot q-high" cx="674.0" cy="134.0" r="13.0"/><text class="lbl strong q-high-t" x="674.0" y="138.5" text-anchor="middle">2</text>
+<text class="lbl strong" x="696.0" y="130.0">les autres CMS</text>
+<text class="lbl small muted" x="696.0" y="146.0">LDO, tampon, diodes, perle, R et C</text>
+<circle class="dot q-high" cx="674.0" cy="198.0" r="13.0"/><text class="lbl strong q-high-t" x="674.0" y="202.5" text-anchor="middle">3</text>
+<text class="lbl strong" x="696.0" y="194.0">connecteur FPC Hirose</text>
+<text class="lbl small muted" x="696.0" y="210.0">pattes fines : flux, fer fin, loupe</text>
+<circle class="dot q-high" cx="674.0" cy="262.0" r="13.0"/><text class="lbl strong q-high-t" x="674.0" y="266.5" text-anchor="middle">4</text>
+<text class="lbl strong" x="696.0" y="258.0">jack, JP1, points de test</text>
+<text class="lbl small muted" x="696.0" y="274.0">traversants, fer classique</text>
+<circle class="dot q-high" cx="674.0" cy="326.0" r="13.0"/><text class="lbl strong q-high-t" x="674.0" y="330.5" text-anchor="middle">5</text>
+<text class="lbl strong" x="696.0" y="322.0">les quatre barrettes mâles</text>
+<text class="lbl small muted" x="696.0" y="338.0">emboîtées dans la Nucleo, puis soudées</text>
+<circle class="dot q-high" cx="674.0" cy="390.0" r="13.0"/><text class="lbl strong q-high-t" x="674.0" y="394.5" text-anchor="middle">6</text>
+<text class="lbl strong" x="696.0" y="386.0">contrôle à l'ohmmètre</text>
+<text class="lbl small muted" x="696.0" y="402.0">aucun rail en court-circuit à la masse</text>
+</svg></div>
+<figcaption><b>La carte de banc en coupe, emboîtée sur la Nucleo, et l'ordre de soudure.</b> Les composants dessus ; les barrettes mâles soudées côté cuivre, corps sous la carte, broches vers le bas dans les embases femelles de la Nucleo.</figcaption>
+</figure>
+<p>L'ordre est celui de la figure : le buck QFN d'abord, à l'air chaud ou sur plaque, pendant que la carte est vide et à plat ; puis les autres CMS au fer ; le connecteur FPC ; les traversants (jack, cavalier JP1) ; et les quatre barrettes mâles en dernier, parce qu'une fois soudées la carte ne se pose plus à plat.</p>
+<p>Les barrettes sont la seule chose à ne pas se tromper : le corps sous la carte, les broches vers le bas, la soudure sur le dessous (le côté cuivre). Pour qu'elles restent perpendiculaires et au bon pas, les emboîter d'abord dans les embases femelles de la Nucleo, poser la carte de banc dessus, et souder les broches par le dessus de la carte ; ensuite seulement retirer l'ensemble de la Nucleo. Les quatre embases de la Nucleo ne sont pas symétriques (8, 6, 8 et 10 broches) : la carte ne s'emboîte que dans un sens.</p>
+<p>Le cavalier JP1 choisit d'où vient le 5 V analogique : broches 1 et 2, du LDO, la position de départ ; 2 et 3, du buck, pour la comparaison de la mesure M8.</p>
+
+<h2>Les pucks</h2>
+<p>Un puck est un résonateur : une bobine et un condensateur qui sonnent à une note, plus un aimant ferrite pour que, plus tard, le chariot du plateau puisse déplacer la pièce.</p>
+<ol>
+<li>Imprimer le gabarit du bon diamètre (un par classe de bobine) et ses rondelles.</li>
+<li>Monter le noyau sur une vis M3 dans le mandrin d'une perceuse, rondelle serrée ; passer le bout du fil dans l'encoche en laissant 10 cm libres.</li>
+<li>Bobiner à vitesse lente le nombre de tours de la table (75, 67, 67, 62 selon la pièce), spires serrées et régulières, dans la fenêtre de 2 mm ; laisser 10 cm en sortie.</li>
+<li>Imprégner de vernis ou d'une goutte de cyanoacrylate, laisser sécher, retirer la rondelle et sortir la bobine.</li>
+<li>Dénuder les deux bouts (l'émail part au grattoir ou dans une grosse goutte d'étain bien chaude), souder le condensateur C0G aux deux fils, court, dans le prolongement de la bobine.</li>
+<li>Si un LCR-mètre est là : mesurer L, attendue à 45 µH à ± 5 %, et Q à 100 kHz ; noter les valeurs sur le puck, elles servent en M1 et M6.</li>
+<li>Glisser la bobine dans les 2 mm du fond du puck, le condensateur dans sa fente, l'aimant dans sa poche par dessus ; un point de colle. Marquer le puck de sa classe.</li>
+</ol>
+<p>Quatre bobines à la main donnent quatre inductances légèrement différentes : c'est attendu, la note bouge de ± 2,5 % au plus, et la calibration du firmware mesure chaque pièce avant de la reconnaître.</p>
+
+<h2>Le bois</h2>
+<p>Scotcher le gabarit <code>surface-template</code> sur le contreplaqué, percer les trous de fixation et les points lumineux de 2,5 mm au droit des LED, coller le feutre, poser sur les entretoises de 2 mm au-dessus du quadrant. Ne rien mettre de métallique entre la carte et les pucks : une vis en acier au milieu d'une case change sa note.</p>
+</section>
+
+<section>
+<p class="eyebrow">Tester</p>
+<h2>L'échelle des tests</h2>
+<figure>
+<div class="fig-scroll"><svg class="docfig" viewBox="0 0 960 640" role="img" aria-label="L'echelle des tests du banc, du bas vers le haut : ohmmetre carte seule, 12 V seul et points de test, Nucleo et console, quadrant et nappe, un puck et sa note, les quatre pucks avec la calibration et les LED, puis la campagne de mesures M1 a M11">
+<defs><marker id="arr23" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+<text class="lbl small" x="40.0" y="40.0">Monter un échelon à la fois : on ne passe au suivant qu'une fois</text>
+<text class="lbl small" x="40.0" y="54.0">le précédent réussi, et on note ce qu'on a lu.</text>
+<rect class="box box-soft" x="40" y="560" width="600" height="62" rx="6"/>
+<circle class="dot q-high" cx="66.0" cy="591.0" r="13.0"/><text class="lbl strong q-high-t" x="66.0" y="595.5" text-anchor="middle">1</text>
+<text class="lbl strong" x="90.0" y="582.0">Carte seule, ohmmètre</text>
+<text class="lbl small" x="90.0" y="599.0">entre VIN, 5V, 5VA, 3V3 et la masse (points de test)</text>
+<text class="lbl small q-high-t" x="90.0" y="614.0">jamais zéro ohm : pas de court-circuit</text>
+<rect class="box box-soft" x="40" y="484" width="600" height="62" rx="6"/>
+<circle class="dot q-high" cx="66.0" cy="515.0" r="13.0"/><text class="lbl strong q-high-t" x="66.0" y="519.5" text-anchor="middle">2</text>
+<text class="lbl strong" x="90.0" y="506.0">12 V seul, sans Nucleo</text>
+<text class="lbl small" x="90.0" y="523.0">alimentation limitée à 100 mA, jack branché</text>
+<text class="lbl small q-high-t" x="90.0" y="538.0">TP6 12 V, TP3 5,0 V, TP2 5,0 V ; moins de 30 mA</text>
+<line class="wire" x1="654.0" y1="620.0" x2="654.0" y2="550.0" marker-end="url(#arr23)"/>
+<rect class="box box-soft" x="40" y="408" width="600" height="62" rx="6"/>
+<circle class="dot q-high" cx="66.0" cy="439.0" r="13.0"/><text class="lbl strong q-high-t" x="66.0" y="443.5" text-anchor="middle">3</text>
+<text class="lbl strong" x="90.0" y="430.0">Nucleo et console</text>
+<text class="lbl small" x="90.0" y="447.0">USB, 115200 bauds, firmware make NUCLEO=1, touche h</text>
+<text class="lbl small q-high-t" x="90.0" y="462.0">TP4 3,3 V ; bannière « # LC chessboard, nucleo bench »</text>
+<line class="wire" x1="654.0" y1="544.0" x2="654.0" y2="474.0" marker-end="url(#arr23)"/>
+<rect class="box box-soft" x="40" y="332" width="600" height="62" rx="6"/>
+<circle class="dot q-high" cx="66.0" cy="363.0" r="13.0"/><text class="lbl strong q-high-t" x="66.0" y="367.5" text-anchor="middle">4</text>
+<text class="lbl strong" x="90.0" y="354.0">Quadrant et nappe</text>
+<text class="lbl small" x="90.0" y="371.0">nappe engagée aux deux bouts, touche s</text>
+<text class="lbl small q-high-t" x="90.0" y="386.0">quatre lignes CSV, amplitude faible : le bruit des cases vides</text>
+<line class="wire" x1="654.0" y1="468.0" x2="654.0" y2="398.0" marker-end="url(#arr23)"/>
+<rect class="box box-piece" x="40" y="256" width="600" height="62" rx="6"/>
+<circle class="dot q-high" cx="66.0" cy="287.0" r="13.0"/><text class="lbl strong q-high-t" x="66.0" y="291.5" text-anchor="middle">5</text>
+<text class="lbl strong" x="90.0" y="278.0">Un puck, sa note</text>
+<text class="lbl small" x="90.0" y="295.0">pion noir sur une case, touche s, puis r pour le brut</text>
+<text class="lbl small q-high-t" x="90.0" y="310.0">fa ≈ 217 kHz à ± 3 % ; l'enveloppe dure la fenêtre de 136 µs</text>
+<line class="wire" x1="654.0" y1="392.0" x2="654.0" y2="322.0" marker-end="url(#arr23)"/>
+<rect class="box box-piece" x="40" y="180" width="600" height="62" rx="6"/>
+<circle class="dot q-high" cx="66.0" cy="211.0" r="13.0"/><text class="lbl strong q-high-t" x="66.0" y="215.5" text-anchor="middle">6</text>
+<text class="lbl strong" x="90.0" y="202.0">Quatre pucks, calibration, LED</text>
+<text class="lbl small" x="90.0" y="219.0">un puck par case, touche c, puis i, puis l</text>
+<text class="lbl small q-high-t" x="90.0" y="234.0">i nomme les quatre pucks sans erreur, l allume leurs cases</text>
+<line class="wire" x1="654.0" y1="316.0" x2="654.0" y2="246.0" marker-end="url(#arr23)"/>
+<rect class="box box-warm" x="40" y="104" width="600" height="62" rx="6"/>
+<circle class="dot q-high" cx="66.0" cy="135.0" r="13.0"/><text class="lbl strong q-high-t" x="66.0" y="139.5" text-anchor="middle">7</text>
+<text class="lbl strong" x="90.0" y="126.0">La campagne M1 à M11</text>
+<text class="lbl small" x="90.0" y="143.0">protocole measurements/protocol.md, un CSV par mesure</text>
+<text class="lbl small q-high-t" x="90.0" y="158.0">Q ≥ 30 avec la ferrite (M2) : la mesure qui décide</text>
+<line class="wire" x1="654.0" y1="240.0" x2="654.0" y2="170.0" marker-end="url(#arr23)"/>
+<text class="lbl mono muted" x="690.0" y="40.0">CE QUE LA CONSOLE ÉCRIT</text>
+<text class="lbl mono small" x="690.0" y="62.0">q,coil,sq,fa_hz,fb_hz,amp_mv,snr_db10</text>
+<text class="lbl mono small strong" x="690.0" y="88.0">q, coil, sq</text>
+<text class="lbl small muted" x="690.0" y="102.0">quadrant, bobine, case</text>
+<text class="lbl small muted" x="690.0" y="116.0">(a1 = 0, b1 = 1, a2 = 8, b2 = 9)</text>
+<text class="lbl mono small strong" x="690.0" y="134.0">fa_hz</text>
+<text class="lbl small muted" x="690.0" y="148.0">la note par FFT, à 1 kHz près</text>
+<text class="lbl mono small strong" x="690.0" y="166.0">fb_hz</text>
+<text class="lbl small muted" x="690.0" y="180.0">la même note par comptage de période</text>
+<text class="lbl mono small strong" x="690.0" y="198.0">amp_mv</text>
+<text class="lbl small muted" x="690.0" y="212.0">l'amplitude de la sonnerie</text>
+<text class="lbl mono small strong" x="690.0" y="230.0">snr_db10</text>
+<text class="lbl small muted" x="690.0" y="244.0">signal sur bruit, en dixièmes de dB</text>
+<text class="lbl mono muted" x="690.0" y="272.0">LES TOUCHES</text>
+<text class="lbl mono small strong" x="690.0" y="296.0">h</text>
+<text class="lbl small" x="736.0" y="296.0">aide</text>
+<text class="lbl mono small strong" x="690.0" y="316.0">s</text>
+<text class="lbl small" x="736.0" y="316.0">un balayage</text>
+<text class="lbl mono small strong" x="690.0" y="336.0">m / x</text>
+<text class="lbl small" x="736.0" y="336.0">balayage répété, stop</text>
+<text class="lbl mono small strong" x="690.0" y="356.0">r</text>
+<text class="lbl small" x="736.0" y="356.0">512 points bruts de la case a1</text>
+<text class="lbl mono small strong" x="690.0" y="376.0">c</text>
+<text class="lbl small" x="736.0" y="376.0">calibrer, en flash</text>
+<text class="lbl mono small strong" x="690.0" y="396.0">i</text>
+<text class="lbl small" x="736.0" y="396.0">identifier</text>
+<text class="lbl mono small strong" x="690.0" y="416.0">l / o</text>
+<text class="lbl small" x="736.0" y="416.0">LED des cases reconnues, extinction</text>
+<text class="lbl mono small strong" x="690.0" y="436.0">p / P</text>
+<text class="lbl small" x="736.0" y="436.0">impulsion plus courte, plus longue</text>
+<text class="lbl small strong" x="690.0" y="468.0">À l'oscilloscope, avant de croire</text>
+<text class="lbl small strong" x="690.0" y="482.0">le firmware :</text>
+<text class="lbl small muted" x="690.0" y="500.0">TP1 du quadrant (AMP_OUT) et TP3</text>
+<text class="lbl small muted" x="690.0" y="514.0">(bus d'impulsion) ; la sonnerie doit</text>
+<text class="lbl small muted" x="690.0" y="528.0">remplir la fenêtre sans écrêter, sinon</text>
+<text class="lbl small muted" x="690.0" y="542.0">changer la résistance de gain (note 19).</text>
+</svg></div>
+<figcaption><b>Du bas vers le haut, un échelon à la fois.</b> À droite, ce que la console écrit et les touches du firmware. Les tensions attendues se lisent sur les points de test de la carte de banc : TP6 VIN, TP3 5V, TP2 5VA, TP4 3V3, TP5 GND, TP7 ADC1, TP1 LED_END.</figcaption>
+</figure>
+<ol>
+<li><b>Carte de banc seule, ohmmètre.</b> Entre chaque rail (VIN, 5V, 5VA, 3V3) et la masse : jamais zéro ohm. Une valeur qui monte lentement (les condensateurs qui se chargent) est normale.</li>
+<li><b>12 V seul, sans Nucleo.</b> Alimentation limitée à 100 mA, jack branché : TP6 à 12 V, TP3 à 5,0 V (le buck), TP2 à 5,0 V (le LDO, cavalier en 1-2), consommation de quelques milliampères. Si le courant part en butée, couper : chercher un pont de soudure sur le buck ou une diode à l'envers.</li>
+<li><b>Nucleo et console.</b> Dans <code>firmware/board</code>, <code>make NUCLEO=1</code> produit <code>build/nucleo/board-nucleo.bin</code> ; le copier sur le lecteur NUCLEO ou le flasher par <code>st-flash</code>. Ouvrir le port série de la sonde à 115200 bauds. Emboîter la carte de banc, brancher le 12 V : TP4 à 3,3 V (le 3,3 V vient de la Nucleo), et la console affiche la bannière <code># LC chessboard, nucleo bench</code> avec la cadence d'échantillonnage et l'en-tête du CSV. La touche <code>h</code> liste les commandes.</li>
+<li><b>Quadrant et nappe.</b> Nappe engagée aux deux bouts, 12 V rebranché : <code>s</code> écrit quatre lignes CSV (cases 0, 1, 8, 9, soit a1, b1, a2, b2) avec une note quelconque et une amplitude faible : c'est le bruit, il n'y a pas de pièce. Les LED attendent l'échelon 6 : <code>l</code> n'allume que les cases reconnues et répond « no calibration stored » tant que <code>c</code> n'a pas tourné.</li>
+<li><b>Un puck, sa note.</b> Le pion noir sur une case : <code>s</code> doit donner sur cette case <code>fa_hz</code> proche de 217 000 (± 3 %, la tolérance du fil et du condensateur), <code>fb_hz</code> à quelques centaines de hertz de <code>fa_hz</code>, une amplitude nettement au-dessus des cases vides. La touche <code>r</code> vide les 512 points bruts de la case a1 : tracés, ils doivent montrer une sinusoïde qui décroît doucement sur toute la fenêtre de 136 µs. Si elle est plate en haut, la chaîne écrête : remplacer R14 du quadrant par une valeur plus forte.</li>
+<li><b>Quatre pucks, calibration, LED.</b> Un puck par case, <code>c</code> mesure et range les quatre notes en flash, <code>i</code> les reconnaît ensuite ; permuter deux pucks et refaire <code>i</code> : les noms doivent suivre. <code>l</code> allume alors les quatre cases, en blanc chaud ou en bleu selon la classe, et <code>o</code> les éteint : c'est le test de la chaîne LED. Les quatre notes attendues : 217, 237, 262, 288 kHz.</li>
+<li><b>La campagne M1 à M11.</b> Le protocole du dépôt (<code>measurements/protocol.md</code>) dit, pour chaque mesure, la préparation, la commande, le fichier CSV à remplir et le critère ; la page sur le cerveau et le banc donne la valeur théorique de chaque grandeur et l'ordre : d'abord AMP_OUT à vide à l'oscilloscope, puis un puck sans aimant (M1), puis avec la ferrite (M2, la mesure qui décide), puis les quatre pucks, les voies A et B, les LED et le bois.</li>
+</ol>
+<p>Avant de croire le firmware, l'oscilloscope : sonde sur TP1 du quadrant (AMP_OUT, centré sur 1,65 V) et sur TP3 (le bus d'impulsion), déclenchement sur TP3. On doit voir l'impulsion de 1 µs, 2 µs de silence, puis la sonnerie qui remplit la fenêtre sans toucher les rails.</p>
+</section>
+
+<section>
+<p class="eyebrow">Si ça ne marche pas</p>
+<h2>Où regarder</h2>
+<div class="tbl">
+<table>
+<thead><tr><th>symptôme</th><th>où regarder</th></tr></thead>
+<tbody>
+<tr><td>Pas de console</td><td>le port série est celui de la sonde ST-Link (ttyACM sous Linux, COM sous Windows), 115200 bauds ; le firmware est bien celui de <code>build/nucleo/</code></td></tr>
+<tr><td>TP3 sans 5 V</td><td>polarité du jack (positif au centre), fusible F1, pont de soudure sur le buck, D1 à l'envers</td></tr>
+<tr><td>TP2 sans 5 V</td><td>cavalier JP1 absent ou sur 2-3 sans buck ; LDO U2</td></tr>
+<tr><td>Console vivante, <code>s</code> sans amplitude même avec un puck</td><td>nappe mal engagée ou contacts du mauvais côté ; 5VA absent sur le quadrant (TP2) ; MUX_EN_L ou PULSE_EN : regarder TP3 du quadrant à l'oscilloscope pendant <code>s</code>, l'impulsion doit y être</td></tr>
+<tr><td>Note très différente de celle attendue</td><td>mauvais condensateur ou nombre de tours ; un LCR-mètre tranche en une minute ; du métal près de la case</td></tr>
+<tr><td>Q faible, sonnerie courte</td><td>métal à proximité, bobine mal vernie, ou un aimant néodyme à la place de la ferrite ; comparer avec et sans aimant (M1 contre M2)</td></tr>
+<tr><td>Sonnerie écrêtée</td><td>gain trop fort pour l'entrefer réel : R14 du quadrant vers 1 kΩ ou 2 kΩ</td></tr>
+<tr><td>LED muettes</td><td><code>l</code> demande une calibration au préalable ; sinon TP1 LED_END de la carte de banc, tampon U3, 5V_LED et fusible F2</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section>
+<p class="eyebrow">Lexique</p>
+<h2>Les mots de cette page</h2>
+<dl>
+<dt>Shield</dt><dd>carte fille qui s'emboîte sur les connecteurs d'une carte de développement, au format des Arduino ici.</dd>
+<dt>CMS</dt><dd>composant monté en surface, sans pattes traversantes ; les tailles 0603, 0805, 1206 sont ses dimensions en centièmes de pouce.</dd>
+<dt>QFN, LFCSP</dt><dd>boîtiers plats sans broches apparentes, avec une plage de soudure sous le composant : air chaud ou plaque chauffante.</dd>
+<dt>Nappe FPC</dt><dd>câble plat souple à contacts imprimés, pas de 0,5 mm entre conducteurs.</dd>
+<dt>Gerber</dt><dd>les fichiers de fabrication d'un circuit imprimé, une couche par fichier.</dd>
+<dt>C0G</dt><dd>diélectrique de condensateur céramique stable en température et dans le temps.</dd>
+<dt>Puck</dt><dd>le palet de test qui tient lieu de pièce d'échecs.</dd>
+<dt>Point de test</dt><dd>une pastille nue sur la carte, faite pour y poser une sonde.</dd>
+<dt>CSV</dt><dd>le texte que la console écrit, une mesure par ligne, des virgules entre les colonnes ; les tableurs et les notebooks du dépôt le lisent tel quel.</dd>
+</dl>
+</section>
+
+<p class="foot">Chiffres calculés par <code>chessboard_calc</code> depuis <code>config/board.yaml</code> du dépôt electronic-chess, nomenclatures des générateurs, septembre 2026 ; schémas de <code>tools/docfig</code>, note 20 du dépôt.</p>
+</div>
+</body>
+</html>

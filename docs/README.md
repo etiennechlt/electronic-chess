@@ -36,6 +36,13 @@ pas.
   [note 13](notes/13-revue-et-verification.md) (KiCad, DRC, netlists,
   valeurs, simulation, commande, protocole de test) et le bilan de la
   revue des cartes, [note 14](notes/14-revue-des-cartes.md).
+- **Savoir ce que le routage vaut devant les règles du métier** : la
+  [note 21](notes/21-routage-et-regles-de-l-art.md) confronte les cartes
+  générées aux règles de placement et de routage de la profession, avec
+  la mesure de chacune par `tools/routing_audit.py` : ce qui est
+  conforme, les écarts assumés (pas de plan continu sur In1 puisque la
+  carte est le capteur, règle 2W dans une bande de 20 mm) et les deux
+  points à corriger avant la commande.
 - **Utiliser les skills embarqués** (analyseurs KiCad, SPICE, CEM,
   approvisionnement, mise en fabrication, commande JLCPCB, CadQuery) :
   la [note 15](notes/15-skills-embarques.md) dit lequel sert à quel
@@ -52,6 +59,14 @@ pas.
   [note 20](notes/20-tuto-banc.md) (le tuto du banc : quoi commander,
   comment assembler, comment tester) ; leurs schémas sont générés par
   `python -m docfig build`.
+- **Envoyer ces explications à quelqu'un** : les mêmes trois textes
+  existent en pages autonomes dans [`docs/pages/`](pages/), une par
+  note, schémas embarqués et lisibles hors du dépôt :
+  [le facteur Q](pages/facteur-q.html),
+  [le cerveau et le banc](pages/cerveau-banc.html),
+  [monter le banc](pages/tuto-banc.html). Elles sont générées par
+  `python -m docfig pages`, des mêmes fonctions et du même yaml que les
+  notes, donc jamais désynchronisées d'elles.
 - **Modifier une carte** :
   [générateurs KiCad](notes/03-generateurs-kicad.md),
   [routeur et garanties](notes/04-routeur-et-garanties.md),

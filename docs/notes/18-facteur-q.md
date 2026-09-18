@@ -7,7 +7,9 @@ temps la note dure et à quel point elle est pure. Les chiffres cités
 sont ceux imprimés par `python -m chessboard_calc.report` le
 17/09/2026 depuis `config/board.yaml` ; les schémas sont produits par
 `python -m docfig build` depuis les mêmes fonctions (runbook,
-[note 08](08-regenerer.md)).
+[note 08](08-regenerer.md)). La même explication existe en page
+autonome, schémas embarqués, à envoyer telle quelle :
+[`docs/pages/facteur-q.html`](../pages/facteur-q.html).
 
 À retenir :
 

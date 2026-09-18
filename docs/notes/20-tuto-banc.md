@@ -6,7 +6,9 @@ comment les assembler et comment tester, pour passer du dépôt à un
 banc qui mesure. Les chiffres viennent de `config/board.yaml` par
 `chessboard_calc` ; les schémas sont produits par
 `python -m docfig build` ; les nomenclatures sont celles écrites par
-les générateurs dans `hardware/bench/` et `hardware/quadrant-2x2/`.
+les générateurs dans `hardware/bench/` et `hardware/quadrant-2x2/`. Le
+même tuto existe en page autonome, schémas et nomenclatures embarqués :
+[`docs/pages/tuto-banc.html`](../pages/tuto-banc.html).
 
 À retenir :
 

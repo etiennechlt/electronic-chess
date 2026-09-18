@@ -117,6 +117,15 @@ n'a pas été régénéré : même générateur, mêmes correctifs, mais sa
 bande est deux fois plus longue, ses liaisons à la main lui sont
 propres et son bilan reste à refaire.
 
+La revue du routage contre les règles de la profession
+([note 21](21-routage-et-regles-de-l-art.md)) laisse deux points à
+trancher avant la commande des quatre quadrants : la garde des trous de
+fixation (2,15 mm de cuivre libre autour d'un M3 là où la règle en
+demande 3,0, donc vis nylon, rondelle épaulée, ou trous déplacés) et le
+découplage, de 4 à 12 mm des broches d'alimentation qu'il sert, à coller
+aux boîtiers par le placement. Les autres écarts sont assumés et
+expliqués dans la note.
+
 ### 2. Simulation
 
 **Quoi.** Lancer `chain-spice.cir` (AD8421 puis Sallen-Key) et écrire

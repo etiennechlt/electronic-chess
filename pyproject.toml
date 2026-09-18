@@ -42,3 +42,9 @@ extend-exclude = [".claude"]  # vendored third-party skills keep upstream style
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# the pages of docs/pages are documents: their long lines are prose,
+# style sheets and embedded figures, and folding them would hurt both
+# the reading and the diffs
+"tools/docfig/page*.py" = ["E501"]

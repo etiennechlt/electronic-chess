@@ -26,6 +26,34 @@ code de sortie non nul tant qu'il reste une erreur ou un élément non
 connecté (les nets ouverts). Bilan et lecture des familles de
 signalements dans la [note 14](14-revue-des-cartes.md).
 
+## Revue du routage contre les règles de l'art (secondes)
+
+```bash
+PYTHONPATH=tools python3 tools/routing_audit.py \
+    hardware/quadrant-2x2/quadrant-2x2.kicad_pcb hardware/bench/bench.kicad_pcb
+```
+
+Mesure sur les cartes livrées ce que les règles de placement et de
+routage demandent : orientations, garde des trous de fixation, portes de
+fabrication, règle 2W entre les nets de mesure et ceux qui commutent,
+appariement des paires de l'amplificateur, distance de chaque découplage
+à sa broche, descentes de masse. Les verdicts, écart par écart, sont
+dans la [note 21](21-routage-et-regles-de-l-art.md).
+
+## Pages d'explication (instantané)
+
+```bash
+PYTHONPATH=tools python3 -m docfig pages
+```
+
+Écrit `docs/pages/facteur-q.html`, `cerveau-banc.html` et
+`tuto-banc.html` : les notes 18, 19 et 20 en pages autonomes, schémas
+embarqués, pour un lecteur qui ouvre un navigateur plutôt que le dépôt.
+Mêmes fonctions et même yaml que les figures de `docs/images`, donc les
+pages ne peuvent pas dériver des notes ;
+`tests/test_docfig.py` vérifie qu'aucun gabarit ne reste, qu'aucun
+chemin absolu ne s'y glisse et que les douze notes du plan y sont.
+
 ## Faces des cartes, tracées par KiCad
 
 ```bash

@@ -6,7 +6,9 @@ d'une carte de développement Nucleo, sans cerveau ni carte puissance,
 va confronter les grandeurs physiques calculées à la réalité. Les
 schémas sont produits par `python -m docfig build` depuis
 `config/board.yaml` ; les chiffres viennent du rapport
-`python -m chessboard_calc.report` du 17/09/2026.
+`python -m chessboard_calc.report` du 17/09/2026. La même explication
+existe en page autonome :
+[`docs/pages/cerveau-banc.html`](../pages/cerveau-banc.html).
 
 ## 1. À quoi sert le cerveau
 

@@ -167,7 +167,12 @@ Régénérer avec le runbook et relancer `tools/drc.py` pour vérifier.
 
 Les nets ouverts restent ceux que le routeur ne ferme pas ; ils se
 terminent dans pcbnew comme prévu par la note 13, et le DRC les compte
-comme éléments non connectés jusque-là.
+comme éléments non connectés jusque-là. Le quadrant 2 x 2 n'en a plus :
+ses sept dernières liaisons sont tracées dans le générateur
+([note 04](04-routeur-et-garanties.md)). Le DRC dit si la carte est
+fabricable ; ce que le routage vaut devant les règles de la profession
+(zonage, gardes mécaniques, empilage, règle 2W, découplage) est mesuré
+et jugé dans la [note 21](21-routage-et-regles-de-l-art.md).
 
 ## 4. Ce qui reste pour clore le lot 1
 
