@@ -41,6 +41,7 @@ FEEDER_WIDTH_MM = 0.4
 SPINE_VREF_X = 5.2
 SPINE_VREF_TURN_MM = 0.7  # how far north of the buses the spine turns east
 GATE_PD_VIA_X = 6.7  # east of the 0402 pull-down, before the 0805 damping resistor
+CELL_CLAMP_GAP_MM = 0.3  # the B clamp's row, that far above the damping resistor
 NFET_VIA_X = 10.77  # between the damping resistor and the source of the N-FET
 BUS_X = {net: x for net, x, _w in BUSES_IN1}
 
@@ -72,6 +73,33 @@ def hand_routes(b: Builder) -> None:
             V("5VA", CELL_VIA_X, s.y)
             T("5VA", "In1.Cu", [(CELL_VIA_X, s.y), (FEEDER_5VA_X, s.y)], lane)
         # ---- the two ground pads of the middle columns
+        # ---- each clamp resistor reaches the mux input of its own cell.
+        # The two are four columns apart, with the via column and the clamp
+        # diode between them; one row of each column is free, and not the
+        # same one on both sides of the cell. The A clamp lies one row
+        # above its diode pad: it steps down inside its own pad and runs
+        # east along that row. The B clamp lies a row and a half below and
+        # the reference resistor is in the way, so it runs east along its
+        # own row, past the diode, and comes back down east of it.
+        r_pad, d_pad = pads[(cr["clamp_a"], "2")], pads[(cr["dual_a"], "3")]
+        x_jog = round(r_pad.x + r_pad.w / 2.0 - lane / 2.0, 3)
+        T(
+            r_pad.net,
+            "F.Cu",
+            [(r_pad.x, r_pad.y), (x_jog, r_pad.y), (x_jog, d_pad.y), (d_pad.x, d_pad.y)],
+            lane,
+        )
+        r_pad, d_pad = pads[(cr["clamp_b"], "2")], pads[(cr["dual_b"], "3")]
+        damp = pads[(cr["damp_r"], "1")]
+        y_east = round(damp.y - damp.h / 2.0 - CELL_CLAMP_GAP_MM, 3)
+        x_down = round((pads[(cr["dual_b"], "2")].x + d_pad.x) / 2.0, 3)
+        T(
+            r_pad.net,
+            "F.Cu",
+            [(r_pad.x, r_pad.y), (r_pad.x, y_east), (x_down, y_east), (x_down, d_pad.y)],
+            lane,
+        )
+        T(r_pad.net, "F.Cu", [(x_down, d_pad.y), (d_pad.x, d_pad.y)], lane)
         # ---- the two bleed resistors reach the reference under their body
         for role in ("bleed_a", "bleed_b"):
             west, east = pads[(cr[role], "1")], pads[(cr[role], "2")]

@@ -1058,8 +1058,11 @@ class Builder:
         self.res.pour_islands = len(live)
         if len(live) < 2:
             return
+        # the smallest island leads: the router searches from the piece it
+        # starts on, and a search seeded with the hundred thousand cells of
+        # the main pour spends its whole budget on the seeding
         pieces = []
-        for g in live:
+        for g in sorted(live, key=lambda g: g.area):
             cells = self._island_cells(mr, g)
             if cells:
                 pieces.append(
