@@ -30,7 +30,7 @@ from analoggen.fplib import Footprint, load_footprint, pad_abs_pos, place_footpr
 from coilgen.geometry import LayerPath, spiral_stack
 from coilgen.kicad import Board
 from coilgen.project import DesignRules
-from shapely.geometry import LineString, Point
+from shapely.geometry import LineString, MultiPolygon, Point, box
 from shapely.strtree import STRtree
 
 from chessboard_calc.config import BoardConfig
@@ -40,10 +40,13 @@ from .connect import (
     CHECK_SLOP_MM,
     close_net,
     connectivity_check,
-    exit_copper,
+    ground_drops,
     net_pieces,
     pad_copper,
+    pour_pieces,
+    stub_copper,
     track_cells,
+    trim_corridors,
 )
 from .escape import (
     FANOUT_VIA_DRILL_MM,
@@ -154,6 +157,7 @@ class BuildResult:
     open_nets: list[str] = field(default_factory=list)
     routed_nets: int = 0
     unconnected: list[str] = field(default_factory=list)  # nets in pieces after routing
+    pour_islands: int = 0  # pieces the strip's ground pour fills as
     chain: object = None
 
 
@@ -413,7 +417,7 @@ class Builder:
         e5, eg = 1.6, 1.0
         W, H = lay.board_w, lay.board_h
         xs = lay.strip_w - 1.0
-        self.bus_gnd_x, self.bus_5v_x = lay.strip_w - 0.8, lay.strip_w - 2.4
+        self.bus_5v_x = lay.strip_w - 2.4
 
         for y in (e5, H - e5):
             line = [(self.bus_5v_x, y), (W - e5, y)]
@@ -437,22 +441,24 @@ class Builder:
             line = [(xs, y), (W - eg, y)]
             self.track(NET_GND, "B.Cu", line, w)
             self.gnd_lines.append(line)
-        # In1 bus down the strip, tied to the B.Cu lines by vias at each line
-        y_top = 6.0
-        # between the last cell and the 5 V line
-        y_bot = self.lay.cell_ys[-1] + self.q.strip.cell_pitch_mm / 2.0 + 0.7
-        self.track(NET_GND, "In1.Cu", [(self.bus_gnd_x, y_top), (self.bus_gnd_x, y_bot)], w)
-        ties = [(y_top, eg), *((y + 1.5, y) for y in free_ys), (y_bot, H - eg)]
-        for y, ly in ties:
-            self.via(NET_GND, self.bus_gnd_x, y, 0.8, 0.4)
-            pts = (
-                [(self.bus_gnd_x, y), (self.bus_gnd_x, ly), (xs, ly)]
-                if abs(y - ly) > 1e-9
-                else [(self.bus_gnd_x, y), (xs, ly)]
-            )
-            self.track(NET_GND, "B.Cu", pts, w)
+        # The ground of the strip is its B.Cu pour (strip_pour), which the
+        # B.Cu lines above overlap on their west end. The escape band of
+        # each coil group crosses the strip on B.Cu and cuts the pour in
+        # two, so one In1 bridge joins the halves, in the free rows the
+        # cells leave either side of the band and under the ground pad of
+        # their freewheel diode.
+        for lanes in self.lay.band_lanes:
+            y_n, y_s = min(lanes) - self.BRIDGE_GAP_MM, max(lanes) + self.BRIDGE_GAP_MM
+            for y in (y_n, y_s):
+                self.via(NET_GND, self.BRIDGE_X_MM, y, *self.STRIP_VIA_MM)
+            self.track(NET_GND, "In1.Cu", [(self.BRIDGE_X_MM, y_n), (self.BRIDGE_X_MM, y_s)], 0.4)
 
     EXPLICIT_PINS = (NET_GND, NET_5V, "LED_DIN", "LED_DOUT")
+    # the ground bridge across an escape band: x of its column, east of the
+    # supply buses and under the ground pads of the freewheel diodes, and
+    # how far from the band its vias sit
+    BRIDGE_X_MM = 18.6
+    BRIDGE_GAP_MM = 0.625
     EXPLICIT_REACH = 3.2  # past both escape via rows of the neighbouring pins
 
     def connector(self) -> None:
@@ -478,9 +484,17 @@ class Builder:
             self.track(net, "F.Cu", [(px, py), (vx, vy)], 0.2)
             self.via(net, vx, vy)
             self.pin_vias.setdefault(net, (vx, vy))
-        # GND and 5 V pins onto their strip buses
-        gx, gy = self.pin_vias[NET_GND]
-        self.track(NET_GND, "In1.Cu", [(gx, gy), (self.bus_gnd_x, gy)], self.rt.ring_track_mm)
+        # The LED chain leaves the strip on In1 along its own pin's row,
+        # one lane per direction: the chain router starts and ends east of
+        # the front end, so nothing of the chain is ever drawn between its
+        # parts. Nothing else runs on In1 in the connector zone (the ground
+        # of the strip is its pour), so the two lanes go straight east.
+        for net in ("LED_DIN", "LED_DOUT"):
+            vx, vy = self.pin_vias[net]
+            x_end = lay.strip_w + 1.0
+            self.track(net, "In1.Cu", [(vx, vy), (x_end, vy)], self.w)
+            self.pin_vias[net] = (x_end, vy)
+        # the 5 V pin onto its strip bus
         vx, vy = self.pin_vias[NET_5V]
         self.track(NET_5V, "In2.Cu", [(vx, vy), (self.bus_5v_x, vy)], self.rt.ring_track_mm)
 
@@ -553,6 +567,11 @@ class Builder:
         for layer, excl in self.RASTERS:
             ras = Raster(lay.board_w, lay.board_h, g)
             ras.block_outside(margin, lay.board_w, lay.board_h)
+            if layer == "In1.Cu":
+                # the LED chain never enters the front end: it starts and
+                # ends on the two lanes the connector draws out of the
+                # strip, so its return cannot run down the middle
+                ras.blocked |= ras._xs < lay.strip_w - 0.5
             for t in self.res.tracks:
                 if t.layer == layer and t.net != excl:
                     for a, b in zip(t.pts, t.pts[1:], strict=False):
@@ -665,7 +684,38 @@ class Builder:
     STRIP_THIN_MM = 0.25  # every other net of the strip
     WIDE_NETS = ("VIN", "5VA", "3V3", "DRIVE_BUS", "PULSE_RAIL", NET_GND)
     EXIT_LAYER = "In2.Cu"  # the fanout exits of the fine-pitch packages continue here
+    STRIP_VIA_MM = (FANOUT_VIA_PAD_MM, FANOUT_VIA_DRILL_MM)  # the strip's vias, all small
     STRIP_MAX_NODES = 2_000_000
+    DROP_MAX_NODES = 200_000
+    # the ground pour of the strip on the back layer: a via in it needs free
+    # copper around it for the pour to reach it
+    POUR_LAYER = "B.Cu"
+    POUR_REACH_MM = 0.6  # free copper a drop needs around it for the pour to wrap it
+    POUR_EAST_INSET_MM = 0.5  # the pour stops short of the strip line, off the spirals
+    # routing order of the strip's nets: "span" (shortest first) or
+    # "fine_first" (the nets with the most fine-pitch escapes first, while
+    # the corridors around their packages are still free)
+    STRIP_ORDER = "span"
+    # travel cost per layer on the strip lattices (1.0 elsewhere): a higher
+    # cost on the exit layer keeps it for the corridors and short hops
+    STRIP_LAYER_COST: dict[str, float] = {}
+
+    def strip_pour_box(self) -> tuple[float, float, float, float]:
+        """The ground pour under the strip: the board edge clearance on
+        three sides, short of the strip line to the east, never under a
+        spiral (a copper sheet in the coil's field would eat its Q)."""
+        e = self.rt.edge_clearance_mm
+        return (e, e, self.lay.strip_w - self.POUR_EAST_INSET_MM, self.lay.board_h - e)
+
+    def strip_pour(self) -> None:
+        x0, y0, x1, y1 = self.strip_pour_box()
+        self.board.zone(
+            self.board.net(NET_GND),
+            NET_GND,
+            self.POUR_LAYER,
+            [(x0, y0), (x1, y0), (x1, y1), (x0, y1)],
+            clearance_mm=self.clr + 0.1,
+        )
 
     def seed(self, net: str, layer: str, pts, width: float | None = None) -> None:
         """A track drawn by hand before the strip is routed: the router
@@ -694,9 +744,13 @@ class Builder:
             H,
             g,
             self.clr,
-            rt.led_via.pad_mm,
+            self.STRIP_VIA_MM[0],
             track_half=track_half,
             h_weight=1.3,
+            layer_cost=self.STRIP_LAYER_COST,
+            # the back layer of the strip is its ground plane: vias cross it,
+            # no route travels along it, so the pour stays one piece
+            plane_layers=(self.POUR_LAYER,),
         )
         m = int(rt.edge_clearance_mm / g) + 3
         for la in COPPER_LAYERS:
@@ -729,13 +783,17 @@ class Builder:
         lattice inflated for the thin one, every route painted into both;
         shortest span first, ground last; what cannot be closed is listed
         with its reason, for pcbnew."""
-        lay, rt = self.lay, self.rt
+        lay = self.lay
         W = lay.strip_w
         seed_tracks: dict[str, list[Track]] = {}
         for net, layer, width, pts in self.seeds:
             seed_tracks.setdefault(net, []).append(self.track(net, layer, pts, width))
         for net, x, y, pad, drill in self.seed_vias:
             self.via(net, x, y, pad, drill)
+        # the exit corridors of the fanout vias, cut to what the copper drawn
+        # so far leaves legal on the exit layer (a via of another net beside)
+        foreign = self._copper_index().get(self.EXIT_LAYER, ([], None))[0]
+        self.stubs = trim_corridors(self.stubs, foreign, self.clr, self.STRIP_THIN_MM)
         routers = {
             "wide": self._strip_router(self.STRIP_WIDE_MM / 2.0),
             "thin": self._strip_router(self.STRIP_THIN_MM / 2.0),
@@ -760,7 +818,7 @@ class Builder:
         skip = {"", NET_5V, "LED_DIN", "LED_DOUT", NET_GND}
         nets = [n for n in pads_of if n not in skip and not n.startswith("LED_L")]
         if NET_GND in pads_of:
-            nets.append(NET_GND)
+            nets.append(NET_GND)  # dropped to the pour, piece by piece, after the rest
         pieces_of = {
             net: net_pieces(
                 ref,
@@ -794,12 +852,11 @@ class Builder:
 
         for mr in routers.values():
             reclaim_seeds(mr)
-        # fanout vias of every net: a route that starts or ends inside the
-        # exit corridor of one gets the corridor's copper drawn to the via
-        fanout: dict[str, list] = {}
-        for net, pts, rw, via in self.stubs:
-            if via:
-                fanout.setdefault(net, []).append((runway_end(pts, rw), pts, rw))
+        # the escape stubs of every net: a route that lands on a plain runway
+        # or in the exit corridor of a fanout via owes them their copper
+        stubs_of: dict[str, list] = {}
+        for stub in self.stubs:
+            stubs_of.setdefault(stub[0], []).append(stub)
 
         def span(net):
             pts = [(p.x, p.y) for p in pads_of[net]]
@@ -813,7 +870,7 @@ class Builder:
                     for a, b in zip(pts, pts[1:], strict=False):
                         mr.segment(net, la, a[0], a[1], b[0], b[1], width)
                 for x, y in vias:
-                    mr.disc(net, COPPER_LAYERS, x, y, rt.led_via.pad_mm / 2.0)
+                    mr.disc(net, COPPER_LAYERS, x, y, self.STRIP_VIA_MM[0] / 2.0)
                 reclaim_stubs(mr, self.stubs, exit_layer=self.EXIT_LAYER)
                 reclaim_seeds(mr)
 
@@ -823,20 +880,33 @@ class Builder:
                 1 for la, cs in cells.items() for i, j in cs if mr.own[la][j, i] in (mr.FREE, nid)
             )
 
-        via_pad = rt.led_via.pad_mm
+        via_pad, via_drill = self.STRIP_VIA_MM
 
-        def attempt(net, starts, goals):
+        def legal(mr, net, cells):
+            """The cells of a piece a route may start or end on now: those
+            the net owns or nobody does (a corridor cell another net's route
+            has taken since would put the stub copper against it)."""
+            nid = mr.nid(net)
+            return {
+                la: {(i, j) for i, j in cs if mr.own[la][j, i] in (mr.FREE, nid)}
+                for la, cs in cells.items()
+            }
+
+        def attempt(net, starts, goals, drop=False):
             """One route of `net` between two sets of cells, drawn and
             painted when legal: wide on the wide lattice for a supply, thin
             again when the wide track finds no way or brushes a pad or a
-            stub of the fine-pitch package it leaves."""
-            wide = net in self.WIDE_NETS
+            stub of the fine-pitch package it leaves. A ground drop is thin
+            and short."""
+            wide = net in self.WIDE_NETS and not drop
             mr = routers["wide"] if wide else routers["thin"]
             width = self.STRIP_WIDE_MM if wide else self.STRIP_THIN_MM
-            found = mr.route(net, starts, goals, max_nodes=self.STRIP_MAX_NODES)
+            budget = self.DROP_MAX_NODES if drop else self.STRIP_MAX_NODES
+            starts, goals = legal(mr, net, starts), legal(mr, net, goals)
+            found = mr.route(net, starts, goals, max_nodes=budget)
             if found is None and wide:
                 mr, width = routers["thin"], self.STRIP_THIN_MM
-                found = mr.route(net, starts, goals, max_nodes=self.STRIP_MAX_NODES)
+                found = mr.route(net, starts, goals, max_nodes=budget)
             if found is None:
                 return (
                     f"no route (usable start cells {usable(mr, net, starts)}, "
@@ -854,24 +924,27 @@ class Builder:
                 # the lattice is conservative but not exact: a route that
                 # would fail the real clearance is dropped, never drawn
                 return f"route rejected, {clash}"
-            exits = exit_copper(mr, self.EXIT_LAYER, tracks, fanout.get(net, []))
+            exits = stub_copper(mr, self.EXIT_LAYER, tracks, vias, stubs_of.get(net, []))
             clash = self._route_clash(net, exits, [], STUB_WIDTH_MM, via_pad) if exits else None
             if clash:
-                return f"exit corridor blocked, {clash}"
+                return f"stub copper blocked, {clash}"
             for la, pts in tracks:
                 self.track(net, la, pts, width)
             for la, pts in exits:
                 self.track(net, la, pts, STUB_WIDTH_MM)
             for x, y in vias:
-                self.via(net, x, y)
+                self.via(net, x, y, via_pad, via_drill)
             paint(net, tracks, vias, width)
             if exits:
                 paint(net, exits, [], STUB_WIDTH_MM)
             return tracks, vias, mr
 
-        order = sorted([n for n in nets if n != NET_GND], key=span)
-        if NET_GND in nets:
-            order.append(NET_GND)
+        def rank(net):
+            if self.STRIP_ORDER == "fine_first":
+                return (-len(stubs_of.get(net, [])), span(net))
+            return (span(net),)
+
+        order = sorted([n for n in nets if n != NET_GND], key=rank)
         verbose = bool(os.environ.get("QUADGEN_VERBOSE"))  # progress of the minutes-long routing
         for net in order:
             pieces = pieces_of[net]
@@ -889,6 +962,22 @@ class Builder:
                     f"  {net}: {len(pieces)} pieces, {time.time() - t0:.0f} s, {state}",
                     file=sys.stderr,
                 )
+        if NET_GND in nets:
+            # ground last: every piece off the pour layer gets a drop into the pour
+            ground_drops(
+                routers["thin"],
+                NET_GND,
+                pieces_of[NET_GND],
+                self.POUR_LAYER,
+                int(round(self.POUR_REACH_MM / self.STRIP_GRID_MM)),
+                functools.partial(attempt, NET_GND, drop=True),
+                self.res.open_nets,
+                within=self.strip_pour_box(),
+            )
+            self.res.routed_nets += 1
+            if verbose:
+                drops = [line for line in self.res.open_nets if line.startswith(NET_GND)]
+                print(f"  {NET_GND}: {len(drops)} piece(s) without a drop", file=sys.stderr)
 
     # ------------------------------------------------------------ drawing
     def outline(self) -> None:
@@ -917,12 +1006,10 @@ class Builder:
         b.gr_text("J1 FPC", 5.5, 3.0, "F.SilkS", 1.0)
 
     # ------------------------------------------------------------ checks
-    def _route_clash(self, net: str, tracks, vias, width: float, via_pad: float) -> str | None:
-        """Exact clearance of a candidate strip route against the copper drawn
-        so far (strip region only); the first clash, or None."""
-
+    def _copper_index(self) -> dict:
+        """(net, copper) items and their tree per layer, of everything drawn
+        so far in the strip region; rebuilt whenever copper was added."""
         W = self.lay.strip_w
-        clr = self.clr - CHECK_SLOP_MM
         key = (len(self.res.tracks), len(self.res.vias))
         if getattr(self, "_clash_key", None) != key:
             by_layer: dict[str, list] = {}
@@ -952,14 +1039,21 @@ class Builder:
             self._clash_index = {
                 la: (its, STRtree([g for _n, g in its])) for la, its in by_layer.items()
             }
+        return self._clash_index
+
+    def _route_clash(self, net: str, tracks, vias, width: float, via_pad: float) -> str | None:
+        """Exact clearance of a candidate strip route against the copper drawn
+        so far (strip region only); the first clash, or None."""
+        clr = self.clr - CHECK_SLOP_MM
+        index = self._copper_index()
         new = [(la, LineString(pts).buffer(width / 2.0)) for la, pts in tracks]
         for x, y in vias:
             for la in COPPER_LAYERS:
                 new.append((la, Point(x, y).buffer(via_pad / 2.0)))
         for la, g in new:
-            if la not in self._clash_index:
+            if la not in index:
                 continue
-            its, tree = self._clash_index[la]
+            its, tree = index[la]
             for j in tree.query(g.buffer(clr)):
                 other = its[int(j)]
                 if other[0] == net:
@@ -1037,12 +1131,31 @@ class Builder:
         self.spurs()
         self.strip_parts()
         if self.with_strip:
+            from .hand import hand_routes
+
+            hand_routes(self)
             self.strip_routing()
+        self.strip_pour()
         self.outline()
         self.res.clearance_errors = self.clearance_check()
-        # every net one piece of copper, whatever the router believed
+        # every net one piece of copper, whatever the router believed; the
+        # strip's ground pour joins what has copper on its layer inside it
+        pour = pour_pieces(
+            box(*self.strip_pour_box()),
+            [
+                g
+                for n, g in self._copper_index().get(self.POUR_LAYER, ([], None))[0]
+                if n != NET_GND
+            ],
+            self.clr + 0.1,
+        )
+        self.res.pour_islands = len(pour)
         self.res.unconnected = connectivity_check(
-            self.res.tracks, self.res.vias, self.res.pads, COPPER_LAYERS
+            self.res.tracks,
+            self.res.vias,
+            self.res.pads,
+            COPPER_LAYERS,
+            pours={NET_GND: (self.POUR_LAYER, MultiPolygon(pour) if pour else None)},
         )
         listed = {line.split(":", 1)[0] for line in self.res.open_nets}
         for line in self.res.unconnected:

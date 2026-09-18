@@ -136,12 +136,21 @@ def stub_cells(router, pts: list[tuple[float, float]], runway: float) -> list[tu
     ]
 
 
-def exit_cells(router, pts: list[tuple[float, float]], runway: float) -> list[tuple[int, int]]:
+def stub_reach(stub) -> float:
+    """The exit corridor length of a kept stub: its fifth element when the
+    generator trimmed it against the copper already drawn (connect.py),
+    else the full corridor."""
+    return stub[4] if len(stub) > 4 else EXIT_MM
+
+
+def exit_cells(
+    router, pts: list[tuple[float, float]], runway: float, reach: float = EXIT_MM
+) -> list[tuple[int, int]]:
     """Lattice cells of the exit corridor: from the fanout via onward, on
-    the layer the route continues on."""
+    the layer the route continues on, `reach` mm long."""
     a = runway_end(pts, runway)
-    b = runway_end(pts, runway + EXIT_MM)
-    n = max(4, int(EXIT_MM / router.grid * 2))
+    b = runway_end(pts, runway + reach)
+    n = max(4, int(reach / router.grid * 2))
     return [
         router.cell(a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n)
         for k in range(n + 1)
@@ -160,15 +169,29 @@ def claim_stubs(router, stubs, layer: str = "F.Cu", exit_layer: str | None = Non
     # the painted band grows by its own inflation at both ends: stop it
     # short so the last runway cells and the cells past them stay free
     spill = BAND_WIDTH_MM / 2.0 + router.clr + router.track_half + router.grid
-    for _net, pts, runway, via in stubs:
+    for stub in stubs:
+        _net, pts, runway, via = stub[:4]
+        reach = stub_reach(stub)
         if runway > spill + 0.2:
             a, b = pts[0], runway_end(pts, runway - spill - 0.2)
             router.soft_segment("__escape__", layer, a[0], a[1], b[0], b[1], BAND_WIDTH_MM)
-        if via and exit_layer is not None and EXIT_MM > spill + 0.2:
+        if via and exit_layer is not None and reach > spill + 0.2:
             # the same band around the exit corridor: a route weaving between
             # two corridors would sit too close to the one routed later
-            a, b = runway_end(pts, runway), runway_end(pts, runway + EXIT_MM - spill - 0.2)
+            a, b = runway_end(pts, runway), runway_end(pts, runway + reach - spill - 0.2)
             router.soft_segment("__escape__", exit_layer, a[0], a[1], b[0], b[1], BAND_WIDTH_MM)
+    # the corridor cells two foreign vias inflate together (a fanout at the
+    # pad pitch, legal for the exact rule) may be claimed; a cell two nets
+    # share later, because a route came by, may not: remember the first
+    if exit_layer is not None:
+        own_x = router.own[exit_layer]
+        router.corridor_multi = {
+            (i, j)
+            for stub in stubs
+            if stub[3]
+            for i, j in exit_cells(router, stub[1], stub[2], stub_reach(stub))
+            if own_x[j, i] == router.MULTI
+        }
     reclaim_stubs(router, stubs, layer, exit_layer)
 
 
@@ -180,7 +203,8 @@ def reclaim_stubs(router, stubs, layer: str = "F.Cu", exit_layer: str | None = N
     one after the other. The exit corridor, on `exit_layer`, guarantees a
     way out of the via row for every net whatever was routed before."""
     own = router.own[layer]
-    for net, pts, runway, via in stubs:
+    for stub in stubs:
+        net, pts, runway, via = stub[:4]
         nid = router.nid(net)
         for i, j in stub_cells(router, pts, runway):
             own[j, i] = nid
@@ -193,9 +217,20 @@ def reclaim_stubs(router, stubs, layer: str = "F.Cu", exit_layer: str | None = N
                 # packages facing each other): claims never fight
                 own_x = router.own[exit_layer]
                 band = router.net_ids.get("__escape__")
-                for i, j in exit_cells(router, pts, runway):
-                    if own_x[j, i] not in (router.FREE, router.MULTI, nid, band):
-                        break
+                static_multi = getattr(router, "corridor_multi", set())
+                cells = exit_cells(router, pts, runway, stub_reach(stub))
+                stop = len(cells)
+                for k, (i, j) in enumerate(cells):
+                    o = own_x[j, i]
+                    if o in (router.FREE, nid, band) or (
+                        o == router.MULTI and (i, j) in static_multi
+                    ):
+                        continue
+                    stop = k
+                    break
+                # two cells short of the other net: the corridor's copper
+                # keeps its clearance from that net's track
+                for i, j in cells[: max(0, stop - 2)]:
                     own_x[j, i] = nid
 
 

@@ -191,6 +191,64 @@ def test_strip_routing_is_clean(cfg):
     assert len(res.open_nets) <= 3, res.open_nets
 
 
+def test_supply_buses_have_a_via_channel(cfg):
+    """A via on a bus crosses every layer, so a bus of the other layer has
+    to stay a via pad and a clearance away from it, and a bus of its own
+    layer as far as their two half widths and a clearance. Packed tighter
+    the bus is drawn and unreachable: the cells and the chain then hang
+    off it, which is what the DRC of the 18/09/2026 counted."""
+    from quadgen.escape import FANOUT_VIA_PAD_MM
+    from quadgen.layout import make_layout
+    from quadgen.strip import BUS_3V3_IN2, BUSES_IN1
+
+    lay = make_layout(cfg)
+    clr = cfg.plateau.quadrant.routing.track_clearance_mm
+    reach = FANOUT_VIA_PAD_MM / 2.0 + clr  # a via center to a foreign edge
+    in1 = list(BUSES_IN1)
+    in2 = [BUS_3V3_IN2, ("5V_LED", lay.strip_w - 2.4, cfg.plateau.quadrant.routing.ring_track_mm)]
+    for side, other_side in ((in1, in2), (in2, in1)):
+        for net, x, w in side:
+            for other, ox, ow in other_side:
+                assert abs(x - ox) >= reach + ow / 2.0 - 1e-9, f"{net} via vs {other}"
+            for other, ox, ow in side:
+                if other == net:
+                    continue
+                assert abs(x - ox) >= (w + ow) / 2.0 + clr - 1e-9, f"{net} vs {other}"
+                assert abs(x - ox) >= reach + ow / 2.0 - 1e-9, f"{net} via vs {other}"
+
+
+def test_strip_geometry_is_legal_before_routing(cfg):
+    """Everything the strip draws before its router runs: the placement, the
+    escapes of the fine-pitch packages, the LED chain and its two lanes out
+    of the strip, the supply spurs and the routes drawn by hand in the
+    cells. Seconds, where the full build takes minutes."""
+    from quadgen.board import Builder
+    from quadgen.hand import hand_routes
+
+    b = Builder(cfg, strip=False)
+    b.spirals()
+    b.escapes()
+    b.holes()
+    b.supply_lines()
+    b.connector()
+    b.leds()
+    b.strip_buses()
+    b.build_rasters()
+    b.chain()
+    b.spurs()
+    b.strip_parts()
+    assert b.res.open_routes == []
+    hand_routes(b)
+    for net, layer, width, pts in b.seeds:
+        b.track(net, layer, pts, width)
+    for net, x, y, pad, drill in b.seed_vias:
+        b.via(net, x, y, pad, drill)
+    assert b.clearance_check() == []
+    # every cell taps the four rails it needs, by hand and the same way
+    seeded = {net for net, _layer, _w, _pts in b.seeds}
+    assert {"GND", "5VA", "VIN", "DRIVE_BUS"} <= seeded
+
+
 def test_escape_stubs_only_on_fine_pitch():
     from analoggen.fplib import load_footprint
     from quadgen.escape import FINE_PITCH_MM, STUB_BEYOND_MM, escape_stubs, pad_pitch

@@ -153,6 +153,7 @@ class MultiRouter:
         outer_cost: float = 1.4,
         plane_layers: tuple[str, ...] = (),
         h_weight: float = 1.0,
+        layer_cost: dict[str, float] | None = None,
     ):
         self.layers = layers
         self.track_half = track_half
@@ -165,6 +166,10 @@ class MultiRouter:
             50.0 if la in plane_layers else outer_cost if la in outer_layers else 1.0
             for la in layers
         ]
+        # a layer kept for short hops (the exit corridors of the fanouts)
+        # costs more to travel along: long routes take the other layers
+        for la, cost in (layer_cost or {}).items():
+            self.step_cost[layers.index(la)] = cost
         # > 1 weights the heuristic (greedier, faster, slightly longer routes)
         self.h_weight = h_weight
         self.own = {la: np.full((self.ny, self.nx), self.FREE, dtype=np.int16) for la in layers}

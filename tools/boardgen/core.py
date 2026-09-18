@@ -27,10 +27,12 @@ from quadgen.connect import (
     CHECK_SLOP_MM,
     close_net,
     connectivity_check,
-    exit_copper,
+    ground_drops,
     net_pieces,
     pad_copper,
+    stub_copper,
     track_cells,
+    trim_corridors,
 )
 from quadgen.escape import (
     FANOUT_VIA_DRILL_MM,
@@ -389,6 +391,10 @@ class GenericBoard:
             seed_tracks.setdefault(net, []).append(self.track(net, layer, pts, width))
         for net, x, y, pad, drill in self.seed_vias:
             self.via(net, x, y, pad, drill)
+        # the exit corridors of the fanout vias, cut to what the copper drawn
+        # so far leaves legal on the exit layer (a via of another net beside)
+        foreign = [(n, g) for n, la, g in self._copper_items() if la == self.exit_layer]
+        self.stubs = trim_corridors(self.stubs, foreign, sp.clearance, sp.track)
         routers = {
             "power": self._new_router(sp.power_track / 2.0),
             "signal": self._new_router(sp.track / 2.0),
@@ -440,12 +446,11 @@ class GenericBoard:
 
         for mr in routers.values():
             reclaim_seeds(mr)
-        # fanout vias of every net: a route that starts or ends inside the
-        # exit corridor of one gets the corridor's copper drawn to the via
-        fanout: dict[str, list] = {}
-        for net, pts, rw, via in self.stubs:
-            if via:
-                fanout.setdefault(net, []).append((runway_end(pts, rw), pts, rw))
+        # the escape stubs of every net: a route that lands on a plain runway
+        # or in the exit corridor of a fanout via owes them their copper
+        stubs_of: dict[str, list] = {}
+        for stub in self.stubs:
+            stubs_of.setdefault(stub[0], []).append(stub)
 
         def span(net):
             pts = [(p.x, p.y) for p in pads_of[net]]
@@ -469,15 +474,28 @@ class GenericBoard:
                 1 for la, cs in cells.items() for i, j in cs if mr.own[la][j, i] in (mr.FREE, nid)
             )
 
-        def attempt(net, starts, goals):
+        def legal(mr, net, cells):
+            """The cells of a piece a route may start or end on now: those
+            the net owns or nobody does (a corridor cell another net's route
+            has taken since would put the stub copper against it)."""
+            nid = mr.nid(net)
+            return {
+                la: {(i, j) for i, j in cs if mr.own[la][j, i] in (mr.FREE, nid)}
+                for la, cs in cells.items()
+            }
+
+        def attempt(net, starts, goals, drop=False):
             """One route of `net` between two sets of cells, drawn and
             painted when legal: wide on the power lattice for a power net,
             thin again when the wide track finds no way or brushes a pad
-            or a stub of the fine-pitch package it leaves."""
-            power = net in sp.power_nets
+            or a stub of the fine-pitch package it leaves. A ground drop
+            is thin and short."""
+            power = net in sp.power_nets and not drop
             mr = routers["power"] if power else routers["signal"]
             width = sp.power_track if power else sp.track
-            found = mr.route(net, starts, goals, max_nodes=max_nodes)
+            budget = 120_000 if drop else max_nodes
+            starts, goals = legal(mr, net, starts), legal(mr, net, goals)
+            found = mr.route(net, starts, goals, max_nodes=budget)
             if found is None and power:
                 # a wide track cannot reach a fine-pitch pad: finish thin
                 mr, width = routers["signal"], sp.track
@@ -499,10 +517,10 @@ class GenericBoard:
                 # the lattice is conservative but not exact: a route that
                 # would fail the real clearance is dropped, never drawn
                 return f"route rejected, {clash}"
-            exits = exit_copper(mr, self.exit_layer, tracks, fanout.get(net, []))
+            exits = stub_copper(mr, self.exit_layer, tracks, vias, stubs_of.get(net, []))
             clash = self._route_clash(net, exits, [], STUB_WIDTH_MM) if exits else None
             if clash:
-                return f"exit corridor blocked, {clash}"
+                return f"stub copper blocked, {clash}"
             for la, pts in tracks:
                 self.track(net, la, pts, width)
             for la, pts in exits:
@@ -521,7 +539,7 @@ class GenericBoard:
         # tracks), then the power nets, then the rest; shortest span first
         # inside each group. BOARDGEN_MAX_NODES overrides the budget.
         max_nodes = int(os.environ.get("BOARDGEN_MAX_NODES", max_nodes))
-        fine = {net for net, _pts, _rw, _via in self.stubs}
+        fine = {stub[0] for stub in self.stubs}
         first_nets = [n for n in signals if n in fine]
         rest = [n for n in signals if n not in fine]
         order = sorted(first_nets, key=span) + sorted(power, key=span) + sorted(rest, key=span)
@@ -539,44 +557,17 @@ class GenericBoard:
             if close_net(net, pieces, functools.partial(attempt, net), self.res.open_nets):
                 self.res.routed_nets += 1
         if sp.gnd_layer in self.layers:
-            self._route_gnd(routers["signal"], gnd, pieces_of.get(gnd, []), sp.track, paint)
+            ground_drops(
+                routers["signal"],
+                gnd,
+                pieces_of.get(gnd, []),
+                sp.gnd_layer,
+                int(round(POUR_REACH_MM / sp.grid)),
+                functools.partial(attempt, gnd, drop=True),
+                self.res.open_nets,
+            )
+            self.res.routed_nets += 1
         self._gnd_pour(gnd)
-
-    def _route_gnd(self, mr: MultiRouter, gnd: str, pieces, width: float, paint) -> None:
-        """Every piece of ground copper without copper on the pour layer
-        gets its own short drop to it: goal is any free cell of that layer
-        near the piece, the router puts the via. A piece that reaches the
-        pour layer already (a fanout via, a via or a track drawn by hand)
-        needs none."""
-        sp = self.spec
-        gl = sp.gnd_layer
-        n = mr.nid(gnd)
-        for pc in pieces:
-            if gl in pc.cells:
-                continue
-            free = (mr.own[gl] == MultiRouter.FREE) | (mr.own[gl] == n)
-            free &= (mr.own_via[gl] == MultiRouter.FREE) | (mr.own_via[gl] == n)
-            # the pour must reach the via: keep the spots with free copper
-            # around them (a via boxed in by tracks stays an island)
-            free = _erode(free, int(round(POUR_REACH_MM / sp.grid)))
-            cells = [c for cs in pc.cells.values() for c in cs]
-            i0 = max(0, min(c[0] for c in cells) - 60)
-            i1 = min(mr.nx, max(c[0] for c in cells) + 60)
-            j0 = max(0, min(c[1] for c in cells) - 60)
-            j1 = min(mr.ny, max(c[1] for c in cells) + 60)
-            jj, ii = free[j0:j1, i0:i1].nonzero()
-            goal_cells = [(int(i) + i0, int(j) + j0) for i, j in zip(ii, jj, strict=True)]
-            found = mr.route(gnd, pc.cells, {gl: goal_cells}, max_nodes=120_000)
-            if found is None:
-                self.res.open_nets.append(f"{gnd}: {pc.label} has no drop to the pour")
-                continue
-            tracks, vias = found
-            for tla, pts in tracks:
-                self.track(gnd, tla, pts, width)
-            for x, y in vias:
-                self.via(gnd, x, y)
-            paint(gnd, tracks, vias, width)
-        self.res.routed_nets += 1
 
     def _gnd_pour(self, gnd: str) -> None:
         sp = self.spec
@@ -702,26 +693,6 @@ class GenericBoard:
                 self.res.routed_nets = max(0, self.res.routed_nets - 1)
                 listed.add(net)
         return self.res
-
-
-def _erode(mask, r: int):
-    """The cells whose whole disc of radius r (in cells) is inside the mask."""
-    import numpy as np
-
-    out = mask.copy()
-    ny, nx = mask.shape
-    for dy in range(-r, r + 1):
-        for dx in range(-r, r + 1):
-            if dx * dx + dy * dy > r * r:
-                continue
-            shifted = np.zeros_like(mask)
-            ys = slice(max(0, dy), min(ny, ny + dy))
-            xs = slice(max(0, dx), min(nx, nx + dx))
-            ys_src = slice(max(0, -dy), min(ny, ny - dy))
-            xs_src = slice(max(0, -dx), min(nx, nx - dx))
-            shifted[ys, xs] = mask[ys_src, xs_src]
-            out &= shifted
-    return out
 
 
 def _strip_courtyard(raw: str) -> str:

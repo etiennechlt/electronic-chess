@@ -10,10 +10,11 @@ from quadgen.connect import (
     Piece,
     close_net,
     connectivity_check,
-    exit_copper,
+    ground_drops,
     net_pieces,
     pad_cells,
     reached,
+    stub_copper,
     track_cells,
 )
 from quadgen.router import MultiRouter
@@ -176,11 +177,45 @@ def test_connectivity_check_reports_pieces_islands_and_pours():
     assert stranded == ["GND: 2 pieces (C1.2; C2.2)"]
 
 
-def test_exit_copper_draws_the_corridor_to_where_the_route_starts():
+def test_stub_copper_joins_a_route_to_the_stub_it_lands_on():
     mr = router()
-    fan = [((2.0, 3.3), [(2.0, 2.0), (2.0, 2.5)], 0.8)]  # corridor from y 3.3 to 5.3
+    fan = [("N", [(2.0, 2.0), (2.0, 2.5)], 0.8, True)]  # via at (2, 3.3), corridor to 5.3
     route = [("B.Cu", [(2.0, 4.5), (6.0, 4.5)])]
-    assert exit_copper(mr, "B.Cu", route, fan) == [("B.Cu", [(2.0, 3.3), (2.0, 4.5)])]
+    assert stub_copper(mr, "B.Cu", route, [], fan) == [("B.Cu", [(2.0, 3.3), (2.0, 4.5)])]
+    # a via dropped into the corridor from another layer owes it the same copper
+    dropped = [("F.Cu", [(6.0, 4.5), (2.0, 4.5)])]
+    assert stub_copper(mr, "B.Cu", dropped, [(2.0, 4.5)], fan) == [
+        ("B.Cu", [(2.0, 3.3), (2.0, 4.5)])
+    ]
     beside = [("B.Cu", [(2.4, 4.5), (6.0, 4.5)])]
-    assert exit_copper(mr, "B.Cu", beside, fan) == []
-    assert exit_copper(mr, "F.Cu", route, fan) == []
+    assert stub_copper(mr, "B.Cu", beside, [], fan) == []
+    assert stub_copper(mr, "B.Cu", dropped, [], fan) == []  # another layer, no via
+    # a plain runway (no via fitted) is copper only up to the stub end
+    plain = [("N", [(2.0, 2.0), (2.0, 2.5)], 0.3, False)]  # runway cells from 2.5 to 2.8
+    landing = [("F.Cu", [(2.0, 2.7), (5.0, 2.7)])]
+    assert stub_copper(mr, "B.Cu", landing, [], plain) == [("F.Cu", [(2.0, 2.5), (2.0, 2.7)])]
+
+
+def test_ground_drops_only_for_pieces_off_the_pour_layer():
+    mr = router()
+    on_pour = Piece({"F.Cu": [(10, 10)], "B.Cu": [(10, 10)]}, "A")
+    off = Piece({"F.Cu": [(50, 50)]}, "B")
+    calls = []
+
+    def attempt(starts, goals):
+        calls.append((starts, goals))
+        return [("F.Cu", [(5.0, 5.0), (5.5, 5.0)])], [(5.5, 5.0)], mr
+
+    open_nets: list[str] = []
+    ground_drops(mr, "GND", [on_pour, off], "B.Cu", 3, attempt, open_nets, (4.0, 4.0, 7.0, 7.0))
+    assert open_nets == [] and len(calls) == 1
+    starts, goals = calls[0]
+    assert starts == {"F.Cu": {(50, 50)}}
+    assert set(goals) == {"B.Cu"}
+    assert (55, 50) in goals["B.Cu"] and (35, 50) not in goals["B.Cu"]
+
+    def none(starts, goals):
+        return "no route"
+
+    ground_drops(mr, "GND", [off], "B.Cu", 3, none, open_nets)
+    assert open_nets == ["GND: B has no drop to the pour: no route"]

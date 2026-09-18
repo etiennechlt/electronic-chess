@@ -72,11 +72,66 @@ def cell_template(cfg: BoardConfig, circuit: Circuit) -> dict[str, tuple[float, 
             y += h + CELL_STACK_GAP
     return out
 
+
 # In1 supply buses (net, x, width) and In2 logic rail, along the strip.
-BUSES_IN1 = (("5VA", 15.4, 0.6), ("VREF", 16.2, 0.4), ("DRIVE_BUS", 17.0, 0.5), ("VIN", 17.9, 0.6))
-BUS_3V3_IN2 = ("3V3", 16.4, 0.4)
+# Every bus needs a via channel: a via on it crosses all four layers, so
+# the buses of the other layer must stay 0.375 mm away from its center
+# (via pad 0.225 plus the clearance) and those of its own layer as far as
+# the pads demand. Packed tighter, a bus is drawn but unreachable: the
+# cells and the chain then hang off it, which is what the DRC counted.
+# East of VIN the top layer carries the diode pads of the cells (to
+# x = 19.5) and In2 the 5 V grid of the LEDs (from x = 17.1).
+BUSES_IN1 = (
+    ("5VA", 13.2, 0.6),
+    ("VREF", 14.4, 0.4),
+    ("DRIVE_BUS", 15.6, 0.5),
+    ("VIN", 16.55, 0.6),
+)
+BUS_3V3_IN2 = ("3V3", 12.2, 0.4)
 
 SHELF_GAP = 0.25
+
+# The passives by the package they serve, with the regions of the strip
+# they go to, in order of preference: the instrumentation amplifier's
+# input network beside the mux, above the amplifiers; the filters, the
+# output stage and the reference divider beside and under the
+# amplifiers; the mux decoupling beside the mux; the decoders' decoupling
+# and their inverter beside the decoders; the bulk 5VA and the 3V3 and
+# 5VA decoupling of the link zone by the link. What a group's regions
+# cannot hold goes wherever room is left.
+GROUPS: tuple[tuple[tuple[str, ...], tuple[str, ...]], ...] = (
+    (("C14", "C15", "R12", "R13", "R14", "C16"), ("mux", "amp_col", "bottom")),
+    (
+        (
+            "C17",
+            "C18",
+            "R15",
+            "R16",
+            "R17",
+            "R18",
+            "R19",
+            "R20",
+            "C19",
+            "C20",
+            "R21",
+            "R22",
+            "C21",
+            "R23",
+            "R24",
+            "C22",
+            "C23",
+            "R25",
+            "C24",
+            "R5",
+            "R6",
+            "C13",
+        ),
+        ("amp_col", "bottom", "mux"),
+    ),
+    (("C7", "C8"), ("mux", "dec")),
+    (("U6", "C5", "C6", "C3"), ("dec",)),
+    (("C2", "C4"), ("link", "dec")),
+)
 
 
 @dataclass
@@ -184,6 +239,31 @@ def shelf_pack(
     return out
 
 
+def _pack_regions(boxes: list[Box], keys, regions, next_y: dict, out: dict) -> list[Box]:
+    """Packs `boxes` into the regions named by `keys`, in order, each from
+    its next free row (`next_y`, kept across calls); returns the boxes
+    that fit nowhere."""
+    pending = list(boxes)
+    for key in keys:
+        for k, (cx0, cx1, cy0, cy1, upright) in enumerate(regions[key]):
+            if not pending:
+                return pending
+            y0 = next_y.get((key, k), cy0)
+            if y0 >= cy1:
+                continue
+            placed = shelf_pack(pending, cx0, cx1, y0, upright=upright)
+            kept = {}
+            for ref, (x, y, r) in placed.items():
+                box = next(b for b in pending if b.ref == ref)
+                h = box.w if abs(math.sin(math.radians(r))) > 0.5 else box.h
+                if y + h / 2.0 <= cy1:
+                    kept[ref] = (x, y, r)
+                    next_y[(key, k)] = max(next_y.get((key, k), cy0), y + h / 2.0 + SHELF_GAP)
+            out.update(kept)
+            pending = [b for b in pending if b.ref not in kept]
+    return pending
+
+
 def strip_placements(cfg: BoardConfig, lay: Layout, circuit: Circuit) -> dict[str, Placement]:
     q = cfg.plateau.quadrant
     by_ref = {c.ref: c for c in circuit.components}
@@ -206,10 +286,12 @@ def strip_placements(cfg: BoardConfig, lay: Layout, circuit: Circuit) -> dict[st
     out["U1"] = (xc, top + 4.6, 0.0)  # 74HC4514, TSSOP-24 upright
     out["U2"] = (xc, top + 13.2, 0.0)  # 74HC154
     # the muxes face each other: half a pitch of offset interleaves their vias
-    out["U3"] = (5.4, top + 22.8, 0.0)  # ADG1607 coils 1..8
+    # the muxes stand 5.6 mm from their edge: their fine pads escape west
+    # and east with a fanout via 4.65 mm out, which needs 0.875 mm of board
+    out["U3"] = (5.6, top + 22.8, 0.0)  # ADG1607 coils 1..8
     two_muxes = "U4" in by_ref
     if two_muxes:
-        out["U4"] = (lay.strip_w - 5.4, top + 23.3, 0.0)  # ADG1607 coils 9..16
+        out["U4"] = (lay.strip_w - 5.6, top + 23.3, 0.0)  # ADG1607 coils 9..16
     out["U5"] = (5.0, top + 32.2, 0.0)  # AD8421
     out["U7"] = (12.6, top + 32.2, 0.0)  # OPA2810 HP + LP
     out["U8"] = (5.0, top + 38.0, 0.0)  # OPA2810 VREF buffer + output
@@ -238,59 +320,76 @@ def strip_placements(cfg: BoardConfig, lay: Layout, circuit: Circuit) -> dict[st
     # buses run the whole strip on In1), one between the two muxes
     zone_bottom = st.connector_zone_mm - 0.5  # the first cell's parts start 0.4 mm lower
     tp_y = zone_bottom - 1.25
-    tps = {"TP1": (2.05, tp_y), "TP2": (4.8, tp_y), "TP3": (7.55, tp_y), "TP4": (xc, top + 21.5)}
+    # the rows under the amplifiers stop where the middle zone does, unless
+    # no cell follows it (the reduced quadrant, whose strip is longer than
+    # its play area): there they run to the board edge
+    zone_end = top + st.middle_zone_mm - 0.8
+    tail = lay.board_h - q.routing.edge_clearance_mm - 0.8
+    bottom = zone_end if any(y > zone_end for y in lay.cell_ys) else tail
+    tps = {
+        "TP1": (2.05, tp_y),
+        "TP2": (4.8, tp_y),
+        "TP3": (7.55, tp_y),
+        "TP4": (xc, top + 21.0),
+    }
     for ref, (x, y) in tps.items():
         out[ref] = (x, y, 0.0)
-    # decoupling and the inverter first, close to their packages, then the
-    # rest: side columns beside the decoders, the gaps around the muxes, the
-    # rows left in the connector zone, a column beside the amplifiers and a
-    # flat row under them
-    first = [r for r in ("U6", "C5", "C6", "C3", "C7", "C8") if r in by_ref]
-    rest = [box_of(by_ref[r]) for r in first] + sorted(
+    # the rest by affinity: every passive near the package it serves, in
+    # the regions the fixed parts leave free (x0, x1, y0, y1, upright).
+    # Decoder fanout (one via row) reaches 1.5 mm past the pad tips at 3.6;
+    # the mux fanout (two via rows) reaches 4.7 from the package center.
+    mux_lo = out["U3"][1] - 3.1
+    mux_hi = (out["U4"][1] if two_muxes else out["U3"][1]) + 3.1
+    # one mux leaves its whole east side free, two leave the gap between
+    # them and the strip of board east of the second
+    mux_side = [(x_lo, out["U3"][0] - 3.4, mux_lo, mux_hi, True)] + (
+        [
+            (out["U4"][0] + 3.4, x_hi, mux_lo, mux_hi, True),
+            (out["U3"][0] + 3.4, out["U4"][0] - 3.4, top + 23.0, mux_hi, True),
+        ]
+        if two_muxes
+        else [(max(out["U3"][0] + 5.2, xc + 1.5), x_hi, mux_lo, mux_hi, True)]
+    )
+    regions = {
+        "link": [
+            (x_lo, 10.0, fpc_bottom + 0.8, tp_y - 1.25 - 0.4, True),
+            (10.4, x_hi, link_bottom + 0.8, zone_bottom, True),
+        ],
+        "dec": [
+            (x_lo, xc - 5.2, top + 0.8, top + 17.6, True),
+            (xc + 5.2, x_hi, top + 0.8, top + 17.6, True),
+            (x_lo, x_hi, top + 17.8, top + 19.6, False),  # the row under them
+        ],
+        "mux": mux_side,
+        "amp_col": [
+            (x_lo, x_hi, top + 26.65, top + 29.25, False),  # the row between muxes and amplifiers
+            (16.7, x_hi, top + 29.5, top + 40.6, True),
+            (8.75, 10.3, top + 35.2, top + 40.6, True),  # between the buffer and the rail resistor
+        ],
+        # the rows under the amplifiers, flat so a short one still holds a
+        # row of passives; they run to the board edge when nothing follows
+        "bottom": [(x_lo, x_hi, top + 41.2, bottom, False)],
+    }
+    next_y: dict[tuple[str, int], float] = {}
+    known = {ref for refs, _regions in GROUPS for ref in refs}
+    leftovers: list[Box] = []
+    for refs, keys in GROUPS:
+        boxes = [box_of(by_ref[r]) for r in refs if r in by_ref and r not in out]
+        leftovers += _pack_regions(boxes, keys, regions, next_y, out)
+    leftovers += sorted(
         (
             box_of(comp)
             for comp in circuit.components
             if comp.ref not in out
-            and comp.ref not in first
+            and comp.ref not in known
             and not comp.ref.startswith(("LD", "CL", "NT", "J"))
         ),
         key=lambda b: -(b.w * b.h),
     )
-    # decoder fanout (one via row) reaches 1.5 mm past the pad tips at 3.6;
-    # (x0, x1, y0, y1, upright)
-    mux_lo = out["U3"][1] - 3.1
-    mux_hi = (out["U4"][1] if two_muxes else out["U3"][1]) + 3.1
-    columns = [
-        (x_lo, xc - 5.2, top + 0.8, top + 17.6, True),
-        (xc + 5.2, x_hi, top + 0.8, top + 17.6, True),
-        (x_lo, 10.0, fpc_bottom + 0.8, tp_y - 1.25 - 0.4, True),
-        (10.4, x_hi, link_bottom + 0.8, zone_bottom, True),
-        (16.7, x_hi, top + 29.5, top + 40.6, True),
-        (x_lo, x_hi, top + 41.2, top + st.middle_zone_mm - 0.8, False),
-        (x_lo, out["U3"][0] - 3.1 - 0.3, mux_lo, mux_hi, True),
-    ]
-    if two_muxes:
-        columns += [
-            (out["U4"][0] + 3.1 + 0.3, x_hi, mux_lo, mux_hi, True),
-            (out["U3"][0] + 3.1 + 0.3, out["U4"][0] - 3.1 - 0.3, top + 23.0, mux_hi, True),
-        ]
-    else:
-        columns.append((out["U3"][0] + 3.1 + 0.3, x_hi, mux_lo, mux_hi, True))
-    pending = list(rest)
-    for cx0, cx1, cy0, cy1, upright in columns:
-        if not pending:
-            break
-        placed = shelf_pack(pending, cx0, cx1, cy0, upright=upright)
-        kept = {}
-        for ref, (x, y, r) in placed.items():
-            box = next(b for b in pending if b.ref == ref)
-            h = box.w if abs(math.sin(math.radians(r))) > 0.5 else box.h
-            if y + h / 2.0 <= cy1:
-                kept[ref] = (x, y, r)
-        out.update(kept)
-        pending = [b for b in pending if b.ref not in kept]
-    if pending:
-        raise ValueError(f"middle zone overflow: {[b.ref for b in pending]} do not fit")
+    # what a group's own regions could not hold goes to any room left
+    leftovers = _pack_regions(leftovers, tuple(regions), regions, next_y, out)
+    if leftovers:
+        raise ValueError(f"middle zone overflow: {[b.ref for b in leftovers]} do not fit")
     # fixed places overlap guard
     _check_no_overlap(out, by_ref)
     return out

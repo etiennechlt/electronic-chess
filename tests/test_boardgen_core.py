@@ -1,8 +1,10 @@
-"""The board core's geometry helpers: the copper of a pad as KiCad draws it,
-and the erosion that keeps ground drops where the pour can reach them."""
+"""The board core's geometry helpers, from the shared connectivity module:
+the copper of a pad as KiCad draws it, and the erosion that keeps ground
+drops where the pour can reach them."""
 
 import numpy as np
-from boardgen.core import PadItem, _erode, pad_copper
+from boardgen.core import PadItem, pad_copper
+from quadgen.connect import erode
 from shapely.geometry import Point
 
 
@@ -35,7 +37,7 @@ def test_oval_pad_is_a_stadium_along_its_long_side():
 def test_erosion_keeps_the_cells_with_a_free_disc_around_them():
     free = np.ones((9, 9), dtype=bool)
     free[4, 4] = False
-    out = _erode(free, 2)
+    out = erode(free, 2)
     assert not out[4, 4] and not out[4, 6] and not out[2, 4]
     assert out[2, 2] and out[6, 2] and out[6, 6]
     assert not out[0, 0]  # the board edge counts as blocked
