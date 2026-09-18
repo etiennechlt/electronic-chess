@@ -27,7 +27,7 @@ les générateurs dans `hardware/bench/` et `hardware/quadrant-2x2/`.
 | Élément | État au 18/09/2026 | Ce qui débloque |
 |---|---|---|
 | Carte de banc (`hardware/bench/`) | générée, 29 nets fermés, DRC KiCad 7 : zéro erreur, zéro élément non connecté ([README](../../hardware/bench/README.md)) | rien : exporter les gerbers (section 3.1) |
-| Quadrant 2 x 2 (`hardware/quadrant-2x2/`) | généré ; DRC KiCad 7 : 117 éléments non connectés, dont les nets INA_INM et GND du [README](../../hardware/quadrant-2x2/README.md) et des trous de la même famille que ceux corrigés sur le banc ([note 04](04-routeur-et-garanties.md)) | fermer les nets dans `tools/quadgen` (routes manuelles, comme `hand_routes` du banc), DRC à zéro, puis exporter |
+| Quadrant 2 x 2 (`hardware/quadrant-2x2/`) | généré ; DRC KiCad 7 : 117 éléments non connectés sur 36 nets, trois familles ([README](../../hardware/quadrant-2x2/README.md)) : les tronçons d'échappée des boîtiers fins et du connecteur FPC laissés en îlots, les pastilles des cellules que le routeur a crues atteintes (masse, 5VA, VREF, VIN, bus d'excitation, entrées du mux, grilles), et une vingtaine de pastilles de la chaîne d'amplification ; le générateur n'en compte que deux parce que sa comptabilité de connexité a les trois défauts corrigés sur le banc ([note 04](04-routeur-et-garanties.md)) | porter dans `tools/quadgen` la comptabilité du cœur de `boardgen` (une pièce de cuivre par tronçon, pastilles à leur forme réelle, atteinte vérifiée), rerouter, routes manuelles pour le reste comme `hand_routes` du banc, DRC à zéro, puis exporter |
 | Codes fournisseur (LCSC) | présents pour les circuits intégrés, transistors, diodes, connecteurs, LED et inductance ; absents pour résistances, condensateurs, fusibles, barrettes, cavalier et points de test | une session avec accès au réseau (lot sourcing, [note 15](15-skills-embarques.md)) ; en attendant, les passifs se commandent par valeur et boîtier (section 3) |
 | Devis de fabrication | à faire ([note 16](16-cout-des-cartes.md) pour les options) | même session réseau |
 | Deux points de fiche technique | l'aiguilleur ADG1607 alimenté en 5 V, les vias de 0,45 mm chez le fabricant ([note 14](14-revue-des-cartes.md)) | lecture des fiches, devis |
@@ -275,6 +275,13 @@ ou sur plaque, pendant que la carte est vide et à plat ; puis les
 autres CMS au fer ; le connecteur FPC ; les traversants (jack,
 cavalier JP1) ; et les quatre barrettes mâles en dernier, parce
 qu'une fois soudées la carte ne se pose plus à plat.
+
+Pour situer chaque repère de la nomenclature 3.2 au moment de
+souder, la face composants tracée par KiCad, pours remplis (les
+sérigraphies portent les repères ; la face masse est dans le
+[README](../../hardware/bench/README.md) de la carte) :
+
+![Face composants de la carte de banc](../images/bench-top.svg)
 
 Les barrettes sont la seule chose à ne pas se tromper : le corps
 sous la carte, les broches vers le bas, la soudure sur le dessous

@@ -2,6 +2,14 @@
 
 ![Carte de banc](../../docs/images/bench.png)
 
+Les deux faces tracées par KiCad, pours remplis (`tools/plot.py`) :
+la face composants avec sa sérigraphie, puis la face masse vue
+retournée, comme on regarde la carte réelle.
+
+![Face composants](../../docs/images/bench-top.svg)
+
+![Face masse, vue retournée](../../docs/images/bench-bottom.svg)
+
 Carte générée par `tools/boardgen` (module `bench`) depuis la section
 `bench` de `config/board.yaml`, pour le banc de la
 [note 19](../../docs/notes/19-cerveau-et-banc-nucleo.md) : une
@@ -61,7 +69,11 @@ attend la passe de sourcing des autres cartes.
 
 ```bash
 PYTHONPATH=tools .venv/bin/python -m boardgen build bench --render docs/images/bench.png
+/usr/bin/python3 tools/plot.py hardware/bench/bench.kicad_pcb --out docs/images
 ```
+
+La seconde commande, avec le Python de KiCad, remplit les pours et
+trace les deux faces en SVG (`bench-top.svg`, `bench-bottom.svg`).
 
 `tests/test_bench.py` vérifie que chaque signal du bus est sur la
 broche du cerveau (sauf DAMP_EN_N, déplacé de PC2 à D6 parce que PC2

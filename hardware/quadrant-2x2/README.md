@@ -86,14 +86,46 @@ Généré par `python -m quadgen build --reduced` :
 |---|---|---|---|---|---|---|
 | 4 | 8 | 8330 | 230 | 0 | 2 | 0 |
 
-Nets du frontal à finir dans pcbnew : INA_INM (une pastille), GND
-(trois pastilles : D142, R145, C24).
+Le générateur ne compte que deux nets ouverts, INA_INM (une pastille)
+et GND (trois pastilles : D142, R145, C24). Ce compte est faux par
+défaut : sa comptabilité de connexité a les trois défauts corrigés
+dans le cœur de `boardgen` pour le banc ([note 04](../../docs/notes/04-routeur-et-garanties.md)),
+tout le cuivre déjà tracé d'un net compté comme une seule pièce, les
+pastilles prises pour des rectangles, et une pastille marquée atteinte
+quand la route s'arrête ailleurs.
 
-DRC KiCad 7 (`tools/drc.py`, zones remplies) : 465 signalements, 117
-éléments non connectés (les deux nets ouverts ci-dessus), erreurs
-restantes : aucune ; avertissements sans effet sur la fabrication :
-silk_overlap 185, lib_footprint_issues 129, silk_over_copper 78,
-via_dangling 41, track_dangling 27, silk_edge_clearance 5. Le contrôle
-d'isolement exact du générateur ne signale aucun défaut. Les vias
-d'éventail des boîtiers fins font 0,45 mm (perçage 0,2 mm), dans les
-capacités standard de JLCPCB, à confirmer sur le devis.
+DRC KiCad 7 (`tools/drc.py`, zones remplies) : 465 signalements, dont
+117 éléments non connectés sur 36 nets, en trois familles :
+
+- les tronçons d'échappée des boîtiers fins (U3, les décodeurs) et du
+  connecteur FPC, tracés avec leur via puis jamais rejoints : une
+  trentaine de lignes 3V3, MUX_A0 à A2, MUX_EN_H et L, DAMP_EN_N,
+  AMP_OUT, MUXA_OUT, VIN, 5VA, GND ;
+- les pastilles des quatre cellules que le routeur a crues atteintes :
+  masse (D1x1, D1x2, R1x5, Q1x1, D1x5), 5VA (D1x1, D1x2), VREF (R1x1,
+  R1x2), VIN (D1x4), DRIVE_BUS (D1x3), entrées du mux M1 à M4 (D pad 3
+  vers R pad 2, puis vers U3), grilles DRIVE1 à 4 et DAMP1_N à 4_N :
+  une soixantaine ;
+- une vingtaine de pastilles de la chaîne d'amplification et de ses
+  filtres (R8, R10, Q2, C20, C21, R15, R17, R18, R21, R22, D3, R5, R12,
+  R13, C14, C16, C4, C6, C2, C22, C23, U5, U7, U8, TP4).
+
+Jusqu'au 18/09/2026 le rapport de KiCad nommait des éléments faux
+(pastilles d'autres composants) : les empreintes de bibliothèque
+copiées telles quelles partageaient leurs identifiants entre
+instances, ce que `place_footprint` corrige depuis le banc ; la carte
+a été régénérée avec ce correctif (même cuivre, identifiants uniques)
+et le rapport nomme désormais les bons éléments. Erreurs restantes :
+aucune ;
+avertissements sans effet sur la fabrication : silk_overlap 185,
+lib_footprint_issues 129, silk_over_copper 78, via_dangling 41,
+track_dangling 27, silk_edge_clearance 5. Le contrôle d'isolement
+exact du générateur ne signale aucun défaut. Les vias d'éventail des
+boîtiers fins font 0,45 mm (perçage 0,2 mm), dans les capacités
+standard de JLCPCB, à confirmer sur le devis. La sérigraphie porte
+encore le titre du 4 x 4.
+
+Rien ne se commande avant zéro élément non connecté : la méthode est
+celle du banc, porter la comptabilité de connexité du cœur dans
+`strip_routing`, rerouter, dessiner à la main ce que le routeur ne
+ferme pas (le connecteur FPC d'abord), vérifier au DRC.

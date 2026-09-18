@@ -26,6 +26,20 @@ code de sortie non nul tant qu'il reste une erreur ou un élément non
 connecté (les nets ouverts). Bilan et lecture des familles de
 signalements dans la [note 14](14-revue-des-cartes.md).
 
+## Faces des cartes, tracées par KiCad
+
+```bash
+/usr/bin/python3 tools/plot.py hardware/bench/bench.kicad_pcb --out docs/images
+```
+
+Même Python que le DRC : remplit les pours d'une copie de la carte,
+puis `kicad-cli pcb export svg` trace la face composants (F.Cu et
+sérigraphie) et la face masse en miroir, un SVG par face, zone de la
+carte seule. `--faces top,bottom,both` choisit les vues, `both`
+superpose les deux cuivres comme dans l'éditeur. Les rendus
+`docs/images/<carte>-top.svg` et `-bottom.svg` servent aux README et
+au tuto de montage ([note 20](20-tuto-banc.md)).
+
 ## Rapport de calculs
 
 ```bash
