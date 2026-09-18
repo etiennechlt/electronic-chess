@@ -47,9 +47,11 @@ pas.
   de mesure, composants et câblage bloc par bloc.
 - **Expliquer le projet à un non-spécialiste** : la
   [note 18](notes/18-facteur-q.md) (le facteur Q, avec les chiffres du
-  projet) et la [note 19](notes/19-cerveau-et-banc-nucleo.md) (le
-  cerveau, le banc Nucleo, théorie contre réalité) ; leurs schémas
-  sont générés par `python -m docfig build`.
+  projet), la [note 19](notes/19-cerveau-et-banc-nucleo.md) (le
+  cerveau, le banc Nucleo, théorie contre réalité) et la
+  [note 20](notes/20-tuto-banc.md) (le tuto du banc : quoi commander,
+  comment assembler, comment tester) ; leurs schémas sont générés par
+  `python -m docfig build`.
 - **Modifier une carte** :
   [générateurs KiCad](notes/03-generateurs-kicad.md),
   [routeur et garanties](notes/04-routeur-et-garanties.md),
@@ -111,6 +113,9 @@ pas.
 | [15](notes/15-skills-embarques.md) | Skills embarqués : lesquels, pour quel lot, comment les tenir à jour |
 | [16](notes/16-cout-des-cartes.md) | Coût des cartes : quadrant, format 100 x 100, décisions à prendre avant de chiffrer |
 | [17](notes/17-quadrant-fonction-et-cablage.md) | Quadrant : la fonction, les composants et leur câblage, base du schéma redessiné |
+| [18](notes/18-facteur-q.md) | Le facteur Q, expliqué sans électronique |
+| [19](notes/19-cerveau-et-banc-nucleo.md) | Le cerveau et le banc Nucleo, expliqués ; théorie contre réalité |
+| [20](notes/20-tuto-banc.md) | Tuto du banc : quoi commander, quels composants, comment assembler et tester |
 
 Décisions formelles : [index des ADR](adr/README.md). Conventions de
 contribution : `CLAUDE.md` à la racine (langue, typographie, source

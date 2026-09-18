@@ -40,3 +40,16 @@ def test_fr_num():
     assert fr_num(50.0, 0) == "50"
     assert fr_num(2.5) == "2,5"
     assert fr_num(1234.5, 1) == "1 234,5"
+
+
+def test_tuto_figures_carry_the_four_test_pieces(cfg):
+    from docfig.tuto import bench_pucks
+
+    rows = bench_pucks(cfg)
+    assert [r["piece"].value for r in rows] == [tp.piece.value for tp in cfg.mockup.test_pieces]
+    puck_svg = FIGURES["tuto-puck.svg"](cfg)
+    for r in rows:
+        assert f">{fr_num(r['cap_nF'])} nF<" in puck_svg
+        assert f">{r['f0_khz']:.0f} kHz<" in puck_svg
+    tests_svg = FIGURES["tuto-tests.svg"](cfg)
+    assert f"{rows[0]['f0_khz']:.0f} kHz" in tests_svg  # the first puck's note is the first check

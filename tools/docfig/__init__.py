@@ -23,6 +23,7 @@ from .q import (
     fig_q_vs_frequency,
     fig_q_width,
 )
+from .tuto import fig_bench_inventory, fig_bench_tests, fig_puck_making, fig_shield_assembly
 
 FIGURES: dict[str, Callable[[BoardConfig], str]] = {
     "q-ringdown.svg": fig_q_ringdown,
@@ -35,6 +36,10 @@ FIGURES: dict[str, Callable[[BoardConfig], str]] = {
     "cerveau-blocs.svg": fig_brain_blocks,
     "cerveau-cycle.svg": fig_scan_cycle,
     "banc-nucleo.svg": fig_bench_nucleo,
+    "tuto-inventaire.svg": fig_bench_inventory,
+    "tuto-shield.svg": fig_shield_assembly,
+    "tuto-puck.svg": fig_puck_making,
+    "tuto-tests.svg": fig_bench_tests,
 }
 
 
