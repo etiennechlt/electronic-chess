@@ -31,10 +31,15 @@ from .strip import BUSES_IN1
 # the via column of a cell, between the resistor column (pads end at
 # x = 6.63) and the dual diodes (pads start at 7.55)
 CELL_VIA_X = 7.1
-# the 5VA feeder along the cells on In1, west of that column and clear of
-# the ground drop of the gate pull-down
-FEEDER_5VA_X = 5.9
+# the 5VA feeder along the cells on In1, between the ground drop of the
+# gate pull-down and the reference vias under the bleed resistors
+FEEDER_5VA_X = 6.05
 FEEDER_WIDTH_MM = 0.4
+# the reference (VREF) runs along the cells on In1 too, west of the 5VA
+# feeder; each bleed resistor reaches it by a via under its own body,
+# between its two pads, the only spot of that column a via fits in
+SPINE_VREF_X = 5.2
+SPINE_VREF_TURN_MM = 0.7  # how far north of the buses the spine turns east
 GATE_PD_VIA_X = 6.7  # east of the 0402 pull-down, before the 0805 damping resistor
 NFET_VIA_X = 10.77  # between the damping resistor and the source of the N-FET
 BUS_X = {net: x for net, x, _w in BUSES_IN1}
@@ -67,6 +72,12 @@ def hand_routes(b: Builder) -> None:
             V("5VA", CELL_VIA_X, s.y)
             T("5VA", "In1.Cu", [(CELL_VIA_X, s.y), (FEEDER_5VA_X, s.y)], lane)
         # ---- the two ground pads of the middle columns
+        # ---- the two bleed resistors reach the reference under their body
+        for role in ("bleed_a", "bleed_b"):
+            west, east = pads[(cr[role], "1")], pads[(cr[role], "2")]
+            x_via = round((west.x + west.w / 2.0 + east.x - east.w / 2.0) / 2.0, 3)
+            T("VREF", "F.Cu", [(east.x, east.y), (x_via, east.y)], thin)
+            V("VREF", x_via, east.y)
         pd = pads[(cr["gate_pd"], "2")]
         T(NET_GND, "F.Cu", [(pd.x, pd.y), (GATE_PD_VIA_X, pd.y)], thin)
         V(NET_GND, GATE_PD_VIA_X, pd.y)
@@ -87,11 +98,12 @@ def hand_routes(b: Builder) -> None:
         V("VIN", x_vin, y2)
         T(NET_GND, "F.Cu", [(gnd.x, gnd.y), (gnd.x, y2)], thin)
         V(NET_GND, gnd.x, y2)
-    # the 5VA feeder: one run per band of cells, from the top of its first
-    # cell to the bottom of its last, joined to the 5VA bus at its top. One
-    # run per band and not one for the strip: between two bands lie the
-    # middle zone and its packages, whose escapes own that ground.
+    # the feeders: one run per band of cells, from the top of its first
+    # cell to the bottom of its last, joined to its bus at the top. One run
+    # per band and not one for the strip: between two bands lie the middle
+    # zone and its packages, whose escapes own that room.
     pitch = b.q.strip.cell_pitch_mm
+    bus_y0 = min(lay.cell_ys) - pitch / 2.0  # where the buses of the strip start
     bands: dict[int, list[float]] = {}
     for coil in lay.coils:
         bands.setdefault(coil.band, []).append(coil.cell_y)
@@ -99,3 +111,21 @@ def hand_routes(b: Builder) -> None:
         y_top, y_bot = min(ys) - pitch / 2.0, max(ys) + pitch / 2.0
         T("5VA", "In1.Cu", [(FEEDER_5VA_X, y_top), (FEEDER_5VA_X, y_bot)], FEEDER_WIDTH_MM)
         T("5VA", "In1.Cu", [(FEEDER_5VA_X, y_top), (BUS_X["5VA"], y_top)], FEEDER_WIDTH_MM)
+        # the reference turns east past the end of the buses, where none of
+        # them is in the way: north of them for the first band of cells,
+        # south for the last (the buses run from the first cell of the
+        # strip to its last, middle zone included)
+        north = abs(y_top - bus_y0) < 1e-6
+        y_turn = (y_top - SPINE_VREF_TURN_MM) if north else (y_bot + SPINE_VREF_TURN_MM)
+        y_join = y_top if north else y_bot
+        T(
+            "VREF",
+            "In1.Cu",
+            [
+                (SPINE_VREF_X, y_bot if north else y_top),
+                (SPINE_VREF_X, y_turn),
+                (BUS_X["VREF"], y_turn),
+                (BUS_X["VREF"], y_join),
+            ],
+            lane,
+        )

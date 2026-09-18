@@ -344,15 +344,18 @@ def stub_copper(mr, exit_layer: str, tracks, vias, stubs) -> list:
     return out
 
 
-def trim_corridors(stubs, foreign, clearance: float, track_width: float = STUB_WIDTH_MM) -> list:
+def trim_corridors(
+    stubs, foreign, clearance: float, track_width: float = STUB_WIDTH_MM, margin: float = 0.0
+) -> list:
     """The stubs with their exit corridor cut to what the copper of other
     nets on the exit layer leaves legal for the corridor's thin track and
     for a route of `track_width` ending on it: `foreign` is (net, shapely
     copper) of everything drawn so far on that layer, vias and through
     pads included. A corridor stops one clearance before the first
-    foreign item on its axis; later routes stop it by ownership
-    (`reclaim_stubs`). Returns five-element stubs (net, points, runway,
-    via, reach)."""
+    foreign item on its axis, `margin` further back so the lattice rounds
+    a route's end onto a cell that is still legal; later routes stop it
+    by ownership (`reclaim_stubs`). Returns five-element stubs (net,
+    points, runway, via, reach)."""
     tree = STRtree([g for _n, g in foreign]) if foreign else None
     r = clearance + max(STUB_WIDTH_MM, track_width) / 2.0
     out = []
@@ -369,7 +372,7 @@ def trim_corridors(stubs, foreign, clearance: float, track_width: float = STUB_W
                 if hit.is_empty:
                     continue
                 t = min(line.project(Point(c)) for c in get_coordinates(hit))
-                reach = min(reach, max(0.0, t - CHECK_SLOP_MM))
+                reach = min(reach, max(0.0, t - margin - CHECK_SLOP_MM))
         out.append((net, pts, rw, via, round(reach, 3)))
     return out
 

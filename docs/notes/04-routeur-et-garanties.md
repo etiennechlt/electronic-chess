@@ -133,6 +133,45 @@ les alimentations, fines pour le reste) comme sur les cartes
 génériques, et des routes manuelles (`seed`, `seed_via`) pour ce que
 le routeur ne trouve pas.
 
+## La géométrie qui empêchait de router (bande du quadrant)
+
+Une fois la comptabilité juste, le compte des connexions manquantes du
+quadrant 2 x 2 n'a pas bougé : le routeur ne cherchait pas mal, la
+géométrie lui interdisait de réussir. Trois causes, corrigées à la
+racine, et une méthode : mesurer avant de router.
+
+1. **Des bus qu'aucun via ne peut atteindre.** Les quatre bus
+   d'alimentation de la bande (5VA, VREF, bus d'excitation, 12 V) sur
+   In1 étaient posés au pas de 0,8 mm, avec le rail 3V3 sur In2 au
+   milieu et la grille 5 V des LED juste à l'est. Un via traverse
+   toutes les couches : il lui faut, autour de son axe, le rayon de sa
+   pastille plus l'isolement (0,375 mm) libre de tout bus des autres
+   couches. Aucun des quatre ne l'avait. Les bus sont réespacés pour
+   que chacun ait son couloir de via, et un test l'exige désormais
+   (`test_supply_buses_have_a_via_channel`).
+2. **Des prises de cellule impossibles à trouver.** Une cellule de
+   bobine est quatre colonnes de composants empilés à 0,1 mm : le
+   routeur n'a qu'un couloir de via par cellule et quelques rangées
+   libres. Les prises (masse, 5VA, bus d'excitation, 12 V) sont donc
+   dessinées dans le générateur (`tools/quadgen/hand.py`), placées
+   depuis les pastilles réelles, les mêmes dans les quatre cellules du
+   2 x 2 et les seize du 4 x 4.
+3. **Une chaîne LED qui traversait le frontal.** Son retour vers le
+   connecteur descendait au milieu de la bande sur In1. La chaîne sort
+   maintenant par deux voies dessinées au connecteur, une par sens, et
+   la bande lui est fermée.
+
+Le plan de masse de la bande, sur la couche arrière, remplace le bus de
+masse et ses vias. Il n'est jamais d'un seul tenant : les échappées des
+bobines le coupent en deux, les routes de la couche arrière y ouvrent
+des criques. Le build calcule les îlots réellement remplis (même règle
+que le remplisseur de KiCad : moins le cuivre étranger et son
+isolement, puis les cols plus étroits que l'épaisseur minimale
+pincés), garde ceux qui portent de la masse, et les fait recoudre par
+le routeur comme deux pastilles d'un même net. Le contrôle de
+connexité compte un nœud par îlot, donc un plan coupé ne masque plus
+rien.
+
 ## Les trois garanties formelles
 
 Ordre d'exécution dans `build_pcb` : routage, puis

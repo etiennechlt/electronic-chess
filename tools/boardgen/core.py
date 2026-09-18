@@ -394,7 +394,9 @@ class GenericBoard:
         # the exit corridors of the fanout vias, cut to what the copper drawn
         # so far leaves legal on the exit layer (a via of another net beside)
         foreign = [(n, g) for n, la, g in self._copper_items() if la == self.exit_layer]
-        self.stubs = trim_corridors(self.stubs, foreign, sp.clearance, sp.track)
+        self.stubs = trim_corridors(
+            self.stubs, foreign, sp.clearance, sp.track, margin=1.5 * sp.grid
+        )
         routers = {
             "power": self._new_router(sp.power_track / 2.0),
             "signal": self._new_router(sp.track / 2.0),
