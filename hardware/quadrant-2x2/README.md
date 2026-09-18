@@ -25,7 +25,14 @@ dans la [note 17](../../docs/notes/17-quadrant-fonction-et-cablage.md).
 - 8 WS2812B aux coins NO et SE de chaque case, un 100 nF chacune,
   chaîne de données en serpentin sur In1, grille 5 V sur In2, masse
   sur B.Cu le long des bords nord et sud (pas de couloir médian : dans
-  un 2 x 2 le seul couloir est la bande d'échappée).
+  un 2 x 2 le seul couloir est la bande d'échappée). La chaîne ne
+  traverse jamais le frontal : elle entre et sort par deux voies
+  dessinées au connecteur, une par sens.
+- Masse du frontal : un plan sur B.Cu sous toute la bande, à la place
+  de l'ancien bus sur In1. Les échappées des bobines le coupent en
+  deux, quelques routes de la couche arrière y ouvrent des criques ;
+  le build calcule les îlots réellement remplis et les fait recoudre
+  ([note 04](../../docs/notes/04-routeur-et-garanties.md)).
 - Connecteur FPC 16 broches 0,5 mm (Hirose FH12), brochage dans
   `plateau.quadrant.link.pinout`, identique au 4 x 4 : le cerveau ne
   voit pas la différence, `COILS_PER_QUADRANT` vaut 4 dans son firmware
@@ -72,60 +79,56 @@ comparée au circuit en test (`tests/test_drawn_schematic.py`).
 Sorties du build : projet KiCad avec ses six feuilles, `bom.csv`,
 `jlc-bom.csv` (lignes avec code LCSC), `jlc-cpl.csv`, `chain-spice.cir`.
 
+## Résultat du build
+
+Généré par `python -m quadgen build --reduced` (18/09/2026) :
+
+| Bobines | LED | Segments | Vias | Nets ouverts | Pastilles ouvertes | Défauts d'isolement |
+|---|---|---|---|---|---|---|
+| 4 | 8 | 8669 | 367 | 5 | 8 | 0 |
+
+DRC KiCad 7 (`tools/drc.py`, zones remplies) : 394 signalements, dont
+**7 éléments non connectés**, contre 117 le matin du même jour. Le
+compte du build et celui de KiCad disent la même chose à une pièce
+près (le modèle du plan de masse du build est le plus prudent des
+deux) : c'est la comptabilité partagée de la
+[note 04](../../docs/notes/04-routeur-et-garanties.md) qui le permet.
+Erreurs restantes : aucune autre ; avertissements sans effet sur la
+fabrication : silk_overlap 151, lib_footprint_issues 129,
+silk_over_copper 75, track_dangling 24, via_dangling 11,
+silk_edge_clearance 4. Le contrôle d'isolement exact du générateur ne
+signale aucun défaut.
+
+Ce qui reste à fermer, dans pcbnew ou, mieux, dans
+`tools/quadgen/hand.py` pour que le build le redessine :
+
+| Net | Ce qui manque | Où |
+|---|---|---|
+| PULSE_EN | trois pastilles : la grille de Q2, son rappel R8 et l'entrée de l'inverseur U6 ; l'échappée de la broche 14 du FPC est tracée, rien ne la rejoint | zone du connecteur, y de 13 à 66 |
+| M2_A | l'entrée A de la cellule 2 vers l'aiguilleur, la piste s'arrête au tiers du chemin | de (6,35) à (8,83) |
+| DAMP4_N | la sortie du décodeur d'amortissement vers la grille du P-FET de la cellule 4 | de (7,70) à (12,28) |
+| INA_INP | C14 vers l'entrée non inverseuse de l'AD8421 | (12,79) à (10,81) |
+| GND | un via de masse isolé dans une crique du plan | (1.6,59.6) |
+
+Les quatre premiers sont des liaisons longues que le routeur n'a plus
+su glisser une fois la bande pleine ; le dernier est une crique du
+plan que les échappées et une piste de la couche arrière referment sur
+elle-même. Un humain les trace en un quart d'heure dans pcbnew ; les
+garder dans `hand.py` vaut mieux, le build les redessinera et les
+vérifiera à chaque fois.
+
 ## Régénérer
 
 ```bash
 PYTHONPATH=tools .venv/bin/python -m quadgen build --reduced --render docs/images/quadrant-2x2.png
+/usr/bin/python3 tools/plot.py hardware/quadrant-2x2/quadrant-2x2.kicad_pcb --out docs/images
+/usr/bin/python3 tools/drc.py hardware/quadrant-2x2/quadrant-2x2.kicad_pcb
 ```
 
-## Résultat du build
+La deuxième commande, avec le Python de KiCad, remplit les pours et
+trace les deux faces en SVG ; la troisième compte les éléments non
+connectés, qui doivent tomber à zéro avant toute commande.
 
-Généré par `python -m quadgen build --reduced` :
+![Face composants](../../docs/images/quadrant-2x2-top.svg)
 
-| Bobines | LED | Segments | Vias | Routes LED et alimentation ouvertes | Nets du frontal ouverts | Défauts d'isolement |
-|---|---|---|---|---|---|---|
-| 4 | 8 | 8330 | 230 | 0 | 2 | 0 |
-
-Le générateur ne compte que deux nets ouverts, INA_INM (une pastille)
-et GND (trois pastilles : D142, R145, C24). Ce compte est faux par
-défaut : sa comptabilité de connexité a les trois défauts corrigés
-dans le cœur de `boardgen` pour le banc ([note 04](../../docs/notes/04-routeur-et-garanties.md)),
-tout le cuivre déjà tracé d'un net compté comme une seule pièce, les
-pastilles prises pour des rectangles, et une pastille marquée atteinte
-quand la route s'arrête ailleurs.
-
-DRC KiCad 7 (`tools/drc.py`, zones remplies) : 465 signalements, dont
-117 éléments non connectés sur 36 nets, en trois familles :
-
-- les tronçons d'échappée des boîtiers fins (U3, les décodeurs) et du
-  connecteur FPC, tracés avec leur via puis jamais rejoints : une
-  trentaine de lignes 3V3, MUX_A0 à A2, MUX_EN_H et L, DAMP_EN_N,
-  AMP_OUT, MUXA_OUT, VIN, 5VA, GND ;
-- les pastilles des quatre cellules que le routeur a crues atteintes :
-  masse (D1x1, D1x2, R1x5, Q1x1, D1x5), 5VA (D1x1, D1x2), VREF (R1x1,
-  R1x2), VIN (D1x4), DRIVE_BUS (D1x3), entrées du mux M1 à M4 (D pad 3
-  vers R pad 2, puis vers U3), grilles DRIVE1 à 4 et DAMP1_N à 4_N :
-  une soixantaine ;
-- une vingtaine de pastilles de la chaîne d'amplification et de ses
-  filtres (R8, R10, Q2, C20, C21, R15, R17, R18, R21, R22, D3, R5, R12,
-  R13, C14, C16, C4, C6, C2, C22, C23, U5, U7, U8, TP4).
-
-Jusqu'au 18/09/2026 le rapport de KiCad nommait des éléments faux
-(pastilles d'autres composants) : les empreintes de bibliothèque
-copiées telles quelles partageaient leurs identifiants entre
-instances, ce que `place_footprint` corrige depuis le banc ; la carte
-a été régénérée avec ce correctif (même cuivre, identifiants uniques)
-et le rapport nomme désormais les bons éléments. Erreurs restantes :
-aucune ;
-avertissements sans effet sur la fabrication : silk_overlap 185,
-lib_footprint_issues 129, silk_over_copper 78, via_dangling 41,
-track_dangling 27, silk_edge_clearance 5. Le contrôle d'isolement
-exact du générateur ne signale aucun défaut. Les vias d'éventail des
-boîtiers fins font 0,45 mm (perçage 0,2 mm), dans les capacités
-standard de JLCPCB, à confirmer sur le devis. La sérigraphie porte
-encore le titre du 4 x 4.
-
-Rien ne se commande avant zéro élément non connecté : la méthode est
-celle du banc, porter la comptabilité de connexité du cœur dans
-`strip_routing`, rerouter, dessiner à la main ce que le routeur ne
-ferme pas (le connecteur FPC d'abord), vérifier au DRC.
+![Face masse, vue retournée](../../docs/images/quadrant-2x2-bottom.svg)

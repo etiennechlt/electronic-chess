@@ -42,6 +42,8 @@ SPINE_VREF_X = 5.2
 SPINE_VREF_TURN_MM = 0.7  # how far north of the buses the spine turns east
 GATE_PD_VIA_X = 6.7  # east of the 0402 pull-down, before the 0805 damping resistor
 CELL_CLAMP_GAP_MM = 0.3  # the B clamp's row, that far above the damping resistor
+CELL_WEST_VIA_X = 4.2  # west of the gate pull-down, before the escape lanes
+CELL_GATE_LANE_MM = 1.1  # the gate's lane under the cell, that far below its pad
 NFET_VIA_X = 10.77  # between the damping resistor and the source of the N-FET
 BUS_X = {net: x for net, x, _w in BUSES_IN1}
 
@@ -106,6 +108,26 @@ def hand_routes(b: Builder) -> None:
             x_via = round((west.x + west.w / 2.0 + east.x - east.w / 2.0) / 2.0, 3)
             T("VREF", "F.Cu", [(east.x, east.y), (x_via, east.y)], thin)
             V("VREF", x_via, east.y)
+        # ---- the gate of the exciting FET: its pull-down is in the west
+        # column and the FET in the east one, and the only way across the
+        # cell is under it, on the inner layer the 5 V grid leaves free
+        gate, pull = pads[(cr["nfet"], "1")], pads[(cr["gate_pd"], "1")]
+        y_lane = round(gate.y + CELL_GATE_LANE_MM, 3)
+        T(pull.net, "F.Cu", [(pull.x, pull.y), (CELL_WEST_VIA_X, pull.y)], thin)
+        V(pull.net, CELL_WEST_VIA_X, pull.y)
+        T(
+            pull.net,
+            "In2.Cu",
+            [
+                (CELL_WEST_VIA_X, pull.y),
+                (CELL_WEST_VIA_X, y_lane),
+                (NFET_VIA_X, y_lane),
+                (NFET_VIA_X, gate.y),
+            ],
+            lane,
+        )
+        V(pull.net, NFET_VIA_X, gate.y)
+        T(pull.net, "F.Cu", [(NFET_VIA_X, gate.y), (gate.x, gate.y)], lane)
         pd = pads[(cr["gate_pd"], "2")]
         T(NET_GND, "F.Cu", [(pd.x, pd.y), (GATE_PD_VIA_X, pd.y)], thin)
         V(NET_GND, GATE_PD_VIA_X, pd.y)

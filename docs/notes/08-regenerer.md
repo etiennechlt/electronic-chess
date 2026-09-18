@@ -29,7 +29,8 @@ signalements dans la [note 14](14-revue-des-cartes.md).
 ## Faces des cartes, tracées par KiCad
 
 ```bash
-/usr/bin/python3 tools/plot.py hardware/bench/bench.kicad_pcb --out docs/images
+/usr/bin/python3 tools/plot.py hardware/bench/bench.kicad_pcb \
+    hardware/quadrant-2x2/quadrant-2x2.kicad_pcb --out docs/images
 ```
 
 Même Python que le DRC : remplit les pours d'une copie de la carte,
