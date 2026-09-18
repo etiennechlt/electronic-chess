@@ -98,6 +98,18 @@ vérifie désormais la connexité exacte. Cerveau, puissance, moteurs et
 horloge ont été générés avant : à régénérer avec le runbook, relire
 leurs nets ouverts, puis `tools/drc.py`.
 
+**Complément du 18/09/2026.** La comptabilité de connexité n'existe
+plus qu'en un exemplaire (`tools/quadgen/connect.py`), importée par
+les deux générateurs, et la bande de frontal du quadrant a été
+reroutée dessus : bus réespacés pour qu'un via puisse les atteindre,
+plan de masse à la place du bus de masse, prises des cellules et
+sorties de la chaîne LED dessinées dans le générateur
+([note 04](04-routeur-et-garanties.md)). Le quadrant 2 x 2 passe de
+117 éléments non connectés au DRC à une poignée, listés dans son
+[README](../../hardware/quadrant-2x2/README.md). Le quadrant 4 x 4
+n'a pas été régénéré : même générateur, mêmes correctifs, mais sa
+bande est deux fois plus longue et son bilan reste à refaire.
+
 ### 2. Simulation
 
 **Quoi.** Lancer `chain-spice.cir` (AD8421 puis Sallen-Key) et écrire

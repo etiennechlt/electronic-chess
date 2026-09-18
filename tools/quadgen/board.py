@@ -674,16 +674,27 @@ class Builder:
                 self.via(net, end[0], end[1], FANOUT_VIA_PAD_MM, FANOUT_VIA_DRILL_MM)
             self.stubs.append((net, pts, runway, via))
 
+    # The analog rails and the logic rail run the whole strip, from under
+    # the chain lanes of the connector to the last row of the middle zone:
+    # the amplifiers and their decoupling sit far south of the cells, and a
+    # bus that stops at the last cell leaves them a trek across the strip.
+    # The pulse rail and the 12 V serve the cells (and, by one route each,
+    # the connector zone), so they stay on the cells.
+    BUS_FULL_NETS = ("5VA", "VREF")
+    BUS_FULL_TOP_MM = 16.0  # under the two In1 lanes of the LED chain
+
     def strip_buses(self) -> None:
-        """Supply and logic buses on the inner layers, from the first cell
-        to the last; the router ties them to the FPC pins and to the parts."""
+        """Supply and logic buses on the inner layers; the router ties them
+        to the FPC pins and to the parts."""
         q = self.q.strip
         y0 = self.lay.cell_ys[0] - q.cell_pitch_mm / 2.0
         y1 = self.lay.cell_ys[-1] + q.cell_pitch_mm / 2.0
+        y_full = (self.BUS_FULL_TOP_MM, self.lay.board_h - self.rt.edge_clearance_mm - 0.5)
         for net, x, w in BUSES_IN1:
-            self.track(net, "In1.Cu", [(x, y0), (x, y1)], w)
+            span = y_full if net in self.BUS_FULL_NETS else (y0, y1)
+            self.track(net, "In1.Cu", [(x, span[0]), (x, span[1])], w)
         net, x, w = BUS_3V3_IN2
-        self.track(net, "In2.Cu", [(x, y0), (x, y1)], w)
+        self.track(net, "In2.Cu", [(x, y_full[0]), (x, y_full[1])], w)
 
     # ------------------------------------------------------------ strip routing
     STRIP_GRID_MM = 0.1
@@ -967,10 +978,10 @@ class Builder:
 
         def rank(net):
             if net in self.STRIP_FIRST:
-                return (0, self.STRIP_FIRST.index(net))
+                return (0, self.STRIP_FIRST.index(net), 0.0)
             if self.STRIP_ORDER == "fine_first":
                 return (1, -len(stubs_of.get(net, [])), span(net))
-            return (1, span(net))
+            return (1, 0, span(net))
 
         verbose = bool(os.environ.get("QUADGEN_VERBOSE"))  # progress of the routing
         if NET_GND in nets:

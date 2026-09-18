@@ -83,7 +83,7 @@ def cell_template(cfg: BoardConfig, circuit: Circuit) -> dict[str, tuple[float, 
 # x = 19.5) and In2 the 5 V grid of the LEDs (from x = 17.1).
 BUSES_IN1 = (
     ("5VA", 13.2, 0.6),
-    ("VREF", 14.4, 0.4),
+    ("VREF", 14.2, 0.4),  # clear of the east fanout vias of the decoders
     ("DRIVE_BUS", 15.6, 0.5),
     ("VIN", 16.55, 0.6),
 )

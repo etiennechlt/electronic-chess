@@ -139,21 +139,18 @@ def hand_routes(b: Builder) -> None:
         y_top, y_bot = min(ys) - pitch / 2.0, max(ys) + pitch / 2.0
         T("5VA", "In1.Cu", [(FEEDER_5VA_X, y_top), (FEEDER_5VA_X, y_bot)], FEEDER_WIDTH_MM)
         T("5VA", "In1.Cu", [(FEEDER_5VA_X, y_top), (BUS_X["5VA"], y_top)], FEEDER_WIDTH_MM)
-        # the reference turns east past the end of the buses, where none of
-        # them is in the way: north of them for the first band of cells,
-        # south for the last (the buses run from the first cell of the
-        # strip to its last, middle zone included)
+        # The spine reaches its bus on the top layer, in the free row just
+        # past the cells (north of the first band, south of the last): the
+        # analog rails run the whole strip on In1, so a link on that layer
+        # would cross the 5VA bus.
         north = abs(y_top - bus_y0) < 1e-6
         y_turn = (y_top - SPINE_VREF_TURN_MM) if north else (y_bot + SPINE_VREF_TURN_MM)
-        y_join = y_top if north else y_bot
         T(
             "VREF",
             "In1.Cu",
-            [
-                (SPINE_VREF_X, y_bot if north else y_top),
-                (SPINE_VREF_X, y_turn),
-                (BUS_X["VREF"], y_turn),
-                (BUS_X["VREF"], y_join),
-            ],
+            [(SPINE_VREF_X, y_bot if north else y_top), (SPINE_VREF_X, y_turn)],
             lane,
         )
+        V("VREF", SPINE_VREF_X, y_turn)
+        T("VREF", "F.Cu", [(SPINE_VREF_X, y_turn), (BUS_X["VREF"], y_turn)], lane)
+        V("VREF", BUS_X["VREF"], y_turn)
