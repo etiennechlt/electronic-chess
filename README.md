@@ -82,6 +82,12 @@ dessiné feuille par feuille (fonction, composants et câblage dans la
 [note 17](docs/notes/17-quadrant-fonction-et-cablage.md)) ; un
 quadrant réduit 2 x 2, même circuit et même bus, sert de banc de mise
 au point : [hardware/quadrant-2x2](hardware/quadrant-2x2/README.md).
+Ce quadrant réduit et la [carte de banc](hardware/bench/README.md) qui
+le pilote sont les deux cartes du plateau dont le routage est fermé,
+donc les deux dont les gerbers sont commités
+(`*-gerbers.zip`, produits par `tools/gerbers.py`, qui remplit les
+pours avant de tracer et refuse toute carte à nets ouverts) : le banc
+de la [note 20](docs/notes/20-tuto-banc.md) se commande tel quel.
 
 | Cerveau (STM32G474, 4 couches) | Puissance (3S, BQ24610, BQ76920) |
 |---|---|
@@ -147,6 +153,7 @@ décisions formelles sont dans [`docs/adr/`](docs/adr/README.md).
 | `config/` | `board.yaml`, source de vérité unique | 0 |
 | `chessboard_calc/` | calculs paramétriques et garde-fous | 0 |
 | `tools/coilgen`, `tools/analoggen` | générateurs KiCad des deux cartes de la maquette | 1 |
+| `tools/drc.py`, `tools/plot.py`, `tools/gerbers.py` | DRC, tracés de faces et gerbers de fabrication, par le `pcbnew` de KiCad | 1 à 2 |
 | `tools/quadgen`, `hardware/quadrant/` | générateur et projet KiCad du quadrant 4 x 4 | 2 |
 | `tools/boardgen`, `hardware/{brain,power,motion,clock}/` | générateur générique et projets KiCad du cerveau, de la puissance, des moteurs et de l'horloge | 2 |
 | `hardware/mockup-2x2/` | projets KiCad (`.kicad_pro` à ouvrir), gerbers, BOM, guides | 1 |

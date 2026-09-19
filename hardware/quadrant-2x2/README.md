@@ -130,3 +130,25 @@ connectés, qui doivent tomber à zéro avant toute commande.
 ![Face composants](../../docs/images/quadrant-2x2-top.svg)
 
 ![Face masse, vue retournée](../../docs/images/quadrant-2x2-bottom.svg)
+
+## Gerbers de fabrication
+
+`quadrant-2x2-gerbers.zip` se dépose tel quel chez le fabricant :
+4 couches (F.Cu, In1.Cu, In2.Cu, B.Cu), la pâte de la face
+composants, les deux sérigraphies, les deux masques, le contour et les
+perçages Excellon séparés (PTH et NPTH), plus le fichier de tâche
+`.gbrjob`. 1,6 mm ; les vias d'éventail de 0,45 mm à perçage 0,2 mm
+sous les boîtiers fins demandent l'option de perçage minimal 0,2 mm, à
+confirmer sur le devis, et un pochoir rend la pose du frontal beaucoup
+plus sûre. Options de commande et nomenclature dans la
+[note 20](../../docs/notes/20-tuto-banc.md), section 3.
+
+```bash
+/usr/bin/python3 tools/gerbers.py hardware/quadrant-2x2/quadrant-2x2.kicad_pcb
+```
+
+Avec le Python de KiCad : l'outil remplit les pours d'une copie de la
+carte avant de tracer (sans ce remplissage le plan de masse de la
+bande sort vide), lit le jeu de couches sur la carte, et refuse
+d'exporter tant qu'une pastille reste non connectée. Le dossier
+`gerbers/` qu'il écrit n'est pas versionné ; l'archive l'est.

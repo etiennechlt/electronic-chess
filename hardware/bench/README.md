@@ -151,3 +151,22 @@ chemins de bibliothèque des empreintes (la configuration de KiCad ne
 connaît pas les bibliothèques par leur nom), 35 de sérigraphie
 (références sur une ligne ou une pastille), 5 vias d'éventail du QFN
 raccordés d'un seul côté (la route est partie en face avant).
+
+## Gerbers de fabrication
+
+`bench-gerbers.zip` se dépose tel quel chez le fabricant : 2 couches
+(F.Cu, B.Cu), la pâte de la face composants, les deux sérigraphies,
+les deux masques, le contour et les perçages Excellon séparés (PTH et
+NPTH), plus le fichier de tâche `.gbrjob`. 1,6 mm, finition HASL sans
+plomb ou ENIG ; les options de commande et la nomenclature sont dans
+la [note 20](../../docs/notes/20-tuto-banc.md), section 3.
+
+```bash
+/usr/bin/python3 tools/gerbers.py hardware/bench/bench.kicad_pcb
+```
+
+Avec le Python de KiCad : l'outil remplit les pours d'une copie de la
+carte avant de tracer (sans ce remplissage le plan de masse de B.Cu
+sort vide), lit le jeu de couches sur la carte, et refuse d'exporter
+tant qu'une pastille reste non connectée. Le dossier `gerbers/` qu'il
+écrit n'est pas versionné ; l'archive l'est.

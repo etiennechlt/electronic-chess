@@ -26,6 +26,37 @@ code de sortie non nul tant qu'il reste une erreur ou un élément non
 connecté (les nets ouverts). Bilan et lecture des familles de
 signalements dans la [note 14](14-revue-des-cartes.md).
 
+## Gerbers de fabrication (secondes)
+
+```bash
+/usr/bin/python3 tools/gerbers.py hardware/bench/bench.kicad_pcb \
+    hardware/quadrant-2x2/quadrant-2x2.kicad_pcb
+```
+
+Même Python que le DRC, et la même recette : remplir les pours d'une
+copie de la carte, puis `kicad-cli pcb export` trace les couches et
+perce. Le remplissage n'est pas un détail, c'est la raison d'être de
+l'outil : les générateurs laissent les pours vides et `kicad-cli`
+trace la carte telle qu'elle est enregistrée, si bien qu'un export
+direct envoie au fabricant un plan de masse vide (9 ko de B.Cu pour la
+carte de banc au lieu de 94 ko).
+
+Le jeu de couches est lu sur la carte et non écrit projet par projet :
+la pile cuivre vient du nombre de couches déclaré, les couches de pâte
+des faces qui portent réellement des pastilles CMS, les masques, les
+sérigraphies et le contour y sont toujours. Sortent un dossier
+`gerbers/` par carte (ignoré par git) et l'archive
+`<carte>-gerbers.zip` à déposer chez le fabricant, celle-ci commitée.
+
+Une carte dont le routage n'est pas fermé est refusée : le compte de
+pastilles non connectées doit être nul, la même barrière que
+`tools/drc.py`, pour qu'aucune archive de carte à nets ouverts ne soit
+commitée par mégarde. `--force` passe outre, `--layers` impose un jeu
+de couches. Seules la carte de banc et le quadrant 2 x 2 franchissent
+aujourd'hui cette barrière ; cerveau, puissance, moteurs, horloge et
+quadrant 4 x 4 ont encore des nets à fermer dans pcbnew, listés dans le
+README de chaque carte.
+
 ## Revue du routage contre les règles de l'art (secondes)
 
 ```bash
@@ -232,6 +263,8 @@ de `plateau.brain.mcu_pins`, `plateau.quadrant`, `bench` ou
 | Projets KiCad | `hardware/quadrant/quadrant.kicad_pro`, `hardware/mockup-2x2/*/[nom].kicad_pro` |
 | Gerbers bobines | `hardware/mockup-2x2/coil-board/coil-board-gerbers.zip` |
 | Gerbers analogique | `hardware/mockup-2x2/analog-board/analog-board-gerbers.zip` |
+| Gerbers carte de banc | `hardware/bench/bench-gerbers.zip` |
+| Gerbers quadrant 2 x 2 | `hardware/quadrant-2x2/quadrant-2x2-gerbers.zip` |
 | BOM et placements JLC | `hardware/mockup-2x2/analog-board/jlc-*.csv` |
 | STL/STEP, vue 3D interactive | `mechanical/exports/` |
 | Images du README | `docs/images/` |

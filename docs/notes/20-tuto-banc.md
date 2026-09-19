@@ -28,8 +28,8 @@ même tuto existe en page autonome, schémas et nomenclatures embarqués :
 
 | Élément | État au 18/09/2026 | Ce qui débloque |
 |---|---|---|
-| Carte de banc (`hardware/bench/`) | générée, 29 nets fermés, DRC KiCad 7 : zéro erreur, zéro élément non connecté ([README](../../hardware/bench/README.md)) | rien : exporter les gerbers (section 3.1) |
-| Quadrant 2 x 2 (`hardware/quadrant-2x2/`) | reroutée le 18/09/2026 sur la comptabilité de connexité partagée ([note 04](04-routeur-et-garanties.md)) : bus réespacés pour qu'un via puisse les atteindre, plan de masse à la place du bus de masse, prises des cellules, sorties de la chaîne LED et les sept liaisons hors de portée du routeur dessinées dans le générateur. DRC KiCad 7 : zéro erreur, zéro élément non connecté, contre 117 le matin même, et le compte du build dit la même chose que celui de KiCad ([README](../../hardware/quadrant-2x2/README.md)) | rien : exporter les gerbers (section 3.1) |
+| Carte de banc (`hardware/bench/`) | générée, 29 nets fermés, DRC KiCad 7 : zéro erreur, zéro élément non connecté ([README](../../hardware/bench/README.md)) | rien : gerbers commités, à déposer chez le fabricant (section 3.1) |
+| Quadrant 2 x 2 (`hardware/quadrant-2x2/`) | reroutée le 18/09/2026 sur la comptabilité de connexité partagée ([note 04](04-routeur-et-garanties.md)) : bus réespacés pour qu'un via puisse les atteindre, plan de masse à la place du bus de masse, prises des cellules, sorties de la chaîne LED et les sept liaisons hors de portée du routeur dessinées dans le générateur. DRC KiCad 7 : zéro erreur, zéro élément non connecté, contre 117 le matin même, et le compte du build dit la même chose que celui de KiCad ([README](../../hardware/quadrant-2x2/README.md)) | rien : gerbers commités, à déposer chez le fabricant (section 3.1) |
 | Codes fournisseur (LCSC) | présents pour les circuits intégrés, transistors, diodes, connecteurs, LED et inductance ; absents pour résistances, condensateurs, fusibles, barrettes, cavalier et points de test | une session avec accès au réseau (lot sourcing, [note 15](15-skills-embarques.md)) ; en attendant, les passifs se commandent par valeur et boîtier (section 3) |
 | Devis de fabrication | à faire ([note 16](16-cout-des-cartes.md) pour les options) | même session réseau |
 | Deux points de fiche technique | l'aiguilleur ADG1607 alimenté en 5 V, les vias de 0,45 mm chez le fabricant ([note 14](14-revue-des-cartes.md)) | lecture des fiches, devis |
@@ -79,17 +79,16 @@ la [note 19](19-cerveau-et-banc-nucleo.md), section 4.
 | Quadrant 2 x 2 | 120 x 108 mm | 4 | 1,6 mm | vias de 0,45 mm à perçage 0,2 mm sous les boîtiers fins : cocher l'option de perçage minimal 0,2 mm, à confirmer sur le devis ; un pochoir (stencil) rend la pose du frontal beaucoup plus sûre |
 
 Cinq exemplaires sont le minimum chez JLCPCB et suffisent largement.
-Les projets KiCad sont dans `hardware/bench/` et
-`hardware/quadrant-2x2/` ; le dépôt ne versionne pas leurs gerbers.
-Pour les produire : ouvrir le `.kicad_pro` dans KiCad 7 ou plus
-récent, lancer le contrôle des règles (les mêmes nombres que
-`tools/drc.py`), puis Fichier, Tracer : toutes les couches de cuivre,
-les masques, la sérigraphie et le contour, format Gerber, et Générer
-les fichiers de perçage. Compresser le dossier et le déposer sur le
-site du fabricant. Les fichiers `jlc-bom.csv` et `jlc-cpl.csv` de
-chaque carte servent si l'on choisit l'assemblage en usine des
-composants qui ont un code (section 3.2 et 3.3) ; les autres se
-soudent à la main.
+Le dépôt versionne les gerbers des deux cartes, il n'y a rien à
+produire : `hardware/bench/bench-gerbers.zip` et
+`hardware/quadrant-2x2/quadrant-2x2-gerbers.zip` se déposent tels
+quels sur le site du fabricant. Ils sortent de `tools/gerbers.py`
+(section « Gerbers » de la [note 08](08-regenerer.md)), qui remplit
+les pours avant de tracer : un plan de masse exporté sans ce
+remplissage arrive vide chez le fabricant. Les fichiers `jlc-bom.csv`
+et `jlc-cpl.csv` de chaque carte servent si l'on choisit l'assemblage
+en usine des composants qui ont un code (section 3.2 et 3.3) ; les
+autres se soudent à la main.
 
 ### 3.2 Les composants de la carte de banc
 

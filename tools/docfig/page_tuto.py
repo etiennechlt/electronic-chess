@@ -171,7 +171,7 @@ BODY = r"""<div class="wrap">
 </tbody>
 </table>
 </div>
-<p>Cinq exemplaires sont le minimum chez JLCPCB et suffisent largement. Les projets KiCad sont dans <code>hardware/bench/</code> et <code>hardware/quadrant-2x2/</code> ; le dépôt ne versionne pas leurs gerbers. Pour les produire : ouvrir le projet dans KiCad 7 ou plus récent, lancer le contrôle des règles, puis Fichier, Tracer (toutes les couches de cuivre, les masques, la sérigraphie et le contour, format Gerber) et Générer les fichiers de perçage. Compresser le dossier et le déposer sur le site du fabricant. Les fichiers <code>jlc-bom.csv</code> et <code>jlc-cpl.csv</code> de chaque carte servent si l'on choisit l'assemblage en usine des composants qui ont un code ; les autres se soudent à la main.</p>
+<p>Cinq exemplaires sont le minimum chez JLCPCB et suffisent largement. Le dépôt versionne les gerbers des deux cartes, il n'y a rien à produire : <code>hardware/bench/bench-gerbers.zip</code> et <code>hardware/quadrant-2x2/quadrant-2x2-gerbers.zip</code> se déposent tels quels sur le site du fabricant. Ils sortent de <code>tools/gerbers.py</code>, qui remplit les pours de cuivre avant de tracer : un plan de masse exporté sans ce remplissage arrive vide chez le fabricant. Les fichiers <code>jlc-bom.csv</code> et <code>jlc-cpl.csv</code> de chaque carte servent si l'on choisit l'assemblage en usine des composants qui ont un code ; les autres se soudent à la main.</p>
 
 <h2>Les composants de la carte de banc</h2>
 <p>La nomenclature <code>hardware/bench/bom.csv</code>, telle que le générateur l'écrit : 43 composants. Les lignes sans code se commandent par valeur et boîtier ; prendre deux exemplaires de chaque petit CMS, un 0603 qui saute de la pince ne se retrouve pas.</p>

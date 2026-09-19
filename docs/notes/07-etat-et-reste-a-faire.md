@@ -154,7 +154,8 @@ rail à l'entrée du mux.
 
 ### 3. Commande et fabrication
 
-**Quoi.** Exporter les gerbers depuis KiCad 9, commander quatre
+**Quoi.** Exporter les gerbers avec `tools/gerbers.py` (il refuse
+toute carte dont le routage n'est pas fermé), commander quatre
 quadrants (4 couches, assemblés), un cerveau (4 couches), une carte
 puissance et une horloge (2 couches) ; acheter les trois cellules
 plates, les aimants ferrite, le fil, le feutre ; imprimer les pièces

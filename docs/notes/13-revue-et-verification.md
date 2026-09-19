@@ -54,8 +54,13 @@ de référence dans `hardware/mockup-2x2/`.
 
 - Quadrant : 4 couches, 1,6 mm, 1 oz, assemblage face top ; commander
   quatre exemplaires du même fichier. `jlc-bom.csv` et `jlc-cpl.csv`
-  sont dans `hardware/quadrant/`, gerbers à exporter depuis KiCad 9
-  (`Fichier > Tracer`) une fois les nets fermés.
+  sont dans `hardware/quadrant/`, gerbers par `tools/gerbers.py`
+  ([note 08](08-regenerer.md)) une fois les nets fermés : l'outil les
+  refuse tant qu'il reste une pastille non connectée, et il y en a 347.
+- Les deux cartes du banc sont les seules dont les gerbers soient
+  commités, parce qu'elles sont les seules à routage fermé :
+  `hardware/bench/bench-gerbers.zip` et
+  `hardware/quadrant-2x2/quadrant-2x2-gerbers.zip`.
 - Cerveau : 4 couches. Puissance, moteurs, horloge : 2 couches.
 - Les codes LCSC du BOM sont des candidats saisis hors ligne : vérifier
   chaque ligne dans la prévisualisation JLCPCB (mêmes réserves que pour
