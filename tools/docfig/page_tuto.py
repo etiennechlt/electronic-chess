@@ -11,11 +11,12 @@ import re
 from pathlib import Path
 
 from chessboard_calc.config import DEFAULT_CONFIG_PATH, BoardConfig, PieceType
-from chessboard_calc.resonance import frequency_plan
+from chessboard_calc.coupling import ringdown_signal, ringdown_tau_us
+from chessboard_calc.resonance import check_separation, frequency_plan
 
 from .common import fr_num
 from .page import check, document, esc
-from .q import listen_window_us
+from .q import ADC_FS_FIRMWARE_HZ, listen_window_us
 from .tuto import (
     bench_pucks,
     fig_bench_inventory,
@@ -68,6 +69,9 @@ def tuto_page(cfg: BoardConfig, repo: Path | None = None) -> str:
     )
     notes = ", ".join(f"{r['f0_khz']:.0f}" for r in pucks)
     pawn = plan.line(PieceType.PAWN, cfg.mockup.test_pieces[0].color)
+    band = sorted(line.f0_hz for line in plan.lines)
+    rings = [ringdown_signal(cfg, line.piece, line.color, p) for line in plan.lines]
+    emf = sorted(r.emf_after_blanking_v for r in rings)
     v = {
         "FIG_INV": fig_bench_inventory(cfg),
         "FIG_SHIELD": fig_shield_assembly(cfg),
@@ -89,6 +93,19 @@ def tuto_page(cfg: BoardConfig, repo: Path | None = None) -> str:
         "FELT": fr_num(cfg.gap.felt_mm),
         "SHIELD": f"{fr_num(shield_w, 0)} x {fr_num(shield_h, 0)}",
         "QUAD": f"{fr_num(board_w, 0)} x {fr_num(board_h, 0)}",
+        "F_LOW": f"{band[0] / 1e3:.0f}",
+        "F_HIGH": f"{band[-1] / 1e3:.0f}",
+        "BW_MIN": fr_num(8 * band[-1] / 1e6),
+        "SPS_MIN": fr_num(10 * band[-1] / 1e6),
+        "EMF_LO": fr_num(emf[0], 2),
+        "EMF_HI": fr_num(emf[-1], 2),
+        "VREF": fr_num(cfg.mockup.analog.vref_v, 2),
+        "TAU_LO": f"{ringdown_tau_us(band[-1], cfg.resonator.q_min_with_magnet):.0f}",
+        "TAU_HI": f"{ringdown_tau_us(band[0], cfg.resonator.q_nominal):.0f}",
+        "GAP_KHZ": fr_num(check_separation(cfg).min_worst_case_gap_hz / 1e3, 2),
+        "FS": fr_num(ADC_FS_FIRMWARE_HZ / 1e6, 2),
+        "FFT": f"{cfg.measurement.fft_points}",
+        "AVG": f"{cfg.measurement.coherent_avg}",
         "PULSE": fr_num(cfg.measurement.drive.pulse_us),
         "BLANK": fr_num(cfg.measurement.blanking_us),
         "MAGNET_H": fr_num(cfg.piece_magnet.thickness_mm, 0),
@@ -212,7 +229,7 @@ BODY = r"""<div class="wrap">
 <tr><td>station à air chaud ou plaque chauffante, pâte à braser, pochoir</td><td>le buck QFN de la carte de banc, l'aiguilleur LFCSP du quadrant (plage thermique sous le boîtier, impossible au fer)</td><td>oui pour ces deux boîtiers</td></tr>
 <tr><td>multimètre</td><td>continuité, tensions des points de test</td><td>oui</td></tr>
 <tr><td>alimentation 12 V limitée en courant</td><td>le rail d'impulsion et le 5 V analogique</td><td>oui</td></tr>
-<tr><td>oscilloscope 2 voies, 100 Méch/s</td><td>voir le signal avant de croire le firmware</td><td>oui pour les mesures, pas pour les premiers échelons</td></tr>
+<tr><td>oscilloscope, au moins {{BW_MIN}} MHz de bande et {{SPS_MIN}} Méch/s</td><td>voir le signal avant de croire le firmware</td><td>oui pour les mesures, pas pour les premiers échelons</td></tr>
 <tr><td>LCR-mètre</td><td>L et Q des bobines nues</td><td>conseillé</td></tr>
 <tr><td>perceuse ou petit tour</td><td>bobiner</td><td>oui</td></tr>
 <tr><td>imprimante 3D, ou un service d'impression</td><td>pucks et gabarits</td><td>oui</td></tr>
@@ -220,6 +237,9 @@ BODY = r"""<div class="wrap">
 </tbody>
 </table>
 </div>
+<p>Ce qu'on demande à l'oscilloscope vient de la bande de mesure, {{F_LOW}} à {{F_HIGH}} kHz. La note la plus haute fixe les deux planchers : huit fois cette note en bande passante pour que la sonnerie ne soit pas arrondie, soit {{BW_MIN}} MHz, et dix échantillons par période, soit {{SPS_MIN}} Méch/s. Il faut aussi tenir à l'écran la fenêtre d'écoute, {{WINDOW}} µs sur le banc ({{FFT}} points à {{FS}} Méch/s). Les amplitudes sont généreuses : la force électromotrice sur la spirale va de {{EMF_LO}} à {{EMF_HI}} V crête selon la pièce, une fois les {{BLANK}} µs de silence passés, et AMP_OUT se lit autour de {{VREF}} V. Un petit appareil de poche à une voie, 10 MHz de bande et 48 Méch/s, couvre donc tout ce que les échelons demandent, avec 78 échantillons par période sur la note la plus haute.</p>
+<p>Deux limites à connaître avant de s'y fier. Une seule voie interdit de voir l'impulsion et la sonnerie ensemble : on déclenche alors sur la sonnerie elle même (mode normal ou coup unique, front montant, seuil au dessus du bruit) et on vérifie l'impulsion dans un second temps, sonde sur TP3. Et une bande de 10 MHz ne dit rien de l'ondulation du buck à 2,2 MHz : cette comparaison (mesure M8) se lit de toute façon dans les relevés bruts du firmware, pas à l'écran. De même, le générateur intégré de ces appareils plafonne vers 50 kHz, quatre fois sous notre bande : il n'excite rien ici, l'excitation c'est l'impulsion de la carte.</p>
+<p>L'oscilloscope ne mesure pas les notes, il montre qu'elles existent. L'identification demande environ 1 kHz de résolution devant un écart pire cas de {{GAP_KHZ}} kHz entre deux pièces voisines : c'est le firmware qui la fournit, {{FFT}} points à {{FS}} Méch/s, FFT et interpolation parabolique, {{AVG}} moyennes cohérentes. Lire une période au curseur sur un écran de 320 pixels donne quelques milliers de hertz d'erreur, bon pour diagnostiquer, insuffisant pour nommer une pièce. Le Q, lui, se lit très bien à l'écran : l'enveloppe décroît en {{TAU_LO}} à {{TAU_HI}} µs selon la note et le Q, soit une dizaine de périodes bien visibles avant l'extinction.</p>
 </section>
 
 <section>

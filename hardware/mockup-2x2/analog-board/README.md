@@ -78,6 +78,23 @@ pas encore remplies : remplir les plans (touche B) ramène le compte à
 28. La phrase « DRC zéro » des sections ci-dessous date de la
 génération de référence et ne décrit plus le fichier commité.
 
+Le détail des 28, par net, tel que le rapport les nomme :
+
+| Net | Signalements | Ce qui reste ouvert |
+|---|---|---|
+| GND | 19 | des pastilles et des morceaux de masse que les plans ne rejoignent pas : U1.6 et U1.7 (masse du buck), U2.2 (LDO), U4.5 (AD8421), U8.1 (tampon LED), C1.2, C12.2, C27.2 (découplages), Q12.2 et Q13.2 (sources des FET d'excitation), D14.1, J4.2, J4.19, J5.4, plus huit vias et huit tronçons orphelins |
+| LED_DINB | 4 | R68.1, la sortie du tampon U8 vers la résistance série de la chaîne LED |
+| LED_DIN5 | 1 | R68.2, l'autre borne de la même résistance, vers le joint des bobines |
+| M1_A | 1 | la voie A de la bobine 1, vers la broche 12 du mux U3 |
+| M2_A | 1 | la voie A de la bobine 2, vers son écrêteur D12 |
+| BUCK_FB | 1 | le retour de tension du buck, broche 5 de U1 |
+| 5V_BUCK_FILT | 1 | la broche 1 du cavalier JP1, celui qui choisit la source du rail 5VA |
+
+Deux de ces restes sont fonctionnellement bloquants et pas seulement
+cosmétiques : la masse du buck (U1.6, U1.7) et son retour de tension
+(BUCK_FB). Sans eux le régulateur ne régule pas. Les autres sont la
+suite connue de la liste de finition ci-dessous.
+
 ## Liste de finition (chevelu affiché dans KiCad)
 
 Le build imprime les jonctions posées et la liste exacte des restes.

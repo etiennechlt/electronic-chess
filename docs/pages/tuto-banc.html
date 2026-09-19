@@ -401,7 +401,7 @@ code{font-family:"IBM Plex Mono",Menlo,Consolas,monospace; font-size:.9em; backg
 <tr><td>station à air chaud ou plaque chauffante, pâte à braser, pochoir</td><td>le buck QFN de la carte de banc, l'aiguilleur LFCSP du quadrant (plage thermique sous le boîtier, impossible au fer)</td><td>oui pour ces deux boîtiers</td></tr>
 <tr><td>multimètre</td><td>continuité, tensions des points de test</td><td>oui</td></tr>
 <tr><td>alimentation 12 V limitée en courant</td><td>le rail d'impulsion et le 5 V analogique</td><td>oui</td></tr>
-<tr><td>oscilloscope 2 voies, 100 Méch/s</td><td>voir le signal avant de croire le firmware</td><td>oui pour les mesures, pas pour les premiers échelons</td></tr>
+<tr><td>oscilloscope, au moins 4,9 MHz de bande et 6,1 Méch/s</td><td>voir le signal avant de croire le firmware</td><td>oui pour les mesures, pas pour les premiers échelons</td></tr>
 <tr><td>LCR-mètre</td><td>L et Q des bobines nues</td><td>conseillé</td></tr>
 <tr><td>perceuse ou petit tour</td><td>bobiner</td><td>oui</td></tr>
 <tr><td>imprimante 3D, ou un service d'impression</td><td>pucks et gabarits</td><td>oui</td></tr>
@@ -409,6 +409,9 @@ code{font-family:"IBM Plex Mono",Menlo,Consolas,monospace; font-size:.9em; backg
 </tbody>
 </table>
 </div>
+<p>Ce qu'on demande à l'oscilloscope vient de la bande de mesure, 217 à 613 kHz. La note la plus haute fixe les deux planchers : huit fois cette note en bande passante pour que la sonnerie ne soit pas arrondie, soit 4,9 MHz, et dix échantillons par période, soit 6,1 Méch/s. Il faut aussi tenir à l'écran la fenêtre d'écoute, 136 µs sur le banc (512 points à 3,78 Méch/s). Les amplitudes sont généreuses : la force électromotrice sur la spirale va de 0,12 à 0,74 V crête selon la pièce, une fois les 2 µs de silence passés, et AMP_OUT se lit autour de 1,65 V. Un petit appareil de poche à une voie, 10 MHz de bande et 48 Méch/s, couvre donc tout ce que les échelons demandent, avec 78 échantillons par période sur la note la plus haute.</p>
+<p>Deux limites à connaître avant de s'y fier. Une seule voie interdit de voir l'impulsion et la sonnerie ensemble : on déclenche alors sur la sonnerie elle même (mode normal ou coup unique, front montant, seuil au dessus du bruit) et on vérifie l'impulsion dans un second temps, sonde sur TP3. Et une bande de 10 MHz ne dit rien de l'ondulation du buck à 2,2 MHz : cette comparaison (mesure M8) se lit de toute façon dans les relevés bruts du firmware, pas à l'écran. De même, le générateur intégré de ces appareils plafonne vers 50 kHz, quatre fois sous notre bande : il n'excite rien ici, l'excitation c'est l'impulsion de la carte.</p>
+<p>L'oscilloscope ne mesure pas les notes, il montre qu'elles existent. L'identification demande environ 1 kHz de résolution devant un écart pire cas de 7,06 kHz entre deux pièces voisines : c'est le firmware qui la fournit, 512 points à 3,78 Méch/s, FFT et interpolation parabolique, 16 moyennes cohérentes. Lire une période au curseur sur un écran de 320 pixels donne quelques milliers de hertz d'erreur, bon pour diagnostiquer, insuffisant pour nommer une pièce. Le Q, lui, se lit très bien à l'écran : l'enveloppe décroît en 16 à 73 µs selon la note et le Q, soit une dizaine de périodes bien visibles avant l'extinction.</p>
 </section>
 
 <section>

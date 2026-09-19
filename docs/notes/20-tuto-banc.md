@@ -271,11 +271,48 @@ normales :
 | station à air chaud ou plaque chauffante, pâte à braser, pochoir | le buck QFN de la carte de banc, l'aiguilleur LFCSP du quadrant (pad thermique sous le boîtier, impossible au fer) | oui pour ces deux boîtiers |
 | multimètre | continuité, tensions des points de test | oui |
 | alimentation 12 V limitée en courant | section 3.4 | oui |
-| oscilloscope 2 voies, 100 Méch/s | voir le signal avant de croire le firmware | oui pour les mesures, pas pour les premiers échelons |
+| oscilloscope, 5 MHz de bande et 10 Méch/s au minimum | voir le signal avant de croire le firmware | oui pour les mesures, pas pour les premiers échelons |
 | LCR-mètre | L et Q des bobines nues | conseillé |
 | perceuse ou petit tour | bobiner | oui |
 | imprimante 3D, ou un service d'impression | pucks et gabarits | oui |
 | analyseur logique | le bus de commande, en cas de doute | non |
+
+Ce qu'on demande à l'oscilloscope vient de la bande de mesure, 217 à
+613 kHz (`resonance.frequency_plan`). La note la plus haute fixe les
+deux planchers : huit fois cette note en bande passante pour que la
+sonnerie ne soit pas arrondie, soit 4,9 MHz, et dix échantillons par
+période, soit 6,1 Méch/s. Il faut aussi tenir à l'écran la fenêtre
+d'écoute, 136 µs sur le banc (512 points à 3,78 Méch/s). Les
+amplitudes sont généreuses : la force électromotrice sur la spirale va
+de 0,12 à
+0,74 V crête selon la pièce, une fois les 2 µs de silence passés
+(`coupling.ringdown_signal`), et AMP_OUT se lit autour de 1,65 V. Un
+petit appareil de poche à une voie, 10 MHz de bande et 48 Méch/s,
+couvre donc tout ce que les échelons demandent, avec 78 échantillons
+par période sur la note la plus haute.
+
+Deux limites à connaître avant de s'y fier. Une seule voie interdit de
+voir l'impulsion et la sonnerie ensemble : on déclenche alors sur la
+sonnerie elle même (mode normal ou coup unique, front montant, seuil
+au dessus du bruit) et on vérifie l'impulsion dans un second temps,
+sonde sur TP3. Et une bande de 10 MHz ne dit rien de l'ondulation du
+buck à 2,2 MHz : cette comparaison (mesure M8) se lit de toute façon
+dans les relevés bruts du firmware, pas à l'écran. De même, le
+générateur intégré de ces appareils plafonne vers 50 kHz, quatre fois
+sous notre bande : il n'excite rien ici, l'excitation c'est
+l'impulsion de la carte.
+
+L'oscilloscope ne mesure pas les notes, il montre qu'elles existent.
+L'identification demande environ 1 kHz de résolution devant un écart
+pire cas de 7,06 kHz entre deux pièces voisines
+(`resonance.check_separation`) : c'est le firmware qui la fournit,
+512 points à 3,78 Méch/s, FFT et interpolation parabolique, seize
+moyennes cohérentes. Lire une période au curseur sur un écran de
+320 pixels donne quelques milliers de hertz d'erreur, bon pour
+diagnostiquer, insuffisant pour nommer une pièce. Le Q, lui, se lit
+très bien à l'écran : l'enveloppe décroît en 16 à 73 µs selon la note
+et le Q (`ringdown_tau_us`), soit une dizaine de périodes bien
+visibles avant l'extinction.
 
 ## 4. Assembler
 
