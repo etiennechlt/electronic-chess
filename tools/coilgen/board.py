@@ -72,6 +72,9 @@ class BuildResult:
     holes: list[tuple[float, float, float]] = field(default_factory=list)
     outline_mm: tuple[float, float] = (0.0, 0.0)
     leds: list[tuple[str, tuple[float, float]]] = field(default_factory=list)
+    # every part a factory can place, ref -> (x, y, rotation): the camp
+    # LEDs and their decoupling (the bills of materials, coilgen.bom)
+    placements: dict[str, tuple[float, float, float]] = field(default_factory=dict)
     led_tracks: list = field(default_factory=list)  # (net, layer, width, pts)
     led_vias: list = field(default_factory=list)  # (x, y)
 
@@ -349,6 +352,7 @@ def _place_leds(
         }
         pad_nets = {num: (board.net(nets[role]), "") for num, role in pad_roles.items()}
         board.body.append(place_footprint(fp, f"LD{lref}", leds.part, x, y, 0.0, pad_nets))
+        result.placements[f"LD{lref}"] = (x, y, 0.0)
         for pad in fp.pads:
             px, py = pad_abs_pos(x, y, 0.0, pad)
             role = pad_roles[pad.number]
@@ -405,6 +409,7 @@ def _place_leds(
                         {"1": (board.net(net_5v), ""), "2": (board.net(net_gnd), "")},
                     )
                 )
+                result.placements[f"CL{lref}"] = (x_cap, y_cap, rot_cap)
                 for pad in fp_c.pads:
                     sx, sy = pad_abs_pos(x_cap, y_cap, rot_cap, pad)
                     if pad.number == "1":

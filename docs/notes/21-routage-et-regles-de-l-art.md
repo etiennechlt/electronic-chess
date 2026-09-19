@@ -85,24 +85,26 @@ accord de longueur n'est justifié ici.
 
 ## 3. Les deux points à corriger
 
-**La garde des trous de fixation.** La règle exige 3,0 mm de rayon libre
-de cuivre autour d'un trou M3 (6 mm de diamètre), pour qu'aucune tête de
-vis ni entretoise n'écrase de cuivre. Le quadrant a 2,15 mm : un anneau
-libre de 0,55 mm seulement autour du perçage de 3,2 mm, et une tête de
-vis M3 fait 5,5 à 6 mm. Elle se posera donc sur du cuivre sous vernis
-d'épaisseur 20 µm. Le pion de positionnement de 4,2 mm est à 2,85 mm,
-même remarque. Trois sorties, à trancher avant la commande :
+**La garde des trous de fixation : tranché, vis nylon.** La règle exige
+3,0 mm de rayon libre de cuivre autour d'un trou M3 (6 mm de diamètre),
+pour qu'aucune tête de vis ni entretoise n'écrase de cuivre. Le quadrant
+a 2,15 mm : un anneau libre de 0,55 mm seulement autour du perçage de
+3,2 mm, et une tête de vis M3 fait 5,5 à 6 mm. Elle se poserait donc sur
+du cuivre sous un vernis de 20 µm. Le pion de positionnement de 4,2 mm
+est à 2,85 mm, même remarque.
 
-1. monter avec des vis nylon ou des rondelles épaulées isolantes (aucun
-   changement de carte) ;
-2. éloigner les deux trous, dont l'écart vient de
-   `plateau.quadrant.mounting_hole_inset_mm` du yaml, ce qui coûte de la
-   place dans le champ des spirales ;
-3. ajouter une zone d'exclusion autour des trous dans le générateur, ce
-   qui revient au même coût de place mais automatiquement.
+Décision du 19/09/2026 : **monter en nylon**, vis, écrous et rondelles,
+plutôt que d'élargir les gardes. La carte ne change pas, la place reste
+aux spirales, et la quincaillerie est portée dans la liste de commande
+du banc ([note 20](20-tuto-banc.md), section 3.6). Les deux autres
+sorties restent ouvertes si un jour le montage doit être métallique :
+éloigner les trous (`plateau.quadrant.mounting_hole_inset_mm` du yaml)
+ou poser une zone d'exclusion autour d'eux dans le générateur, au même
+coût de place.
 
-**Le découplage est trop loin des broches d'alimentation.** La règle veut
-le condensateur contre la broche. Mesuré sur le quadrant :
+**Le découplage est trop loin des broches d'alimentation : mesuré,
+essayé, reporté.** La règle veut le condensateur contre la broche.
+Mesuré sur le quadrant :
 
 | Broche | Condensateur le plus proche | Distance |
 |---|---|---|
@@ -116,11 +118,33 @@ le condensateur contre la broche. Mesuré sur le quadrant :
 À 3 nH par millimètre de boucle, 9 mm font une trentaine de
 nanohenrys : sans effet sur la mesure à 60 kHz, mais pas sur les
 transitoires de commutation du multiplexeur et des décodeurs, qui
-remontent alors sur le rail analogique. Le correctif est un correctif de
-placement, pas de routage : le paquet de passifs par affinité existe
-déjà dans `tools/quadgen/strip.py`, il suffit de lui imposer de coller
-chaque découplage à son boîtier. À faire avant la commande des quatre
-quadrants, pas nécessairement avant celle du 2 x 2 de mise au point.
+remontent alors sur le rail analogique.
+
+Le correctif tient en un pas de placement : poser chaque découplage
+contre la broche qu'il sert avant de remplir les rangées. Il a été
+écrit et essayé le 19/09/2026, en trois variantes de plus en plus
+prudentes, et chacune a été mesurée :
+
+| Variante | Ce que le découplage gagne | Ce que la carte perd |
+|---|---|---|
+| Les huit condensateurs contre leur broche | 12,3 à 2,9 mm (décodeur 1), 8,4 à 2,4 (décodeur 2), 8,9 à 2,8 (multiplexeur), 6,7 à 1,1 (AD8421) | la géométrie devient illégale : les condensateurs tombent dans les couloirs des routes tracées à la main |
+| Les mêmes, cantonnés aux régions du placement, couloirs réservés | mêmes gains sur les décodeurs et le multiplexeur | 3 liaisons rouvertes (HP_IN, M4_A, une masse de cellule) |
+| Les deux découplages de décodeur seulement, déplacés après le placement pour que rien d'autre ne bouge | 12,3 à 2,9 et 8,4 à 2,4 mm | 2 liaisons rouvertes (HP_IN, M4_A) |
+
+La leçon est la même que celle de la saturation, plus haut : dans une
+bande de 20 mm pour une centaine de liaisons, **déplacer une seule
+pastille re-tire au sort tout le routage**, parce qu'elle prend et
+libère des couloirs que le routeur utilisait. Le plancher, lui, reste
+le champ d'échappées : un boîtier à pas fin réserve 2,5 mm autour de
+ses pastilles, donc son découplage ne descendra jamais sous 3 mm.
+
+Décision : le quadrant 2 x 2 garde son placement, celui qui est au DRC
+zéro et prêt à commander, et le rapprochement se fera dans la révision
+des quatre quadrants, où la bande est de toute façon retracée et
+reconvergée. Le pas de placement y sera repris tel qu'essayé ici :
+placer le découplage **après** le remplissage des rangées, pour qu'il
+prenne de la place que personne n'utilise, et garder libres les
+couloirs des routes tracées à la main.
 
 ## 4. Ce que cette revue ne couvre pas
 

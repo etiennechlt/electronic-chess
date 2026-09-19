@@ -220,11 +220,50 @@ de chaque bloc est dans la [note 17](17-quadrant-fonction-et-cablage.md).
   décompose en 1,6 mm de circuit, 2 mm d'air, 3 mm de bois, 0,5 mm de
   feutre : tout est dans `gap` du yaml).
 - Entretoises nylon M3 : 2 mm entre la carte et le bois (l'air des
-  LED), 10 mm sous la carte ; vis et écrous M3 ; le gabarit de perçage
+  LED), 10 mm sous la carte ; le gabarit de perçage
   `surface-template` de `mechanical/exports/` donne les trous de
   fixation et les deux points lumineux de 2,5 mm par case.
+- **Vis et écrous M3 en nylon**, pas en acier, et des rondelles avec
+  eux. Le cuivre s'approche à 2,15 mm de l'axe des trous du quadrant,
+  soit un anneau libre de 0,55 mm seulement, là où une tête de vis M3
+  fait 5,5 à 6 mm : une vis métallique se poserait sur du cuivre sous
+  un vernis de 20 µm. C'est la décision prise sur le premier des deux
+  points de la [note 21](21-routage-et-regles-de-l-art.md), et elle ne
+  coûte rien à la carte.
 
-### 3.7 L'outillage
+### 3.7 Déposer la commande chez le fabricant
+
+Trois choses surprennent à la première commande, et les trois sont
+normales :
+
+- **Le fabricant ne retrouve pas tous les composants.** Sa bibliothèque
+  d'assemblage n'est pas tout le catalogue du distributeur, et les
+  stocks bougent : un code valide peut être introuvable ou épuisé le
+  jour de la commande. Les pièces concernées apparaissent en
+  « unselected parts ». Trois sorties, dans cet ordre : chercher le
+  même boîtier chez le fabricant et remplacer le code dans
+  `jlc-bom.csv` ; retirer la ligne et souder la pièce à la main (tous
+  les boîtiers de ce projet se soudent au fer sauf le buck QFN de la
+  carte de banc et l'aiguilleur LFCSP du quadrant) ; ou ne commander
+  que les circuits nus. Les amplificateurs OPA2810 et AD8421 sont les
+  plus exposés : ils sont aussi dans la nomenclature du quadrant, donc
+  le contrôle vaut pour les deux cartes.
+- **Les composants semblent mal alignés sur l'aperçu.** Le fichier de
+  placement que les générateurs écrivent utilise le repère du
+  fabricant, origine au coin bas gauche et ordonnée retournée par
+  rapport à KiCad ; les positions sont donc justes. Ce qui diffère,
+  ce sont les rotations : le fabricant oriente certains boîtiers
+  autrement que KiCad (SOT-23 à 180 degrés, SOIC à 90 ou 270, QFN à
+  90, diodes SMA et SMB à 180). Son aperçu permet de corriger pièce
+  par pièce avant de payer ; noter les corrections retenues et les
+  redescendre dans le générateur, qui les appliquera aux exports
+  suivants.
+- **Une carte n'a pas de fichiers d'assemblage.** C'est qu'aucune de
+  ses pièces n'a encore de code fournisseur. La carte bobines en a
+  depuis le 19/09/2026 : ses huit LED de camp sont dans
+  `jlc-bom.csv`, leurs huit découplages restent à poser à la main.
+
+### 3.8 L'outillage
 
 | Outil | Pour quoi | Indispensable |
 |---|---|---|

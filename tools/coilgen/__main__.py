@@ -9,6 +9,7 @@ from pathlib import Path
 from chessboard_calc.config import DEFAULT_CONFIG_PATH, load_config
 
 from .board import build_coil_board, design_rules
+from .bom import bom_csv, jlc_bom_csv, jlc_cpl_csv
 from .project import project_json
 from .render import render_board
 
@@ -35,6 +36,13 @@ def main(argv: list[str] | None = None) -> int:
         f"track {result.track_width_mm:.2f} mm)"
     )
     print(f"wrote {pro_path} (open this one in KiCad)")
+    for name, text in (
+        ("bom.csv", bom_csv(cfg, result.placements)),
+        ("jlc-bom.csv", jlc_bom_csv(cfg, result.placements)),
+        ("jlc-cpl.csv", jlc_cpl_csv(cfg, result.placements)),
+    ):
+        (out_dir / name).write_text(text, encoding="utf-8")
+        print(f"wrote {out_dir / name}")
     if args.render:
         render_board(result, Path(args.render))
         print(f"wrote {args.render}")

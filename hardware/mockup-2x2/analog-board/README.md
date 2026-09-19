@@ -60,6 +60,24 @@ chaque jonction restant à 0,132 mm de tout cuivre étranger ; le plan
 de masse est enfin calculé sur le cuivre final. La carte générée est
 donc toujours DRC zéro, et la liste résiduelle est courte.
 
+## État mesuré au 19/09/2026
+
+Cette carte est la référence de la chaîne analogique, retirée du plan
+par l'[ADR 0010](../../../docs/adr/0010-plateau-8x8-base-interchangeable-horloge.md) :
+le banc et le quadrant 2 x 2 la remplacent, et eux sont au DRC zéro. Ce
+qu'elle porte encore, mesuré par `tools/drc.py` (zones remplies) :
+
+| Contrôle | Résultat |
+|---|---|
+| Éléments non connectés | 28, dont 19 de masse, 4 de la chaîne LED, puis M1_A, M2_A, LED_DIN5, BUCK_FB et 5V_BUCK_FILT |
+| Chevauchements de courtyard | 49 |
+| Cuivre trop près du bord | 1 |
+
+KiCad affiche 54 non routés à l'ouverture parce que ses zones ne sont
+pas encore remplies : remplir les plans (touche B) ramène le compte à
+28. La phrase « DRC zéro » des sections ci-dessous date de la
+génération de référence et ne décrit plus le fichier commité.
+
 ## Liste de finition (chevelu affiché dans KiCad)
 
 Le build imprime les jonctions posées et la liste exacte des restes.

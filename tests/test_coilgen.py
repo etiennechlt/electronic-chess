@@ -184,3 +184,33 @@ def test_committed_project_matches_this_build(cfg, build):
     )
     emitted = json.loads(project_json("coil-board", design_rules(cfg, build)))
     assert json.loads(path.read_text(encoding="utf-8")) == emitted
+
+
+def test_the_coil_board_carries_its_bills(cfg):
+    """The coil board has parts a factory can place: the camp LEDs and
+    their decoupling. The assembly files hold the coded ones alone, since
+    the fabricator refuses a placement file whose designators are not all
+    in the bill, and they are written in its frame, ordinate turned over."""
+    from coilgen.board import build_coil_board
+    from coilgen.bom import bom_csv, jlc_bom_csv, jlc_cpl_csv
+
+    result = build_coil_board(cfg)
+    placements = result.placements
+    leds = sorted(r for r in placements if r.startswith("LD"))
+    caps = sorted(r for r in placements if r.startswith("CL"))
+    assert len(leds) == len(caps) == len(cfg.mockup.coil_board.leds.chain_squares)
+
+    bom = bom_csv(cfg, placements)
+    assert "WS2812B" in bom and "100n" in bom
+
+    jlc = jlc_bom_csv(cfg, placements)
+    assert "WS2812B" in jlc and "100n" not in jlc  # no supplier code yet
+
+    cpl = [ln.split(",") for ln in jlc_cpl_csv(cfg, placements).strip().splitlines()[1:]]
+    assert {row[0] for row in cpl} == set(leds)  # the designators of the bill, no more
+    height = cfg.mockup.coil_board.size_mm[1]
+    for row in cpl:
+        x, y = float(row[1].removesuffix("mm")), float(row[2].removesuffix("mm"))
+        ref = row[0]
+        assert abs(x - placements[ref][0]) < 1e-6
+        assert abs(y - (height - placements[ref][1])) < 1e-6

@@ -19,6 +19,25 @@ regénérer.
 - 4 trous M3 espacés de 34 mm autour de S3 pour le support d'aimant
   réglable imprimé (répertoire `mechanical/`).
 
+## Nomenclatures et placement
+
+`python -m coilgen build` écrit, à côté de la carte :
+
+- `bom.csv` : les seize composants posables, huit WS2812B et leurs huit
+  découplages de 100 nF ;
+- `jlc-bom.csv` et `jlc-cpl.csv` : les fichiers d'assemblage, qui ne
+  portent que les pièces munies d'un code fournisseur, donc les huit
+  LED (C2761795). Le fabricant refuse un fichier de placement dont un
+  repère manque à la nomenclature, d'où ce filtrage. Les 100 nF n'ont
+  pas encore de code ([note 15](../../../docs/notes/15-skills-embarques.md)) :
+  ils se posent à la main, ou se commandent par valeur et boîtier.
+
+Le placement est écrit dans le repère du fabricant : origine au coin
+bas gauche de la carte, ordonnée retournée par rapport à KiCad. Les
+rotations sont celles de KiCad ; le fabricant applique parfois une
+convention différente par boîtier, à vérifier sur son aperçu avant de
+payer.
+
 ## Ouvrir
 
 `coil-board.kicad_pro`, généré avec la carte, est le fichier à ouvrir

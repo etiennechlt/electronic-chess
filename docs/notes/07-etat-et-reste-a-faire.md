@@ -118,13 +118,15 @@ bande est deux fois plus longue, ses liaisons à la main lui sont
 propres et son bilan reste à refaire.
 
 La revue du routage contre les règles de la profession
-([note 21](21-routage-et-regles-de-l-art.md)) laisse deux points à
-trancher avant la commande des quatre quadrants : la garde des trous de
-fixation (2,15 mm de cuivre libre autour d'un M3 là où la règle en
-demande 3,0, donc vis nylon, rondelle épaulée, ou trous déplacés) et le
-découplage, de 4 à 12 mm des broches d'alimentation qu'il sert, à coller
-aux boîtiers par le placement. Les autres écarts sont assumés et
-expliqués dans la note.
+([note 21](21-routage-et-regles-de-l-art.md)) avait laissé deux points à
+trancher avant la commande. La garde des trous de fixation est tranchée :
+montage en nylon, vis, écrous et rondelles, la carte ne change pas. Le
+rapprochement du découplage a été écrit, essayé en trois variantes et
+mesuré : il gagne de 12,3 à 2,9 mm sur le pire cas, mais chaque
+déplacement rouvre deux à trois liaisons, la bande étant saturée. Il est
+donc reporté à la révision des quatre quadrants, où la bande est
+retracée de toute façon ; la recette est dans la note 21. Les autres
+écarts sont assumés et expliqués dans la note.
 
 ### 2. Simulation
 
