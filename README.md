@@ -87,7 +87,10 @@ le pilote sont les deux cartes du plateau dont le routage est fermé,
 donc les deux dont les gerbers sont commités
 (`*-gerbers.zip`, produits par `tools/gerbers.py`, qui remplit les
 pours avant de tracer et refuse toute carte à nets ouverts) : le banc
-de la [note 20](docs/notes/20-tuto-banc.md) se commande tel quel.
+de la [note 20](docs/notes/20-tuto-banc.md) se commande tel quel. La
+[carte analogique de maquette](hardware/mockup-2x2/analog-board/README.md),
+gardée comme référence de la chaîne, est fermée elle aussi et porte
+son archive.
 
 | Cerveau (STM32G474, 4 couches) | Puissance (3S, BQ24610, BQ76920) |
 |---|---|

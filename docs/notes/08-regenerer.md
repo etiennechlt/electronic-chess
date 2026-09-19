@@ -52,10 +52,10 @@ Une carte dont le routage n'est pas fermé est refusée : le compte de
 pastilles non connectées doit être nul, la même barrière que
 `tools/drc.py`, pour qu'aucune archive de carte à nets ouverts ne soit
 commitée par mégarde. `--force` passe outre, `--layers` impose un jeu
-de couches. Seules la carte de banc et le quadrant 2 x 2 franchissent
-aujourd'hui cette barrière ; cerveau, puissance, moteurs, horloge et
-quadrant 4 x 4 ont encore des nets à fermer dans pcbnew, listés dans le
-README de chaque carte.
+de couches. Trois cartes franchissent aujourd'hui cette barrière : la
+carte de banc, le quadrant 2 x 2 et la carte analogique de maquette ;
+cerveau, puissance, moteurs, horloge et quadrant 4 x 4 ont encore des
+nets à fermer dans pcbnew, listés dans le README de chaque carte.
 
 ## Revue du routage contre les règles de l'art (secondes)
 

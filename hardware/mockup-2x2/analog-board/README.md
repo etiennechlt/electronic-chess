@@ -35,16 +35,16 @@ générateur vérifie lui même.
 
 Le DRC de KiCad contrôle aussi ce que le générateur ne regarde pas, en
 particulier la distance du cuivre au bord de carte, réglée ici à la
-valeur de fabrication 0,2 mm. Sur la génération de référence il
-signale la broche 2 du jack J1, placée 1 mm en dehors du contour : le
-placement de J1 dans `tools/analoggen/pcb.py` est à corriger avant
-commande, ce n'est pas un faux positif.
+valeur de fabrication 0,2 mm. C'est lui qui a trouvé la broche 2 du
+jack J1, 1 mm en dehors du contour : le jack est maintenant posé à
+x = 8 mm, ses pastilles à 0,5 mm du bord, et son corps dépasse de
+6 mm à l'ouest, ce qui est la fonction d'un jack de panneau.
 
 ## Génération et fabrication
 
 ```bash
 .venv/bin/python -m analoggen build --render docs/images/analog-board.png
-sh hardware/mockup-2x2/analog-board/export.sh   # gerbers + percage + zip
+sh hardware/mockup-2x2/analog-board/export.sh   # regenere puis exporte
 ```
 
 Le générateur route la carte (routeur A* maison sur grille 0,125 mm,
@@ -84,25 +84,43 @@ le banc et le quadrant 2 x 2 la remplacent. Mesures de `tools/drc.py`
 
 | Contrôle | Résultat |
 |---|---|
-| Éléments non connectés | **0** (557 pistes, 296 vias) |
+| Éléments non connectés | **0** (558 pistes, 297 vias) |
 | Chevauchements de courtyard | 49 |
-| Cuivre trop près du bord | 1 |
+| Cuivre trop près du bord | 0 |
 | Gardes sous la valeur de la classe de nets | 0 |
 
 KiCad affiche un chevelu plus long à l'ouverture parce que ses zones
 ne sont pas encore remplies : remplir les plans (touche B) donne le
 compte ci-dessus.
 
-Les deux défauts qui restent ne sont pas des liaisons :
+Le seul défaut qui reste n'est pas une liaison : **49 chevauchements
+de courtyard**, hérités du placement. Trente-deux viennent du motif de
+cellule, où les résistances de polarisation touchent le courtyard de
+leur diode double ; les autres sont le jack contre son trou de
+fixation et quelques découplages serrés contre leur boîtier. Les
+corriger demande de réespacer les cellules, donc d'agrandir la carte
+et de retirer le routage au sort. La carte étant retirée du plan par
+l'ADR 0010, le placement n'a pas été repris ; les empreintes ne se
+chevauchent pas, seuls leurs courtyards se touchent, et la carte reste
+assemblable.
 
-- **49 chevauchements de courtyard**, hérités du placement
-  (connecteurs contre trous de fixation, découplages serrés contre
-  leur boîtier). Les corriger demande de déplacer des composants, donc
-  de retirer la carte au sort du routage ; la carte est retirée du
-  plan, le placement n'a pas été repris.
-- **la broche 2 du jack J1**, 1 mm en dehors du contour. C'est un
-  défaut de placement réel, pas un faux positif : `PLACEMENTS["J1"]`
-  dans `tools/analoggen/pcb.py` est à corriger avant toute commande.
+## Gerbers de fabrication
+
+`analog-board-gerbers.zip` se dépose tel quel chez le fabricant :
+2 couches (F.Cu, B.Cu), la pâte de la face composants, les deux
+sérigraphies, les deux masques, le contour et les perçages Excellon
+séparés (PTH et NPTH), plus le fichier de tâche `.gbrjob`. 1,6 mm,
+finition HASL sans plomb ou ENIG.
+
+```bash
+/usr/bin/python3 tools/gerbers.py hardware/mockup-2x2/analog-board/analog-board.kicad_pcb
+```
+
+Avec le Python de KiCad : l'outil remplit les pours d'une copie de la
+carte avant de tracer (sans ce remplissage le plan de masse de B.Cu
+sort vide, 3 ko au lieu de 301), lit le jeu de couches sur la carte et
+refuse d'exporter tant qu'une pastille reste non connectée. Le dossier
+`gerbers/` qu'il écrit n'est pas versionné ; l'archive l'est.
 
 ## Ce que le routeur ne trouve pas, et ce qui le remplace
 

@@ -18,10 +18,11 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 
-# The boards `tools/gerbers.py` exports, and their archive. The two
-# mockup archives come from the hand written layer list of their own
-# export.sh and are checked only for the files every board needs.
+# The boards `tools/gerbers.py` exports, and their archive. The coil
+# board still comes from the hand written layer list of its own
+# export.sh and is checked only for the files every board needs.
 GENERATED = {
+    "analog-board": ROOT / "hardware/mockup-2x2/analog-board",
     "bench": ROOT / "hardware/bench",
     "quadrant-2x2": ROOT / "hardware/quadrant-2x2",
 }

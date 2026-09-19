@@ -119,8 +119,10 @@ PLACEMENTS: dict[str, tuple[float, float, float]] = {
     "TP4": (55.5, 7.5, 0.0),
     "TP5": (51.5, 3.0, 0.0),
     "TP6": (51.5, 7.5, 0.0),
-    # Power entry, west.
-    "J1": (5.0, 9.5, 0.0),
+    # Power entry, west. The jack body hangs 6 mm past the west edge,
+    # which is what a panel barrel jack is for; its pads stay on the
+    # board, 0.5 mm inside the outline (they did not at x = 5).
+    "J1": (8.0, 9.5, 0.0),
     "D1": (15.5, 4.5, 180.0),
     "D2": (16.0, 10.5, 90.0),
     "C1": (15.5, 15.0, 0.0),
@@ -1158,7 +1160,14 @@ def build_pcb(cfg: BoardConfig, circuit: Circuit) -> PcbResult:
 
     fill, strips = _plane_strips(islands)
 
-    board = Board(thickness_mm=1.6, title="Damier LC, maquette 2x2, carte analogique")
+    # Two copper layers, said out loud: the serializer defaults to the
+    # four of the coil board, and a board file that claims four inner
+    # layers is quoted and etched as a four layer board.
+    board = Board(
+        thickness_mm=1.6,
+        title="Damier LC, maquette 2x2, carte analogique",
+        copper_layers=2,
+    )
     net_index = {"": 0}
     for comp in circuit.components:
         for net in comp.pins.values():

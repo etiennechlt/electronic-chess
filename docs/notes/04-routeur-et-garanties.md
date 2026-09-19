@@ -312,11 +312,12 @@ Tout le reste est fermé par les passes.
 
 ## Référence actuelle
 
-557 pistes, 296 vias, **zéro élément non connecté** au DRC de KiCad
+558 pistes, 297 vias, **zéro élément non connecté** au DRC de KiCad
 comme au compte du build, zéro garde sous la valeur de la classe de
-nets. Restent deux défauts de placement, hérités et documentés dans le
+nets, zéro cuivre hors contour, et les gerbers commités. Reste un
+défaut de placement, hérité et documenté dans le
 [README de la carte](../../hardware/mockup-2x2/analog-board/README.md) :
-49 chevauchements de courtyard et la broche 2 du jack J1, 1 mm en
-dehors du contour. La progression historique des liaisons ouvertes est
-dans le [journal](09-journal.md) : 57, 51, 46, 40, 21, 16, 12, 9, puis
-28 une fois le compte devenu exact, puis 0.
+49 chevauchements de courtyard, dont trente-deux dans le motif de
+cellule. La progression historique des liaisons ouvertes est dans le
+[journal](09-journal.md) : 57, 51, 46, 40, 21, 16, 12, 9, puis 28 une
+fois le compte devenu exact, puis 0.

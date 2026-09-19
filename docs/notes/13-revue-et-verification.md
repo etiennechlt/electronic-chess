@@ -57,10 +57,12 @@ de référence dans `hardware/mockup-2x2/`.
   sont dans `hardware/quadrant/`, gerbers par `tools/gerbers.py`
   ([note 08](08-regenerer.md)) une fois les nets fermés : l'outil les
   refuse tant qu'il reste une pastille non connectée, et il y en a 347.
-- Les deux cartes du banc sont les seules dont les gerbers soient
-  commités, parce qu'elles sont les seules à routage fermé :
+- Les cartes à routage fermé sont les seules dont les gerbers soient
+  produits par `tools/gerbers.py` : les deux cartes du banc,
   `hardware/bench/bench-gerbers.zip` et
-  `hardware/quadrant-2x2/quadrant-2x2-gerbers.zip`.
+  `hardware/quadrant-2x2/quadrant-2x2-gerbers.zip`, et la carte
+  analogique de maquette,
+  `hardware/mockup-2x2/analog-board/analog-board-gerbers.zip`.
 - Cerveau : 4 couches. Puissance, moteurs, horloge : 2 couches.
 - Les codes LCSC du BOM sont des candidats saisis hors ligne : vérifier
   chaque ligne dans la prévisualisation JLCPCB (mêmes réserves que pour

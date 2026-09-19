@@ -277,6 +277,13 @@ quatre commandes.
   coude payants) pour les liaisons qu'aucun raccord simple ne ferme,
   et des **routes structurelles** tracées avant le routage dans des
   canaux mesurés libres de pastilles.
+- Deux défauts que la fermeture a mis à nu, corrigés dans la foulée :
+  la broche 2 du jack, 1 mm hors du contour depuis l'origine (le jack
+  recule à x = 8, son corps dépasse à l'ouest comme il se doit), et le
+  fichier de carte qui déclarait quatre couches cuivre pour une carte
+  deux couches, ce qu'un fabricant aurait facturé et gravé tel quel.
+  Les gerbers de la carte sont désormais produits par
+  `tools/gerbers.py`, pours remplis, et commités.
 - Leçon retenue et écrite dans la [note 04](04-routeur-et-garanties.md) :
   la « saturation » qui justifiait d'arrêter à sept liaisons était un
   artefact du compte. Un mauvais arbitre fait prendre les mauvaises
