@@ -257,6 +257,32 @@ quatre commandes.
   DRC ; les empreintes posées reçoivent des `tstamp` uniques, sans
   quoi le rapport DRC nomme les mauvais éléments.
 
+## 19/09/2026, la carte analogique de maquette fermée
+
+- Point de départ : KiCad comptait vingt-huit éléments non connectés
+  sur la carte commitée, le build en annonçait sept. L'écart venait du
+  modèle : la masse n'était pas vérifiée, les couches étaient
+  fusionnées sans exiger de via, et une pastille valait la boîte
+  autour d'elle. Le modèle exact du quadrant a été branché sur la
+  carte analogique (`tools/analoggen/connect.py`), avec la forme vraie
+  des pastilles et le plan de masse calculé comme le calcule le
+  remplisseur de KiCad, îlot par îlot.
+- Résultat immédiat : dix-neuf des vingt-huit liaisons manquantes
+  étaient des masses, des groupes de pastilles reliés entre eux en
+  face avant mais jamais descendus vers un îlot que le plan gardait
+  entier. Une passe de finition de la masse, jouée contre les îlots
+  réels, les a fermées.
+- Deux outils ajoutés : un **labyrinthe** à géométrie exacte
+  (`tools/analoggen/maze.py`, trame 0,05 mm, deux couches, via et
+  coude payants) pour les liaisons qu'aucun raccord simple ne ferme,
+  et des **routes structurelles** tracées avant le routage dans des
+  canaux mesurés libres de pastilles.
+- Leçon retenue et écrite dans la [note 04](04-routeur-et-garanties.md) :
+  la « saturation » qui justifiait d'arrêter à sept liaisons était un
+  artefact du compte. Un mauvais arbitre fait prendre les mauvaises
+  décisions pendant des jours ; le compte exact a renversé la
+  conclusion en une journée.
+
 ## Où en est la ligne de temps
 
 Phase 0 faite ; la phase 1 (maquette) est conçue mais ne sera pas

@@ -7,6 +7,7 @@ analog-board README); these tests cover everything upstream of it.
 import shutil
 import subprocess
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
@@ -19,6 +20,8 @@ from analoggen.filters import round_e96  # noqa: E402
 from analoggen.schematic import emit_schematic  # noqa: E402
 from analoggen.spice import run_chain_ac  # noqa: E402
 from coilgen.board import PAD_PLAN  # noqa: E402
+
+from chessboard_calc.config import load_config  # noqa: E402
 
 
 @pytest.fixture(scope="module")
@@ -133,3 +136,95 @@ def test_finish_pass_joins_and_respects_clearance():
     for _net, w, pts, _layer in new_a:
         assert LineString(pts).buffer(w / 2.0).distance(obstacle) >= CLEAR - 1e-9
     assert not [line for line in log if line.startswith("C:")]
+
+
+@dataclass(frozen=True)
+class Pad:
+    """The pad fields the routing bookkeeping reads."""
+
+    ref: str
+    number: str
+    net: str | None
+    x: float
+    y: float
+    w: float
+    h: float
+    tht: bool = False
+
+
+def test_the_exact_check_counts_the_pieces_kicad_would():
+    from analoggen import connect
+    from shapely.geometry import box as _box
+
+    pads = [
+        Pad("R1", "1", "A", 10.0, 10.0, 1.0, 0.6),
+        Pad("R2", "1", "A", 13.0, 10.0, 1.0, 0.6),
+        Pad("R3", "1", "B", 20.0, 10.0, 1.0, 0.6),
+        Pad("R4", "1", "B", 23.0, 10.0, 1.0, 0.6),
+    ]
+    # a track that stops short of the second pad leaves the net open
+    short = ("A", 0.25, [(10.5, 10.0), (12.0, 10.0)], "F.Cu")
+    assert connect.errors(pads, [short], [], 0.6) == [
+        "A: 2 pieces (R1.1; R2.1)",
+        "B: 2 pieces (R3.1; R4.1)",
+    ]
+    full = ("A", 0.25, [(10.5, 10.0), (12.5, 10.0)], "F.Cu")
+    # the two halves of B change layer without a via: two pieces still
+    two_layers = [
+        full,
+        ("B", 0.25, [(20.5, 10.0), (21.5, 10.0)], "F.Cu"),
+        ("B", 0.25, [(21.5, 10.0), (22.2, 10.0)], "B.Cu"),
+    ]
+    assert [e.split(":")[0] for e in connect.errors(pads, two_layers, [], 0.6)] == ["B"]
+    # one via down, one via back up under the second pad, and B is whole
+    vias = [("B", 21.5, 10.0), ("B", 22.2, 10.0)]
+    assert connect.errors(pads, two_layers, vias, 0.6) == []
+
+    # a pour joins what its own island covers, and only that
+    ground = [
+        Pad("J1", "1", "GND", 30.0, 10.0, 1.6, 1.6, True),
+        Pad("J1", "2", "GND", 40.0, 10.0, 1.6, 1.6, True),
+    ]
+    one = [_box(28.0, 8.0, 42.0, 12.0)]
+    assert connect.errors(ground, [], [], 0.6, islands=one) == []
+    cut = [_box(28.0, 8.0, 34.0, 12.0), _box(36.0, 8.0, 42.0, 12.0)]
+    assert [e.split(":")[0] for e in connect.errors(ground, [], [], 0.6, islands=cut)] == ["GND"]
+
+
+def test_the_maze_goes_around_a_wall_the_joints_cannot():
+    from analoggen import maze
+    from analoggen.finish import CLEAR, THERMAL_PAD_MM, VIA_R, W_JOIN
+    from shapely.geometry import LineString
+
+    pads = [Pad("R1", "1", "A", 10.0, 10.0, 1.0, 0.6), Pad("R2", "1", "A", 16.0, 10.0, 1.0, 0.6)]
+    # a wall between them, with one gap 2 mm north of the straight line
+    wall = [
+        ("W", 0.4, [(13.0, 4.0), (13.0, 8.2)], "F.Cu"),
+        ("W", 0.4, [(13.0, 9.8), (13.0, 20.0)], "F.Cu"),
+    ]
+    piece_a = (LineString([(10.0, 10.0), (10.0, 10.0)]).buffer(0.3), None)
+    piece_b = (LineString([(16.0, 10.0), (16.0, 10.0)]).buffer(0.3), None)
+    plan = maze.maze_join(
+        "A", piece_a, piece_b, pads, wall, [], W_JOIN, CLEAR, VIA_R, THERMAL_PAD_MM
+    )
+    assert plan, "the maze should thread the gap in the wall"
+    drawn = maze.plan_geometry(plan, W_JOIN, VIA_R)
+    obstacles = [LineString(pts).buffer(w / 2.0) for _n, w, pts, _la in wall]
+    for layer, geoms in drawn.items():
+        for g in geoms:
+            for o in obstacles:
+                assert g.distance(o) >= CLEAR - 1e-9, layer
+
+
+def test_the_hand_seeds_of_the_analog_board_stay_legal():
+    """Every seeded route is re-checked against the real pad geometry."""
+    from analoggen.pcb import Router, _hand_seeds, _pad_instances, full_placements
+
+    cfg = load_config()
+    ckt, _chain = build_circuit(cfg)
+    pads = _pad_instances(ckt, full_placements(cfg))
+    router = Router(pads)
+    _hand_seeds(router, pads)
+    seeded = {net for net, _w, _pts, _layer in router.tracks}
+    for net in ("BUCK_FB", "C2_A", "C3_B", "M1_A", "M2_A", "VREF", "GND"):
+        assert net in seeded, net

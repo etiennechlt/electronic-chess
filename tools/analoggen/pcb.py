@@ -38,6 +38,7 @@ from shapely.ops import unary_union
 
 from chessboard_calc.config import BoardConfig
 
+from . import connect
 from .circuit import Circuit
 from .fplib import load_footprint, pad_abs_pos, place_footprint
 
@@ -259,6 +260,11 @@ class PadInst:
     w: float  # bounding box after rotation
     h: float
     tht: bool
+    shape: str = "rect"  # what KiCad draws: rect, roundrect, oval, circle
+    rratio: float = 0.0  # corner radius of a roundrect, as a ratio
+    angle: float = 0.0  # absolute rotation of the pad, degrees
+    sx: float = 0.0  # size before rotation, as the footprint declares it
+    sy: float = 0.0
 
     @property
     def fine(self) -> bool:
@@ -289,6 +295,11 @@ def _pad_instances(circuit: Circuit, placements) -> list[PadInst]:
                     w=w,
                     h=h,
                     tht=pad.kind != "smd",
+                    shape=pad.shape,
+                    rratio=pad.rratio,
+                    angle=total,
+                    sx=pad.size[0],
+                    sy=pad.size[1],
                 )
             )
     return out
@@ -870,35 +881,86 @@ def _hand_seeds(r: Router, pads) -> None:
     # Pi 3V3 drops to the plane side right at the isolator pin.
     T("PI_3V3", [P("U7", "8"), (15.4, 31.6)])
     V("PI_3V3", 15.4, 31.6)
-    # M1_A (mux pin 12 to cell 1) stays on the finish list: any seeded
-    # crossing of the cell band displaces more links than it closes.
+
+    # The links below were left to the router and it could not find
+    # them: the corridors they need are taken by the time their turn
+    # comes. Seeded, they claim their channel first and the router
+    # works around them. Every waypoint sits in a channel measured
+    # free of pads, and the guard above re-checks it at build time.
+
+    # Cell 2, the A line in one piece: down the cell's west lane to the
+    # clamp, then under the resistor row on the back side, the way the
+    # router itself crosses that row on cell 1.
+    T("C2_A", [P("R33", "1"), (33.3, 39.23), (33.3, 46.05), P("D32", "1")])
+    T("C2_A", [P("R31", "1"), (38.5, 39.23)])
+    V("C2_A", 38.5, 39.23)
+    T("C2_A", [(38.5, 39.23), (33.85, 39.23)], layer="B.Cu")
+    V("C2_A", 33.85, 39.23)
+    # Cell 3, the B line: over its own resistor row, in the 0.86 mm
+    # channel between the two rows of the cell.
+    T("C3_B", [P("R44", "1"), (58.6, 38.4), (63.4, 38.4), P("R42", "1")])
+    # Cell 2, the A tap to its clamp: the channel between the bias
+    # resistor and the diode of the 5VA rail is 1.4 mm wide.
+    T("M2_A", [P("D12", "3"), (35.54, 41.4), (35.54, 37.57), P("R33", "2")])
+    # The mux pins of cells 1 and 4 escape north into the band above the
+    # cells, which carries no pad at all; the router hauls the rest.
+    T("M1_A", [P("U3", "12"), (48.83, 36.9)])
+    T("M4_A", [P("U3", "11"), (49.475, 36.9)])
+    # The bleed resistor of cell 1 reaches the VREF rail straight up.
+    T("VREF", [P("R21", "2"), (27.0, 35.4)])
+    # The feedback pin of the buck leaves on the west side and crosses
+    # under the enable escape on the back layer to reach the divider.
+    # The power-good pin takes the lane next to it and crosses the same
+    # escape 6 mm further north: the two are the only ways out of that
+    # corner, and the router finds neither on its own.
+    T("BUCK_FB", [P("U1", "5"), (21.75, 13.65), (19.6, 13.65), (19.6, 9.6)])
+    V("BUCK_FB", 19.6, 9.6)
+    T("BUCK_FB", [(19.6, 9.6), (26.2, 8.18)], layer="B.Cu")
+    V("BUCK_FB", 26.2, 8.18)
+    T("BUCK_FB", [(26.2, 8.18), P("R3", "2")])
+    T("BUCK_PG", [P("U1", "4"), (20.2, 12.25), (20.2, 7.2), (21.8, 7.2)])
+    V("BUCK_PG", 21.8, 7.2)
+    T("BUCK_PG", [(21.8, 7.2), (24.0, 7.2)], layer="B.Cu")
+    V("BUCK_PG", 24.0, 7.2)
+    T("BUCK_PG", [(24.0, 7.2), (26.2, 7.2), P("R2", "1")])
+    # Two grounds the pour cannot reach on its own: the mux pins, which
+    # the cell band walls in, and pin 2 of the MCU header, which the
+    # connector cuts off from the rest of the pour.
+    T("GND", [P("U3", "7"), (50.12, 47.6)])
+    V("GND", 50.12, 47.6)
+    # The source of the drive FET of cell 1: its drop goes south first,
+    # through the 1.5 mm channel between the two clamp diodes, because
+    # the pour around the cell itself ends up cut off from the main
+    # plane by the back-side runs of the two neighbouring coil lines.
+    T("GND", [P("Q11", "2"), (26.6, 45.55), (26.6, 49.3)])
+    V("GND", 26.6, 49.3)
+    T("GND", [P("J4", "2"), (64.0, 1.5), (57.0, 1.5)], layer="B.Cu", w=W_SIG)
+    # The two grounds of the coil socket: the escapes of the ten signal
+    # pins fill the row, and a stub of its own ends up walled in by the
+    # first route that passes. They get a ground bus instead, along the
+    # south edge where no pad lives, which nothing can enclose.
+    T("GND", [(31.0, 60.6), (66.0, 60.6)], layer="B.Cu", w=W_SIG)
+    for pin in ("1", "10"):
+        T("GND", [P("J2", pin), (P("J2", pin)[0], 60.6)], layer="B.Cu", w=W_SIG)
 
 
 # ----------------------------------------------------------------------
 # Plane, checks and assembly.
 # ----------------------------------------------------------------------
-def _plane_strips(pads, tracks, vias):
-    keep_out = []
-    for pad in pads:
-        if pad.tht and pad.net != "GND":
-            keep_out.append(
-                box(
-                    pad.x - pad.w / 2 - PLANE_CLR,
-                    pad.y - pad.h / 2 - PLANE_CLR,
-                    pad.x + pad.w / 2 + PLANE_CLR,
-                    pad.y + pad.h / 2 + PLANE_CLR,
-                )
-            )
-    for net, width, pts, layer in tracks:
-        if layer == "B.Cu" and net != "GND":
-            keep_out.append(LineString(pts).buffer(width / 2.0 + PLANE_CLR))
-    for net, x, y in vias:
-        if net != "GND":
-            keep_out.append(Point(x, y).buffer(VIA_D / 2.0 + PLANE_CLR))
-    holes = unary_union(keep_out) if keep_out else None
-    outline = box(EDGE_KEEPOUT, EDGE_KEEPOUT, BOARD_W - EDGE_KEEPOUT, BOARD_H - EDGE_KEEPOUT)
-    fill = outline.difference(holes) if holes is not None else outline
+def plane_region():
+    """The zone outline: the board less its edge keepout."""
+    return box(EDGE_KEEPOUT, EDGE_KEEPOUT, BOARD_W - EDGE_KEEPOUT, BOARD_H - EDGE_KEEPOUT)
 
+
+def _plane_strips(islands):
+    """The pour written into the file: its islands cut into flat bands.
+
+    A filled polygon of KiCad carries no hole, so the pour goes in as
+    overlapping horizontal strips of the very islands the connectivity
+    check uses. What the file shows and what the build counts are then
+    the same copper.
+    """
+    fill = unary_union(islands)
     strips = []
     step, overlap = 0.5, 0.06
     y = EDGE_KEEPOUT
@@ -913,40 +975,8 @@ def _plane_strips(pads, tracks, vias):
     return fill, strips
 
 
-PLANE_CLR = 0.3
-
-
-def _connectivity_errors(circuit: Circuit, pads, tracks, vias) -> list[str]:
-    from collections import defaultdict
-
-    errors = []
-    by_net_pads = defaultdict(list)
-    for pad in pads:
-        if pad.net:
-            by_net_pads[pad.net].append(pad)
-    for net, net_pads in by_net_pads.items():
-        if net == "GND" or len(net_pads) < 2:
-            continue
-        geoms = [
-            box(
-                p.x - p.w / 2 - 0.05,
-                p.y - p.h / 2 - 0.05,
-                p.x + p.w / 2 + 0.05,
-                p.y + p.h / 2 + 0.05,
-            )
-            for p in net_pads
-        ]
-        for tnet, width, pts, _layer in tracks:
-            if tnet == net:
-                geoms.append(LineString(pts).buffer(width / 2.0 + 0.02))
-        for vnet, x, y in vias:
-            if vnet == net:
-                geoms.append(Point(x, y).buffer(VIA_D / 2.0))
-        merged = unary_union(geoms)
-        n_parts = len(getattr(merged, "geoms", [merged]))
-        if n_parts != 1:
-            errors.append(f"{net}: {n_parts} pieces")
-    return errors
+PLANE_CLR = 0.3  # zone clearance to foreign copper
+PLANE_MIN_W = 0.2  # zone minimum thickness: thinner necks pinch off
 
 
 def _drc_errors(pads, tracks, vias) -> list[str]:
@@ -1117,7 +1147,16 @@ def build_pcb(cfg: BoardConfig, circuit: Circuit) -> PcbResult:
 
     finish_log = finish_pass(pads, router.tracks, router.vias)
 
-    fill, strips = _plane_strips(pads, router.tracks, router.vias)
+    # The pour is what the filler leaves once the signal copper is
+    # final. Ground copper is not foreign to its own pour, so the ground
+    # joints that follow never move it: it is computed once, and the
+    # ground is finished against the islands it really has.
+    islands = connect.plane_islands(
+        pads, router.tracks, router.vias, plane_region(), VIA_D, PLANE_CLR, PLANE_MIN_W
+    )
+    finish_log += finish_pass(pads, router.tracks, router.vias, nets=["GND"], islands=islands)
+
+    fill, strips = _plane_strips(islands)
 
     board = Board(thickness_mm=1.6, title="Damier LC, maquette 2x2, carte analogique")
     net_index = {"": 0}
@@ -1165,7 +1204,7 @@ def build_pcb(cfg: BoardConfig, circuit: Circuit) -> PcbResult:
         vias=router.vias,
         plane_polys=strips,
     )
-    conn = _connectivity_errors(circuit, pads, router.tracks, router.vias)
+    conn = connect.errors(pads, router.tracks, router.vias, VIA_D, islands)
     still_split = {e.split(":")[0] for e in conn}
     kept_fails = [
         f for f in router.failed if f.startswith("GND-via") or f.split(":")[0] in still_split

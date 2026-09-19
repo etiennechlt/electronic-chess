@@ -1,4 +1,4 @@
-# 04. Le routeur maison et ses trois garanties
+# 04. Le routeur maison et ses garanties
 
 La carte analogique est routée par un routeur écrit pour le projet
 (`tools/analoggen/pcb.py`). Cette note capture ce qu'il fait, les
@@ -253,41 +253,70 @@ l'agence autrement (sa colonne d'amplification et ses multiplexeurs
 sont ailleurs, et ses broches de multiplexeur échappent sans via). Il
 aura ses propres liaisons quand viendra son tour d'être routé.
 
-## Les trois garanties formelles
+## Les quatre passes formelles
 
 Ordre d'exécution dans `build_pcb` : routage, puis
 
-1. **DRC exact** : shapely, par couche, seuil de fabrication
-   0,127 mm ; c'est l'autorité, pas les masques du routeur.
-2. **Passe de retrait** (`_strip_subclearance`) : tout cuivre sous la
-   garde est retiré et sa liaison réouverte en chevelu explicite ; les
-   paires pad contre pad relèvent du placement et sont listées.
-3. **Passe de finition** (`tools/analoggen/finish.py`) : sur le cuivre
+1. **Passe de retrait** (`_strip_subclearance`) : tout cuivre sous la
+   garde de fabrication de 0,127 mm est retiré et sa liaison réouverte
+   en chevelu explicite ; les paires pad contre pad relèvent du
+   placement et sont listées.
+2. **Passe de finition** (`tools/analoggen/finish.py`) : sur le cuivre
    fini, en géométrie exacte sans grille, elle referme les écarts par
    le raccord le plus simple (segment, L, Z balayés jusqu'à 6,4 mm,
-   variantes face arrière à un ou deux vias, anneaux jusqu'à 4,8 mm),
-   chaque raccord tenu à 0,132 mm de tout cuivre étranger. Le réglage
-   décisif : les canaux entre rangées de pads des cellules font
-   0,52 mm, une garde de 0,137 exigeait 0,524, quatre microns de trop.
+   variantes face arrière à un ou deux vias, anneaux de via jusqu'à
+   6 mm dans douze directions). Chaque raccord est tenu à 0,15 mm de
+   tout cuivre étranger, c'est à dire la garde de la classe de nets,
+   celle que le DRC de KiCad compte comme une erreur. Quand aucun
+   raccord simple ne passe, un **labyrinthe**
+   (`tools/analoggen/maze.py`) cherche sur une trame de 0,05 mm, deux
+   couches, en payant chaque via et chaque coude : il a fermé une
+   nappe de 25 mm que la grille du routeur ne voyait pas. Le chemin
+   qu'il trouve est revérifié en géométrie exacte avant d'être posé.
+3. **Plan de masse** : calculé comme le calcule le remplisseur de
+   KiCad, îlot par îlot (garde 0,3 mm, largeur minimale 0,2 mm), et
+   non comme une bande idéale. C'est là que se cachait l'essentiel des
+   liaisons manquantes : un plan de masse coupé en morceaux par les
+   pistes de la face arrière ne relie rien d'un morceau à l'autre.
+4. **Finition de la masse** : chaque groupe de pastilles de masse que
+   le plan ne rejoint pas reçoit sa descente vers l'îlot qui porte le
+   reste. Le cuivre de masse n'est pas étranger à son propre plan,
+   donc ces raccords ne le déplacent pas : le plan se calcule une
+   fois, après le routage des signaux, et la masse se finit contre
+   lui.
 
-Le plan de masse est calculé après, sur le cuivre final. Résultat
-invariant : **la carte générée est toujours DRC zéro**, et tout ce qui
-n'a pas pu être fermé est imprimé en liste de finition.
+La connexité est enfin vérifiée couche par couche, plan compris
+(`tools/analoggen/connect.py`), avec la forme vraie des pastilles et
+non la boîte autour : **le compte du build est celui de KiCad**.
 
-## La saturation, et pourquoi on s'arrête là
+## La saturation, et ce qu'elle cachait
 
-Les liaisons restantes sont celles dont tout seed structurel déplace
-plus de nets qu'il n'en ferme : mesuré sur plusieurs générations
-comparées, chaque tentative dans la bande des cellules échangeait un
-échec contre deux. Le plancher atteint est une courte liste de
-couloirs saturés (bande des cellules, coin buck), des détours
-multi-segments qu'un humain trace en un quart d'heure dans pcbnew,
-listés par le build et dans le
-[README de la carte](../../hardware/mockup-2x2/analog-board/README.md).
+Cette note affirmait que les liaisons restantes étaient celles dont
+tout seed structurel déplace plus de nets qu'il n'en ferme, mesuré sur
+plusieurs générations comparées. C'était vrai des essais faits, et
+faux comme conclusion : le compte servant d'arbitre était celui d'un
+modèle de connexité optimiste, qui ignorait la masse, fusionnait les
+couches sans exiger de via et prenait la boîte d'une pastille pour son
+cuivre. Il annonçait sept liaisons ouvertes là où KiCad en comptait
+vingt-huit, et il jugeait donc mal chaque tentative.
+
+Le modèle exact a renversé la conclusion : les seeds structurels
+ferment ce qu'on leur demande, à condition de les tracer dans des
+canaux mesurés libres de pastilles, et le plancher n'était pas la
+saturation mais la mesure. Treize liaisons sont désormais dessinées
+dans `_hand_seeds` : la ligne A de la cellule 2 (deux), la ligne B de
+la cellule 3, la prise A de la cellule 2, deux broches du
+multiplexeur, la résistance de fuite de la cellule 1, les deux sorties
+du régulateur à découpage, et quatre masses que le plan n'atteint pas.
+Tout le reste est fermé par les passes.
 
 ## Référence actuelle
 
-499 pistes, 259 vias, DRC zéro, 12 raccords posés par la finition,
-nets LED entièrement câblés ; sept nets à fermer à la main (M1_A,
-M2_A, C2_A, C3_B, BUCK_FB, BUCK_EN, VREF). La progression historique
-des liaisons ouvertes est dans le [journal](09-journal.md).
+557 pistes, 296 vias, **zéro élément non connecté** au DRC de KiCad
+comme au compte du build, zéro garde sous la valeur de la classe de
+nets. Restent deux défauts de placement, hérités et documentés dans le
+[README de la carte](../../hardware/mockup-2x2/analog-board/README.md) :
+49 chevauchements de courtyard et la broche 2 du jack J1, 1 mm en
+dehors du contour. La progression historique des liaisons ouvertes est
+dans le [journal](09-journal.md) : 57, 51, 46, 40, 21, 16, 12, 9, puis
+28 une fois le compte devenu exact, puis 0.

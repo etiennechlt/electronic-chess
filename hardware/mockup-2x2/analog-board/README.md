@@ -48,69 +48,82 @@ sh hardware/mockup-2x2/analog-board/export.sh   # gerbers + percage + zip
 ```
 
 Le générateur route la carte (routeur A* maison sur grille 0,125 mm,
-légalité par transformée de distance, seeds structurels vérifiés
-contre la géométrie réelle au build), puis applique trois passes
-formelles : la passe de garantie retire toute piste ou via qui
-passerait sous la garde de fabrication de 0,127 mm (DRC exact shapely)
-en réouvrant la liaison concernée ; la passe de finition à géométrie
-exacte (`tools/analoggen/finish.py`, sans grille) referme ensuite les
-écarts restants par la jonction la plus simple (segment, coudes en L,
-coudes en Z balayés, variantes face arrière à un ou deux vias),
-chaque jonction restant à 0,132 mm de tout cuivre étranger ; le plan
-de masse est enfin calculé sur le cuivre final. La carte générée est
-donc toujours DRC zéro, et la liste résiduelle est courte.
+légalité par transformée de distance, routes structurelles vérifiées
+contre la géométrie réelle au build), puis quatre passes finissent le
+travail sur le cuivre fini, en géométrie exacte :
+
+1. **garantie** : toute piste ou via passant sous la garde de
+   fabrication de 0,127 mm est retirée et sa liaison réouverte ;
+2. **finition** (`tools/analoggen/finish.py`) : chaque net encore en
+   morceaux reçoit le raccord le plus simple qui tienne (segment,
+   coude, Z balayé, variantes face arrière à un ou deux vias), tenu à
+   0,15 mm de tout cuivre étranger, la garde que le DRC de KiCad
+   exige. Quand aucun ne passe, un **labyrinthe**
+   (`tools/analoggen/maze.py`) cherche sur une trame de 0,05 mm, deux
+   couches, en payant chaque via et chaque coude ; le chemin trouvé
+   est revérifié en géométrie exacte avant d'être posé ;
+3. **plan de masse** : calculé comme le calcule le remplisseur de
+   KiCad, îlot par îlot (garde 0,3 mm, largeur minimale 0,2 mm), et
+   non comme une bande idéale ;
+4. **finition de la masse** : chaque groupe de pastilles de masse que
+   le plan ne rejoint pas reçoit sa descente vers l'îlot qui porte le
+   reste. Le cuivre de masse n'est pas étranger à son propre plan,
+   donc ces raccords ne le déplacent pas : le plan se calcule une
+   fois, après le routage des signaux.
+
+La connexité est enfin vérifiée couche par couche, plan compris
+(`tools/analoggen/connect.py`, qui emprunte la comptabilité du
+quadrant) : **le compte du build est celui que KiCad affiche**.
 
 ## État mesuré au 19/09/2026
 
 Cette carte est la référence de la chaîne analogique, retirée du plan
 par l'[ADR 0010](../../../docs/adr/0010-plateau-8x8-base-interchangeable-horloge.md) :
-le banc et le quadrant 2 x 2 la remplacent, et eux sont au DRC zéro. Ce
-qu'elle porte encore, mesuré par `tools/drc.py` (zones remplies) :
+le banc et le quadrant 2 x 2 la remplacent. Mesures de `tools/drc.py`
+(zones remplies) sur le fichier commité :
 
 | Contrôle | Résultat |
 |---|---|
-| Éléments non connectés | 28, dont 19 de masse, 4 de la chaîne LED, puis M1_A, M2_A, LED_DIN5, BUCK_FB et 5V_BUCK_FILT |
+| Éléments non connectés | **0** (557 pistes, 296 vias) |
 | Chevauchements de courtyard | 49 |
 | Cuivre trop près du bord | 1 |
+| Gardes sous la valeur de la classe de nets | 0 |
 
-KiCad affiche 54 non routés à l'ouverture parce que ses zones ne sont
-pas encore remplies : remplir les plans (touche B) ramène le compte à
-28. La phrase « DRC zéro » des sections ci-dessous date de la
-génération de référence et ne décrit plus le fichier commité.
+KiCad affiche un chevelu plus long à l'ouverture parce que ses zones
+ne sont pas encore remplies : remplir les plans (touche B) donne le
+compte ci-dessus.
 
-Le détail des 28, par net, tel que le rapport les nomme :
+Les deux défauts qui restent ne sont pas des liaisons :
 
-| Net | Signalements | Ce qui reste ouvert |
+- **49 chevauchements de courtyard**, hérités du placement
+  (connecteurs contre trous de fixation, découplages serrés contre
+  leur boîtier). Les corriger demande de déplacer des composants, donc
+  de retirer la carte au sort du routage ; la carte est retirée du
+  plan, le placement n'a pas été repris.
+- **la broche 2 du jack J1**, 1 mm en dehors du contour. C'est un
+  défaut de placement réel, pas un faux positif : `PLACEMENTS["J1"]`
+  dans `tools/analoggen/pcb.py` est à corriger avant toute commande.
+
+## Ce que le routeur ne trouve pas, et ce qui le remplace
+
+Le build imprime les raccords posés et la liste exacte de ce qui
+reste. Les liaisons que la grille ne sait pas voir sont dessinées dans
+le générateur (`_hand_seeds`), avant le routage, donc le routeur
+travaille autour d'elles ; chacune est revérifiée au build contre la
+géométrie réelle des pads et contre les autres routes structurelles.
+
+| Liaison | Pourquoi la grille échoue | Ce qui la remplace |
 |---|---|---|
-| GND | 19 | des pastilles et des morceaux de masse que les plans ne rejoignent pas : U1.6 et U1.7 (masse du buck), U2.2 (LDO), U4.5 (AD8421), U8.1 (tampon LED), C1.2, C12.2, C27.2 (découplages), Q12.2 et Q13.2 (sources des FET d'excitation), D14.1, J4.2, J4.19, J5.4, plus huit vias et huit tronçons orphelins |
-| LED_DINB | 4 | R68.1, la sortie du tampon U8 vers la résistance série de la chaîne LED |
-| LED_DIN5 | 1 | R68.2, l'autre borne de la même résistance, vers le joint des bobines |
-| M1_A | 1 | la voie A de la bobine 1, vers la broche 12 du mux U3 |
-| M2_A | 1 | la voie A de la bobine 2, vers son écrêteur D12 |
-| BUCK_FB | 1 | le retour de tension du buck, broche 5 de U1 |
-| 5V_BUCK_FILT | 1 | la broche 1 du cavalier JP1, celui qui choisit la source du rail 5VA |
-
-Deux de ces restes sont fonctionnellement bloquants et pas seulement
-cosmétiques : la masse du buck (U1.6, U1.7) et son retour de tension
-(BUCK_FB). Sans eux le régulateur ne régule pas. Les autres sont la
-suite connue de la liste de finition ci-dessous.
-
-## Liste de finition (chevelu affiché dans KiCad)
-
-Le build imprime les jonctions posées et la liste exacte des restes.
-À la génération de référence (499 pistes, 259 vias, DRC zéro, 12
-jonctions posées par la finition, LED de camp entièrement câblées :
-tampon, joint 12 broches, 5V) il reste sept nets à fermer à la main
-dans la bande des cellules et le coin buck : M1_A et M2_A (broches 12
-et 14 du mux vers les écrêteurs), C2_A, C3_B (ponts courts), BUCK_FB,
-BUCK_EN et VREF (raccords de morceaux). Ce sont les couloirs saturés
-connus (cuivre routé et verticale arrière M4_B) : des détours
-multi-segments qu'un humain trace en un quart d'heure dans pcbnew,
-chevelu affiché. Relancer ensuite le DRC KiCad et refaire l'export :
-les gerbers du dépôt sont générés depuis la carte telle quelle.
+| C2_A, la ligne A de la cellule 2 | la descente vers l'écrêteur et la traversée de la rangée de résistances sont prises quand vient son tour | couloir ouest de la cellule (1,55 mm libre) et traversée sous la rangée, face arrière, comme le routeur le fait de lui même sur la cellule 1 |
+| C3_B, la ligne B de la cellule 3 | idem, rangée de la cellule 3 | canal de 0,86 mm entre les deux rangées de la cellule |
+| M2_A, la prise A de la cellule 2 | le seul passage fait 1,44 mm entre la résistance de polarisation et la diode du rail 5VA | montée verticale à x = 35,54 |
+| M1_A et M4_A, deux broches du mux | leur nappe traverse la bande des cellules sur 25 mm : jamais le choix local le moins cher | échappée de 2,2 mm vers la bande libre au nord des cellules, le reste au routeur (le labyrinthe ferme les 25 mm) |
+| VREF, la résistance de fuite de la cellule 1 | sa pastille est murée par la ligne B voisine, 0,2 mm de libre | montée droite vers le rail VREF, posée avant |
+| BUCK_FB et BUCK_PG, deux broches du buck | le coin du régulateur n'a que deux sorties et le rail 5V les prend | une voie chacune vers l'ouest, puis traversée de l'échappée d'enable par la face arrière |
+| GND de U3, de Q11, de J4 et du connecteur de bobines | le plan de masse n'atteint pas ces pastilles une fois les signaux routés | une descente dédiée par pastille, vers une zone que le plan garde entière |
 
 Commande JLCPCB : 2 couches, 1,6 mm, 1 oz, assemblage face top avec
 `jlc-bom.csv` et `jlc-cpl.csv` (vérifier les correspondances LCSC dans
 leur prévisualisation, et l'orientation des diodes et du régulateur
-sur le rendu avant de valider). Ne commander qu'après la finition du
-chevelu ci-dessus.
+sur le rendu avant de valider). Corriger d'abord le placement du jack
+J1, dont une broche sort du contour.
