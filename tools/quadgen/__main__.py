@@ -33,6 +33,9 @@ def main(argv: list[str] | None = None) -> int:
     build.add_argument(
         "--no-strip", action="store_true", help="place the front end but do not route it"
     )
+    build.add_argument(
+        "--resume", default=None, help="a QUADGEN_DUMP file: finishing pass and checks only"
+    )
     args = parser.parse_args(argv)
 
     cfg = load_config(args.config)
@@ -41,7 +44,12 @@ def main(argv: list[str] | None = None) -> int:
     name = project_name(cfg, args.reduced)
     out = Path(args.out or f"hardware/{name}")
     out.mkdir(parents=True, exist_ok=True)
-    result = build_quadrant(cfg, strip=not args.no_strip)
+    if args.resume:
+        from .board import Builder
+
+        result = Builder.resume(args.resume)
+    else:
+        result = build_quadrant(cfg, strip=not args.no_strip)
     (out / f"{name}.kicad_pcb").write_text(result.board.serialize(), encoding="utf-8")
     sch = quadrant_schematic(cfg, result.circuit, result.chain, name)
     sch.verify(result.circuit)

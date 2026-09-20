@@ -68,10 +68,18 @@ def main(argv: list[str] | None = None) -> int:
     build.add_argument("--config", default=str(DEFAULT_CONFIG_PATH))
     build.add_argument("--out", default=None)
     build.add_argument("--render", default=None)
+    build.add_argument(
+        "--resume", default=None, help="a BOARDGEN_DUMP file: finishing pass and checks only"
+    )
     args = parser.parse_args(argv)
     cfg = load_config(args.config)
     fn, spec, groups_fn = BOARDS[args.board]
-    result = fn(cfg)
+    if args.resume:
+        from .core import GenericBoard
+
+        result = GenericBoard.resume(args.resume)
+    else:
+        result = fn(cfg)
     out = Path(args.out) if args.out else Path("hardware") / args.board
     write_outputs(result, groups_fn(), out, args.render)
     return 1 if (result.open_nets or result.clearance_errors) else 0

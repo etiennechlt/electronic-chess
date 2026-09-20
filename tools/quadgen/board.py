@@ -1299,7 +1299,36 @@ class Builder:
 
             hand_routes(self)
             self.strip_routing()
+            self.dump(os.environ.get("QUADGEN_DUMP"))
             self.finish_routes()
+        return self._checks()
+
+    def dump(self, path: str | None) -> None:
+        """Pickles the builder once the strip is routed (QUADGEN_DUMP=path):
+        the finishing pass and the checks, seconds, can then be rerun from
+        the file (`resume`) without the half hour of routing."""
+        if not path:
+            return
+        import pickle
+
+        for name in ("_clash_key", "_clash_index"):
+            if hasattr(self, name):
+                delattr(self, name)
+        with open(path, "wb") as fh:
+            pickle.dump(self, fh, protocol=pickle.HIGHEST_PROTOCOL)
+
+    @classmethod
+    def resume(cls, path: str) -> BuildResult:
+        """The build from a dump: finishing pass, pour, outline, checks."""
+        import pickle
+
+        with open(path, "rb") as fh:
+            b = pickle.load(fh)
+        if b.with_strip:
+            b.finish_routes()
+        return b._checks()
+
+    def _checks(self) -> BuildResult:
         self.strip_pour()
         self.outline()
         self.res.clearance_errors = self.clearance_check()

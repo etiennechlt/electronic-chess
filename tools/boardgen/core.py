@@ -723,9 +723,36 @@ class GenericBoard:
         self.res.finish_log = log
 
     def finish(self, texts: list[tuple[str, float, float, str, float]] = ()) -> Result:
+        self._texts = list(texts)
+        self.dump(os.environ.get("BOARDGEN_DUMP"))
+        return self._finish_tail()
+
+    def dump(self, path: str | None) -> None:
+        """Pickles the board once routed (BOARDGEN_DUMP=path): the finishing
+        pass and the checks, seconds, can then be rerun from the file
+        (`resume`) without the routing."""
+        if not path:
+            return
+        import pickle
+
+        if hasattr(self, "_items_cache"):
+            delattr(self, "_items_cache")
+        with open(path, "wb") as fh:
+            pickle.dump(self, fh, protocol=pickle.HIGHEST_PROTOCOL)
+
+    @classmethod
+    def resume(cls, path: str) -> Result:
+        """The build from a dump: finishing pass, outline, checks."""
+        import pickle
+
+        with open(path, "rb") as fh:
+            gb = pickle.load(fh)
+        return gb._finish_tail()
+
+    def _finish_tail(self) -> Result:
         sp = self.spec
         self.board.gr_rect(0.0, 0.0, sp.width, sp.height, "Edge.Cuts")
-        for text, x, y, layer, size in texts:
+        for text, x, y, layer, size in getattr(self, "_texts", ()):
             self.board.gr_text(text, x, y, layer, size)
         gnd = getattr(self, "_gnd", "GND")
         self.finish_routes(gnd)

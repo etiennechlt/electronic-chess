@@ -82,7 +82,7 @@ class Rules:
     hole_to_hole: float = 0.25  # drill edge to drill edge
     thin: float | None = None  # a thinner joint tried when the first fails
     small_via: tuple[float, float] | None = None  # a finer via tried when the first fails
-    budget_s: float = 90.0  # seconds spent on one net before it is left open
+    budget_s: float = 60.0  # seconds spent on one net before it is left open
 
     @property
     def route_layers(self) -> tuple[str, ...]:
@@ -334,8 +334,9 @@ class _Joiner:
                     break
 
     def single_via(self, net, layer_a, pa, ga, layer_b, gb):
-        """Stub and via on layer A, run on layer B straight onto B copper."""
-        for head, va in self.stub_via(net, layer_a, pa, ga):
+        """Stub and via on layer A, run on layer B straight onto B copper;
+        a few via spots, then the maze is the better search."""
+        for head, va in islice(self.stub_via(net, layer_a, pa, ga), VIA_SPOTS):
             p2 = nearest_points(Point(va), gb)[1]
             for run in _paths(va, (p2.x, p2.y)):
                 if self._legal(net, layer_b, run, (gb,)) is not None:
@@ -508,6 +509,8 @@ def finish_pass(
                     key=lambda t: t[0],
                 )[:MAX_PAIRS]
                 dist = 0.0
+                # the simple joints of every width and via first, the mazes
+                # only once none of them passes: a maze costs seconds
                 for width, via in _attempts(rules):
                     joiner = _Joiner(rules, obs, width, via)
                     for d, i, j in pairs:
@@ -517,6 +520,8 @@ def finish_pass(
                             break
                     if plan:
                         break
+                for width, via in _attempts(rules) if plan is None else ():
+                    joiner = _Joiner(rules, obs, width, via)
                     for d, i, j in pairs[:MAZE_PAIRS]:
                         plan = maze_join(
                             net,
