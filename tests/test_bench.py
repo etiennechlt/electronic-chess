@@ -95,3 +95,19 @@ def test_bench_board_is_closed(cfg):
     seeded = {t.net for t in res.tracks}
     assert {"MUX_EN_L", "PULSE_EN", "3V3", "SW", "VIN", "AMP_OUT1", "5V_LED"} <= seeded
     assert res.routed_nets == len({p.net for p in res.pads if p.net}) - 0  # every net closed
+
+
+def test_a_routing_snapshot_resumes_to_the_same_board(cfg, tmp_path, monkeypatch):
+    """BOARDGEN_DUMP writes the routed board to a file; `resume` runs the
+    finishing pass and the checks from it and lands on the same board as
+    the build that wrote it."""
+    from boardgen.bench import build_bench
+    from boardgen.core import GenericBoard
+
+    dump = tmp_path / "bench.pkl"
+    monkeypatch.setenv("BOARDGEN_DUMP", str(dump))
+    res = build_bench(cfg)
+    assert dump.is_file()
+    again = GenericBoard.resume(str(dump))
+    assert again.board.serialize() == res.board.serialize()
+    assert again.open_nets == res.open_nets == []
