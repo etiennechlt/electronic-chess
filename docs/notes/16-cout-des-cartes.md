@@ -30,6 +30,14 @@ empilement actuels, nets ouverts ou non, le prix n'en dépend pas),
 avec le skill `operate-jlcpcb-order` de la
 [note 15](15-skills-embarques.md).
 
+**Mise à jour du 20/09/2026.** La part du frontal dans la facture est
+mesurée, et non plus supposée : sur le panier complet du plateau
+(quatre quadrants et un cerveau, 1 399 composants, 180 USD),
+**l'ADG1607, l'AD8421 et l'OPA2810 font 63,2 % du prix des composants**,
+détail dans la [fiche d'approvisionnement du plateau](../bom-plateau.md).
+La section 2 ci dessous est donc bien le sujet à trancher, et la
+section 3, le format des cartes, en est un second.
+
 ## 2. Décision amont : différentiel vrai ou single-ended
 
 Le frontal actuel est câblé en différentiel vrai : deux ADG1607

@@ -29,6 +29,12 @@ pas.
   [protocole M1 à M11](../measurements/protocol.md).
 - **Savoir quoi faire ensuite** : la [note 07](notes/07-etat-et-reste-a-faire.md),
   feuille de route en deux phases (sans chariot d'abord, chariot ensuite).
+- **Acheter les composants du plateau** : la
+  [fiche d'approvisionnement du plateau](bom-plateau.md) donne la liste
+  des 1 399 composants de quatre quadrants et d'un cerveau, ce qu'ils
+  coûtent chez LCSC et chez Mouser, les neuf codes LCSC à corriger, les
+  risques d'approvisionnement et les leviers chiffrés. Elle se regénère
+  par `tools/bomagg.py`.
 - **Commander les cartes chez JLCPCB** : la
   [note 23](notes/23-commande-jlcpcb.md) dit ce qui part et ce qui ne
   part pas, les fichiers et leur empreinte, les options écran par

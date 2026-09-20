@@ -92,7 +92,11 @@ de la [note 20](docs/notes/20-tuto-banc.md) se commande tel quel. La
 gardée comme référence de la chaîne, est fermée elle aussi et porte
 son archive. Ce qui se commande, avec quelles options et ce qu'il
 manque aux autres cartes : la
-[note 23](docs/notes/23-commande-jlcpcb.md).
+[note 23](docs/notes/23-commande-jlcpcb.md). Ce qu'il faut acheter pour
+monter le plateau (les 1 399 composants de quatre quadrants et d'un
+cerveau, leur prix chez LCSC et chez Mouser, les paniers prêts à
+téléverser) : la [fiche d'approvisionnement du plateau](docs/bom-plateau.md),
+regénérée par `tools/bomagg.py`.
 
 | Cerveau (STM32G474, 4 couches) | Puissance (3S, BQ24610, BQ76920) |
 |---|---|
@@ -163,6 +167,7 @@ décisions formelles sont dans [`docs/adr/`](docs/adr/README.md).
 | `chessboard_calc/` | calculs paramétriques et garde-fous | 0 |
 | `tools/coilgen`, `tools/analoggen` | générateurs KiCad des deux cartes de la maquette | 1 |
 | `tools/drc.py`, `tools/plot.py`, `tools/gerbers.py` | DRC, tracés de faces et gerbers de fabrication, par le `pcbnew` de KiCad | 1 à 2 |
+| `tools/fabcheck.py`, `tools/bomagg.py` | audit avant commande, et liste d'achat agrégée avec ses prix | 1 à 2 |
 | `tools/quadgen`, `hardware/quadrant/` | générateur et projet KiCad du quadrant 4 x 4 | 2 |
 | `tools/boardgen`, `hardware/{brain,power,motion,clock}/` | générateur générique et projets KiCad du cerveau, de la puissance, des moteurs et de l'horloge | 2 |
 | `hardware/mockup-2x2/` | projets KiCad (`.kicad_pro` à ouvrir), gerbers, BOM, guides | 1 |

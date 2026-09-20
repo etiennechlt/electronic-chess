@@ -388,6 +388,25 @@ quatre commandes.
   éventails dessinés à la main, un à deux jours. Le build du 20/09 est
   commité, sans archive.
 
+## 20/09/2026, la liste d'achat du plateau
+
+- `tools/bomagg.py` agrège les BOM générés d'un jeu de cartes avec leur
+  multiplicateur : le plateau fait **1 399 composants en 71 lignes
+  d'achat**, 1 584 unités avec la règle de rechange. Les prix vivent
+  dans `docs/prix-plateau.csv`, une ligne, un statut, une source ; la
+  [fiche](../bom-plateau.md) explique, l'outil compte.
+- Les trois paniers : 138 USD tout LCSC mais incomplet (l'OPA2810 n'y
+  est pas), 379 USD tout Mouser mais incomplet aussi (la WS2812B n'y est
+  pas), **180 USD en prenant le moins cher ligne à ligne**, soit 199 EUR
+  TTC. Un quadrant coûte 32,44 USD de composants, le cerveau 18,63 USD :
+  la note 23 les surestimait d'un tiers.
+- Deux constats qui commandent la suite : **l'ADG1607, l'AD8421 et
+  l'OPA2810 font 63,2 % du panier** (la mesure que la note 16 attendait
+  pour rouvrir le single-ended), et **neuf codes LCSC sur les cartes du
+  plateau sont faux, manquants ou pointent une autre variante**, dont le
+  FH12-16S obsolète et en rupture. Même famille d'erreur qu'au point 11
+  de la note 22, détectée cette fois par un test.
+
 ## Où en est la ligne de temps
 
 Phase 0 faite ; la phase 1 (maquette) est conçue mais ne sera pas

@@ -297,6 +297,13 @@ son archive : c'est le chiffre de référence que la
 
 ### 8.2 Les composants
 
+**Repris le 20/09 par la [fiche d'approvisionnement du plateau](../bom-plateau.md)**,
+qui agrège les BOM des cinq cartes, relève les prix des deux canaux et
+sort les paniers prêts à téléverser. Elle corrige les estimations de ce
+paragraphe d'un tiers vers le bas (un quadrant 32,44 USD de composants,
+le cerveau 18,63 USD) et trouve neuf codes LCSC faux ou manquants. Les
+tableaux ci dessous sont l'estimation d'origine, gardée pour mémoire.
+
 Par carte, quantités de `bom.csv`, prix unitaires estimés :
 
 | Quadrant 4 x 4 | Quantité | Unitaire (EUR) | Total (EUR) |
