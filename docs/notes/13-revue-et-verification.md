@@ -52,6 +52,12 @@ de référence dans `hardware/mockup-2x2/`.
 
 ## 4. Commander
 
+Le runbook de commande, carte par carte, avec les options écran par
+écran, la fabricabilité mesurée et ce qui manque pour un ordre
+d'assemblage, est la [note 23](23-commande-jlcpcb.md). L'audit se
+rejoue en une commande, `python3 tools/fabcheck.py`. Ce qui suit reste
+vrai et le complète.
+
 - Quadrant : 4 couches, 1,6 mm, 1 oz, assemblage face top ; commander
   quatre exemplaires du même fichier. `jlc-bom.csv` et `jlc-cpl.csv`
   sont dans `hardware/quadrant/`, gerbers par `tools/gerbers.py`
@@ -62,7 +68,11 @@ de référence dans `hardware/mockup-2x2/`.
   `hardware/bench/bench-gerbers.zip` et
   `hardware/quadrant-2x2/quadrant-2x2-gerbers.zip`, et la carte
   analogique de maquette,
-  `hardware/mockup-2x2/analog-board/analog-board-gerbers.zip`.
+  `hardware/mockup-2x2/analog-board/analog-board-gerbers.zip`. Chacune
+  porte son empreinte `*-gerbers.sha256`, à vérifier par
+  `sha256sum -c` avant de téléverser. La carte bobines de la maquette
+  n'en a plus : son archive ne correspondait plus à sa carte
+  ([note 22](22-erreurs-de-conception.md), point 10).
 - Cerveau : 4 couches. Puissance, moteurs, horloge : 2 couches.
 - Les codes LCSC du BOM sont des candidats saisis hors ligne : vérifier
   chaque ligne dans la prévisualisation JLCPCB (mêmes réserves que pour

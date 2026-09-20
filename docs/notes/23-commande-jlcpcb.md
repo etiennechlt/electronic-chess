@@ -136,11 +136,15 @@ Trois choix, à trancher explicitement :
 |---|---|---|
 | `mockup-2x2/coil-board` | 251 violations bloquantes au DRC, 2 éléments non connectés | fermer le routage, dédupliquer les vias superposés ; carte retirée du plan (ADR 0010) |
 | `mockup-2x2/analog-board` | routage fermé, DRC zéro, archive à jour | rien techniquement, mais elle ne sert qu'avec la carte bobines ci dessus ; carte retirée du plan |
-| `brain` | 23 liaisons ouvertes | fermeture du routage, puis DRC et gerbers |
-| `power` | 12 liaisons ouvertes | idem, dont le net `BAT-` entier (15 morceaux) |
-| `clock` | 11 liaisons ouvertes | idem, dont `VBUS` (7 morceaux, pastilles USB-C inatteignables par le routeur) |
+| `brain` | 141 éléments non connectés au DRC (23 nets ouverts au build) | fermeture du routage, puis DRC et gerbers |
+| `power` | 69 éléments non connectés (12 nets, dont `BAT-` entier, 15 morceaux) | idem |
+| `clock` | 51 éléments non connectés (11 nets, dont `VBUS`, 7 morceaux : pastilles USB-C inatteignables par le routeur) | idem |
 | `quadrant` (4 x 4) | jamais régénéré depuis la comptabilité exacte | régénérer, fermer, puis gerbers |
-| `motion` | aucun code LCSC, aucune archive | phase 2, ni commandée ni testée (note 07) |
+| `motion` | 27 éléments non connectés et 24 perçages trop proches | phase 2, ni commandée ni testée (note 07) |
+
+Chiffres mesurés sur les fichiers commités par
+`/usr/bin/python3 tools/drc.py`, le 19/09/2026. Un net ouvert compte
+plusieurs éléments non connectés, d'où les deux nombres.
 
 Les quatre cartes de la phase 1 (quadrant 4 x 4, cerveau, puissance,
 horloge) partagent la même cause : leur routeur pose ce qu'il sait

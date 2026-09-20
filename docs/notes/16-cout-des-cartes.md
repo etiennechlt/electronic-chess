@@ -6,6 +6,15 @@ lequel les décisions doivent tomber, pour que la discussion reprenne
 là où elle s'est arrêtée. Les cotes viennent de `config/board.yaml`
 (sections `plateau`, `measurement`, `gap`).
 
+**Mise à jour du 19/09/2026.** L'audit avant commande est fait
+([note 23](23-commande-jlcpcb.md)) : le quadrant 2 x 2 et le banc sont
+commandables en l'état, en cartes nues, et c'est par eux que passe la
+validation du frontal avant tout devis de quadrant 4 x 4. Deux
+paramètres de prix sont maintenant chiffrés côté conception : les vias
+d'éventail de 0,45 mm passent dans le procédé standard (aucun
+surcoût), et le cuivre interne 1 oz est une option payante que le
+modèle de spirale suppose (0,5 oz coûte 50 % d'ESR et un tiers du Q).
+
 ## 1. Le poste qui motive la réflexion
 
 Le quadrant : 220 x 200 mm en 4 couches (4 p plus la bande de frontal

@@ -320,12 +320,25 @@ qui recouvre un via du même net, parce que deux pastilles qui se
 recouvrent sont un seul cuivre et deux forets qui se rapprochent sont
 un défaut de fabrication).
 
-**L'état.** Ouvert, et assumé : la carte bobines de la maquette est
-retirée du plan par l'[ADR 0010](../adr/0010-plateau-8x8-base-interchangeable-horloge.md).
-Elle n'a plus d'archive commitée (point 10) et le garde de
-`tools/gerbers.py` refuse d'en produire une. Le jour où cette carte
-repasse en fabrication, la déduplication de vias du générateur
-générique est à porter dans `coilgen`.
+**Le même défaut ailleurs.** La carte moteurs en porte 24, avec des
+distances de 0,03 à 0,19 mm pour un minimum de 0,25 : là le routeur
+tient bien un keepout de perçage autour de chaque pastille traversante
+(`HOLE_TO_HOLE_MM` dans `tools/boardgen/core.py`), donc ces vias
+viennent d'ailleurs que de la grille, probablement des éventails et des
+amorces posés sans repasser par ce contrôle. La cause exacte n'est pas
+établie, et c'est pour cela qu'aucune correction n'est écrite : une
+correction sans cause est une deuxième erreur.
+
+**L'état.** Ouvert sur les deux cartes, et assumé pour l'instant : la
+carte bobines de la maquette est retirée du plan par
+l'[ADR 0010](../adr/0010-plateau-8x8-base-interchangeable-horloge.md),
+la carte moteurs appartient à la phase 2 et n'est ni commandée ni
+testée. Aucune des deux n'a d'archive commitée (point 10) et le garde
+de `tools/gerbers.py` refuse d'en produire une, leur routage n'étant
+pas fermé. Le jour où l'une repasse en fabrication : porter la
+déduplication de vias du générateur générique dans `coilgen`, et
+vérifier les perçages en géométrie exacte comme les gardes de cuivre le
+sont déjà, plutôt que sur la grille du routeur.
 
 ## Les contrôles, et la commande qui les fait tourner
 
