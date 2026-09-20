@@ -136,24 +136,27 @@ Trois choix, à trancher explicitement :
 |---|---|---|
 | `mockup-2x2/coil-board` | 251 violations bloquantes au DRC, 2 éléments non connectés | fermer le routage, dédupliquer les vias superposés ; carte retirée du plan (ADR 0010) |
 | `mockup-2x2/analog-board` | routage fermé, DRC zéro, archive à jour | rien techniquement, mais elle ne sert qu'avec la carte bobines ci dessus ; carte retirée du plan |
-| `brain` | 141 éléments non connectés au DRC (23 nets ouverts au build) | fermeture du routage, puis DRC et gerbers |
+| `brain` | routage fermé le 20/09, DRC zéro, archive et empreinte commitées | rien pour des cartes nues ; codes LCSC à vérifier avant un assemblage |
 | `power` | 69 éléments non connectés (12 nets, dont `BAT-` entier, 15 morceaux) | idem |
 | `clock` | 51 éléments non connectés (11 nets, dont `VBUS`, 7 morceaux : pastilles USB-C inatteignables par le routeur) | idem |
-| `quadrant` (4 x 4) | jamais régénéré depuis la comptabilité exacte | régénérer, fermer, puis gerbers |
+| `quadrant` (4 x 4) | régénéré le 20/09 : 47 nets ouverts, 52 éléments non connectés | éventails à la main des multiplexeurs et des décodeurs ([note 04](04-routeur-et-garanties.md)), puis gerbers |
 | `motion` | 27 éléments non connectés et 24 perçages trop proches | phase 2, ni commandée ni testée (note 07) |
 
 Chiffres mesurés sur les fichiers commités par
-`/usr/bin/python3 tools/drc.py`, le 19/09/2026. Un net ouvert compte
+`/usr/bin/python3 tools/drc.py`, le 19/09/2026 (cerveau et quadrant
+4 x 4 : le 20/09). Un net ouvert compte
 plusieurs éléments non connectés, d'où les deux nombres.
 
-Les quatre cartes de la phase 1 (quadrant 4 x 4, cerveau, puissance,
-horloge) partagent la même cause : leur routeur pose ce qu'il sait
-poser et laisse le reste ouvert, sans la passe de finition ni le
-labyrinthe qui ont fermé la carte analogique
-([note 04](04-routeur-et-garanties.md)). Le travail est identifié :
-brancher ces deux passes sur `tools/boardgen` et `tools/quadgen`, puis
-tracer les liaisons structurelles restantes comme sur la carte
-analogique. C'est le lot suivant, et il n'est pas fait.
+Le cerveau a été fermé le 20/09 avec ce lot : passe de finition
+partagée, masses en premier, éventails et VBAT dessinés à la main,
+nets de liaison routés en premier, rip-up et reroutage des nets murés
+([note 04](04-routeur-et-garanties.md)). Puissance et horloge attendent
+le même traitement, court maintenant que l'outillage existe. Le
+quadrant 4 x 4 est un cas à part : ses 47 nets ouverts viennent de
+trois champs d'échappées que rien ne traverse (multiplexeurs face à
+face, décodeurs à une rangée de vias, colonne d'amplification), et il
+lui faut des éventails dessinés à la main comme aux liens du cerveau,
+un à deux jours.
 
 ## 5. Cartes nues maintenant, assemblage plus tard
 
@@ -287,8 +290,9 @@ Ordre de grandeur du prix des cartes, extrapolé du devis du 20/09
 | 5 cerveaux, 480 cm² | 28 à 35 |
 | Port, 2 kg environ | 25 à 40 |
 
-Le devis réel se demande en téléversant `quadrant-gerbers.zip` et
-`brain-gerbers.zip` : c'est le chiffre de référence que la
+Le devis réel du cerveau se demande en téléversant
+`brain-gerbers.zip`, commité le 20/09 ; celui du quadrant 4 x 4 attend
+son archive : c'est le chiffre de référence que la
 [note 16](16-cout-des-cartes.md) attend depuis le 07/09.
 
 ### 8.2 Les composants

@@ -50,6 +50,8 @@ def write_outputs(result: Result, groups, out: Path, render: str | None) -> None
         encoding="utf-8",
     )
     print(f"wrote {out / (name + '.kicad_pcb')}: {summary(result)}")
+    for line in result.rip_up_log:
+        print(f"  {line}")
     for line in result.open_nets[:40]:
         print(f"  open net: {line}")
     for line in result.clearance_errors[:20]:

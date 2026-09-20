@@ -100,14 +100,30 @@ PYTHONPATH=tools .venv/bin/python -m quadgen build --render docs/images/quadrant
 
 ## Résultat du build
 
-Généré par `python -m quadgen build` :
+Généré par `python -m quadgen build` le 20/09/2026, avec la comptabilité
+de connexité exacte, les descentes de masse en premier et la passe de
+finition partagée ([note 04](../../docs/notes/04-routeur-et-garanties.md)) :
 
-| Bobines | LED | Segments | Vias | Routes LED et alimentation ouvertes | Nets du frontal ouverts | Défauts d'isolement |
-|---|---|---|---|---|---|---|
-| 16 | 32 | 31954 | 468 | 0 | 9 | 0 |
+| Bobines | LED | Segments | Vias | Raccords de la passe | Routes LED et alimentation ouvertes | Nets ouverts | Défauts d'isolement |
+|---|---|---|---|---|---|---|---|
+| 16 | 32 | 32926 | 838 | 22 | 0 | 47 | 0 |
 
-Nets du frontal à finir dans pcbnew (20 pastilles) : MUXB_OUT, RG_A,
-INA_INM, RG_B, INA_INP, LP_OUT, OUT_STAGE, 5VA (4 pastilles), GND
-(7 pastilles, les broches de masse des BAV99W surtout).
+Nets ouverts, par cause (le détail et le plan sont dans la note 04,
+section « Ce que le routeur ne peut pas trouver (quadrant 4 x 4) ») :
 
-DRC KiCad 7 (`tools/drc.py`, zones remplies) : 733 signalements, 347 éléments non connectés (les nets ouverts ci-dessus), erreurs restantes : aucune ; avertissements sans effet sur la fabrication : lib_footprint_issues 199, silk_over_copper 199, silk_overlap 199, via_dangling 73, track_dangling 58, silk_edge_clearance 5. Le contrôle d'isolement exact du générateur ne signale aucun défaut. Les vias d'éventail des boîtiers fins font 0,45 mm (perçage 0,2 mm), dans les capacités standard de JLCPCB, à confirmer sur le devis.
+- 21 lignes M des cellules vers les multiplexeurs (A et B), plus
+  MUXA_OUT, MUX_A0 et MUX_A2 : les champs d'échappées des deux LFCSP-32
+  au pas de 0,5 mm, dont seuls les vias des bouts de rangée sont
+  atteignables ;
+- 9 sorties DRIVE du 74HC4514 et 6 sorties DAMP du 74HC154 : une rangée
+  de vias au pas de 0,65 mm, couloirs perpendiculaires à la bande ;
+- la colonne d'amplification (LP_IN, LP_OUT, LP_FB, OUT_FB, OUT_STAGE),
+  PULSE_EN, 5VA en quatre pièces, sept îlots du plan de masse.
+
+Aucune archive de fabrication : `tools/gerbers.py` refuse une carte au
+routage ouvert. Le lot suivant, les éventails dessinés à la main des
+multiplexeurs et des décodeurs sur le motif du cerveau, est décrit dans
+la note 04 et planifié dans la
+[note 07](../../docs/notes/07-etat-et-reste-a-faire.md).
+
+DRC KiCad 7 (`tools/drc.py`, zones remplies) : 688 signalements, 52 éléments non connectés (les nets ouverts ci-dessus), erreurs restantes : aucune ; avertissements sans effet sur la fabrication : lib_footprint_issues 199, silk_over_copper 199, silk_overlap 199, track_dangling 67, via_dangling 19, silk_edge_clearance 5. Le contrôle d'isolement exact du générateur ne signale aucun défaut. Les vias d'éventail des boîtiers fins font 0,45 mm (perçage 0,2 mm), dans les capacités standard de JLCPCB, à confirmer sur le devis.

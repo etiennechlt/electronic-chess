@@ -370,6 +370,24 @@ quatre commandes.
   430 à 480 EUR assemblé, dont 120 à 140 EUR de silicium analogique
   pour les quatre frontaux.
 
+- Cerveau fermé, le soir : VBAT posé à la main sur la face arrière
+  (bord sud, puis une colonne à l'ouest du lien puissance, jusqu'au
+  fusible), les LED d'état à côté de leurs résistances, le bus, les
+  alimentations, les sorties analogiques et l'UART de l'isolateur
+  routés en premier, et un rip-up et reroutage des nets murés dans
+  `boardgen` (un net à la fois, ses voisins soulevés, la levée gardée
+  si elle ferme quelque chose). Douze builds de vingt minutes dans la
+  journée. Résultat : 0 net ouvert, 0 élément non connecté au DRC de
+  KiCad, `brain-gerbers.zip` et son empreinte commités ; le cerveau
+  rejoint le 2 x 2 et le banc parmi les cartes commandables nues.
+- Quadrant 4 x 4 : deux variantes de plus (broches fines en premier,
+  face arrière moins chère), 47 nets ouverts dans tous les cas. Le
+  diagnostic est écrit (note 04) : trois champs d'échappées, les
+  multiplexeurs LFCSP face à face, les décodeurs à une rangée de vias,
+  la colonne d'amplification ; le remède est celui du cerveau, des
+  éventails dessinés à la main, un à deux jours. Le build du 20/09 est
+  commité, sans archive.
+
 ## Où en est la ligne de temps
 
 Phase 0 faite ; la phase 1 (maquette) est conçue mais ne sera pas

@@ -16,8 +16,10 @@ import math
 import os
 import re
 import sys
+from collections import Counter
 from dataclasses import dataclass, field
 
+import numpy as np
 from analoggen.circuit import Circuit, Part
 from analoggen.fplib import Footprint, load_footprint, pad_abs_pos, place_footprint
 from analoggen.symlib import load_symbol
@@ -107,6 +109,8 @@ class Track:
     layer: str
     width: float
     pts: list[tuple[float, float]]
+    # the lines written to the board file, so a rip-up can lift the item
+    body: list[str] = field(default_factory=list, compare=False, repr=False)
 
 
 @dataclass
@@ -116,6 +120,7 @@ class Via:
     y: float
     pad: float
     drill: float
+    body: list[str] = field(default_factory=list, compare=False, repr=False)
 
 
 @dataclass
@@ -137,6 +142,12 @@ class PadItem:
 HOLE_TO_HOLE_MM = 0.25  # fabrication: drill edge to drill edge
 PAD_GUARD_MM = 0.1  # free ring the lattice keeps around an SMD pad, beyond the clearance
 POUR_REACH_MM = 0.9  # free lattice around a ground drop so the pour reaches it
+# rip-up and reroute (GenericBoard.reroute_walled): how many rounds, the
+# budget of a route in them, and how far around the pieces of a net still
+# open the routes of its neighbours count as its walls
+RIP_UP_ROUNDS = 3
+RIP_UP_NODES = 2_000_000
+RIP_UP_REACH_MM = 0.6
 
 
 @dataclass
@@ -154,6 +165,7 @@ class Result:
     clearance_errors: list[str] = field(default_factory=list)
     unconnected: list[str] = field(default_factory=list)  # nets in pieces after routing
     finish_log: list[str] = field(default_factory=list)  # joints of the finishing pass
+    rip_up_log: list[str] = field(default_factory=list)  # rounds of rip-up and reroute
 
 
 class GenericBoard:
@@ -197,26 +209,31 @@ class GenericBoard:
     # ------------------------------------------------------------ emitters
     def track(self, net: str, layer: str, pts, width: float) -> Track:
         pts = [(float(x), float(y)) for x, y in pts]
+        n0 = len(self.board.body)
         self.board.polyline(pts, width, layer, self.board.net(net))
-        item = Track(net, layer, width, pts)
+        item = Track(net, layer, width, pts, body=self.board.body[n0:])
         self.res.tracks.append(item)
         return item
 
     def via(
         self, net: str, x: float, y: float, pad: float | None = None, drill: float | None = None
-    ) -> None:
+    ) -> Via | None:
         """A via, unless one of the same net already overlaps it (the router
         restarts from a fanout via and may put its own next to it): two
         overlapping pads are one piece of copper, and two drills that
-        close are a fabrication error."""
+        close are a fabrication error. Returns the via placed, None when
+        an existing one stands for it."""
         pad = self.spec.via_pad if pad is None else pad
         drill = self.spec.via_drill if drill is None else drill
         for v in self.res.vias:
             reach = (v.pad + pad) / 2.0 - 0.02
             if v.net == net and (v.x - x) ** 2 + (v.y - y) ** 2 <= reach * reach:
-                return
+                return None
+        n0 = len(self.board.body)
         self.board.via(x, y, pad, drill, self.board.net(net))
-        self.res.vias.append(Via(net, float(x), float(y), pad, drill))
+        item = Via(net, float(x), float(y), pad, drill, body=self.board.body[n0:])
+        self.res.vias.append(item)
+        return item
 
     def seed(self, net: str, layer: str, pts, width: float | None = None) -> None:
         """A track drawn by hand before routing: the router starts from it
@@ -388,13 +405,16 @@ class GenericBoard:
         painted into both so the two views never disagree. `first` names
         nets routed before every other (a net the fanout of its package
         walls in once its neighbours are out). Every net is a set of
-        pieces of copper (quadgen.connect) joined one route at a time."""
+        pieces of copper (quadgen.connect) joined one route at a time.
+        What the round leaves in pieces gets the rip-up rounds of
+        `reroute_walled` (BOARDGEN_RIP_UP=0 skips them)."""
         sp = self.spec
         self.route_first = tuple(first)
         self._gnd = gnd
-        seed_tracks: dict[str, list[Track]] = {}
+        self._seed_tracks = {}
+        self._routed = {}
         for net, layer, width, pts in self.seeds:
-            seed_tracks.setdefault(net, []).append(self.track(net, layer, pts, width))
+            self._seed_tracks.setdefault(net, []).append(self.track(net, layer, pts, width))
         for net, x, y, pad, drill in self.seed_vias:
             self.via(net, x, y, pad, drill)
         # the exit corridors of the fanout vias, cut to what the copper drawn
@@ -408,6 +428,29 @@ class GenericBoard:
             "signal": self._new_router(sp.track / 2.0),
         }
         self._routers = routers  # kept for inspection after a run
+        # BOARDGEN_MAX_NODES overrides the budget of a route
+        max_nodes = int(os.environ.get("BOARDGEN_MAX_NODES", max_nodes))
+        self._route_round(routers, gnd, max_nodes, only, ground=True)
+        if os.environ.get("BOARDGEN_RIP_UP", "1") != "0":
+            self.reroute_walled(gnd)
+        self._gnd_pour(gnd)
+
+    def _route_round(
+        self,
+        routers: dict[str, MultiRouter],
+        gnd: str,
+        max_nodes: int,
+        only: set[str] | None,
+        ground: bool,
+        lead: tuple[str, ...] = (),
+    ) -> None:
+        """One round of the lattice router over `only` (every net with
+        pads when None): the ground drops first when `ground`, then
+        `lead`, the nets named `first` by `route_all`, the nets leaving a
+        fine-pitch package, the power nets, the rest, shortest span first
+        inside each group. The copper each route draws is remembered per
+        net, so a rip-up can lift it again."""
+        sp = self.spec
         ref = routers["signal"]
         pads_of: dict[str, list[PadItem]] = {}
         for p in self.res.pads:
@@ -430,9 +473,10 @@ class GenericBoard:
                 vias_of.get(net, []),
                 self.stubs,
                 self.exit_layer,
-                first=seed_tracks.get(net, []),
+                first=self._seed_tracks.get(net, []),
             )
             for net, pads in pads_of.items()
+            if only is None or net in only or net == gnd
         }
         # like the stubs, a seed keeps its own cells whatever the neighbours'
         # inflation says: a fan drawn by hand at the pad pitch is legal for
@@ -529,34 +573,31 @@ class GenericBoard:
             clash = self._route_clash(net, exits, [], STUB_WIDTH_MM) if exits else None
             if clash:
                 return f"stub copper blocked, {clash}"
-            for la, pts in tracks:
-                self.track(net, la, pts, width)
-            for la, pts in exits:
-                self.track(net, la, pts, STUB_WIDTH_MM)
-            for x, y in vias:
-                self.via(net, x, y)
+            drawn = [self.track(net, la, pts, width) for la, pts in tracks]
+            drawn += [self.track(net, la, pts, STUB_WIDTH_MM) for la, pts in exits]
+            placed = [v for v in (self.via(net, x, y) for x, y in vias) if v is not None]
+            self._routed.setdefault(net, []).append((drawn, placed))
             paint(net, tracks, vias, width)
             if exits:
                 paint(net, exits, [], STUB_WIDTH_MM)
             return tracks, vias, mr
 
-        power = [n for n in pads_of if n in sp.power_nets and n != gnd]
-        signals = [n for n in pads_of if n not in sp.power_nets and n != gnd]
+        nets = [n for n in pads_of if only is None or n in only]
+        power = [n for n in nets if n in sp.power_nets and n != gnd]
+        signals = [n for n in nets if n not in sp.power_nets and n != gnd]
         # nets leaving a fine-pitch package first, while the board is empty
         # around it (routed later they end up walled in by the power
         # tracks), then the power nets, then the rest; shortest span first
-        # inside each group. BOARDGEN_MAX_NODES overrides the budget.
-        max_nodes = int(os.environ.get("BOARDGEN_MAX_NODES", max_nodes))
+        # inside each group
         fine = {stub[0] for stub in self.stubs}
         first_nets = [n for n in signals if n in fine]
         rest = [n for n in signals if n not in fine]
         order = sorted(first_nets, key=span) + sorted(power, key=span) + sorted(rest, key=span)
-        order = [n for n in self.route_first if n in order] + [
-            n for n in order if n not in self.route_first
+        ahead = [n for n in lead if n in order] + [
+            n for n in self.route_first if n in order and n not in lead
         ]
-        if only is not None:
-            order = [n for n in order if n in only]
-        if sp.gnd_layer in self.layers:
+        order = ahead + [n for n in order if n not in ahead]
+        if ground and sp.gnd_layer in self.layers:
             # Ground first: every piece of it without copper on the pour's
             # layer gets its short drop while the board is still empty. A
             # decoupling capacitor whose ground via is placed last is a
@@ -579,7 +620,131 @@ class GenericBoard:
                 continue
             if close_net(net, pieces, functools.partial(attempt, net), self.res.open_nets):
                 self.res.routed_nets += 1
-        self._gnd_pour(gnd)
+
+    # ---------------------------------------------------- rip-up and reroute
+    def _nets_in_pieces(self, gnd: str) -> set[str]:
+        """The nets the exact connectivity check finds in pieces now."""
+        sp = self.spec
+        pours = {gnd: sp.gnd_layer} if sp.gnd_layer in self.layers else None
+        lines = connectivity_check(
+            self.res.tracks, self.res.vias, self.res.pads, self.layers, pours=pours
+        )
+        return {line.split(":", 1)[0] for line in lines}
+
+    def _blockers(self, mr: MultiRouter, net: str, reach: int) -> set[str]:
+        """The nets whose copper owns the lattice within `reach` cells of
+        the pieces of `net`: what walls it in, on the signal lattice."""
+        names = {v: k for k, v in mr.net_ids.items()}
+        nid = mr.nid(net)
+        pieces = net_pieces(
+            mr,
+            self.layers,
+            [p for p in self.res.pads if p.net == net],
+            [t for t in self.res.tracks if t.net == net],
+            [v for v in self.res.vias if v.net == net],
+            self.stubs,
+            self.exit_layer,
+            first=self._seed_tracks.get(net, []),
+        )
+        owners: set[int] = set()
+        for pc in pieces:
+            for la, cells in pc.cells.items():
+                own = mr.own[la]
+                for i, j in cells:
+                    window = own[
+                        max(0, j - reach) : j + reach + 1, max(0, i - reach) : i + reach + 1
+                    ]
+                    owners.update(int(v) for v in np.unique(window) if v >= 0 and v != nid)
+        return {names[k] for k in owners if k in names and not names[k].startswith("__")}
+
+    def _lift(self, nets: set[str]) -> None:
+        """Removes every route the rounds drew for `nets`, from the result
+        and from the board file; seeds, escape stubs and pads stay."""
+        tracks: list[Track] = []
+        vias: list[Via] = []
+        for net in nets:
+            for drawn, placed in self._routed.pop(net, []):
+                tracks += drawn
+                vias += placed
+        gone_t = {id(t) for t in tracks}
+        gone_v = {id(v) for v in vias}
+        self.res.tracks = [t for t in self.res.tracks if id(t) not in gone_t]
+        self.res.vias = [v for v in self.res.vias if id(v) not in gone_v]
+        counts = Counter(line for item in tracks + vias for line in getattr(item, "body", ()))
+        body = []
+        for line in self.board.body:
+            if counts.get(line, 0) > 0:
+                counts[line] -= 1
+                continue
+            body.append(line)
+        self.board.body = body
+        if hasattr(self, "_items_cache"):
+            delattr(self, "_items_cache")
+
+    def reroute_walled(
+        self, gnd: str, rounds: int = RIP_UP_ROUNDS, max_nodes: int = RIP_UP_NODES
+    ) -> None:
+        """Rip-up and reroute for what the round left in pieces. A net
+        still in pieces is usually walled in: the routes of its neighbours,
+        laid earlier, own the lattice around one of its pads (the corridor
+        of a fine-pitch pin, a resistor between two vias), and no budget
+        finds a way that does not exist. One net at a time: its routes and
+        those of the routed neighbours owning the lattice within
+        RIP_UP_REACH_MM of its pieces are lifted (seeds, escape stubs,
+        ground drops, the power nets and the nets routed first stay) and
+        routed again on the board as it is, the net first, with a larger
+        budget; the lift is kept when fewer nets are in pieces after it,
+        undone otherwise. Up to `rounds` sweeps over the nets in pieces,
+        stopped by a sweep that closes nothing; `res.rip_up_log` tells
+        what each lift did."""
+        sp = self.spec
+        reach = int(round(RIP_UP_REACH_MM / sp.grid))
+        fixed = {gnd, *sp.power_nets, *self.route_first}
+        for k in range(1, rounds + 1):
+            open_nets = self._nets_in_pieces(gnd) - {gnd}
+            if not open_nets:
+                return
+            count = len(open_nets)
+            for net in sorted(open_nets):
+                if net not in self._nets_in_pieces(gnd):
+                    continue  # closed by an earlier lift of this sweep
+                blockers = self._blockers(self._routers["signal"], net, reach) - fixed - {net}
+                ripped = blockers | {net}
+                saved = (
+                    list(self.res.tracks),
+                    list(self.res.vias),
+                    list(self.board.body),
+                    {n: list(r) for n, r in self._routed.items()},
+                    list(self.res.open_nets),
+                    self._routers,
+                )
+                self._lift(ripped)
+                self.res.open_nets = [
+                    line for line in self.res.open_nets if line.split(":", 1)[0] not in ripped
+                ]
+                routers = {
+                    "power": self._new_router(sp.power_track / 2.0),
+                    "signal": self._new_router(sp.track / 2.0),
+                }
+                self._routers = routers
+                self._route_round(routers, gnd, max_nodes, ripped, ground=False, lead=(net,))
+                after = len(self._nets_in_pieces(gnd) - {gnd})
+                line = (
+                    f"rip-up {k}, {net}: {len(blockers)} neighbour(s) lifted "
+                    f"({', '.join(sorted(blockers))}), nets in pieces {count} -> {after}"
+                )
+                if after >= count:
+                    tracks, vias, body, routed, kept, routers = saved
+                    self.res.tracks, self.res.vias, self.board.body = tracks, vias, body
+                    self._routed, self.res.open_nets, self._routers = routed, kept, routers
+                    if hasattr(self, "_items_cache"):
+                        delattr(self, "_items_cache")
+                    self.res.rip_up_log.append(line + ", undone")
+                    continue
+                count = after
+                self.res.rip_up_log.append(line)
+            if count >= len(open_nets):
+                return
 
     def _gnd_pour(self, gnd: str) -> None:
         sp = self.spec

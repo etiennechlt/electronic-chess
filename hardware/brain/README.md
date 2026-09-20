@@ -66,36 +66,44 @@ routeur n'a pas fermés sont listés et restent à finir dans pcbnew.
 
 ## Résultat du build
 
-Généré par `python -m boardgen build brain` :
+Généré par `python -m boardgen build brain` le 20/09/2026 :
 
-| Composants | Segments | Vias | Nets fermés | Nets ouverts | Défauts d'isolement |
-|---|---|---|---|---|---|
-| 113 | 1076 | 410 | 76 | 24 | 0 |
+| Composants | Segments | Vias | Raccords de la passe | Nets fermés | Nets ouverts | Défauts d'isolement |
+|---|---|---|---|---|---|---|
+| 113 | 1528 | 476 | 6 | 92 | 0 | 0 |
 
-Nets à finir dans pcbnew (le routeur les a laissés ouverts) :
-- ADC2: 1 pad(s) left open (usable start cells 81, goal cells 36)
-- AMP_OUT4: 1 pad(s) left open (usable start cells 38, goal cells 30)
-- LED_DIN1: 1 pad(s) left open (usable start cells 30, goal cells 29)
-- ENDSTOP_X: 4 pad(s) left open (usable start cells 76, goal cells 473)
-- MUX_A2: 1 pad(s) left open (usable start cells 137, goal cells 29)
-- MUX_EN_L: 4 pad(s) left open (usable start cells 41, goal cells 116)
-- MUX_EN_H: 3 pad(s) left open (usable start cells 79, goal cells 114)
-- DAMP_EN_N: 4 pad(s) left open (usable start cells 41, goal cells 116)
-- ESP_EN: 9 pad(s) left open (usable start cells 32, goal cells 874)
-- 5V_LED: 1 pad(s) left open (usable start cells 473, goal cells 38)
-- VBAT: route rejected, F.Cu: vs BUCK_SS at (91.5,21.8) gap 0.121
-- VIN: route rejected, F.Cu: vs DAMP_EN_N at (56.5,6.8) gap 0.100
-- USB_DP_C: 1 pad(s) left open (usable start cells 107, goal cells 4)
-- LED5_K: 1 pad(s) left open (usable start cells 42, goal cells 35)
-- CC1: 4 pad(s) left open (usable start cells 10, goal cells 55)
-- CC2: 4 pad(s) left open (usable start cells 8, goal cells 59)
-- GND: pad at cell (224, 336) has no drop to the pour
-- GND: pad at cell (244, 336) has no drop to the pour
-- GND: pad at cell (590, 193) has no drop to the pour
-- GND: pad at cell (433, 132) has no drop to the pour
-- GND: pad at cell (257, 93) has no drop to the pour
-- GND: pad at cell (277, 93) has no drop to the pour
-- GND: pad at cell (462, 132) has no drop to the pour
-- GND: pad at cell (491, 132) has no drop to the pour
+Ce qui a fermé la carte, dans l'ordre où il a fallu le trouver
+([note 04](../../docs/notes/04-routeur-et-garanties.md)) :
 
-DRC KiCad 7 (`tools/drc.py`, zones remplies) : 353 signalements, 141 éléments non connectés (les nets ouverts ci-dessus), erreurs restantes : aucune ; avertissements sans effet sur la fabrication : lib_footprint_issues 113, via_dangling 112, track_dangling 52, silk_overlap 51, silk_over_copper 22, silk_edge_clearance 3. Le contrôle d'isolement exact du générateur ne signale aucun défaut. Les vias d'éventail des boîtiers fins font 0,45 mm (perçage 0,2 mm), dans les capacités standard de JLCPCB, à confirmer sur le devis.
+- les éventails des quatre liens FPC dessinés à la main (voies de
+  0,3 mm en escalier sur la face avant, un petit via au bout de chacune,
+  les masses descendues au plan à leur moignon), la bande médiane
+  descendue sous eux ;
+- le bus des quadrants, les alimentations, VBAT, les quatre sorties
+  analogiques et les deux lignes UART de l'isolateur routés en premier,
+  quand la carte est vide ;
+- le haul VBAT dessiné à la main sur la face arrière, du lien moteurs
+  au fusible F1 par le bord sud puis une colonne à l'ouest du lien
+  puissance ;
+- chaque LED d'état placée à côté de sa résistance ;
+- les masses descendues au plan avant les signaux, une garde de 0,1 mm
+  autour des pastilles CMS ;
+- le rip-up et reroutage des nets murés, puis la passe de finition
+  partagée (six raccords).
+
+DRC KiCad 7 (`tools/drc.py`, zones remplies) : 220 signalements, aucun élément non connecté, aucune erreur ; avertissements sans effet sur la fabrication : lib_footprint_issues 113, silk_overlap 52, via_dangling 27, silk_over_copper 23, silk_edge_clearance 3, track_dangling 2. Le contrôle d'isolement exact du générateur ne signale aucun défaut. Les vias d'éventail des boîtiers fins font 0,45 mm (perçage 0,2 mm), dans les capacités standard de JLCPCB.
+
+## Fabrication
+
+`brain-gerbers.zip` (quatre couches de cuivre, masques, sérigraphies,
+pâte, contour, perçages PTH et NPTH, fiche de travail) et son
+empreinte `brain-gerbers.sha256`, produits par
+`/usr/bin/python3 tools/gerbers.py hardware/brain/brain.kicad_pcb` ;
+`sha256sum -c brain-gerbers.sha256` dans ce dossier vérifie que
+l'archive est celle de la carte commitée. Commande et options du
+formulaire dans la [note 23](../../docs/notes/23-commande-jlcpcb.md) :
+120 x 80 mm, 4 couches, ENIG (LQFP au pas de 0,5 mm, QFN, quatre FPC),
+cuivre interne standard. La nomenclature d'assemblage (`jlc-bom.csv`,
+`jlc-cpl.csv`) est complète en références, mais ses codes LCSC restent
+à vérifier ligne par ligne avant tout ordre d'assemblage
+([note 22](../../docs/notes/22-erreurs-de-conception.md), point 11).

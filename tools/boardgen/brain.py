@@ -49,7 +49,17 @@ BOARD_OPTIONS = {"overhang": ("U5",), "plain_fanout": ("J1", "J2", "J3", "J4")}
 # The quadrant bus: one net across the four FPC links, routed before every
 # other net, while the band under the connectors is still empty. Routed
 # later, each finds its fanout corridors taken by the short nets of the
-# links (the ADC filters, the LED chain) and stays in pieces.
+# links (the ADC filters, the LED chain) and stays in pieces. VBAT
+# follows: its haul across the board is drawn by hand (hand_routes) and
+# the hops from the haul to the LDO and to the battery cluster need the
+# empty board too (routed last, a 66 mm search ran past the budget). The
+# four analog outputs come last: from the fan via of each link to the
+# RC filter shelf in front of the MCU, across the band, and the one that
+# crosses the whole band (AMP_OUT4, 52 mm) found its resistor walled in
+# when routed among the signals. Then the two UART lines through the
+# isolator U6, from the middle band to the Pi and module headers: routed
+# among the signals, the isolator pin of RXD ended walled in by the
+# comms rails around U6.
 BUS_FIRST = (
     "MUX_A0",
     "MUX_A1",
@@ -62,6 +72,13 @@ BUS_FIRST = (
     "3V3",
     "VIN",
     "5VA",
+    "VBAT",
+    "AMP_OUT1",
+    "AMP_OUT2",
+    "AMP_OUT3",
+    "AMP_OUT4",
+    "COMM_TXD",
+    "COMM_RXD",
 )
 
 MCU = Part(
@@ -629,9 +646,11 @@ def brain_placements(ckt: Circuit) -> dict[str, tuple[float, float, float]]:
     out["J9"] = (27.0, 74.5, 90.0)
     out["J10"] = (94.0, 77.5, 180.0)
     out["BZ1"] = (14.0, 66.0, 0.0)
+    # every status LED beside its resistor: the packer keeps the list order
+    # among parts of one height, so LEDk_K spans one gap, not the shelf
     out.update(
         shelf(
-            ["Q3", "R27", "D1", "D2", "D3", "D4", "D5", "R32", "R33", "R34", "R35", "R40", "D6"],
+            ["Q3", "R27", "D1", "D2", "R32", "D3", "R33", "D4", "R34", "D5", "R35", "R40", "D6"],
             ckt,
             36.0,
             76.0,
@@ -662,10 +681,21 @@ FAN_OUT_MM = 4.6  # first via column, from the connector centre (the row spans +
 FAN_GND_VIA_MM = 8.55  # the ground pins drop to the plane at their stub end
 FAN_EAST = (2, 4, 5, 6, 7, 8)  # outermost pin first
 FAN_WEST = (16, 15, 14, 13, 12, 11, 10, 9)
+# VBAT reaches the motion link (J9, south-west corner) from the battery
+# cluster (the fuses, north-east) by a haul drawn by hand on the back
+# layer: along the south edge, north on a column west of the power link
+# and of the radio module, east under the fuses, then up to F1 on the top
+# layer. Left to the router, the net stayed open (its search across the
+# routed board ran past the budget) and the seed keeps the wide track off
+# the middle of the board, where the MCU fans out.
+VBAT_HAUL_Y_MM = 78.9  # the south edge run (edge clearance 0.5, track 0.8)
+VBAT_HAUL_X_MM = 88.0  # the north run, between the Pi header and the power link
+VBAT_HAUL_TOP_MM = 27.8  # the east run, between the fuses and the resistors under them
 
 
 def hand_routes(gb: GenericBoard) -> None:
-    """Seeds drawn before routing: the fans of the four quadrant links."""
+    """Seeds drawn before routing: the fans of the four quadrant links and
+    the VBAT haul from the motion link to the fuses."""
     pads = {(p.ref, p.number): p for p in gb.res.pads}
     thin, lane = STUB_WIDTH_MM, gb.spec.track
     small = (FANOUT_VIA_PAD_MM, FANOUT_VIA_DRILL_MM)
@@ -693,6 +723,27 @@ def hand_routes(gb: GenericBoard) -> None:
                 T(p.net, "F.Cu", [(p.x, top[n]), (p.x, y)], thin)
                 T(p.net, "F.Cu", [(p.x, y), (x_end, y)], lane)
                 V(p.net, x_end, y, small)
+    # the VBAT haul (VBAT_HAUL_*): motion link pins 2 and 1, south edge,
+    # north, east, then up through a via to the fuse F1
+    j9a, j9b, f1 = pads[("J9", "1")], pads[("J9", "2")], pads[("F1", "2")]
+    if {j9a.net, j9b.net, f1.net} != {"VBAT"}:
+        raise ValueError("the VBAT haul expects J9.1, J9.2 and F1.2 on VBAT")
+    wide = gb.spec.power_track
+    T(
+        "VBAT",
+        "B.Cu",
+        [
+            (j9b.x, j9b.y),
+            (j9a.x, j9a.y),
+            (j9a.x, VBAT_HAUL_Y_MM),
+            (VBAT_HAUL_X_MM, VBAT_HAUL_Y_MM),
+            (VBAT_HAUL_X_MM, VBAT_HAUL_TOP_MM),
+            (f1.x, VBAT_HAUL_TOP_MM),
+        ],
+        wide,
+    )
+    V("VBAT", f1.x, VBAT_HAUL_TOP_MM)
+    T("VBAT", "F.Cu", [(f1.x, VBAT_HAUL_TOP_MM), (f1.x, f1.y)], wide)
 
 
 def build_brain(cfg: BoardConfig):

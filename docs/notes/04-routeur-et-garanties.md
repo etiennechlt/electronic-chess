@@ -253,6 +253,66 @@ l'agence autrement (sa colonne d'amplification et ses multiplexeurs
 sont ailleurs, et ses broches de multiplexeur échappent sans via). Il
 aura ses propres liaisons quand viendra son tour d'être routé.
 
+## Ce que le routeur ne peut pas trouver (quadrant 4 x 4)
+
+Régénéré le 20/09/2026 avec la comptabilité exacte, les masses
+descendues en premier et la passe de finition : 47 nets ouverts après
+22 raccords, 27 minutes de routage et autant de passe. Les sondes
+(pièces de chaque net, cellules utilisables autour des pastilles)
+donnent la cause. C'est celle des quatre liens FPC du cerveau, un
+champ d'échappées au pas de 0,5 mm que rien ne peut traverser, à trois
+endroits de la bande :
+
+1. **Les deux multiplexeurs se font face.** U3 (bobines 1 à 8) est à
+   5,6 mm du bord ouest, U4 (bobines 9 à 16) à 5,6 mm du bord est,
+   LFCSP-32 au pas de 0,5 mm. Les huit entrées B de U3 sortent vers
+   l'ouest : leurs vias d'éventail sont à 0,95 et 1,65 mm du bord, en
+   deux rangées au pas de 1 mm, et leur couloir de sortie sur In2
+   pointe vers le bord. Entre deux vias d'une rangée il reste 0,25 mm,
+   la largeur d'une piste sans ses gardes : seul le via du bout de
+   chaque rangée est atteignable depuis le nord, d'où viennent les
+   seize lignes M de la bande 0. Les huit entrées A de U3 sortent vers
+   l'est, face aux huit entrées B de U4 : dans les 2,2 mm entre les
+   deux champs de moignons, l'échappée n'a pu poser presque aucun via
+   (treize des seize broches restent sans) et les moignons finissent en
+   impasse sur la face avant, au pas de 0,5 mm, cinq pistes au plus
+   pouvant remonter la fente. Bilan : 21 des 32 lignes M ouvertes, plus
+   MUXA_OUT, MUX_A0 et MUX_A2, prises dans les mêmes champs.
+2. **Les décodeurs à une seule rangée de vias.** U1 (74HC4514) et U2
+   (74HC154), TSSOP-24 au pas de 0,65 mm, empilés au centre de la
+   zone : une rangée de vias au pas de 0,65 mm (pastille 0,45,
+   isolement 0,15, 0,05 de marge) et des couloirs de sortie sur In2
+   qui partent vers l'est et l'ouest, perpendiculaires à la bande, alors
+   que les sorties DRIVE et DAMP vont aux cellules au nord et au sud.
+   Là aussi, seuls les bouts de rangée sont atteignables : neuf DRIVE
+   et six DAMP ouverts.
+3. **La colonne d'amplification**, comme sur le 2 x 2 : le filtre
+   passe-bas et l'étage de sortie (LP_IN, LP_OUT, LP_FB, OUT_FB,
+   OUT_STAGE), PULSE_EN, 5VA en quatre pièces, sept îlots du plan de
+   masse que les routes de la face arrière isolent.
+
+Ni l'ordre des nets (variante « fine_first », les broches fines en
+premier) ni le coût de la face arrière n'y changent rien : la
+géométrie interdit, le routeur ne cherche pas mal.
+
+Ce qu'il faut est le motif qui a fermé le cerveau : des éventails
+dessinés à la main dans le générateur, chaque broche prolongée sur la
+face avant en une voie en escalier qui se termine par un petit via posé
+là où il tient, les vias étalés au pas du millimètre, et le routeur qui
+continue depuis ces vias sur les couches internes. Sur le 4 x 4 cela
+demande de tourner les deux multiplexeurs pour que leurs côtés
+d'entrées regardent le nord et le sud (vers les cellules) et non le
+bord ou l'autre boîtier, de dessiner quatre éventails de huit broches
+et deux éventails de douze pour les décodeurs, puis d'assigner à
+chacune des 32 lignes M et des 32 lignes de grille une colonne sur In2
+ou B.Cu entre les vias des cellules, la plus lointaine à l'extérieur.
+Un lot de un à deux jours, chaque vérification coûtant un routage de
+27 minutes ; il n'a pas été engagé le 20/09. Conséquence pour la
+commande : aucune archive du 4 x 4 n'existe (`tools/gerbers.py`
+refuse une carte au routage ouvert) et son prix
+([note 23](23-commande-jlcpcb.md), section 8) reste une extrapolation
+du devis du 2 x 2.
+
 ## Les quatre passes formelles
 
 Ordre d'exécution dans `build_pcb` : routage, puis
@@ -350,6 +410,47 @@ la bande et avant le calcul du plan de masse de la bande. Un net que la
 passe ferme sort de la liste des nets ouverts, quoi que le routeur en
 ait dit ; un net qu'elle ne ferme pas y reste avec la raison du
 routeur.
+
+## Rip-up et reroutage (`tools/boardgen/core.py`)
+
+Le cerveau, une fois les éventails des liens dessinés et VBAT posé à
+la main, restait chaotique : chaque correction fermait deux nets et en
+ouvrait trois autres (VBAT et LED5_K fermés, AMP_OUT4, I2C_SCL et
+ESP_3V3 ouverts au build suivant). Les sondes disent pourquoi : un net
+laissé en morceaux l'est presque toujours parce que les routes de ses
+voisins, posées avant lui, possèdent la grille autour d'une de ses
+pastilles (le couloir d'une broche fine, une résistance entre deux
+vias), et aucun budget de recherche ne trouve un chemin qui n'existe
+pas. Le remède classique est le rip-up : `GenericBoard.reroute_walled`,
+exécuté à la fin de `route_all`, avant la passe de finition.
+
+Un net à la fois, parmi ceux que la connexité exacte trouve en
+morceaux : les routes de ses voisins qui possèdent la grille à moins de
+0,6 mm de ses pièces sont soulevées avec les siennes (les seeds, les
+moignons d'échappée, les descentes de masse, les nets d'alimentation et
+les nets routés en premier restent), la grille est repeinte, et tout
+est rerouté sur la carte telle qu'elle est, le net ouvert en premier,
+avec un budget doublé (deux millions de nœuds). La levée est gardée si
+moins de nets sont en morceaux après elle, défaite sinon ; jusqu'à
+trois passages sur les nets restants, arrêtés par un passage qui ne
+ferme rien. Le build imprime ce que chaque levée a fait (« rip-up 1,
+ESP_3V3: 6 neighbour(s) lifted, nets in pieces 9 -> 8 ») ;
+`BOARDGEN_RIP_UP=0` le désactive, pour comparer.
+
+Pour lever une route, il faut savoir ce qui est route : chaque
+tentative du routeur enregistre les pistes et les vias qu'elle a
+dessinés, et chaque piste et via se souvient des lignes qu'elle a
+écrites dans le fichier de carte, pour les en retirer aussi.
+
+Sur le cerveau du 20/09 : neuf nets en morceaux après le routage, six
+après le rip-up (dix minutes), un après la passe de finition ; le même
+build sans rip-up en laissait deux ou trois. Ce qu'il ne fait pas :
+lever un mur fait d'alimentations ou des nets routés en premier, et
+c'est là que finissent les derniers ouverts (AMP_OUT4 muré par 3V3 et
+5VA sous les éventails des liens, COMM_RXD par les rails du bloc de
+communication autour de l'isolateur), d'où les quatre sorties
+analogiques et les deux lignes UART de l'isolateur ajoutées à la liste
+des nets routés en premier, quand la carte est vide.
 
 ## La saturation, et ce qu'elle cachait
 

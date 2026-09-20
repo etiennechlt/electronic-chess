@@ -112,10 +112,16 @@ comme la bande, quatre pastilles que les rails analogiques enjambent,
 une crique du plan de masse) et sont tracées dans
 `tools/quadgen/hand.py`, avant le routage, donc redessinées et
 vérifiées à chaque build. Bilan dans son
-[README](../../hardware/quadrant-2x2/README.md). Le quadrant 4 x 4
-n'a pas été régénéré : même générateur, mêmes correctifs, mais sa
-bande est deux fois plus longue, ses liaisons à la main lui sont
-propres et son bilan reste à refaire.
+[README](../../hardware/quadrant-2x2/README.md). Le quadrant 4 x 4 a
+été régénéré le 20/09 avec la même comptabilité, les masses en premier
+et la passe de finition : 47 nets ouverts, 52 éléments non connectés au
+DRC, tous expliqués par trois champs d'échappées que rien ne traverse
+(les deux multiplexeurs LFCSP face à face, les décodeurs à une rangée
+de vias, la colonne d'amplification). Le lot qui le ferme est le motif
+qui a fermé le cerveau, des éventails dessinés à la main dans le
+générateur, un à deux jours de travail ; il est décrit dans la
+[note 04](04-routeur-et-garanties.md) et n'est pas engagé. Bilan dans
+son [README](../../hardware/quadrant/README.md).
 
 La revue du routage contre les règles de la profession
 ([note 21](21-routage-et-regles-de-l-art.md)) avait laissé deux points à
@@ -199,6 +205,18 @@ où le modèle de spirale suppose 1 oz (ESR +50 %, Q d'un tiers plus
 bas, chiffres dans la note 23). Les codes LCSC manquants (dont le
 multiplexeur ADG1607) restent le seul obstacle à un ordre
 d'assemblage, d'où les cartes nues.
+
+**État au 20/09/2026.** Le cerveau est fermé : routage sans net
+ouvert, DRC de KiCad sans élément non connecté ni erreur, archive
+`brain-gerbers.zip` et empreinte commitées ; il rejoint le quadrant
+2 x 2 et le banc parmi les cartes commandables nues. Ce qui l'a fermé
+(éventails et VBAT dessinés à la main, nets de liaison routés en
+premier, masses en premier, rip-up et reroutage, passe de finition)
+est dans la [note 04](04-routeur-et-garanties.md) et vaut pour la
+puissance et l'horloge, non reconstruites depuis. Le quadrant 4 x 4,
+régénéré, reste à 47 nets ouverts pour une cause qui lui est propre,
+trois champs d'échappées que rien ne traverse, et n'a pas d'archive :
+ses éventails à la main sont le lot suivant, un à deux jours.
 
 **Sortie.** Tout le matériel de la phase 1 reçu et inventorié contre
 la BOM, pièces imprimées ajustées à blanc dans le socle.

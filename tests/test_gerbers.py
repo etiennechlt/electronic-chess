@@ -24,6 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 GENERATED = {
     "analog-board": ROOT / "hardware/mockup-2x2/analog-board",
     "bench": ROOT / "hardware/bench",
+    "brain": ROOT / "hardware/brain",
     "quadrant-2x2": ROOT / "hardware/quadrant-2x2",
 }
 ARCHIVES = sorted(ROOT.glob("hardware/**/*-gerbers.zip"))
@@ -141,10 +142,10 @@ def test_the_order_audit_clears_the_boards_whose_routing_is_closed():
     # every archive in the repository matches its board
     assert [a.name for a in audits.values() if a.archive and a.digest != "ok"] == []
     # the boards ordered as bare PCBs are clear, and say so
-    for name in ("quadrant-2x2", "bench"):
+    for name in ("quadrant-2x2", "bench", "brain"):
         assert audits[name].ready_bare, name
     # a board whose routing is open ships no archive at all
-    for name in ("brain", "power", "clock", "coil-board"):
+    for name in ("quadrant", "power", "clock", "coil-board"):
         assert audits[name].archive is None, name
     # and the assembly BOM of the ordered boards is known to be partial
     assert audits["quadrant-2x2"].assembled < audits["quadrant-2x2"].parts
