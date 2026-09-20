@@ -47,10 +47,37 @@ pour les bobines et 0,8/0,4 mm pour les LED, cuivre à 0,5 mm du bord.
 La carte n'a pas de schéma : elle est purement passive et toute sa
 connectivité tient dans le `.kicad_pcb`.
 
-## Fabrication
+## Fabrication : pas commandable en l'état (19/09/2026)
 
-`sh hardware/mockup-2x2/coil-board/export.sh` regénère la carte et
-produit `coil-board-gerbers.zip` (gerbers + perçage Excellon).
-Paramètres de commande JLCPCB : 4 couches, 1,6 mm, cuivre 1 oz,
-finition au choix, reste par défaut. Aucun assemblage : la carte est
-purement passive.
+`sh hardware/mockup-2x2/coil-board/export.sh` regénère la carte puis
+appelle `tools/gerbers.py`, comme les autres cartes du dépôt : les
+plans sont remplis avant le tracé, la pile de couches est lue sur la
+carte, et l'export est refusé tant que le routage n'est pas fermé.
+
+Cette carte est dans cet état. Son DRC porte **251 violations
+bloquantes** (96 gardes, 82 gardes de perçage, 63 ponts de masque de
+soudure, 8 perçages trop proches, dont des vias superposés à 0,000 mm)
+et **deux éléments non connectés** :
+
+```bash
+/usr/bin/python3 tools/drc.py hardware/mockup-2x2/coil-board/coil-board.kicad_pcb
+```
+
+Elle n'a donc pas d'archive de fabrication. Celle qui était commitée
+jusqu'ici avait été tracée par un appel direct à `kicad-cli`, hors du
+garde de connexité, depuis un état de la carte qui n'existe plus : elle
+a été retirée, l'histoire de cette erreur est au point 10 de la
+[note 22](../../../docs/notes/22-erreurs-de-conception.md).
+
+Ce qu'il faudrait pour la commander : fermer les deux liaisons,
+dédupliquer les vias superposés (le générateur générique le fait déjà,
+`coilgen` non), reprendre les gardes et les ponts de masque, puis
+`tools/gerbers.py`. La maquette 2 x 2 étant retirée du plan par
+l'[ADR 0010](../../../docs/adr/0010-plateau-8x8-base-interchangeable-horloge.md),
+ce travail n'est pas engagé.
+
+Paramètres de commande, le jour où elle repasse : 4 couches, 1,6 mm,
+cuivre 1 oz (voir la décision sur le cuivre interne dans la
+[note 23](../../../docs/notes/23-commande-jlcpcb.md)), finition au
+choix, reste par défaut. Aucun assemblage : la carte est purement
+passive.

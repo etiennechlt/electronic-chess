@@ -161,6 +161,16 @@ NPTH), plus le fichier de tâche `.gbrjob`. 1,6 mm, finition HASL sans
 plomb ou ENIG ; les options de commande et la nomenclature sont dans
 la [note 20](../../docs/notes/20-tuto-banc.md), section 3.
 
+À côté de l'archive, `<carte>-gerbers.sha256` porte l'empreinte de la
+carte tracée et celle de l'archive. À vérifier avant toute commande :
+
+```bash
+cd hardware/bench && sha256sum -c bench-gerbers.sha256
+```
+
+Options écran par écran, quantités et décisions à trancher : la
+[note 23](../../docs/notes/23-commande-jlcpcb.md).
+
 ```bash
 /usr/bin/python3 tools/gerbers.py hardware/bench/bench.kicad_pcb
 ```

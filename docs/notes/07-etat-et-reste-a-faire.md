@@ -182,6 +182,24 @@ tuiles 100 x 100 et le quadrant intelligent, et l'ordre des décisions
 sont dans la [note 16](16-cout-des-cartes.md). Le choix différentiel
 vrai contre single-ended (ADR 0004) passe avant tout chiffrage.
 
+**État au 19/09/2026.** L'audit avant commande est fait, carte par
+carte, et il tient dans la [note 23](23-commande-jlcpcb.md) : deux
+cartes sont commandables en l'état, le **quadrant 2 x 2** et le
+**banc**, en cartes nues, cinq exemplaires, avec leurs archives
+vérifiées par empreinte. Les quatre cartes de la phase 1 ne le sont
+pas : 23 liaisons ouvertes sur le cerveau, 12 sur la carte puissance,
+11 sur l'horloge, et le quadrant 4 x 4 n'a pas été régénéré depuis que
+la comptabilité de connexité est exacte. Leur routeur n'a ni la passe
+de finition ni le labyrinthe qui ont fermé la carte analogique : les
+brancher sur `boardgen` et `quadgen` est le lot suivant. Deux points de
+fabrication tranchés au passage : les vias d'éventail de 0,45 mm
+passent chez JLCPCB (minimum 0,25 mm en quatre couches), et le cuivre
+interne demande une décision, l'empilement standard donnant 0,5 oz là
+où le modèle de spirale suppose 1 oz (ESR +50 %, Q d'un tiers plus
+bas, chiffres dans la note 23). Les codes LCSC manquants (dont le
+multiplexeur ADG1607) restent le seul obstacle à un ordre
+d'assemblage, d'où les cartes nues.
+
 **Sortie.** Tout le matériel de la phase 1 reçu et inventorié contre
 la BOM, pièces imprimées ajustées à blanc dans le socle.
 

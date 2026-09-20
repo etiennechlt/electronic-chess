@@ -55,7 +55,12 @@ def test_copper_layers_names_the_stack_outside_in():
     assert gerbers.copper_layers(Board(2)) == ["F.Cu", "B.Cu"]
     assert gerbers.copper_layers(Board(4)) == ["F.Cu", "In1.Cu", "In2.Cu", "B.Cu"]
     assert gerbers.copper_layers(Board(6)) == [
-        "F.Cu", "In1.Cu", "In2.Cu", "In3.Cu", "In4.Cu", "B.Cu",
+        "F.Cu",
+        "In1.Cu",
+        "In2.Cu",
+        "In3.Cu",
+        "In4.Cu",
+        "B.Cu",
     ]
 
 
@@ -92,3 +97,25 @@ def test_the_generated_archives_are_stamped_alike(board, directory):
     with zipfile.ZipFile(directory / f"{board}-gerbers.zip") as zf:
         stamps = {info.date_time for info in zf.infolist()}
     assert stamps == {gerbers.ZIP_EPOCH}
+
+
+@pytest.mark.parametrize("archive", ARCHIVES, ids=lambda p: p.parent.name)
+def test_every_archive_records_the_board_it_was_plotted_from(archive):
+    """A zip says nothing about which board it came from; the digest does.
+
+    `tools/gerbers.py` writes a `sha256sum` file next to the archive
+    with the fingerprint of the board and of the archive. Comparing it
+    against what is committed is what catches an archive that has
+    stopped matching its source, which no DRC and no viewer would.
+    """
+    digest = archive.with_suffix(".sha256")
+    assert digest.is_file(), f"no digest next to {archive.name}"
+    recorded = {}
+    for line in digest.read_text(encoding="utf-8").split("\n"):
+        if line.strip():
+            value, name = line.split()
+            recorded[name] = value
+    board = archive.parent / f"{archive.parent.name}.kicad_pcb"
+    assert set(recorded) == {board.name, archive.name}
+    for path in (board, archive):
+        assert gerbers.sha256(path) == recorded[path.name], f"{path.name} changed since the export"

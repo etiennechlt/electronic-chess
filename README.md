@@ -90,7 +90,9 @@ pours avant de tracer et refuse toute carte à nets ouverts) : le banc
 de la [note 20](docs/notes/20-tuto-banc.md) se commande tel quel. La
 [carte analogique de maquette](hardware/mockup-2x2/analog-board/README.md),
 gardée comme référence de la chaîne, est fermée elle aussi et porte
-son archive.
+son archive. Ce qui se commande, avec quelles options et ce qu'il
+manque aux autres cartes : la
+[note 23](docs/notes/23-commande-jlcpcb.md).
 
 | Cerveau (STM32G474, 4 couches) | Puissance (3S, BQ24610, BQ76920) |
 |---|---|
@@ -119,13 +121,17 @@ du routage ([guide](hardware/mockup-2x2/README.md),
 - **Carte bobines** (100 x 100, 4 couches, générée par
   [`coilgen`](tools/coilgen/)) : 4 spirales série de 5 tours par
   couche, 8 LED de camp WS2812B chaînées aux coins des cases (deux
-  points lumineux par case à travers la surface en bois, ADR 0009),
-  gerbers commités, [détails](hardware/mockup-2x2/coil-board/README.md).
+  points lumineux par case à travers la surface en bois, ADR 0009).
+  Son routage n'est pas fermé et son DRC porte 251 violations
+  bloquantes : elle n'a pas d'archive de fabrication, et l'archive
+  obsolète qu'elle portait a été retirée
+  ([note 22](docs/notes/22-erreurs-de-conception.md), point 10),
+  [détails](hardware/mockup-2x2/coil-board/README.md).
 - **Carte analogique** (100 x 62, 2 couches, générée par
   [`analoggen`](tools/analoggen/)) : mux différentiel, AD8421,
   filtres Sallen-Key validés ngspice, buck forced-PWM contre LDO en
-  cavalier, UART Pi isolée ; routée DRC zéro par le routeur maison,
-  une courte liste de liaisons à fermer dans pcbnew avant commande,
+  cavalier, UART Pi isolée ; routage fermé, zéro élément non connecté
+  et zéro erreur bloquante au DRC de KiCad, gerbers commités,
   [détails](hardware/mockup-2x2/analog-board/README.md).
 - **Firmware** ([`firmware/board`](firmware/board/)) : les deux
   voies d'extraction du brief mesurées simultanément sur chaque

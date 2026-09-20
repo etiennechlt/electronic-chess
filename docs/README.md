@@ -29,13 +29,25 @@ pas.
   [protocole M1 à M11](../measurements/protocol.md).
 - **Savoir quoi faire ensuite** : la [note 07](notes/07-etat-et-reste-a-faire.md),
   feuille de route en deux phases (sans chariot d'abord, chariot ensuite).
+- **Commander les cartes chez JLCPCB** : la
+  [note 23](notes/23-commande-jlcpcb.md) dit ce qui part et ce qui ne
+  part pas, les fichiers et leur empreinte, les options écran par
+  écran, la décision du cuivre interne, et ce qu'il manque pour passer
+  un ordre d'assemblage plutôt que des cartes nues.
+- **Ne pas refaire les erreurs déjà faites** : la
+  [note 22](notes/22-erreurs-de-conception.md) reprend chaque erreur
+  commise sur les cartes, ce qui l'a révélée, sa cause, sa correction
+  et le contrôle automatique qui la rattrape désormais. À lire avant
+  de toucher à un générateur ou de commander.
 - **Baisser le coût des cartes** : la [note 16](notes/16-cout-des-cartes.md),
   état de la réflexion sur le quadrant et le format 100 x 100, avec
   les décisions à prendre avant tout devis.
 - **Ouvrir, vérifier et tester les cartes** : la
   [note 13](notes/13-revue-et-verification.md) (KiCad, DRC, netlists,
   valeurs, simulation, commande, protocole de test) et le bilan de la
-  revue des cartes, [note 14](notes/14-revue-des-cartes.md).
+  revue des cartes, [note 14](notes/14-revue-des-cartes.md). L'état
+  mesuré carte par carte, routage fermé ou non, est dans la
+  [note 23](notes/23-commande-jlcpcb.md).
 - **Savoir ce que le routage vaut devant les règles du métier** : la
   [note 21](notes/21-routage-et-regles-de-l-art.md) confronte les cartes
   générées aux règles de placement et de routage de la profession, avec
@@ -131,6 +143,9 @@ pas.
 | [18](notes/18-facteur-q.md) | Le facteur Q, expliqué sans électronique |
 | [19](notes/19-cerveau-et-banc-nucleo.md) | Le cerveau et le banc Nucleo, expliqués ; théorie contre réalité |
 | [20](notes/20-tuto-banc.md) | Tuto du banc : quoi commander, quels composants, comment assembler et tester |
+| [21](notes/21-routage-et-regles-de-l-art.md) | Le routage devant les règles du métier : conforme, écarts assumés, corrections |
+| [22](notes/22-erreurs-de-conception.md) | Erreurs de conception des cartes, et le contrôle qui empêche chacune de revenir |
+| [23](notes/23-commande-jlcpcb.md) | Commander chez JLCPCB : ce qui part, les options, ce qui manque pour l'assemblage |
 
 Décisions formelles : [index des ADR](adr/README.md). Conventions de
 contribution : `CLAUDE.md` à la racine (langue, typographie, source

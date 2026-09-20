@@ -24,11 +24,23 @@ A board whose routing is unfinished is refused: the count of
 unconnected pads must be zero, the same gate as `tools/drc.py`, so that
 no archive of a board with open nets can be committed by accident.
 `--force` exports one anyway, `--layers` overrides the layer set.
+
+Next to the archive comes a digest file in the format of `sha256sum`,
+which carries the fingerprint of the board it was plotted from and of
+the archive itself:
+
+    cd hardware/bench && sha256sum -c bench-gerbers.sha256
+
+An archive is a copy of a board at one instant, and nothing in a zip
+says which board. The digest does, the tests compare it against the
+committed board, and an archive that stops matching its source is a
+failure instead of a file nobody looks at twice.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import shutil
 import subprocess
 import sys
@@ -140,6 +152,22 @@ def archive(files: list[Path], zip_path: Path) -> None:
             zf.writestr(info, path.read_bytes())
 
 
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def digest_file(board_path: Path, zip_path: Path) -> Path:
+    """The `sha256sum` file of a board and its archive, side by side."""
+    out = zip_path.with_suffix(".sha256")
+    lines = [f"{sha256(p)}  {p.name}" for p in (board_path, zip_path)]
+    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return out
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="fabrication files of a board with kicad-cli")
     parser.add_argument("boards", nargs="+", type=Path)
@@ -170,8 +198,10 @@ def main(argv: list[str] | None = None) -> int:
             files = export(filled, out_dir, layers)
         zip_path = (args.out or board_path.parent) / f"{board_path.stem}-gerbers.zip"
         archive(files, zip_path)
+        digest = digest_file(board_path, zip_path)
         warn = f", {open_pads} unconnected pad(s)" if open_pads else ""
         print(f"{board_path}: {len(layers)} layers, {len(files)} files{warn} -> {zip_path}")
+        print(f"  digest: {digest}")
     return rc
 
 

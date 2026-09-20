@@ -138,10 +138,21 @@ connectés, qui doivent tomber à zéro avant toute commande.
 composants, les deux sérigraphies, les deux masques, le contour et les
 perçages Excellon séparés (PTH et NPTH), plus le fichier de tâche
 `.gbrjob`. 1,6 mm ; les vias d'éventail de 0,45 mm à perçage 0,2 mm
-sous les boîtiers fins demandent l'option de perçage minimal 0,2 mm, à
-confirmer sur le devis, et un pochoir rend la pose du frontal beaucoup
-plus sûre. Options de commande et nomenclature dans la
+sous les boîtiers fins passent dans le procédé standard de JLCPCB en
+quatre couches (minimum annoncé 0,25 mm de diamètre pour 0,15 mm de
+perçage), donc sans option ni surcoût, et un pochoir rend la pose du
+frontal beaucoup plus sûre. Options de commande et nomenclature dans la
 [note 20](../../docs/notes/20-tuto-banc.md), section 3.
+
+À côté de l'archive, `<carte>-gerbers.sha256` porte l'empreinte de la
+carte tracée et celle de l'archive. À vérifier avant toute commande :
+
+```bash
+cd hardware/quadrant-2x2 && sha256sum -c quadrant-2x2-gerbers.sha256
+```
+
+Options écran par écran, quantités et décisions à trancher : la
+[note 23](../../docs/notes/23-commande-jlcpcb.md).
 
 ```bash
 /usr/bin/python3 tools/gerbers.py hardware/quadrant-2x2/quadrant-2x2.kicad_pcb
