@@ -437,7 +437,7 @@ code{font-family:"IBM Plex Mono",Menlo,Consolas,monospace; font-size:.9em; backg
 </tbody>
 </table>
 </div>
-<p>Le câblage entre le quadrant et la Nucleo suit les broches retenues pour le cerveau : AMP_OUT sur A0, PULSE_EN sur A2, les trois bits d'adresse sur D3, D4 et D5, les deux enables sur A5 et A4, LED_DIN sur D13 ; seul DAMP_EN_N change de broche (D6 au lieu du PC2 du cerveau, qui n'atteint qu'un connecteur Morpho), et la carte de banc tient sur les seules embases Arduino. Le firmware du cerveau se compile pour le banc en une commande (<code>make NUCLEO=1</code>) : la console passe sur le port série de la sonde, un seul quadrant de quatre bobines est balayé, la chaîne LED est celle du 2 x 2 ; tout le reste est identique au cerveau.</p>
+<p>Le câblage entre le quadrant et la Nucleo suit les broches retenues pour le cerveau : AMP_OUT sur A0, PULSE_EN sur A2, les trois bits d'adresse sur D3, D4 et D5, les deux enables sur A5 et A4, LED_DIN sur D13 ; seul DAMP_EN_N change de broche (D6 au lieu du PC2 du cerveau, qui n'atteint qu'un connecteur Morpho), et la carte de banc tient sur les seules embases Arduino. Le firmware du cerveau se compile pour le banc en une commande (<code>make NUCLEO=1</code>) : la console passe sur le port série de la sonde, un seul quadrant de quatre bobines est balayé, la chaîne LED est celle du 2 x 2 ; tout le reste est identique au cerveau. Un quadrant 4 x 4 complet se branche sur le même banc, même nappe et même brochage, avec <code>make NUCLEO=1 NUCLEO_FULL=1</code> : seize bobines et 32 LED, quelques cases allumées à la fois seulement (les 32 LED tireraient plus que les 0,5 A par contact de la nappe).</p>
 </section>
 
 <section>

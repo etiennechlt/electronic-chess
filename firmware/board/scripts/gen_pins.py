@@ -5,10 +5,11 @@ Pins come from plateau.brain.mcu_pins; the LED chain (128 LEDs, four
 quadrants in series, the right-hand pair mounted rotated) is taken from
 the quadrant generator's layout so the firmware, the boards and the
 wood template share one source. The NUCLEO=1 bench (note 19) gets its
-own block: the console on the ST-Link virtual COM port (bench.console)
-and the LED chain of the reduced 2 x 2 quadrant. Needs the project's
-Python environment (PYTHONPATH=tools); the generated header is
-committed so plain `make` works without it.
+own block: the console on the ST-Link virtual COM port (bench.console),
+the LED chain of the reduced 2 x 2 quadrant, and the chain of one full
+4 x 4 quadrant plugged on the same shield (NUCLEO_FULL=1). Needs the
+project's Python environment (PYTHONPATH=tools); the generated header
+is committed so plain `make` works without it.
 """
 
 import sys
@@ -24,10 +25,11 @@ TEMPLATE = """/* Generated from config/board.yaml by scripts/gen_pins.py. Do not
 """
 
 
-def led_chain(cfg_path: str, reduced: bool = False) -> list[int]:
+def led_chain(cfg_path: str, reduced: bool = False, single: bool = False) -> list[int]:
     """Zero-based 8x8 square index (file + 8 * rank, rank 0 nearest the
     player) for every LED, in chain order across the four quadrants, or
-    for the single reduced quadrant of the bench placed at the origin."""
+    for one quadrant of the bench placed at the origin: the reduced 2 x 2
+    (`reduced`) or a full 4 x 4 plugged on the same shield (`single`)."""
     from quadgen.layout import make_layout
     from quadgen.variant import reduced_config
 
@@ -37,6 +39,8 @@ def led_chain(cfg_path: str, reduced: bool = False) -> list[int]:
     cfg = load_config(cfg_path)
     if reduced:
         cfg = reduced_config(cfg)
+        origins = [(0.0, 0.0)]
+    elif single:
         origins = [(0.0, 0.0)]
     else:
         # quadrant order on the brain: Q1 north-west, Q2 north-east, Q3
@@ -114,9 +118,16 @@ def main(cfg_path: str, out_path: str) -> None:
     nchain = led_chain(cfg_path, reduced=True)
     lines.extend(chain_defines("NUCLEO_", nchain))
     lines.append("")
+    lines.append("/* NUCLEO=1 NUCLEO_FULL=1: one full quadrant on the same bench shield */")
+    fchain = led_chain(cfg_path, single=True)
+    lines.extend(chain_defines("NUCLEO_FULL_", fchain))
+    lines.append("")
     with open(out_path, "w", encoding="utf-8") as fh:
         fh.write(TEMPLATE.format(defines="\n".join(lines)))
-    print(f"wrote {out_path} ({len(pins)} pins, {len(chain)} LEDs, {len(nchain)} bench LEDs)")
+    print(
+        f"wrote {out_path} ({len(pins)} pins, {len(chain)} LEDs, {len(nchain)} bench LEDs, "
+        f"{len(fchain)} full-quadrant bench LEDs)"
+    )
 
 
 if __name__ == "__main__":

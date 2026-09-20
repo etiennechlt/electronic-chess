@@ -3,6 +3,9 @@
 #        make NUCLEO=1   (bench variant: Nucleo-G474RE, one reduced 2x2
 #                         quadrant, console on the ST-Link port; produces
 #                         build/nucleo/board-nucleo.elf/.bin, note 19)
+#        make NUCLEO=1 NUCLEO_FULL=1
+#                        (same bench shield driving one full 4x4 quadrant;
+#                         produces build/nucleo-full/board-nucleo-full.elf/.bin)
 # Pins:  make pins       (regenerate src/board_pins.h from config/board.yaml)
 
 CROSS   ?= arm-none-eabi-
@@ -11,7 +14,11 @@ OBJCOPY := $(CROSS)objcopy
 SIZE    := $(CROSS)size
 
 NUCLEO  ?= 0
-ifeq ($(NUCLEO),1)
+NUCLEO_FULL ?= 0
+ifeq ($(NUCLEO)$(NUCLEO_FULL),11)
+BUILD   := build/nucleo-full
+TARGET  := $(BUILD)/board-nucleo-full
+else ifeq ($(NUCLEO),1)
 BUILD   := build/nucleo
 TARGET  := $(BUILD)/board-nucleo
 else
@@ -26,7 +33,7 @@ OBJS := $(SRCS:src/%.c=$(BUILD)/%.o)
 CFLAGS := -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard \
           -O2 -g -Wall -Wextra -Wno-unused-parameter \
           -ffunction-sections -fdata-sections -fno-common \
-          -DSTM32G474xx -DNUCLEO=$(NUCLEO) -Ivendor -Isrc
+          -DSTM32G474xx -DNUCLEO=$(NUCLEO) -DNUCLEO_FULL=$(NUCLEO_FULL) -Ivendor -Isrc
 LDFLAGS := -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard \
            -T ld/stm32g474re.ld -nostartfiles --specs=nano.specs \
            --specs=nosys.specs -Wl,--gc-sections -Wl,-Map=$(TARGET).map -lm

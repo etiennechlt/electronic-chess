@@ -13,6 +13,7 @@ commande les 128 LED de camp en série.
 ```bash
 make            # build/board.bin (arm-none-eabi-gcc)
 make NUCLEO=1   # build/nucleo/board-nucleo.bin, variante banc (section ci-dessous)
+make NUCLEO=1 NUCLEO_FULL=1   # build/nucleo-full/board-nucleo-full.bin, un 4 x 4 sur le banc
 make pins       # regénère src/board_pins.h depuis config/board.yaml
                 # (PYTHONPATH=tools, la chaîne LED vient de quadgen.layout)
 make flash      # rappel de la procédure ST-Link sur le connecteur SWD
@@ -84,6 +85,14 @@ vient de `board.h` et des constantes générées dans `board_pins.h` :
 | Cases dans le CSV | a1 à h8 | a1, b1, a2, b2, soit 0, 1, 8, 9 |
 | Commandes `2` à `4` | balayent un quadrant | refusées avec un commentaire |
 | Sortie | `build/board.bin` | `build/nucleo/board-nucleo.bin` |
+
+Un quadrant 4 x 4 complet se branche sur le même shield (même nappe,
+même brochage, MUX_EN_H compris) : `make NUCLEO=1 NUCLEO_FULL=1` garde
+tout ce qui précède et prend seize bobines par quadrant et la chaîne de
+32 LED d'un quadrant posé à l'origine (`NUCLEO_FULL_LED_CHAIN_SQ`,
+généré du même yaml), sortie `build/nucleo-full/board-nucleo-full.bin`.
+Budget du banc et précaution sur les LED dans la
+[note 19](../../docs/notes/19-cerveau-et-banc-nucleo.md), section 5.
 
 Câblage du quadrant sur la Nucleo-64 : le bus du cerveau
 (`plateau.brain.mcu_pins`) tombe sur l'embase Arduino, à une exception

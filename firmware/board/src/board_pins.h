@@ -245,4 +245,11 @@
 #define NUCLEO_LED_CHAIN_SQ { \
     0u, 0u, 1u, 1u, 9u, 9u, 8u, 8u }
 
+/* NUCLEO=1 NUCLEO_FULL=1: one full quadrant on the same bench shield */
+#define NUCLEO_FULL_LED_COUNT 32u
+/* zero-based 8x8 square index per chain position */
+#define NUCLEO_FULL_LED_CHAIN_SQ { \
+    0u, 0u, 1u, 1u, 2u, 2u, 3u, 3u, 11u, 11u, 10u, 10u, 9u, 9u, 8u, 8u, \
+    16u, 16u, 17u, 17u, 18u, 18u, 19u, 19u, 27u, 27u, 26u, 26u, 25u, 25u, 24u, 24u }
+
 #endif

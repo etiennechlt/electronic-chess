@@ -1,7 +1,8 @@
 /* Board-level constants and helpers for the brain board (STM32G474RE),
  * driving four 4x4 quadrants (ADR 0010). Built with NUCLEO=1 the same
  * firmware runs on a Nucleo-G474RE driving one reduced 2x2 quadrant
- * over the brain's bus pins: the bench of note 19. */
+ * over the brain's bus pins: the bench of note 19. NUCLEO=1 NUCLEO_FULL=1
+ * drives one full 4x4 quadrant plugged on that same bench shield. */
 
 #ifndef BOARD_H
 #define BOARD_H
@@ -14,6 +15,9 @@
 
 #ifndef NUCLEO
 #define NUCLEO 0
+#endif
+#ifndef NUCLEO_FULL
+#define NUCLEO_FULL 0
 #endif
 
 #define SYSCLK_HZ 170000000u
@@ -28,11 +32,20 @@
 
 /* Grid, LED chain and console of the two targets (values from board_pins.h). */
 #if NUCLEO
-#define BOARD_NAME "nucleo bench"
 #define N_QUADRANTS 1u
+#if NUCLEO_FULL
+/* one full 4x4 quadrant on the bench shield: same connector, same bus,
+ * the coils 9..16 behind MUX_EN_H exactly as on the brain */
+#define BOARD_NAME "nucleo bench, full quadrant"
+#define COILS_PER_ROW QUADRANT_SQUARES
+#define LED_N NUCLEO_FULL_LED_COUNT
+#define LED_CHAIN NUCLEO_FULL_LED_CHAIN_SQ
+#else
+#define BOARD_NAME "nucleo bench"
 #define COILS_PER_ROW REDUCED_SQUARES
 #define LED_N NUCLEO_LED_COUNT
 #define LED_CHAIN NUCLEO_LED_CHAIN_SQ
+#endif
 #define CONSOLE_TX_PORT NUCLEO_CONSOLE_TX_PORT
 #define CONSOLE_TX_PIN NUCLEO_CONSOLE_TX_PIN
 #define CONSOLE_RX_PORT NUCLEO_CONSOLE_RX_PORT

@@ -43,6 +43,23 @@ ESP32_X, ESP32_Y = 113.25, 68.5
 ESP32_ANTENNA_FROM, ESP32_ANTENNA_TO, ESP32_HALF = 6.75, 12.75, 9.5
 # GenericBoard options shared by the build and the tests
 BOARD_OPTIONS = {"overhang": ("U5",)}
+# The quadrant bus: one net across the four FPC links, routed before every
+# other net, while the band under the connectors is still empty. Routed
+# later, each finds its fanout corridors taken by the short nets of the
+# links (the ADC filters, the LED chain) and stays in pieces.
+BUS_FIRST = (
+    "MUX_A0",
+    "MUX_A1",
+    "MUX_A2",
+    "MUX_EN_L",
+    "MUX_EN_H",
+    "DAMP_EN_N",
+    "PULSE_EN",
+    "5V_LED",
+    "3V3",
+    "VIN",
+    "5VA",
+)
 
 MCU = Part(
     "MCU_ST_STM32G4",
@@ -634,7 +651,7 @@ def build_brain(cfg: BoardConfig):
     gb = GenericBoard(SPEC, ckt, placements, generator="boardgen", **BOARD_OPTIONS)
     gb.place_all()
     antenna_keepout(gb, placements["U5"], SPEC.width)
-    gb.route_all()
+    gb.route_all(first=BUS_FIRST)
     return gb.finish(
         texts=[
             ("DAMIER LC / CERVEAU", 60.0, 78.5, "F.SilkS", 1.5),

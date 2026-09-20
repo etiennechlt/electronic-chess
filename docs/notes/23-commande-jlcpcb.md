@@ -252,3 +252,90 @@ prochaine reprise du routage plutôt qu'à ignorer indéfiniment.
 6. noter dans le [journal](09-journal.md) la date, les options
    retenues, le prix et le délai annoncé, et l'empilement que JLCPCB
    affecte à la carte quatre couches.
+
+## 8. Le plateau : quadrant 4 x 4 et cerveau, ce que coûterait la commande
+
+Établi le 20/09/2026, une fois les deux cartes régénérées avec la
+passe de finition partagée (`quadgen.finish`, [note 04](04-routeur-et-garanties.md)).
+Les prix des composants sont des ordres de grandeur : la fiche
+d'approvisionnement du 30/08 pour l'AD8421 et l'OPA2810, le devis du
+20/09 pour ce que JLCPCB a apparié, des prix catalogue courants pour le
+reste. Le panier JLCPCB et LCSC les remplace le jour de la commande ;
+avant lui, les codes LCSC de la description de circuit sont à
+vérifier ligne par ligne (paragraphe 5 et [note 22](22-erreurs-de-conception.md),
+point 11 : six des douze codes du 2 x 2 étaient faux).
+
+### 8.1 Les cartes nues
+
+Même formulaire que le paragraphe 3 ; ce qui change :
+
+| Champ | Quadrant 4 x 4 | Cerveau |
+|---|---|---|
+| Dimensions | 220 x 200 mm | 120 x 80 mm |
+| Couches | 4 | 4 |
+| Finition | ENIG (FPC 0,5 mm, deux LFCSP) | ENIG (LQFP 0,5 mm, QFN, quatre FPC) |
+| Cuivre interne | 1 oz, même décision qu'au 3.1 : la spirale est la même | 0,5 oz standard suffit, aucune spirale |
+| Quantité | 5 (minimum) pour 4 utiles | 5 (minimum) pour 1 utile |
+
+Ordre de grandeur du prix des cartes, extrapolé du devis du 20/09
+(frais d'ingénierie 4 couches 21,73 EUR par commande, puis la surface,
+30,43 EUR pour 2 592 cm² de 2 x 2 en vingt exemplaires) :
+
+| Poste | EUR hors taxes |
+|---|---|
+| 5 quadrants 4 x 4, 2 200 cm² | 50 à 80, plus l'option cuivre interne 1 oz |
+| 5 cerveaux, 480 cm² | 28 à 35 |
+| Port, 2 kg environ | 25 à 40 |
+
+Le devis réel se demande en téléversant `quadrant-gerbers.zip` et
+`brain-gerbers.zip` : c'est le chiffre de référence que la
+[note 16](16-cout-des-cartes.md) attend depuis le 07/09.
+
+### 8.2 Les composants
+
+Par carte, quantités de `bom.csv`, prix unitaires estimés :
+
+| Quadrant 4 x 4 | Quantité | Unitaire (EUR) | Total (EUR) |
+|---|---|---|---|
+| ADG1607BCPZ | 2 | 8,5 | 17 |
+| AD8421ARZ | 1 | 3,4 à 8,2 | 3,4 à 8,2 |
+| OPA2810IDR | 2 | 5 | 10 |
+| 74HC4514PW, 74HC154PW, 74LVC1G04 | 3 | 0,4 | 1,2 |
+| AO3401A, AO3400A | 34 | 0,06 | 2 |
+| B5819W, SS34FL, BAV99W, BAV99 | 81 | 0,04 | 3,2 |
+| WS2812B | 32 | 0,07 | 2,2 |
+| Passifs, 0402 à 2010 | 135 | 0,01 | 1,4 |
+| FH12-16S-0.5SH | 1 | 0,5 | 0,5 |
+| **Par quadrant** | 324 | | **41 à 46** |
+| **Quatre quadrants** | | | **165 à 185** |
+
+| Cerveau | Quantité | Unitaire (EUR) | Total (EUR) |
+|---|---|---|---|
+| STM32G474RET6 | 1 | 9 | 9 |
+| ESP32-S3-WROOM-1-N8 | 1 | 3 | 3 |
+| TPS62130RGTR | 1 | 2,5 | 2,5 |
+| ADuM1201ARZ | 1 | 1,5 | 1,5 |
+| FH12-16S-0.5SH | 4 | 0,5 | 2 |
+| USB-C USB4085, AP2112K, LP2985, AMS1117, 74AHCT1G125, USBLC6-2 | 6 | 0,3 | 1,6 |
+| Self, FET, diodes, perle, buzzer, boutons, LED | 15 | 0,2 | 3 |
+| Passifs, embases, fusibles | 60 | 0,05 | 3 |
+| **Par cerveau** | 103 | | **26** |
+
+Le silicium analogique des quatre quadrants (ADG1607, AD8421, OPA2810)
+fait à lui seul 120 à 140 EUR : c'est le poste que la
+[note 16](16-cout-des-cartes.md), section 2, propose de rediscuter
+(single-ended, mux moins cher) avant d'engager les quatre cartes.
+
+### 8.3 Le total, assemblé ou non
+
+| Scénario | EUR hors taxes | Ce qu'il reste à souder |
+|---|---|---|
+| Cartes nues (5 + 5), composants achetés à part, port | 300 à 350 | tout : 4 x 324 plus 103 composants, dont deux LFCSP et un LQFP par carte |
+| Assemblage économique de 4 quadrants et 1 cerveau, nomenclature complète | 430 à 480 | rien, si tous les codes LCSC sont en bibliothèque (l'ADG1607 reste à trouver) |
+
+Frais fixes de l'assemblage comptés : préparation 7,16 et pochoir 1,35
+par carte, 3 USD par référence étendue (une douzaine sur le quadrant,
+une vingtaine sur le cerveau), la pose à la pièce. TVA de 20 % en sus
+au paiement. Contre 281 EUR pour le devis du 20/09 de vingt cartes
+2 x 2 mal appariées : le plateau entier, assemblé, coûte moins de deux
+fois ce devis.

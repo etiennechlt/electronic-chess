@@ -448,6 +448,11 @@ TP6 VIN, TP3 5V, TP2 5VA, TP4 3V3, TP5 GND, TP7 ADC1, TP1 LED_END.
    make NUCLEO=1 flash      # rappelle la commande st-flash ; ou copier le .bin sur le lecteur NUCLEO
    ```
 
+   Pour un quadrant 4 x 4 branché sur ce même banc : `make NUCLEO=1
+   NUCLEO_FULL=1` (`build/nucleo-full/board-nucleo-full.bin`), seize
+   bobines et 32 LED, le shield et la nappe ne changent pas
+   ([note 19](19-cerveau-et-banc-nucleo.md), section 5).
+
    Ouvrir le port série de la sonde à 115200 bauds (par exemple
    `screen /dev/ttyACM0 115200`). Emboîter la carte de banc, brancher
    le 12 V : TP4 à 3,3 V (le 3,3 V vient de la Nucleo), et la console

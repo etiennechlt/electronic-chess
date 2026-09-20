@@ -147,6 +147,21 @@ les commandes sont ceux du cerveau. Le firmware de maquette
 (`firmware/mockup`) ne convient pas : il pilote des lignes d'excitation
 individuelles, pas le bus à décodeurs du quadrant.
 
+**Un quadrant 4 x 4 se branche sur le même banc.** La nappe, le
+brochage (`plateau.quadrant.link.pinout`) et le bus sont ceux du 2 x 2,
+MUX_EN_H compris (A4) : le shield ne change pas. Seul le firmware
+change de constantes, `make NUCLEO=1 NUCLEO_FULL=1` : seize bobines par
+quadrant (les bobines 9 à 16 derrière MUX_EN_H, comme sur le cerveau)
+et la chaîne de 32 LED d'un quadrant posé à l'origine
+(`NUCLEO_FULL_LED_CHAIN_SQ`, généré du même yaml). Budget du banc pour
+un 4 x 4 : le frontal tire une vingtaine de milliampères sur les
+150 mA du LP2985 ; le rail d'impulsion est identique, une bobine à la
+fois ; les 32 LED aux couleurs de camp tireraient 1,2 A, sous le
+fusible de 2 A du banc mais au dessus des 0,5 A par contact du FH12
+([note 14](14-revue-des-cartes.md)) : sur le banc, n'allumer que
+quelques cases à la fois (c'est ce que font les commandes `l` et
+`i`), et plafonner la luminosité avant tout allumage complet.
+
 ## 6. Théorie contre réalité : ce que le banc mesure
 
 Chaque ligne oppose une grandeur calculée par `chessboard_calc` à la

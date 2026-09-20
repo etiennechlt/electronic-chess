@@ -42,3 +42,12 @@ def test_bench_console_is_on_a_port_pin(cfg):
     assert con.usart == 2
     for pin in (con.tx, con.rx):
         assert pin[0] == "P" and pin[1] in "ABCD" and pin[2:].isdigit()
+
+
+def test_full_quadrant_bench_chain_is_one_quadrant_at_a1(cfg):
+    n = cfg.plateau.quadrant.squares
+    chain = _gen_pins().led_chain(str(YAML), single=True)
+    assert len(chain) == 2 * n * n
+    assert sorted(set(chain)) == sorted(c + 8 * r for r in range(n) for c in range(n))
+    # the same LED order as the first quadrant of the plateau chain
+    assert chain == _gen_pins().led_chain(str(YAML))[: 2 * n * n]

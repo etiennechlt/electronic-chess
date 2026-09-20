@@ -152,6 +152,7 @@ class Result:
     routed_nets: int = 0
     clearance_errors: list[str] = field(default_factory=list)
     unconnected: list[str] = field(default_factory=list)  # nets in pieces after routing
+    finish_log: list[str] = field(default_factory=list)  # joints of the finishing pass
 
 
 class GenericBoard:
@@ -675,25 +676,80 @@ class GenericBoard:
         return sorted(set(errors))
 
     # ------------------------------------------------------------ finish
+    def finish_routes(self, gnd: str = "GND") -> None:
+        """Exact-geometry joints for what the lattice left open (the
+        shared pass of `quadgen.finish`): the signal nets first, then the
+        ground, whose pieces without copper on the pour's layer each get
+        a drop. Everything drawn here is checked against the real
+        clearance before it lands, like a route."""
+        from quadgen.finish import Rules, finish_pass
+
+        sp = self.spec
+        plane = sp.gnd_layer if len(self.layers) > 2 else None
+        rules = Rules(
+            layers=tuple(self.layers),
+            board=(sp.width, sp.height),
+            edge=sp.edge_clearance,
+            clearance=sp.clearance,
+            width=sp.track,
+            via=(sp.via_pad, sp.via_drill),
+            plane=plane,
+            hole_to_hole=HOLE_TO_HOLE_MM,
+            thin=STUB_WIDTH_MM,
+            small_via=(FANOUT_VIA_PAD_MM, FANOUT_VIA_DRILL_MM),
+        )
+        keepouts = [(x0, y0, x1, y1) for x0, y0, x1, y1, _name in self.keepout_rects]
+        pour = (sp.gnd_layer, None) if sp.gnd_layer in self.layers else None
+        log: list[str] = []
+        for nets in (None, [gnd]):
+            tracks = [(t.net, t.layer, t.width, t.pts) for t in self.res.tracks]
+            vias = [(v.net, v.x, v.y, v.pad, v.drill) for v in self.res.vias]
+            new_tracks, new_vias, lines = finish_pass(
+                rules,
+                self.res.pads,
+                tracks,
+                vias,
+                self.res.holes,
+                keepouts,
+                nets=nets,
+                pour=pour,
+                pour_net=gnd,
+            )
+            for net, layer, width, pts in new_tracks:
+                self.track(net, layer, pts, width)
+            for net, x, y, pad, drill in new_vias:
+                self.via(net, x, y, pad, drill)
+            log += lines
+        self.res.finish_log = log
+
     def finish(self, texts: list[tuple[str, float, float, str, float]] = ()) -> Result:
         sp = self.spec
         self.board.gr_rect(0.0, 0.0, sp.width, sp.height, "Edge.Cuts")
         for text, x, y, layer, size in texts:
             self.board.gr_text(text, x, y, layer, size)
-        self.res.clearance_errors = self.clearance_check()
         gnd = getattr(self, "_gnd", "GND")
+        self.finish_routes(gnd)
+        self.res.clearance_errors = self.clearance_check()
         pours = {gnd: sp.gnd_layer} if sp.gnd_layer in self.layers else None
         self.res.unconnected = connectivity_check(
             self.res.tracks, self.res.vias, self.res.pads, self.layers, pours=pours
         )
-        # a net in pieces is open whatever the router believed
-        listed = {line.split(":", 1)[0] for line in self.res.open_nets}
+        # a net in pieces is open whatever the router believed, and a net
+        # the finishing pass closed is closed whatever the router said
+        still = {line.split(":", 1)[0] for line in self.res.unconnected}
+        kept = [line for line in self.res.open_nets if line.split(":", 1)[0] in still]
+        listed = {line.split(":", 1)[0] for line in kept}
         for line in self.res.unconnected:
             net = line.split(":", 1)[0]
             if net not in listed:
-                self.res.open_nets.append(line)
-                self.res.routed_nets = max(0, self.res.routed_nets - 1)
+                kept.append(line)
                 listed.add(net)
+        self.res.open_nets = kept
+        pads_of: dict[str, int] = {}
+        for p in self.res.pads:
+            if p.net:
+                pads_of[p.net] = pads_of.get(p.net, 0) + 1
+        self.res.routed_nets = sum(1 for n, k in pads_of.items() if k >= 2 and n not in still)
         return self.res
 
 
@@ -779,6 +835,6 @@ def summary(res: Result) -> str:
     n = sum(len(t.pts) - 1 for t in res.tracks)
     return (
         f"{res.spec.name}: {len(res.circuit.components)} parts, {n} segments, "
-        f"{len(res.vias)} vias, nets routed {res.routed_nets}, open {len(res.open_nets)}, "
-        f"clearance errors {len(res.clearance_errors)}"
+        f"{len(res.vias)} vias, joints {len(res.finish_log)}, nets routed {res.routed_nets}, "
+        f"open {len(res.open_nets)}, clearance errors {len(res.clearance_errors)}"
     )

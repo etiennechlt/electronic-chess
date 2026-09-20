@@ -309,6 +309,48 @@ l'ouverture du contrôle : le motif de cellule espaçait ses rangées de
 réespacées et cinq voisinages serrés corrigés un par un ; le compte
 est à zéro, et le routage a été refait sur le placement corrigé.
 
+## La passe de finition partagée (`tools/quadgen/finish.py`)
+
+Le 20/09/2026, la passe de finition et le labyrinthe de la carte
+analogique ont été portés sur le modèle de cuivre partagé, pour servir
+les trois générateurs : n'importe quelle pile de couches, une couche de
+plan sur laquelle aucun raccord ne court (In1 du cerveau), le contour et
+les règles de la carte servie (garde, largeur, via, distance de perçage
+à perçage), et des zones interdites en forme quelconque (les spirales
+du quadrant : aucun raccord ne traverse une bobine). Chaque générateur
+présente son cuivre sous la forme de tuples simples (pastilles avec leur
+forme vraie, pistes, vias, trous, zones interdites, plan) et redessine
+le plan de raccords que la passe lui rend.
+
+Ce qui ne change pas : les familles de raccords (segment, L, Z balayé ;
+un via puis une course sur une autre couche ; deux vias et une course
+sur une troisième couche ; le labyrinthe en dernier recours, sur toutes
+les couches routables à la fois), la garde de la classe de nets tenue
+contre tout cuivre étranger, la revérification exacte de tout chemin
+du labyrinthe, et la masse finie en second, contre les îlots réels de
+son plan ou, sur une couche de plan, par une descente pour chaque
+groupe sans cuivre sur elle.
+
+Ce qui a été appris en le portant : la famille à deux vias explorait
+toutes les paires de spots de via (156 par côté) avant de renoncer, ce
+qui coûtait neuf minutes sur un cas de vingt millimètres ; elle est
+bornée à six spots par côté et n'essaie plus la course sur la couche
+d'un des deux moignons, ce que les familles précédentes couvrent déjà.
+Le labyrinthe part toujours de la plus petite pièce : semé des milliers
+de cellules d'un plan ou d'un bus, il épuisait son plafond sur le
+semis. Un via plus fin (celui des éventails, 0,45 mm) est essayé après
+le via standard de la carte, et chaque net dispose d'un budget de
+temps au delà duquel il reste ouvert et listé. Les tests de
+`tests/test_finish.py` fixent ces cas sur du cuivre synthétique, en
+deux et en quatre couches.
+
+Dans `boardgen`, la passe court après le routeur et avant le compte de
+connexité, sur toutes les cartes ; dans `quadgen`, après le routage de
+la bande et avant le calcul du plan de masse de la bande. Un net que la
+passe ferme sort de la liste des nets ouverts, quoi que le routeur en
+ait dit ; un net qu'elle ne ferme pas y reste avec la raison du
+routeur.
+
 ## La saturation, et ce qu'elle cachait
 
 Cette note affirmait que les liaisons restantes étaient celles dont

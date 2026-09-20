@@ -164,6 +164,7 @@ class BuildResult:
     open_nets: list[str] = field(default_factory=list)
     routed_nets: int = 0
     unconnected: list[str] = field(default_factory=list)  # nets in pieces after routing
+    finish_log: list[str] = field(default_factory=list)  # joints of the finishing pass
     pour_islands: int = 0  # pieces the strip's ground pour fills as
     chain: object = None
 
@@ -1028,6 +1029,62 @@ class Builder:
             if verbose:
                 print(f"  {NET_GND}: {self.res.pour_islands} pour island(s)", file=sys.stderr)
 
+    def finish_routes(self) -> None:
+        """Exact-geometry joints for what the lattice left open in the strip
+        (the shared pass of `quadgen.finish`): the signal nets first, then
+        the ground against the islands its pour really fills. Every spiral
+        is a keepout: no joint ever crosses a coil."""
+        from shapely.geometry import MultiPolygon
+
+        from .finish import Rules, finish_pass
+
+        lay, rt = self.lay, self.rt
+        rules = Rules(
+            layers=tuple(COPPER_LAYERS),
+            board=(lay.board_w, lay.board_h),
+            edge=rt.edge_clearance_mm,
+            clearance=self.clr,
+            width=self.STRIP_THIN_MM,
+            via=self.STRIP_VIA_MM,
+            plane=None,
+            thin=STUB_WIDTH_MM,
+        )
+        keepouts = [Point(c.center).buffer(lay.r_out + self.clr) for c in lay.coils]
+
+        def copper():
+            tracks = [(t.net, t.layer, t.width, t.pts) for t in self.res.tracks]
+            vias = [(v.net, v.x, v.y, v.pad, v.drill) for v in self.res.vias]
+            return tracks, vias
+
+        def draw(new_tracks, new_vias):
+            for net, layer, width, pts in new_tracks:
+                self.track(net, layer, pts, width)
+            for net, x, y, pad, drill in new_vias:
+                self.via(net, x, y, pad, drill)
+
+        tracks, vias = copper()
+        new_tracks, new_vias, log = finish_pass(
+            rules, self.res.pads, tracks, vias, self.res.holes, keepouts, pour_net=NET_GND
+        )
+        draw(new_tracks, new_vias)
+        islands = self.pour_islands()
+        if islands:
+            tracks, vias = copper()
+            new_tracks, new_vias, lines = finish_pass(
+                rules,
+                self.res.pads,
+                tracks,
+                vias,
+                self.res.holes,
+                keepouts,
+                nets=[NET_GND],
+                pour=(self.POUR_LAYER, MultiPolygon(islands)),
+                pour_net=NET_GND,
+            )
+            draw(new_tracks, new_vias)
+            log += lines
+        self.res.finish_log = log
+
     def pour_islands(self):
         """The islands the strip's ground pour fills that carry ground
         copper; the others are floating scraps, which KiCad drops."""
@@ -1242,6 +1299,7 @@ class Builder:
 
             hand_routes(self)
             self.strip_routing()
+            self.finish_routes()
         self.strip_pour()
         self.outline()
         self.res.clearance_errors = self.clearance_check()
@@ -1256,13 +1314,17 @@ class Builder:
             COPPER_LAYERS,
             pours={NET_GND: (self.POUR_LAYER, MultiPolygon(pour) if pour else None)},
         )
-        listed = {line.split(":", 1)[0] for line in self.res.open_nets}
+        # a net in pieces is open whatever the router believed, and a net
+        # the finishing pass closed is closed whatever the router said
+        still = {line.split(":", 1)[0] for line in self.res.unconnected}
+        kept = [line for line in self.res.open_nets if line.split(":", 1)[0] in still]
+        listed = {line.split(":", 1)[0] for line in kept}
         for line in self.res.unconnected:
             net = line.split(":", 1)[0]
             if net not in listed:
-                self.res.open_nets.append(line)
-                self.res.routed_nets = max(0, self.res.routed_nets - 1)
+                kept.append(line)
                 listed.add(net)
+        self.res.open_nets = kept
         return self.res
 
 
@@ -1345,7 +1407,8 @@ def summary(result: BuildResult) -> str:
     n_tracks = sum(len(t.pts) - 1 for t in result.tracks)
     return (
         f"{len(result.coils)} coils, {len(result.leds)} LEDs, {n_tracks} segments, "
-        f"{len(result.vias)} vias, open routes {len(result.open_routes)}, "
+        f"{len(result.vias)} vias, joints {len(result.finish_log)}, "
+        f"open routes {len(result.open_routes)}, "
         f"open nets {len(result.open_nets)}, clearance errors {len(result.clearance_errors)}"
     )
 
