@@ -50,6 +50,17 @@ rendre lisibles ; les nôtres sont générés, c'est l'émetteur
 (tolérances, épaisseurs, clips), pour les pièces de `mechanical/`.
 Licence PolyForm Noncommercial, voir `VENDORED.md`.
 
+## Ce qui vient d'i-have-adhd (commit 839872f)
+
+`i-have-adhd` : un style de réponse, pas un outil de conception. Il
+impose à l'assistant de commencer par l'action à faire, de numéroter
+les étapes, de redire où l'on en est à chaque tour, de chiffrer les
+durées, de plafonner les listes à cinq éléments et de finir sur une
+seule action de moins de deux minutes. Il ne s'active que sur demande
+(`/i-have-adhd`) et reste actif jusqu'à « stop adhd mode ». Utile pour
+les comptes rendus de commande et de mise au point, où la réponse
+brute noie l'action à faire. Licence MIT, voir `VENDORED.md`.
+
 ## Limites à connaître
 
 - Les skills d'approvisionnement et de fiches techniques ont besoin du
