@@ -54,6 +54,7 @@ RING_RADII = (0.4, 0.6, 0.8, 1.0, 1.3, 1.6, 2.0, 2.4, 2.9, 3.5, 4.2, 5.0, 6.0)
 RING_ANGLES = 12
 STUB_PATHS = 9  # straight, both corners, then the first sweeps
 VIA_SPOTS = 6  # via spots tried on each side of a two-via joint
+DROP_PATHS = 25  # stub shapes tried for a drop to the plane: it has one end free
 THERMAL_PAD_MM = 1.2  # a pad this wide both ways takes stitching vias
 MAZE_PAIRS = 6  # pairs offered to the maze once the simple joints fail
 SLOP = 1e-9
@@ -323,12 +324,12 @@ class _Joiner:
                 return [("T", pts, layer)]
         return None
 
-    def stub_via(self, net, layer, p, contact):
+    def stub_via(self, net, layer, p, contact, paths=STUB_PATHS):
         """Legal stub on `layer` from p to a nearby via; yields (plan, via)."""
         for v in _ring(p):
             if not self.obs.via_ok(net, *v, via=self.via):
                 continue
-            for stub in islice(_paths(p, v), STUB_PATHS):
+            for stub in islice(_paths(p, v), paths):
                 if self._legal(net, layer, stub, (contact,)) is not None:
                     yield [("T", stub, layer), ("V", v, self.via)], v
                     break
@@ -445,7 +446,7 @@ def _drop_to_plane(net, rules, joiner, piece):
         c = g.centroid
         p0 = nearest_points(g, c)[0]
         for p in [(p0.x, p0.y)] + _contacts(g, Point(p0.x, p0.y), n_extra=3)[1:]:
-            for head, _v in joiner.stub_via(net, la, p, g):
+            for head, _v in joiner.stub_via(net, la, p, g, paths=DROP_PATHS):
                 return head
     return None
 
@@ -497,6 +498,22 @@ def finish_pass(
                     plan = _drop_to_plane(net, rules, _Joiner(rules, obs, width, via), stranded[0])
                     if plan:
                         break
+                if plan is None:
+                    width, via = _permissive(rules)
+                    plan = maze_drop(
+                        net,
+                        rules,
+                        stranded[0],
+                        pads,
+                        tracks + new_tracks,
+                        vias + new_vias,
+                        holes,
+                        keepouts,
+                        width,
+                        via,
+                    )
+                    joiner = _Joiner(rules, obs, width, via)
+                    plan = joiner.check_plan(net, plan) if plan is not None else None
                 dist = 0.0
             else:
                 boxes = [box(*_bounds(pc)) for pc in pieces]
@@ -520,9 +537,11 @@ def finish_pass(
                             break
                     if plan:
                         break
-                for width, via in _attempts(rules) if plan is None else ():
+                for width, via in (_permissive(rules),) if plan is None else ():
                     joiner = _Joiner(rules, obs, width, via)
                     for d, i, j in pairs[:MAZE_PAIRS]:
+                        if time.monotonic() - t0 > rules.budget_s:
+                            break
                         plan = maze_join(
                             net,
                             rules,
@@ -555,15 +574,25 @@ def finish_pass(
                     new_vias.append((net, x, y, pad, drill))
                     obs.add_via(net, x, y, (pad, drill))
             joints += 1
+            t0 = time.monotonic()  # the budget is per joint: a net in many pieces owes many
             log.append(f"{net}: joint ({dist:.2f} mm, {width:g} mm)")
     return new_tracks, new_vias, log
 
 
 def _attempts(rules: Rules):
-    """(width, via) pairs, the standard ones first, the finer ones after."""
-    for via in rules.vias():
-        for width in rules.widths():
-            yield width, via
+    """(width, via) pairs to try: the board's standard track and via first,
+    then the most permissive pair (the thin track, the fine via). Legality
+    is monotonic in both, so a joint the permissive pair cannot draw, no
+    pair can: the pairs in between are never worth their time."""
+    first = (rules.width, rules.via)
+    last = (rules.widths()[-1], rules.vias()[-1])
+    yield first
+    if last != first:
+        yield last
+
+
+def _permissive(rules: Rules):
+    return rules.widths()[-1], rules.vias()[-1]
 
 
 # ------------------------------------------------------------ the maze
@@ -854,4 +883,48 @@ def maze_join(net, rules, piece_a, piece_b, pads, tracks, vias, holes, keepouts,
     return _to_plan(field, cells)
 
 
-__all__ = ["Rules", "finish_pass", "maze_join", "net_pieces"]
+def maze_drop(net, rules, piece, pads, tracks, vias, holes, keepouts, width, via=None):
+    """A plan taking a piece of the plane's net to a via anywhere legal
+    around it: a stub on the fine raster, walked to the nearest cell a
+    via fits in, then the via (which reaches the plane)."""
+    routable = rules.route_layers
+    parts = [g for la, g in piece.items() if la in routable and not g.is_empty]
+    if not parts:
+        return None
+    via = via or rules.via
+    whole = unary_union(parts)
+    c = whole.centroid
+    w, h = rules.board
+    e = rules.edge + width / 2.0
+    reach = 6.0
+    x0, y0 = max(e, c.x - reach), max(e, c.y - reach)
+    x1, y1 = min(w - e, c.x + reach), min(h - e, c.y + reach)
+    if x1 - x0 < MAZE_GRID or y1 - y0 < MAZE_GRID:
+        return None
+    field = _Field(routable, x0, y0, x1, y1, MAZE_GRID)
+    _fill(field, rules, net, pads, tracks, vias, holes, keepouts, width, via)
+    via_ok = ~field.via_blocked
+    for la in routable:
+        via_ok &= ~field.blocked[la]
+    starts = {
+        la: field.mark_inside(piece[la]) if la in piece else np.zeros((field.ny, field.nx), bool)
+        for la in routable
+    }
+    # the goal is any cell a via fits in, on the layer the piece has copper on
+    goals = {
+        la: (via_ok & ~field.blocked[la]) if la in piece else np.zeros_like(via_ok)
+        for la in routable
+    }
+    for la in routable:
+        goals[la] &= ~starts[la]
+    if not any(m.any() for m in starts.values()) or not any(m.any() for m in goals.values()):
+        return None
+    cells = _search(field, starts, goals, np.zeros_like(via_ok))  # no layer change on the way
+    if cells is None:
+        return None
+    plan = _to_plan(field, cells)
+    x, y = field.point(cells[-1][1], cells[-1][2])
+    return plan + [("V", (x, y), None)]
+
+
+__all__ = ["Rules", "finish_pass", "maze_drop", "maze_join", "net_pieces"]

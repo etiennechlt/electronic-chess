@@ -135,6 +135,7 @@ class PadItem:
 
 
 HOLE_TO_HOLE_MM = 0.25  # fabrication: drill edge to drill edge
+PAD_GUARD_MM = 0.1  # free ring the lattice keeps around an SMD pad, beyond the clearance
 POUR_REACH_MM = 0.9  # free lattice around a ground drop so the pour reaches it
 
 
@@ -352,7 +353,11 @@ class GenericBoard:
         for p in self.res.pads:
             layers = self.layers if p.layer == "*.Cu" else [p.layer]
             net = p.net or ("__nc__" + p.ref + p.number)
-            mr.rect(net, layers, p.x, p.y, p.w, p.h, p.rot)
+            # an SMD pad keeps a guard ring beyond the clearance: a track
+            # hugging it at the bare clearance walls it in, and its own
+            # escape (a thin stub to a via) then fits nowhere
+            guard = 0.0 if p.drill else PAD_GUARD_MM
+            mr.rect(net, layers, p.x, p.y, p.w + 2.0 * guard, p.h + 2.0 * guard, p.rot)
             if p.drill:
                 # a via of the pad's own net may touch its copper, never its hole
                 mr.via_keepout(p.x, p.y, p.drill / 2.0 + sp.via_drill / 2.0 + HOLE_TO_HOLE_MM)
@@ -551,15 +556,11 @@ class GenericBoard:
         ]
         if only is not None:
             order = [n for n in order if n in only]
-        for net in order:
-            pieces = pieces_of[net]
-            if len(pieces) < 2:
-                if len(pads_of[net]) >= 2:
-                    self.res.routed_nets += 1  # one piece already
-                continue
-            if close_net(net, pieces, functools.partial(attempt, net), self.res.open_nets):
-                self.res.routed_nets += 1
         if sp.gnd_layer in self.layers:
+            # Ground first: every piece of it without copper on the pour's
+            # layer gets its short drop while the board is still empty. A
+            # decoupling capacitor whose ground via is placed last is a
+            # capacitor with no ground: its neighbours have walled it in.
             ground_drops(
                 routers["signal"],
                 gnd,
@@ -570,6 +571,14 @@ class GenericBoard:
                 self.res.open_nets,
             )
             self.res.routed_nets += 1
+        for net in order:
+            pieces = pieces_of[net]
+            if len(pieces) < 2:
+                if len(pads_of[net]) >= 2:
+                    self.res.routed_nets += 1  # one piece already
+                continue
+            if close_net(net, pieces, functools.partial(attempt, net), self.res.open_nets):
+                self.res.routed_nets += 1
         self._gnd_pour(gnd)
 
     def _gnd_pour(self, gnd: str) -> None:
@@ -765,12 +774,7 @@ class GenericBoard:
         # the finishing pass closed is closed whatever the router said
         still = {line.split(":", 1)[0] for line in self.res.unconnected}
         kept = [line for line in self.res.open_nets if line.split(":", 1)[0] in still]
-        listed = {line.split(":", 1)[0] for line in kept}
-        for line in self.res.unconnected:
-            net = line.split(":", 1)[0]
-            if net not in listed:
-                kept.append(line)
-                listed.add(net)
+        kept += list(self.res.unconnected)  # the pieces really left, after the pass
         self.res.open_nets = kept
         pads_of: dict[str, int] = {}
         for p in self.res.pads:

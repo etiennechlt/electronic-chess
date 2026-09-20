@@ -714,7 +714,7 @@ class Builder:
     # routing order of the strip's nets: "span" (shortest first) or
     # "fine_first" (the nets with the most fine-pitch escapes first, while
     # the corridors around their packages are still free)
-    STRIP_ORDER = "span"
+    STRIP_ORDER = os.environ.get("QUADGEN_STRIP_ORDER", "span")  # experiments: fine_first
     # The nets that cross the whole strip between fine-pitch packages, in
     # the order they are routed, before everything else: last, they find
     # the narrows between the decoders and the muxes already taken, and
@@ -737,7 +737,7 @@ class Builder:
     # the back layer carries the ground pour: a route may cross it, but it
     # costs three times a signal layer, so only the hops that need it land
     # there and the pour keeps as few cuts as possible
-    STRIP_LAYER_COST: dict[str, float] = {"B.Cu": 3.0}
+    STRIP_LAYER_COST: dict[str, float] = {"B.Cu": float(os.environ.get("QUADGEN_BCU_COST", 3.0))}
 
     def strip_pour_box(self) -> tuple[float, float, float, float]:
         """The ground pour under the strip: the board edge clearance on
@@ -1347,12 +1347,7 @@ class Builder:
         # the finishing pass closed is closed whatever the router said
         still = {line.split(":", 1)[0] for line in self.res.unconnected}
         kept = [line for line in self.res.open_nets if line.split(":", 1)[0] in still]
-        listed = {line.split(":", 1)[0] for line in kept}
-        for line in self.res.unconnected:
-            net = line.split(":", 1)[0]
-            if net not in listed:
-                kept.append(line)
-                listed.add(net)
+        kept += list(self.res.unconnected)  # the pieces really left, after the pass
         self.res.open_nets = kept
         return self.res
 
