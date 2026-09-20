@@ -30,8 +30,10 @@ fichiers KiCad à la main : modifier la source et regénérer.
 associe le schéma et la carte, et il porte les règles du routeur.
 Classe de nets : garde 0,15 mm, piste 0,4 mm (0,8 mm pour les rails,
 0,25 mm pour les entrées dans les pastilles à pas fin), vias
-0,6/0,3 mm. Minima du DRC : garde 0,127 mm, la porte exacte que le
-générateur vérifie lui même.
+0,6/0,3 mm. Minima du DRC : garde 0,127 mm, le plancher de
+fabrication. La porte que le générateur vérifie lui même est la garde
+de la classe de nets, 0,15 mm, celle que le DRC de KiCad compte comme
+une erreur.
 
 Le DRC de KiCad contrôle aussi ce que le générateur ne regarde pas, en
 particulier la distance du cuivre au bord de carte, réglée ici à la
@@ -52,8 +54,11 @@ légalité par transformée de distance, routes structurelles vérifiées
 contre la géométrie réelle au build), puis quatre passes finissent le
 travail sur le cuivre fini, en géométrie exacte :
 
-1. **garantie** : toute piste ou via passant sous la garde de
-   fabrication de 0,127 mm est retirée et sa liaison réouverte ;
+1. **garantie** : toute piste ou via passant sous la garde de la
+   classe de nets, 0,15 mm, est retirée et sa liaison réouverte. C'est
+   la valeur que le DRC de KiCad compte comme une erreur ; le plancher
+   de fabrication de 0,127 mm reste le minimum inscrit dans le projet,
+   pas le juge ;
 2. **finition** (`tools/analoggen/finish.py`) : chaque net encore en
    morceaux reçoit le raccord le plus simple qui tienne (segment,
    coude, Z balayé, variantes face arrière à un ou deux vias), tenu à
@@ -84,8 +89,8 @@ le banc et le quadrant 2 x 2 la remplacent. Mesures de `tools/drc.py`
 
 | Contrôle | Résultat |
 |---|---|
-| Éléments non connectés | **0** (558 pistes, 297 vias) |
-| Chevauchements de courtyard | 49 |
+| Éléments non connectés | **0** (568 pistes, 288 vias) |
+| Chevauchements de courtyard | **0** |
 | Cuivre trop près du bord | 0 |
 | Gardes sous la valeur de la classe de nets | 0 |
 
@@ -93,16 +98,26 @@ KiCad affiche un chevelu plus long à l'ouverture parce que ses zones
 ne sont pas encore remplies : remplir les plans (touche B) donne le
 compte ci-dessus.
 
-Le seul défaut qui reste n'est pas une liaison : **49 chevauchements
-de courtyard**, hérités du placement. Trente-deux viennent du motif de
-cellule, où les résistances de polarisation touchent le courtyard de
-leur diode double ; les autres sont le jack contre son trou de
-fixation et quelques découplages serrés contre leur boîtier. Les
-corriger demande de réespacer les cellules, donc d'agrandir la carte
-et de retirer le routage au sort. La carte étant retirée du plan par
-l'ADR 0010, le placement n'a pas été repris ; les empreintes ne se
-chevauchent pas, seuls leurs courtyards se touchent, et la carte reste
-assemblable.
+La carte est au DRC zéro, toutes familles confondues.
+
+Les 49 chevauchements de courtyard qu'elle a portés jusqu'ici ont
+demandé deux corrections, et le routage a été rejoué dessus. Quarante-quatre venaient du motif de
+cellule, dont les rangées étaient espacées de 3 mm quand les
+courtyards en demandent 3,3 à 4,2 selon les boîtiers : les rangées
+sont réespacées, la cellule est 1,7 mm plus haute et tient toujours
+entre le rail VREF et le connecteur de bobines. Les cinq autres
+étaient des voisinages serrés : le jack contre son trou de fixation
+(descendu de 2,5 mm), le TVS contre le condensateur de réservoir (posé
+à plat et décalé à l'ouest), la résistance d'enable contre ce même
+condensateur (passée à l'ouest de lui), le cavalier de rail contre un
+point de test (0,8 mm à l'ouest) et une résistance de contre-réaction
+contre son amplificateur (0,6 mm au nord).
+
+Le build vérifie désormais cette famille lui même
+(`tools/analoggen/yards.py`) : il lit les courtyards des empreintes,
+les pose, et compte les paires qui se recouvrent, exactement comme
+KiCad. Le compte sort sur la ligne d'état du build, à côté des nets
+ouverts et du DRC exact.
 
 ## Gerbers de fabrication
 
@@ -133,15 +148,19 @@ géométrie réelle des pads et contre les autres routes structurelles.
 | Liaison | Pourquoi la grille échoue | Ce qui la remplace |
 |---|---|---|
 | C2_A, la ligne A de la cellule 2 | la descente vers l'écrêteur et la traversée de la rangée de résistances sont prises quand vient son tour | couloir ouest de la cellule (1,55 mm libre) et traversée sous la rangée, face arrière, comme le routeur le fait de lui même sur la cellule 1 |
-| C3_B, la ligne B de la cellule 3 | idem, rangée de la cellule 3 | canal de 0,86 mm entre les deux rangées de la cellule |
+| C{k}_B, la ligne B de chaque cellule | idem, la rangée de résistances sépare la fuite de l'écrêteur | canal de 0,86 mm entre les deux rangées de la cellule, face avant : aucune pastille n'y vit, et les deux traversées d'une cellule ne partagent donc jamais leur voie |
 | M2_A, la prise A de la cellule 2 | le seul passage fait 1,44 mm entre la résistance de polarisation et la diode du rail 5VA | montée verticale à x = 35,54 |
 | M1_A et M4_A, deux broches du mux | leur nappe traverse la bande des cellules sur 25 mm : jamais le choix local le moins cher | échappée de 2,2 mm vers la bande libre au nord des cellules, le reste au routeur (le labyrinthe ferme les 25 mm) |
 | VREF, la résistance de fuite de la cellule 1 | sa pastille est murée par la ligne B voisine, 0,2 mm de libre | montée droite vers le rail VREF, posée avant |
 | BUCK_FB et BUCK_PG, deux broches du buck | le coin du régulateur n'a que deux sorties et le rail 5V les prend | une voie chacune vers l'ouest, puis traversée de l'échappée d'enable par la face arrière |
+| C{k}_A, la résistance de fuite de chaque cellule | sa pastille est de l'autre côté de la rangée de résistances | traversée sous la rangée par la face arrière, deux vias, dans les quatre cellules |
+| DAMP{k}_N, la grille d'amortissement de chaque cellule | le seul couloir passe 0,35 mm au sud de la résistance d'amortissement | une voie droite d'une pastille à l'autre |
+| C4_A et C4_B, les deux lignes de la cellule 4 | les plus longs parcours de la carte, donc les derniers essayés : la bande sud est prise quand leur tour vient | une voie face arrière sous la rangée de cellules pour A, et pour B le coin sud-est de la carte, qui ne porte aucune pastille |
+| la masse des cellules | le plan de masse d'une cellule est découpé en confettis par les quatre lignes de bobine qui la traversent en face arrière, et une pastille dont l'îlot est scellé n'a nulle part où descendre | une **épine de masse** par cellule, face arrière, dans le canal de 1,1 mm entre l'écrêteur côté mux et la résistance de grille : les descentes atterrissent dessus et le plan fusionne avec elle |
+| la masse de l'AD8421 et celle du LDO | mêmes confettis dans la bande de la chaîne, et le régulateur enferme sa propre broche de masse entre deux broches de son entrée | une épine à l'est de l'amplificateur, une descente au nord du condensateur du LDO |
 | GND de U3, de Q11, de J4 et du connecteur de bobines | le plan de masse n'atteint pas ces pastilles une fois les signaux routés | une descente dédiée par pastille, vers une zone que le plan garde entière |
 
 Commande JLCPCB : 2 couches, 1,6 mm, 1 oz, assemblage face top avec
 `jlc-bom.csv` et `jlc-cpl.csv` (vérifier les correspondances LCSC dans
 leur prévisualisation, et l'orientation des diodes et du régulateur
-sur le rendu avant de valider). Corriger d'abord le placement du jack
-J1, dont une broche sort du contour.
+sur le rendu avant de valider).

@@ -340,6 +340,41 @@ déduplication de vias du générateur générique dans `coilgen`, et
 vérifier les perçages en géométrie exacte comme les gardes de cuivre le
 sont déjà, plutôt que sur la grille du routeur.
 
+## 13. Le build mesurait la garde avec une autre règle que KiCad
+
+**Le fait.** La carte analogique sortait du build annoncée « DRC
+zéro », et le DRC de KiCad y trouvait une garde à 0,1361 mm entre une
+piste d'alimentation et un via voisin.
+
+**Ce qui l'a révélée.** `tools/drc.py` sur la carte regénérée, juste
+avant de produire son archive.
+
+**La cause.** Deux valeurs différentes pour deux choses différentes,
+et le contrôle avait pris la mauvaise. La garde de **fabrication** est
+0,127 mm : en dessous, le fabricant ne garantit plus la gravure. La
+garde de la **classe de nets** est 0,15 mm : c'est ce que le projet
+demande, et c'est ce que KiCad compte comme une erreur. Le contrôle
+exact du build jugeait la carte sur la première ; la piste à 0,136
+était donc fabricable, conforme au contrôle, et fausse pour KiCad.
+
+**La correction et le garde-fou.** Le contrôle exact et la passe de
+retrait qui le sert utilisent maintenant la garde de la classe de
+nets. Ce que la passe retire, la passe de finition le redessine à
+0,15 mm, puisque c'est déjà sa valeur. La garde de fabrication reste
+ce qu'elle est, le plancher inscrit dans les minima du projet KiCad.
+
+Le contrôle des routes structurelles, lui, garde le plancher de
+fabrication, et c'est délibéré : il compare les amorces aux rails pris
+comme des lignes nominales, fenêtres comprises, donc une amorce qui
+monte à travers une fenêtre du rail se lit comme proche d'un cuivre
+qui n'est pas là. Le cuivre réellement posé est jugé après le routage,
+en géométrie exacte, à la garde de la classe de nets.
+
+**La leçon.** Quand deux règles cohabitent, écrire laquelle juge quoi,
+sinon un contrôle vert ne veut rien dire. La règle qui juge la carte
+est celle du fabricant qui la refuse, ou de l'outil qui l'ouvre, pas
+la plus permissive des deux.
+
 ## Les contrôles, et la commande qui les fait tourner
 
 | Erreur | Contrôle | Commande |
@@ -353,6 +388,7 @@ sont déjà, plutôt que sur la grille du routeur.
 | 10 | empreinte de l'archive et de sa carte | `sha256sum -c`, `pytest` |
 | 11 | BOM d'assemblage contre BOM complet | `python3 tools/fabcheck.py` |
 | 10, 11 | verdict de fabricabilité par carte | `python3 tools/fabcheck.py` |
+| 13 | garde exacte à la valeur de la classe de nets | ligne d'état du build, `tools/drc.py` |
 
 Avant tout push : `ruff check .` puis `pytest`. Avant tout export de
 fabrication : `tools/drc.py`, puis `tools/gerbers.py`, qui refuse une

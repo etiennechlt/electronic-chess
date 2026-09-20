@@ -258,9 +258,13 @@ aura ses propres liaisons quand viendra son tour d'être routé.
 Ordre d'exécution dans `build_pcb` : routage, puis
 
 1. **Passe de retrait** (`_strip_subclearance`) : tout cuivre sous la
-   garde de fabrication de 0,127 mm est retiré et sa liaison réouverte
-   en chevelu explicite ; les paires pad contre pad relèvent du
-   placement et sont listées.
+   garde de la classe de nets, 0,15 mm, est retiré et sa liaison
+   réouverte en chevelu explicite ; les paires pad contre pad relèvent
+   du placement et sont listées. La garde jugée est bien celle de la
+   classe de nets et non le plancher de fabrication de 0,127 mm : une
+   piste à 0,136 mm est fabricable et KiCad la compte quand même comme
+   une erreur, et le contrôle n'a d'intérêt que s'il dit ce que dit
+   KiCad ([note 22](22-erreurs-de-conception.md), point 13).
 2. **Passe de finition** (`tools/analoggen/finish.py`) : sur le cuivre
    fini, en géométrie exacte sans grille, elle referme les écarts par
    le raccord le plus simple (segment, L, Z balayés jusqu'à 6,4 mm,
@@ -273,6 +277,11 @@ Ordre d'exécution dans `build_pcb` : routage, puis
    couches, en payant chaque via et chaque coude : il a fermé une
    nappe de 25 mm que la grille du routeur ne voyait pas. Le chemin
    qu'il trouve est revérifié en géométrie exacte avant d'être posé.
+   Une liaison qui traverse la carte tomberait à plusieurs millions de
+   cellules à ce pas : la fenêtre est alors dégrossie (0,1 puis
+   0,2 mm) jusqu'à tenir sous le plafond d'exploration. Comme le
+   chemin est de toute façon revérifié, une trame grossière coûte du
+   détail, jamais de la légalité.
 3. **Plan de masse** : calculé comme le calcule le remplisseur de
    KiCad, îlot par îlot (garde 0,3 mm, largeur minimale 0,2 mm), et
    non comme une bande idéale. C'est là que se cachait l'essentiel des
@@ -288,6 +297,17 @@ Ordre d'exécution dans `build_pcb` : routage, puis
 La connexité est enfin vérifiée couche par couche, plan compris
 (`tools/analoggen/connect.py`), avec la forme vraie des pastilles et
 non la boîte autour : **le compte du build est celui de KiCad**.
+
+Le placement est vérifié de la même façon, et pour la même raison
+(`tools/analoggen/yards.py`) : deux courtyards qui se recouvrent ne
+sont pas un court-circuit, aucune règle de cuivre n'en parle, et
+c'est pourtant une reprise à l'assemblage. Le build lit les courtyards
+des empreintes, les pose, compte les paires qui se recouvrent, et sort
+le nombre sur sa ligne d'état. Quarante-neuf sur cette carte à
+l'ouverture du contrôle : le motif de cellule espaçait ses rangées de
+3 mm quand les boîtiers en demandent 3,3 à 4,2. Les rangées ont été
+réespacées et cinq voisinages serrés corrigés un par un ; le compte
+est à zéro, et le routage a été refait sur le placement corrigé.
 
 ## La saturation, et ce qu'elle cachait
 
@@ -312,12 +332,13 @@ Tout le reste est fermé par les passes.
 
 ## Référence actuelle
 
-558 pistes, 297 vias, **zéro élément non connecté** au DRC de KiCad
+568 pistes, 288 vias, **zéro élément non connecté** au DRC de KiCad
 comme au compte du build, zéro garde sous la valeur de la classe de
-nets, zéro cuivre hors contour, et les gerbers commités. Reste un
-défaut de placement, hérité et documenté dans le
-[README de la carte](../../hardware/mockup-2x2/analog-board/README.md) :
-49 chevauchements de courtyard, dont trente-deux dans le motif de
-cellule. La progression historique des liaisons ouvertes est dans le
+nets, zéro cuivre hors contour, **zéro chevauchement de courtyard**, et
+les gerbers commités avec l'empreinte de la carte dont ils sortent. La
+carte n'a plus de défaut connu, toutes familles confondues.
+
+La progression historique des liaisons ouvertes est dans le
 [journal](09-journal.md) : 57, 51, 46, 40, 21, 16, 12, 9, puis 28 une
-fois le compte devenu exact, puis 0.
+fois le compte devenu exact, puis 0 ; puis 4, 1 et 6 à mesure que la
+correction des courtyards rejouait le routage, et 0 de nouveau.

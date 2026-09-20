@@ -54,7 +54,8 @@ def main(argv: list[str] | None = None) -> int:
         (out / "jlc-cpl.csv").write_text(jlc_cpl_csv(circuit, result.placements), encoding="utf-8")
         status = (
             f"routed: {len(result.tracks)} tracks, {len(result.vias)} vias, "
-            f"open {len(result.open_nets)}, drc {len(result.drc_errors)}"
+            f"open {len(result.open_nets)}, drc {len(result.drc_errors)}, "
+            f"courtyards {len(result.courtyard_errors)}"
         )
         print(status)
         if result.finish_log:
@@ -67,6 +68,10 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"    - {entry}")
         if result.drc_errors:
             print("  DRC:", "; ".join(result.drc_errors[:6]))
+        if result.courtyard_errors:
+            print("  courtyards:")
+            for entry in result.courtyard_errors:
+                print(f"    ! {entry}")
         if args.render:
             render_pcb(result, circuit, Path(args.render))
             print(f"wrote {args.render}")

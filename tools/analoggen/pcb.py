@@ -12,8 +12,9 @@ centerline must keep, so fine-pitch escapes (TSSOP 0.65, QFN 0.5)
 stay routable without ever overlapping. Near its two endpoints a
 connection may dip below the design clearance but never below the
 hard overlap guard; the final authority is the exact shapely DRC run
-afterwards at the fab minimum, together with a per-net connectivity
-check and a plane integrity check.
+afterwards at the netclass clearance, the value KiCad counts as an
+error, together with a per-net connectivity check and a plane
+integrity check.
 
 Floor plan (origin top-left, y down, 100 x 56 mm): MCU header and
 test points on the north edge, power down the west side with the Pi
@@ -41,11 +42,12 @@ from chessboard_calc.config import BoardConfig
 from . import connect
 from .circuit import Circuit
 from .fplib import load_footprint, pad_abs_pos, place_footprint
+from .yards import courtyard_errors
 
 BOARD_W, BOARD_H = 100.0, 62.0
 GRID = 0.125
 CLR = 0.15  # routing design clearance
-FAB_CLR = 0.127  # exact DRC gate
+FAB_CLR = 0.127  # fabrication floor, the project's DRC minimum
 SLOP = 0.09  # rasterization slack (half cell diagonal)
 W_SIG = 0.4
 W_PWR = 0.8
@@ -101,6 +103,7 @@ class PcbResult:
     finish_log: list = field(default_factory=list)
     drc_errors: list = field(default_factory=list)
     open_nets: list = field(default_factory=list)
+    courtyard_errors: list = field(default_factory=list)
     plane_islands: int = 0
 
 
@@ -121,15 +124,17 @@ PLACEMENTS: dict[str, tuple[float, float, float]] = {
     "TP6": (51.5, 7.5, 0.0),
     # Power entry, west. The jack body hangs 6 mm past the west edge,
     # which is what a panel barrel jack is for; its pads stay on the
-    # board, 0.5 mm inside the outline (they did not at x = 5).
-    "J1": (8.0, 9.5, 0.0),
+    # board, 0.5 mm inside the outline (they did not at x = 5). It sits
+    # 2.5 mm lower than it did, clear of the mounting hole; the TVS
+    # turns flat and moves west, clear of the bulk capacitor.
+    "J1": (8.0, 12.0, 0.0),
     "D1": (15.5, 4.5, 180.0),
-    "D2": (16.0, 10.5, 90.0),
+    "D2": (15.5, 9.0, 0.0),
     "C1": (15.5, 15.0, 0.0),
     "C2": (21.0, 4.5, 90.0),
     "C3": (23.8, 4.5, 90.0),
     "U1": (22.5, 11.5, 0.0),
-    "R1": (17.0, 20.0, 90.0),
+    "R1": (14.0, 20.3, 90.0),  # west of the bulk cap, clear of the isolator caps
     "C4": (27.2, 15.0, 90.0),
     "L1": (22.5, 19.5, 0.0),
     "C5": (27.5, 20.0, 90.0),
@@ -145,7 +150,7 @@ PLACEMENTS: dict[str, tuple[float, float, float]] = {
     "C9": (40.8, 18.5, 90.0),
     "C10": (43.6, 18.5, 90.0),
     "C11": (30.5, 15.0, 90.0),
-    "JP1": (44.0, 8.5, 90.0),
+    "JP1": (43.2, 8.5, 90.0),  # 0.8 mm west, clear of the test point
     "C12": (46.4, 18.5, 90.0),
     "R5": (49.2, 18.5, 90.0),
     "R6": (52.0, 18.5, 90.0),
@@ -176,7 +181,7 @@ PLACEMENTS: dict[str, tuple[float, float, float]] = {
     "C18": (67.0, 23.5, 0.0),
     "R15": (64.8, 26.0, 0.0),
     "R16": (70.0, 26.5, 90.0),
-    "R17": (62.5, 28.5, 0.0),
+    "R17": (62.5, 27.9, 0.0),  # 0.6 mm north, clear of the op amp
     "R18": (59.8, 30.0, 90.0),
     "U5": (66.5, 31.5, 180.0),
     "R19": (75.0, 23.5, 0.0),
@@ -212,20 +217,24 @@ PLACEMENTS: dict[str, tuple[float, float, float]] = {
     "H4": (96.4, 52.0, 0.0),
 }
 
+# Rows are spaced on the courtyards, not on the pads: a row pitch of
+# 3 mm put every part 0.2 mm inside its neighbour, which is 44 of the
+# 49 courtyard overlaps the KiCad DRC used to report. The cell is
+# 1.7 mm taller for it, and still clears the coil socket to the south.
 CELL_PARTS: dict[str, tuple[float, float, float]] = {
     "Rb+3": (1.2, 0.4, 90.0),  # clamp A -> MkA node at top
     "Rb+4": (3.6, 0.4, 90.0),  # clamp B
     "Rb+1": (6.0, 0.4, 90.0),  # bleed A (mux-side node)
     "Rb+2": (8.4, 0.4, 90.0),  # bleed B
-    "Dd+10": (2.2, 3.4, 180.0),  # BAV99 A, common west
-    "Dd+20": (8.0, 3.4, 0.0),  # BAV99 B, common east
-    "Dd+30": (1.4, 6.4, 90.0),  # bus diode, K south
-    "Qq+10": (8.6, 6.6, 0.0),  # drive FET
-    "Rb+5": (11.0, 6.6, 90.0),  # drive gate pulldown
-    "Dd+40": (5.6, 9.6, 0.0),  # flyback SS34, A pad east near the FET drain
-    "Qq+20": (1.6, 12.6, 180.0),  # damp FET, source on the A node
-    "Rb+6": (5.4, 12.8, 0.0),  # damp resistor 0805
-    "Rb+7": (8.8, 12.6, 90.0),  # damp gate pullup
+    "Dd+10": (2.2, 3.7, 180.0),  # BAV99 A, common west
+    "Dd+20": (8.0, 3.7, 0.0),  # BAV99 B, common east
+    "Dd+30": (1.4, 7.9, 90.0),  # bus diode, K south
+    "Qq+10": (8.45, 7.2, 0.0),  # drive FET
+    "Rb+5": (11.25, 7.2, 90.0),  # drive gate pulldown
+    "Dd+40": (6.2, 10.75, 0.0),  # flyback SS34, A pad east near the FET drain
+    "Qq+20": (1.6, 14.35, 180.0),  # damp FET, source on the A node
+    "Rb+6": (5.4, 14.35, 0.0),  # damp resistor 0805
+    "Rb+7": (8.8, 14.35, 90.0),  # damp gate pullup
 }
 
 
@@ -760,9 +769,29 @@ def _hand_seeds(r: Router, pads) -> None:
     from shapely.geometry import box as _box
 
     pp = {(q.ref, q.number): (q.x, q.y) for q in pads}
+    pb = {(q.ref, q.number): q for q in pads}
 
     def P(ref, num):
         return pp[(ref, num)]
+
+    def edge(ref, num, side):
+        """One edge of a pad: 'w', 'e', 'n' or 's'."""
+        q = pb[(ref, num)]
+        return {
+            "w": q.x - q.w / 2.0,
+            "e": q.x + q.w / 2.0,
+            "n": q.y - q.h / 2.0,
+            "s": q.y + q.h / 2.0,
+        }[side]
+
+    def channel_x(west, east):
+        """Middle of the gap between two pads, the west one first.
+
+        Waypoints taken from the pads follow the placement: a row moved
+        by a millimetre moves its lanes with it, and the guard below
+        still re-checks the result.
+        """
+        return (edge(*west, "e") + edge(*east, "w")) / 2.0
 
     laid: list[tuple[str, str, object]] = []
     for pnet, pw, ppts, playr in r.tracks:
@@ -772,6 +801,12 @@ def _hand_seeds(r: Router, pads) -> None:
         laid.append((pnet, "F.Cu", disc))
         laid.append((pnet, "B.Cu", disc))
 
+    # The gate here is the fabrication floor, not the netclass value the
+    # finished board is judged against: the rails are compared as whole
+    # nominal lines, windows and interruptions included, so a seed that
+    # rises through a window in a rail reads as close to copper that is
+    # not there. What the board really carries is checked after routing,
+    # in exact geometry, at the netclass clearance.
     def T(net, pts, layer="F.Cu", w=W_FINE):
         line = LineString(pts).buffer(w / 2.0)
         if layer == "F.Cu":
@@ -893,17 +928,32 @@ def _hand_seeds(r: Router, pads) -> None:
     # Cell 2, the A line in one piece: down the cell's west lane to the
     # clamp, then under the resistor row on the back side, the way the
     # router itself crosses that row on cell 1.
-    T("C2_A", [P("R33", "1"), (33.3, 39.23), (33.3, 46.05), P("D32", "1")])
-    T("C2_A", [P("R31", "1"), (38.5, 39.23)])
-    V("C2_A", 38.5, 39.23)
-    T("C2_A", [(38.5, 39.23), (33.85, 39.23)], layer="B.Cu")
-    V("C2_A", 33.85, 39.23)
-    # Cell 3, the B line: over its own resistor row, in the 0.86 mm
-    # channel between the two rows of the cell.
-    T("C3_B", [P("R44", "1"), (58.6, 38.4), (63.4, 38.4), P("R42", "1")])
+    lane = channel_x(("R25", "1"), ("R33", "1"))
+    T("C2_A", [P("R33", "1"), (lane, P("R33", "1")[1]), (lane, P("D32", "1")[1]), P("D32", "1")])
+    # and, in every cell, the bleed resistor of the A line reaches the
+    # clamp under its own resistor row, on the back side, which is how
+    # the router crosses that row when it gets there first
+    for k in CELL_X:
+        bleed, clamp = f"R{10 * k + 11}", f"R{10 * k + 13}"
+        y = P(bleed, "1")[1]
+        east, west = edge(bleed, "1", "w") - 0.52, edge(clamp, "1", "w") - 0.37
+        T(f"C{k}_A", [P(bleed, "1"), (east, y)])
+        V(f"C{k}_A", east, y)
+        T(f"C{k}_A", [(east, y), (west, y)], layer="B.Cu")
+        V(f"C{k}_A", west, y)
+        T(f"C{k}_A", [(west, y), P(clamp, "1")])
+    # and the B line of every cell crosses its own row through the
+    # 0.86 mm channel between the two rows, on the front side: no pad
+    # lives there, so the two crossings of a cell never share a lane
+    for k in CELL_X:
+        bleed, clamp = f"R{10 * k + 12}", f"R{10 * k + 14}"
+        lane = edge(bleed, "1", "n") - 0.43
+        east = edge(bleed, "1", "w") - 0.52
+        T(f"C{k}_B", [P(bleed, "1"), (east, lane), (P(clamp, "1")[0], lane), P(clamp, "1")])
     # Cell 2, the A tap to its clamp: the channel between the bias
     # resistor and the diode of the 5VA rail is 1.4 mm wide.
-    T("M2_A", [P("D12", "3"), (35.54, 41.4), (35.54, 37.57), P("R33", "2")])
+    tap = channel_x(("R33", "1"), ("D12", "2"))
+    T("M2_A", [P("D12", "3"), (tap, P("D12", "3")[1]), (tap, P("R33", "2")[1]), P("R33", "2")])
     # The mux pins of cells 1 and 4 escape north into the band above the
     # cells, which carries no pad at all; the router hauls the rest.
     T("M1_A", [P("U3", "12"), (48.83, 36.9)])
@@ -930,12 +980,105 @@ def _hand_seeds(r: Router, pads) -> None:
     # connector cuts off from the rest of the pour.
     T("GND", [P("U3", "7"), (50.12, 47.6)])
     V("GND", 50.12, 47.6)
-    # The source of the drive FET of cell 1: its drop goes south first,
-    # through the 1.5 mm channel between the two clamp diodes, because
-    # the pour around the cell itself ends up cut off from the main
-    # plane by the back-side runs of the two neighbouring coil lines.
-    T("GND", [P("Q11", "2"), (26.6, 45.55), (26.6, 49.3)])
-    V("GND", 26.6, 49.3)
+    # A ground spine down each cell, on the back side, in the 1.1 mm
+    # channel between the mux-side clamp and the gate pulldown. The
+    # pour of a cell is cut into confetti by the back-side runs of the
+    # four coil lines that cross it, and a ground pad whose island is
+    # sealed has nowhere to go; the spine is ground copper of its own,
+    # laid before the routing, so every drop inside the cell lands on
+    # it and the pour merges with it instead of fragmenting around it.
+    for k in CELL_X:
+        spine = channel_x((f"D{k + 20}", "3"), (f"R{10 * k + 15}", "1"))
+        T("GND", [(spine, CELL_Y + 2.5), (spine, CELL_Y + 15.6)], layer="B.Cu", w=W_SIG)
+        # the gate pulldown sits right against the spine and its ground
+        # pad is the one the pour strands most often: it gets its drop
+        # posed, rather than a via wherever the finishing pass finds
+        # room once everything else is routed. The source of the drive
+        # FET, three millimetres west, is left to the pass: a stub that
+        # long crosses the corridors the cell needs for its own lines.
+        pulldown = f"R{10 * k + 15}"
+        y = P(pulldown, "2")[1]
+        T("GND", [P(pulldown, "2"), (spine, y)])
+        V("GND", spine, y)
+    # The source of the drive FET of cell 1 reaches the southern pour
+    # through the 1.5 mm channel between the two clamp diodes.
+    drop = channel_x(("D41", "1"), ("D41", "2"))
+    T("GND", [P("Q11", "2"), (drop, P("Q11", "2")[1]), (drop, edge("D41", "2", "s") + 0.95)])
+    V("GND", drop, edge("D41", "2", "s") + 0.95)
+    # The ground of the LDO and its output capacitor: the regulator
+    # boxes its own ground pin between two pins of its input, so the
+    # drop goes north of the capacitor, where the pour is whole.
+    T("GND", [P("C9", "2"), (P("C9", "2")[0], 16.2)])
+    V("GND", P("C9", "2")[0], 16.2)
+    # The LED buffer sits under the Nucleo header, hemmed in by the
+    # escapes of twenty pins: its ground and that of its capacitor end
+    # up in an island of their own. It gets a spine of its own, on the
+    # back side, in the channel between the buffer and its capacitor:
+    # the escapes of the header run north to south, so a line parallel
+    # to them takes a column and blocks none of them, and the pour
+    # merges with it.
+    buffer_spine = channel_x(("C27", "1"), ("U8", "3"))
+    T("GND", [P("U8", "3"), (buffer_spine, P("U8", "3")[1])])
+    V("GND", buffer_spine, P("U8", "3")[1])
+    T(
+        "GND",
+        [(buffer_spine, P("U8", "3")[1]), (buffer_spine, 20.0)],
+        layer="B.Cu",
+        w=W_SIG,
+    )
+    # A ground spine east of the instrumentation amplifier, in the
+    # 1.9 mm corridor it leaves before the feedback divider: the pour
+    # of the chain band is cut by the runs of the filter and its pins
+    # have nowhere else to drop.
+    T("GND", [(58.4, 26.5), (58.4, 34.0)], layer="B.Cu", w=W_SIG)
+    # The A line of cell 4 is the longest run of the board, so it is the
+    # last the router tries and the south band is full by then: it gets
+    # its lane on the back side, under the row of cells.
+    entry = (P("Q24", "2")[0], edge("Q24", "2", "n") + 0.2)
+    T("C4_A", [P("J2", "6"), (P("J2", "6")[0], 54.8), (71.0, 54.8), (71.0, 52.5)], layer="B.Cu")
+    V("C4_A", 71.0, 52.5)
+    T("C4_A", [(71.0, 52.5), (71.0, entry[1]), entry])
+    # Its row is sealed too, once the cell is routed: the gate line of
+    # the mux walls it in on the front, the drive line of cell 1 crosses
+    # the whole board on the back, and the 0.85 mm they leave takes no
+    # via. The drop to the drive FET is claimed first instead.
+    drop = P("Q14", "3")[0]
+    top, bottom = edge("D24", "3", "n") - 0.8, edge("Q14", "3", "n") - 0.5
+    T("C4_B", [P("R52", "1"), (drop, P("R52", "1")[1]), (drop, top)])
+    V("C4_B", drop, top)
+    # the clamp of the 5VA rail and the drive FET are both front side,
+    # so the back side of that strip is empty from one row to the other
+    T("C4_B", [(drop, top), (drop, bottom)], layer="B.Cu")
+    V("C4_B", drop, bottom)
+    T("C4_B", [(drop, bottom), P("Q14", "3")])
+    # The B line of cell 4 is the other end of that pair: its socket pin
+    # is walled in by the lane above and by the escapes of the six coil
+    # pins east of it. It goes around instead, through the south-east
+    # corner of the board, which carries no pad at all.
+    south, riser = 58.6, 79.5
+    T(
+        "C4_B",
+        [
+            P("J2", "7"),
+            (P("J2", "7")[0], south),
+            (riser, south),
+            (riser, P("D44", "2")[1]),
+            (edge("D44", "2", "e") - 0.35, P("D44", "2")[1]),
+        ],
+    )
+    # The reference of the output stage reaches the VREF rail down the
+    # lane east of its own divider, ducking under the output spine of
+    # the low-pass stage on the way.
+    T("VREF", [P("R62", "2"), (73.4, P("R62", "2")[1]), (73.4, 33.6)])
+    V("VREF", 73.4, 33.6)
+    T("VREF", [(73.4, 33.6), (73.4, 35.0)], layer="B.Cu")
+    V("VREF", 73.4, 35.0)
+    # The damp gate of each cell: its pullup and the gate itself sit on
+    # either side of the damp resistor, and the only lane between them
+    # passes 0.35 mm south of it.
+    for k in CELL_X:
+        lane = edge(f"R{10 * k + 16}", "2", "s") + 0.35
+        T(f"DAMP{k}_N", [(P(f"R{10 * k + 17}", "1")[0], lane), (P(f"Q{k + 20}", "1")[0], lane)])
     T("GND", [P("J4", "2"), (64.0, 1.5), (57.0, 1.5)], layer="B.Cu", w=W_SIG)
     # The two grounds of the coil socket: the escapes of the ten signal
     # pins fill the row, and a stub of its own ends up walled in by the
@@ -1005,13 +1148,19 @@ def _drc_errors(pads, tracks, vias) -> list[str]:
         for i, a in enumerate(names):
             for b in names[i + 1 :]:
                 d = nets[a].distance(nets[b])
-                if d < FAB_CLR - 1e-6:
+                if d < CLR - 1e-6:
                     errors.append(f"{layer}: {a} vs {b}: {d:.3f} mm")
     return errors
 
 
 def _strip_subclearance(pads, router) -> list[str]:
-    """Remove any copper below the fab clearance, reopening its link.
+    """Remove any copper below the netclass clearance, reopening its link.
+
+    The gate is the netclass value, not the fabrication minimum: a gap
+    of 0.136 mm is manufacturable and KiCad still calls it an error,
+    and the point of this check is to say what KiCad says. What the
+    pass removes, the finishing pass draws again at the netclass
+    clearance.
 
     Returns the stripped nets (one entry per removed piece). After this
     the exact DRC is clean up to pad-against-pad placement pairs."""
@@ -1059,7 +1208,7 @@ def _strip_subclearance(pads, router) -> list[str]:
                 continue
             g = LineString(pts).buffer(w / 2.0)
             d = min(g.distance(og) for og in geoms[other])
-            if d < FAB_CLR - 1e-6 and len(pts) < best[2]:
+            if d < CLR - 1e-6 and len(pts) < best[2]:
                 best = ("track", idx, len(pts))
         if best[0] is None:
             # No offending track: try a via (a via barrel exists on both
@@ -1072,7 +1221,7 @@ def _strip_subclearance(pads, router) -> list[str]:
                     continue
                 g = Point(x, y).buffer(VIA_D / 2.0)
                 d = min(g.distance(og) for og in geoms[other])
-                if d < FAB_CLR - 1e-6:
+                if d < CLR - 1e-6:
                     best = ("via", jdx, 0)
                     break
         if best[0] == "track":
@@ -1125,7 +1274,7 @@ def build_pcb(cfg: BoardConfig, circuit: Circuit) -> PcbResult:
     # and keep the best round.
     promoted: list[str] = []
     router = None
-    for _round in range(2):
+    for _round in range(3):
         order = promoted + [n for n in base_order if n not in promoted]
         cand = run(order)
         if router is None or len(cand.failed) < len(router.failed):
@@ -1224,6 +1373,7 @@ def build_pcb(cfg: BoardConfig, circuit: Circuit) -> PcbResult:
             result.open_nets.append(f"{net}: cuivre retire (sous-garde), a finir")
     result.finish_log = finish_log
     result.drc_errors = _drc_errors(pads, router.tracks, router.vias)
+    result.courtyard_errors = courtyard_errors(circuit, placements)
     parts = list(getattr(fill, "geoms", [fill]))
     result.plane_islands = len(parts)
     return result

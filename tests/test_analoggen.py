@@ -228,3 +228,54 @@ def test_the_hand_seeds_of_the_analog_board_stay_legal():
     seeded = {net for net, _w, _pts, _layer in router.tracks}
     for net in ("BUCK_FB", "C2_A", "C3_B", "M1_A", "M2_A", "VREF", "GND"):
         assert net in seeded, net
+
+
+def test_no_two_courtyards_of_the_analog_board_overlap():
+    """What the KiCad DRC calls a courtyard overlap, checked at build time.
+
+    Not a short circuit and no copper rule says a word about it, but two
+    parts that claim the same room are a rework at assembly.
+    """
+    from analoggen.pcb import full_placements
+    from analoggen.yards import courtyard_errors, footprint_courtyard
+
+    cfg = load_config()
+    ckt, _chain = build_circuit(cfg)
+    assert footprint_courtyard("Resistor_SMD:R_0603_1608Metric").bounds == (
+        -1.48,
+        -0.73,
+        1.48,
+        0.73,
+    )
+    assert courtyard_errors(ckt, full_placements(cfg)) == []
+
+
+def test_the_maze_coarsens_its_raster_for_a_haul_across_the_board():
+    """A 50 mm link would rasterize to millions of cells at 0.05 mm.
+
+    The window is coarsened until it fits the ceiling, and the plan is
+    still checked in exact geometry: coarse costs detail, not legality.
+    """
+    from analoggen import maze
+    from analoggen.finish import CLEAR, THERMAL_PAD_MM, VIA_R, W_JOIN
+    from shapely.geometry import LineString
+
+    pads = [Pad("R1", "1", "A", 6.0, 30.0, 1.0, 0.6), Pad("R2", "1", "A", 56.0, 30.0, 1.0, 0.6)]
+    # a wall on both layers, its only gap 8 mm north of the straight line
+    wall = [
+        (net, 0.4, [(31.0, y0), (31.0, y1)], layer)
+        for layer in ("F.Cu", "B.Cu")
+        for net, y0, y1 in (("W", 8.0, 21.0), ("W", 23.0, 52.0))
+    ]
+    piece_a = (LineString([(6.0, 30.0), (6.0, 30.0)]).buffer(0.3), None)
+    piece_b = (LineString([(56.0, 30.0), (56.0, 30.0)]).buffer(0.3), None)
+    plan = maze.maze_join(
+        "A", piece_a, piece_b, pads, wall, [], W_JOIN, CLEAR, VIA_R, THERMAL_PAD_MM
+    )
+    assert plan, "the maze should haul across the board through the gap"
+    drawn = maze.plan_geometry(plan, W_JOIN, VIA_R)
+    for layer, geoms in drawn.items():
+        obstacles = [LineString(p).buffer(w / 2.0) for _n, w, p, la in wall if la == layer]
+        for g in geoms:
+            for o in obstacles:
+                assert g.distance(o) >= CLEAR - 1e-9, layer

@@ -28,7 +28,21 @@ bobines.
      couches et dépassent du cercle r_out : ce sont des obstacles à
      part entière ;
    - un seed qui ferme une liaison peut en déplacer deux : mesurer le
-     bilan global sur une génération complète avant d'adopter.
+     bilan global sur une génération complète avant d'adopter ;
+   - une pastille CMS ne bloque qu'une couche : un passage introuvable
+     en face avant est souvent libre en face arrière, sous les
+     boîtiers eux mêmes, et c'est par là que descend la rangée B de la
+     cellule 4 de la carte analogique ;
+   - un seed posé dans un couloir occupe ce couloir : une descente de
+     masse tracée au milieu de la colonne d'échappée d'un connecteur a
+     rouvert trois liaisons d'un coup, alors que la même descente en
+     épine, parallèle aux échappées au lieu de les croiser, ne gêne
+     personne. Avant de poser une route, regarder par où passent
+     celles qui existent déjà ;
+   - une liaison qui échoue n'est presque jamais un hasard à relancer :
+     c'est un ordre de routage, un mur ou un couloir trop étroit, et
+     les trois se mesurent (voir la
+     [note 22](22-erreurs-de-conception.md)).
 
 ## Les seeds de `boardgen` (cartes du plateau et banc)
 

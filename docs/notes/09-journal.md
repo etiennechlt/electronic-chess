@@ -284,6 +284,41 @@ quatre commandes.
   deux couches, ce qu'un fabricant aurait facturé et gravé tel quel.
   Les gerbers de la carte sont désormais produits par
   `tools/gerbers.py`, pours remplis, et commités.
+- Puis les 49 chevauchements de courtyard, la dernière famille que le
+  DRC signalait encore. Quarante-quatre venaient du motif de cellule,
+  dont les rangées étaient espacées sur les pastilles et non sur les
+  courtyards ; les cinq autres, de voisinages serrés autour du jack et
+  du réservoir. Le placement est repris, et le build vérifie désormais
+  cette famille lui même (`tools/analoggen/yards.py`).
+- Le prix du déplacement : tout le routage se rejoue. Trois tours de
+  build ont été nécessaires, et chacun rouvrait deux à cinq liaisons
+  ailleurs. La réponse n'a pas été de les fermer une à une mais de
+  poser ce qui manquait structurellement : une **épine de masse** par
+  cellule sur la face arrière, avec la descente de ses deux pastilles
+  les plus fragiles, et une nappe pour la ligne la plus longue de la
+  carte, celle que le routeur essaie en dernier quand la bande sud est
+  pleine.
+- Le placement corrigé a rouvert le routage une dernière fois, et la
+  réponse a de nouveau été structurelle plutôt que liaison par
+  liaison : la traversée de sa rangée par la ligne B de chaque
+  cellule, face avant, dans le canal de 0,86 mm entre les deux
+  rangées ; le contournement du coin sud-est, qui ne porte aucune
+  pastille, pour la ligne B de la cellule 4 ; la descente de sa rangée
+  B par la face arrière de la bande, où l'écrêteur et le FET, tous
+  deux en CMS, ne bloquent rien ; une épine de masse pour le tampon
+  LED, coincé sous le connecteur Nucleo entre vingt échappées ; un
+  tour de routage de plus, puisque chaque tour promeut ce que le
+  précédent a manqué ; et un labyrinthe qui dégrossit sa trame (0,1
+  puis 0,2 mm) quand la liaison traverse la carte, au lieu
+  d'abandonner sur son plafond d'exploration. Résultat : **568 pistes,
+  288 vias, zéro liaison ouverte, zéro DRC, zéro chevauchement**.
+- Deux tentatives ont coûté un build chacune et valent d'être notées,
+  parce qu'elles disent la même chose : une amorce posée dans un
+  couloir occupe ce couloir. Une descente de masse tracée au milieu de
+  la colonne d'échappée du connecteur a rouvert trois lignes
+  d'excitation ; remise en épine, parallèle aux échappées au lieu de
+  les croiser, elle ne gêne plus personne. Avant de poser une route
+  structurelle, regarder par où passent celles qui existent déjà.
 - Leçon retenue et écrite dans la [note 04](04-routeur-et-garanties.md) :
   la « saturation » qui justifiait d'arrêter à sept liaisons était un
   artefact du compte. Un mauvais arbitre fait prendre les mauvaises

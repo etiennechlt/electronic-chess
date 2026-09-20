@@ -225,11 +225,19 @@ tranché : 0,45 mm de diamètre pour 0,20 mm de perçage passe en quatre
 couches (minimum 0,25 / 0,15) comme en deux couches (minimum
 0,45 / 0,20, donc juste au minimum sur le banc). Aucun via à changer.
 
-Les avertissements restants sont de la sérigraphie (chevauchements de
-références, texte coupé par le masque) et des bibliothèques
-d'empreintes absentes de la configuration KiCad locale. Ils ne changent
-pas le cuivre et ne bloquent pas la fabrication ; la sérigraphie est à
-relire une fois sur le rendu si la lisibilité compte.
+Les avertissements restants se répartissent en trois familles, aucune
+bloquante. La sérigraphie d'abord (quadrant : 151 chevauchements de
+références, 75 textes coupés par le masque, 4 au bord ; banc : 29 et
+6) : rien ne change au cuivre, mais la lisibilité des repères est à
+relire sur le rendu si l'on compte sérigraphier utile. Les
+bibliothèques d'empreintes ensuite (129 et 43), absentes de la
+configuration KiCad locale, ce qui ne dit rien de la carte. Enfin du
+cuivre en cul de sac (quadrant : 25 pistes et 11 vias ; banc : 5
+vias) : des moignons dont une extrémité ne rejoint rien, laissés par
+les passes de finition et par les échappées. Ils n'ouvrent aucune
+liaison, ils ne court-circuitent rien, et ils sont fabriqués tels
+quels ; sur une carte qui est un capteur, ils sont à nettoyer à la
+prochaine reprise du routage plutôt qu'à ignorer indéfiniment.
 
 ## 7. Ordre des opérations, le jour de la commande
 

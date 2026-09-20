@@ -25,12 +25,13 @@ import shapely
 from shapely.geometry import LineString, Point, box
 from shapely.ops import nearest_points, unary_union
 
-GRID = 0.05  # raster step of the search
+GRID = 0.05  # raster step of the search, coarsened for a long haul
 MARGIN_MM = 10.0  # how far around the two pieces the search may wander
 DIAG = math.sqrt(2.0)
 VIA_COST = 10.0  # cells: a via is worth half a millimetre of detour
 TURN_COST = 1.5  # cells: prefer the straight run, then the single corner
 MAX_CELLS = 400_000  # ceiling on the exploration of one link
+MAX_GRID = 0.2  # coarsest raster: past it the gaps of a pad row close
 
 
 def _dist_to_segment(xs, ys, p0, p1):
@@ -48,30 +49,30 @@ def _dist_to_segment(xs, ys, p0, p1):
 class _Field:
     """Cells of a window, and what blocks them on each layer."""
 
-    def __init__(self, x0, y0, x1, y1):
-        self.x0, self.y0 = x0, y0
-        self.nx = int(math.ceil((x1 - x0) / GRID)) + 1
-        self.ny = int(math.ceil((y1 - y0) / GRID)) + 1
-        self.xs = x0 + GRID * np.arange(self.nx)
-        self.ys = y0 + GRID * np.arange(self.ny)
+    def __init__(self, x0, y0, x1, y1, grid=GRID):
+        self.x0, self.y0, self.grid = x0, y0, grid
+        self.nx = int(math.ceil((x1 - x0) / grid)) + 1
+        self.ny = int(math.ceil((y1 - y0) / grid)) + 1
+        self.xs = x0 + grid * np.arange(self.nx)
+        self.ys = y0 + grid * np.arange(self.ny)
         self.gx, self.gy = np.meshgrid(self.xs, self.ys)
         self.blocked = [np.zeros((self.ny, self.nx), dtype=bool) for _ in range(2)]
         self.via_blocked = np.zeros((self.ny, self.nx), dtype=bool)
 
     def cell(self, x, y):
         return (
-            int(round((y - self.y0) / GRID)),
-            int(round((x - self.x0) / GRID)),
+            int(round((y - self.y0) / self.grid)),
+            int(round((x - self.x0) / self.grid)),
         )
 
     def point(self, i, j):
-        return (self.x0 + j * GRID, self.y0 + i * GRID)
+        return (self.x0 + j * self.grid, self.y0 + i * self.grid)
 
     def _window(self, x0, y0, x1, y1, reach):
-        j0 = max(0, int(math.floor((x0 - reach - self.x0) / GRID)))
-        j1 = min(self.nx - 1, int(math.ceil((x1 + reach - self.x0) / GRID)))
-        i0 = max(0, int(math.floor((y0 - reach - self.y0) / GRID)))
-        i1 = min(self.ny - 1, int(math.ceil((y1 + reach - self.y0) / GRID)))
+        j0 = max(0, int(math.floor((x0 - reach - self.x0) / self.grid)))
+        j1 = min(self.nx - 1, int(math.ceil((x1 + reach - self.x0) / self.grid)))
+        i0 = max(0, int(math.floor((y0 - reach - self.y0) / self.grid)))
+        i1 = min(self.ny - 1, int(math.ceil((y1 + reach - self.y0) / self.grid)))
         return i0, i1, j0, j1
 
     def _mark(self, targets, window, d, reach):
@@ -129,7 +130,7 @@ def _fill(field, net, pads, tracks, vias, width, clearance, via_r, thermal_mm):
     and what a via may not come near, which is wider by the difference
     of the radii. A cell is a via spot only when the whole disc fits.
     """
-    slop = GRID * DIAG / 2.0  # a cell centre stands for its whole cell
+    slop = field.grid * DIAG / 2.0  # a cell centre stands for its whole cell
     half = width / 2.0
     reach = clearance + slop
     front, back, holes = field.blocked[0], field.blocked[1], field.via_blocked
@@ -293,11 +294,20 @@ def maze_join(
     y1 = min(by1 - edge, max(pa.y, pb.y) + MARGIN_MM)
     if x1 - x0 < GRID or y1 - y0 < GRID:
         return None
+    # A haul across the board rasterizes to millions of cells at the
+    # nominal step: coarsen until the window fits the ceiling. The plan
+    # is checked in exact geometry afterwards either way, so a coarse
+    # raster costs detail, never legality.
+    grid = GRID
+    while (x1 - x0) * (y1 - y0) / (grid * grid) > MAX_CELLS:
+        grid *= 2.0
+        if grid > MAX_GRID:
+            return None
 
     window = box(x0, y0, x1, y1)
     piece_a = tuple(None if g is None else g.intersection(window) for g in piece_a)
     piece_b = tuple(None if g is None else g.intersection(window) for g in piece_b)
-    field = _Field(x0, y0, x1, y1)
+    field = _Field(x0, y0, x1, y1, grid)
     _fill(field, net, pads, tracks, vias, width, clearance, via_r, thermal_mm)
     via_ok = ~field.via_blocked & ~field.blocked[0] & ~field.blocked[1]
     starts = [field.mark_inside(piece_a[la]) for la in (0, 1)]
