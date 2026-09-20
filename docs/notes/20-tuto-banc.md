@@ -76,13 +76,23 @@ la [note 19](19-cerveau-et-banc-nucleo.md), section 4.
 | Carte | Format | Couches | Épaisseur | Particularités |
 |---|---|---|---|---|
 | Carte de banc | 80 x 56 mm | 2 | 1,6 mm | rien de spécial ; finition HASL sans plomb ou ENIG |
-| Quadrant 2 x 2 | 120 x 108 mm | 4 | 1,6 mm | vias de 0,45 mm à perçage 0,2 mm sous les boîtiers fins : cocher l'option de perçage minimal 0,2 mm, à confirmer sur le devis ; un pochoir (stencil) rend la pose du frontal beaucoup plus sûre |
+| Quadrant 2 x 2 | 120 x 108 mm | 4 | 1,6 mm | ses vias de 0,45 mm à perçage 0,2 mm passent dans le procédé standard en quatre couches, sans option ni surcoût ; **cuivre interne 1 oz**, voir ci dessous ; un pochoir (stencil) rend la pose du frontal beaucoup plus sûre |
 
 Cinq exemplaires sont le minimum chez JLCPCB et suffisent largement.
 Le dépôt versionne les gerbers des deux cartes, il n'y a rien à
 produire : `hardware/bench/bench-gerbers.zip` et
 `hardware/quadrant-2x2/quadrant-2x2-gerbers.zip` se déposent tels
-quels sur le site du fabricant. Ils sortent de `tools/gerbers.py`
+quels sur le site du fabricant, après avoir vérifié leur empreinte
+(`sha256sum -c` sur le `*-gerbers.sha256` qui les accompagne).
+
+Une option coûte un peu et se décide ici : le **cuivre interne du
+quadrant**. L'empilement standard en quatre couches donne 1 oz dehors
+et 0,5 oz dedans, alors que la spirale de détection est calculée avec
+35 µm sur ses quatre couches. En 0,5 oz interne, sa résistance monte de
+50 % et son facteur Q descend d'un tiers (67 à 45 à 400 kHz). Pour une
+carte dont le métier est de mesurer, prendre l'option 1 oz interne ;
+le détail et les autres options écran par écran sont dans la
+[note 23](23-commande-jlcpcb.md). Ils sortent de `tools/gerbers.py`
 (section « Gerbers » de la [note 08](08-regenerer.md)), qui remplit
 les pours avant de tracer : un plan de masse exporté sans ce
 remplissage arrive vide chez le fabricant. Les fichiers `jlc-bom.csv`
