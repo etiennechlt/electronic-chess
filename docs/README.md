@@ -103,6 +103,7 @@ pas.
 | `tools/analoggen/` | générateur complet de la carte analogique (schéma, PCB routé, BOM, SPICE) |
 | `tools/quadgen/` | générateur du quadrant 4 x 4 : spirales, échappées, LED, frontal complet (schéma, placement, routage) |
 | `tools/boardgen/` | générateur générique et les quatre cartes du plateau : cerveau, puissance, moteurs, horloge |
+| `tools/fabcheck.py` | audit de commande carte par carte : couches, empreinte de l'archive, couverture du BOM d'assemblage, verdict |
 | `tools/docfig/` | schémas explicatifs de `docs/images/` (notes 18 et 19), dessinés depuis le yaml |
 | `hardware/quadrant/`, `hardware/brain/`, `hardware/power/`, `hardware/motion/`, `hardware/clock/` | projets KiCad générés, BOM, placements, README de chaque carte |
 | `hardware/quadrant-2x2/` | quadrant réduit 2 x 2 de mise au point, même circuit et même bus, schéma dessiné par feuilles |

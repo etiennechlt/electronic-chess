@@ -338,7 +338,8 @@ générique est à porter dans `coilgen`.
 | 6 | amorces revérifiées contre les pastilles | build, `pytest` |
 | 7, 8 | bilan des liaisons ouvertes | ligne d'état du build |
 | 10 | empreinte de l'archive et de sa carte | `sha256sum -c`, `pytest` |
-| 11 | BOM d'assemblage contre BOM complet | [note 23](23-commande-jlcpcb.md) |
+| 11 | BOM d'assemblage contre BOM complet | `python3 tools/fabcheck.py` |
+| 10, 11 | verdict de fabricabilité par carte | `python3 tools/fabcheck.py` |
 
 Avant tout push : `ruff check .` puis `pytest`. Avant tout export de
 fabrication : `tools/drc.py`, puis `tools/gerbers.py`, qui refuse une

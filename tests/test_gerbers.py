@@ -119,3 +119,33 @@ def test_every_archive_records_the_board_it_was_plotted_from(archive):
     assert set(recorded) == {board.name, archive.name}
     for path in (board, archive):
         assert gerbers.sha256(path) == recorded[path.name], f"{path.name} changed since the export"
+
+
+def test_the_order_audit_clears_the_boards_whose_routing_is_closed():
+    """`tools/fabcheck.py` is the pre-order audit, run as a test.
+
+    It answers the two questions a fabricator's upload cannot: whether
+    the archive still matches the board it claims to come from, and how
+    much of the board an assembly order would actually populate.
+    """
+    import fabcheck
+
+    audits = {
+        a.name: a
+        for a in (
+            fabcheck.audit(p)
+            for p in sorted({q.parent for q in (ROOT / "hardware").rglob("*.kicad_pcb")})
+        )
+        if a is not None
+    }
+    # every archive in the repository matches its board
+    assert [a.name for a in audits.values() if a.archive and a.digest != "ok"] == []
+    # the boards ordered as bare PCBs are clear, and say so
+    for name in ("quadrant-2x2", "bench"):
+        assert audits[name].ready_bare, name
+    # a board whose routing is open ships no archive at all
+    for name in ("brain", "power", "clock", "coil-board"):
+        assert audits[name].archive is None, name
+    # and the assembly BOM of the ordered boards is known to be partial
+    assert audits["quadrant-2x2"].assembled < audits["quadrant-2x2"].parts
+    assert audits["quadrant-2x2"].cpl_orphans == []

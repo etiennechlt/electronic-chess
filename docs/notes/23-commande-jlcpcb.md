@@ -67,6 +67,19 @@ PYTHONPATH=tools .venv/bin/python -m boardgen build bench --render docs/images/b
 couches sur la carte, et refuse toute carte dont le routage n'est pas
 fermé.
 
+L'audit de cette note est rejouable en une commande, sans KiCad :
+
+```bash
+python3 tools/fabcheck.py                    # toutes les cartes
+python3 tools/fabcheck.py hardware/bench     # une seule
+```
+
+Il donne par carte le contour, la pile de couches, la piste et le via
+les plus petits, l'état de l'empreinte de l'archive, la couverture du
+BOM d'assemblage et les lignes sans code LCSC, puis un verdict :
+`bare boards ready`, `assembly ready` ou `not ready`. Le code de sortie
+est non nul si une archive ne correspond plus à sa carte.
+
 ## 3. Les options du formulaire, écran par écran
 
 Les champs qui ne sont pas listés restent à la valeur par défaut de
@@ -147,11 +160,14 @@ LCSC dans la description de circuit :
 
 | Carte | Composants | Dans le BOM d'assemblage | À souder à la main |
 |---|---|---|---|
-| `quadrant-2x2` | 126 | 38 | 88 |
-| `bench` | 43 | 9 | 34 |
+| `quadrant-2x2` | 118 | 38 | 80 |
+| `bench` | 36 | 9 | 27 |
 
-Téléverser ces BOM tels quels ferait poser 38 composants sur 126 et
-laisserait le reste, résistances et condensateurs compris, à la main.
+Les points de test, les amarres de spirale et les trous de fixation ne
+comptent pas comme composants : ce sont des pastilles, huit sur le
+quadrant et sept sur le banc. Téléverser ces BOM tels quels ferait
+poser 38 composants sur 118 et laisserait le reste, résistances et
+condensateurs compris, à la main.
 Ce qui manque sur le quadrant 2 x 2 : les passifs génériques (18 x
 100 nF, 8 x 330 R, 9 x 10 k, et les autres valeurs unitaires), les huit
 BAV99W, et **le multiplexeur ADG1607** (ADG1607BCPZ). Sur le banc : les
