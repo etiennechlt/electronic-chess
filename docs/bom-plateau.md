@@ -218,8 +218,8 @@ aux alentours de 450 à 500 EUR TTC, cohérent avec la note 23.
 2. Rejouer la liste et les paniers (paragraphe 1), pour partir des
    fichiers à jour.
 3. Ouvrir le panier LCSC, importer `docs/panier-lcsc.csv`, **relever les
-   prix et les stocks réels ligne à ligne** : 55 des 71 lignes sont
-   estimées, notamment tous les passifs. Compléter les codes des passifs
+   prix et les stocks réels ligne à ligne** : 63 des 71 lignes sont
+   estimées et 8 seulement relevées, notamment tous les passifs. Compléter les codes des passifs
    génériques dans le panier, ou les laisser à la bibliothèque de
    l'assembleur si l'assemblage est retenu.
 4. Ouvrir le panier Mouser, importer `docs/panier-mouser.csv`, vérifier
