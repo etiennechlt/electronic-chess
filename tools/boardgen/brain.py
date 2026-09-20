@@ -28,6 +28,7 @@ from analoggen.circuit import (
     R,
 )
 from analoggen.symlib import load_symbol
+from quadgen.escape import FANOUT_VIA_DRILL_MM, FANOUT_VIA_PAD_MM, STUB_BEYOND_MM, STUB_WIDTH_MM
 
 from chessboard_calc.config import BoardConfig
 
@@ -42,7 +43,9 @@ GND = "GND"
 ESP32_X, ESP32_Y = 113.25, 68.5
 ESP32_ANTENNA_FROM, ESP32_ANTENNA_TO, ESP32_HALF = 6.75, 12.75, 9.5
 # GenericBoard options shared by the build and the tests
-BOARD_OPTIONS = {"overhang": ("U5",)}
+# the four FPC links get no fanout via from the escape module: their
+# fans are drawn by hand below (hand_routes), on the top layer
+BOARD_OPTIONS = {"overhang": ("U5",), "plain_fanout": ("J1", "J2", "J3", "J4")}
 # The quadrant bus: one net across the four FPC links, routed before every
 # other net, while the band under the connectors is still empty. Routed
 # later, each finds its fanout corridors taken by the short nets of the
@@ -507,7 +510,7 @@ def brain_placements(ckt: Circuit) -> dict[str, tuple[float, float, float]]:
     # west column: USB-C (cable west), ESD, SWD, buttons
     out["J5"] = (5.6, 24.0, 90.0)
     out["U9"] = (18.0, 24.0, 0.0)
-    out["J6"] = (19.0, 14.0, 0.0)
+    out["J6"] = (19.0, 14.0, 0.0)  # its pads 0.6 mm under the lowest fan lane of J1
     out["SW2"] = (14.0, 36.0, 0.0)
     out["SW1"] = (14.0, 46.0, 0.0)
     out["SW5"] = (14.0, 56.0, 0.0)
@@ -549,14 +552,15 @@ def brain_placements(ckt: Circuit) -> dict[str, tuple[float, float, float]]:
             upright=True,
         )
     )
-    # LED driver, isolator, load switch, ESP regulator in the middle band
+    # LED driver, isolator, load switch, ESP regulator in the middle band,
+    # under the fans of the third and fourth links (their lowest lane at 13.4)
     out.update(
         shelf(
             ["U8", "R11", "C23", "U6", "C24", "C25", "Q1", "Q2", "R12", "R13", "R16", "R17"],
             ckt,
             58.0,
             84.0,
-            12.0,
+            14.2,
         )
     )
     out["U7"] = (64.0, 30.0, 0.0)
@@ -640,6 +644,57 @@ def brain_placements(ckt: Circuit) -> dict[str, tuple[float, float, float]]:
     return out
 
 
+# ---- the fans of the four FPC links, drawn by hand before the router runs.
+# Sixteen pads at 0.5 mm facing south, in a band the whole bus must cross:
+# fanned out by the escape module, every pin ends in a via two rows deep
+# whose exit corridor is walled in by its neighbours' routes, and the bus
+# nets stay in pieces (23 open nets on the 19/09 build). Instead, as on
+# the bench, every pin leaves its stub on a 0.2 mm column and turns into a
+# 0.3 mm lane heading east (pins 2 to 8) or west (pins 9 to 16), the
+# outermost pin first and the next a lane lower, so no lane crosses a
+# column; each lane ends 1.2 mm past the one above it, in a small via the
+# router continues from on the inner layers. The ground pins (1 and 3)
+# drop to the plane at their stub end.
+FAN_Y0_MM = 9.2  # first lane under the pad row (pads end at 7.9, stubs at 8.2)
+FAN_PITCH_MM = 0.6  # 0.3 mm lanes, 0.3 mm apart
+FAN_STAGGER_MM = 1.2  # a lane ends that much past the one above: room for its via
+FAN_OUT_MM = 4.6  # first via column, from the connector centre (the row spans +-3.75)
+FAN_GND_VIA_MM = 8.55  # the ground pins drop to the plane at their stub end
+FAN_EAST = (2, 4, 5, 6, 7, 8)  # outermost pin first
+FAN_WEST = (16, 15, 14, 13, 12, 11, 10, 9)
+
+
+def hand_routes(gb: GenericBoard) -> None:
+    """Seeds drawn before routing: the fans of the four quadrant links."""
+    pads = {(p.ref, p.number): p for p in gb.res.pads}
+    thin, lane = STUB_WIDTH_MM, gb.spec.track
+    small = (FANOUT_VIA_PAD_MM, FANOUT_VIA_DRILL_MM)
+
+    def T(net, layer, pts, width):
+        gb.seed(net, layer, [(round(x, 3), round(y, 3)) for x, y in pts], width)
+
+    def V(net, x, y, size=None):
+        gb.seed_via(net, round(x, 3), round(y, 3), *(size or (None, None)))
+
+    for k in range(1, 5):
+        ref = f"J{k}"
+        pins = {int(p.number): p for (r, n), p in pads.items() if r == ref and n.isdigit()}
+        xc = (pins[1].x + pins[16].x) / 2.0
+        top = {n: p.y + p.h / 2.0 + STUB_BEYOND_MM for n, p in pins.items()}  # stub ends
+        for n, p in pins.items():
+            if p.net == GND:
+                T(GND, "F.Cu", [(p.x, top[n]), (p.x, FAN_GND_VIA_MM)], thin)
+                V(GND, p.x, FAN_GND_VIA_MM, small)
+        for group, sign in ((FAN_EAST, 1.0), (FAN_WEST, -1.0)):
+            for i, n in enumerate(group):
+                p = pins[n]
+                y = FAN_Y0_MM + FAN_PITCH_MM * i
+                x_end = xc + sign * (FAN_OUT_MM + FAN_STAGGER_MM * i)
+                T(p.net, "F.Cu", [(p.x, top[n]), (p.x, y)], thin)
+                T(p.net, "F.Cu", [(p.x, y), (x_end, y)], lane)
+                V(p.net, x_end, y, small)
+
+
 def build_brain(cfg: BoardConfig):
     ckt = build_brain_circuit(cfg)
     placements = brain_placements(ckt)
@@ -651,6 +706,7 @@ def build_brain(cfg: BoardConfig):
     gb = GenericBoard(SPEC, ckt, placements, generator="boardgen", **BOARD_OPTIONS)
     gb.place_all()
     antenna_keepout(gb, placements["U5"], SPEC.width)
+    hand_routes(gb)
     gb.route_all(first=BUS_FIRST)
     return gb.finish(
         texts=[

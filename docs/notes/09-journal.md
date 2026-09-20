@@ -325,6 +325,51 @@ quatre commandes.
   décisions pendant des jours ; le compte exact a renversé la
   conclusion en une journée.
 
+## 20/09/2026, devis, passe de finition partagée, cerveau et 4 x 4
+
+- Le devis JLCPCB de vingt cartes 2 x 2 (281 EUR) est démonté ligne par
+  ligne ([note 23](23-commande-jlcpcb.md), le document « Cartes du
+  damier ») : six codes LCSC sur douze étaient des candidats jamais
+  vérifiés et JLCPCB les a pris au mot, dont un codec audio à 7,47 EUR
+  pièce à la place de l'AD8421 (149 EUR sur 281). Le format au dessus
+  de 100 x 100 ne coûte que le frais d'ingénierie, 21,73 EUR par
+  commande ; un 2 x 2 en 100 x 100 serait un nouveau plan de frontal
+  en croix entre les bobines, 3 à 5 jours, et l'offre spéciale impose
+  0,5 oz interne. Décision en attente : tuile du plateau ou carte de
+  mise au point.
+- KiCad 7.0.11 et ses bibliothèques s'installent dans l'environnement
+  distant depuis l'archive Ubuntu (les PPA sont bloqués) : DRC, gerbers
+  et tests des générateurs y tournent.
+- Le firmware du banc pilote un quadrant 4 x 4 complet sur le même
+  shield : `make NUCLEO=1 NUCLEO_FULL=1`, seize bobines derrière
+  MUX_EN_H, chaîne de 32 LED générée du yaml ; budget du banc et
+  précaution sur le courant des LED dans la note 19.
+- La passe de finition et le labyrinthe de la carte analogique sont
+  portés sur le modèle de cuivre partagé (`tools/quadgen/finish.py`,
+  [note 04](04-routeur-et-garanties.md)) et branchés sur les trois
+  générateurs ; un instantané du routage (`QUADGEN_DUMP`,
+  `BOARDGEN_DUMP`, `--resume`) permet de rejouer la passe et les
+  contrôles en secondes. Leçons : borner la famille à deux vias (neuf
+  minutes sur un cas de vingt millimètres avant), faire partir le
+  labyrinthe de la plus petite pièce, essayer le via fin après le via
+  standard, donner un budget de temps à chaque net.
+- Cerveau, régénéré : 23 nets ouverts, presque tous aux quatre
+  connecteurs FPC dont les broches sont murées par leurs propres
+  éventails ; le bus routé en premier plus la passe de finition en
+  laissent 18. Réponse structurelle, comme sur le banc : les éventails
+  des quatre liens sont dessinés à la main sur la face avant (voies de
+  0,3 mm en escalier, un petit via au bout de chacune, les masses
+  descendues au plan à leur moignon), la bande médiane descend de
+  2,2 mm sous eux.
+- Quadrant 4 x 4, régénéré pour la première fois depuis la comptabilité
+  exacte : 36 nets ouverts, les entrées des deux mux, les sorties des
+  décodeurs, la colonne des amplificateurs, 5VA, VREF et sept îlots du
+  plan de masse ; le routage seul prend 27 minutes.
+- Estimation du prix du plateau, cartes nues et assemblées, poste par
+  poste (note 23, section 8) : 300 à 350 EUR hors taxes en cartes nues,
+  430 à 480 EUR assemblé, dont 120 à 140 EUR de silicium analogique
+  pour les quatre frontaux.
+
 ## Où en est la ligne de temps
 
 Phase 0 faite ; la phase 1 (maquette) est conçue mais ne sera pas
