@@ -139,24 +139,24 @@ Trois choix, à trancher explicitement :
 | `brain` | routage fermé le 20/09, DRC zéro, archive et empreinte commitées | rien pour des cartes nues ; codes LCSC à vérifier avant un assemblage |
 | `power` | 69 éléments non connectés (12 nets, dont `BAT-` entier, 15 morceaux) | idem |
 | `clock` | 51 éléments non connectés (11 nets, dont `VBUS`, 7 morceaux : pastilles USB-C inatteignables par le routeur) | idem |
-| `quadrant` (4 x 4) | régénéré le 20/09 : 47 nets ouverts, 52 éléments non connectés | éventails à la main des multiplexeurs et des décodeurs ([note 04](04-routeur-et-garanties.md)), puis gerbers |
+| `quadrant` (4 x 4) | régénéré le 04/10 : 24 nets ouverts, 31 éléments non connectés, après les éventails à la main | une décision de conception, bande de 24 mm, six couches ou cellule allégée ([note 04](04-routeur-et-garanties.md)), puis gerbers |
 | `motion` | 27 éléments non connectés et 24 perçages trop proches | phase 2, ni commandée ni testée (note 07) |
 
 Chiffres mesurés sur les fichiers commités par
-`/usr/bin/python3 tools/drc.py`, le 19/09/2026 (cerveau et quadrant
-4 x 4 : le 20/09). Un net ouvert compte
-plusieurs éléments non connectés, d'où les deux nombres.
+`/usr/bin/python3 tools/drc.py`, le 19/09/2026 (cerveau : le 20/09,
+quadrant 4 x 4 : le 04/10). Un net ouvert compte plusieurs éléments
+non connectés, d'où les deux nombres.
 
 Le cerveau a été fermé le 20/09 avec ce lot : passe de finition
 partagée, masses en premier, éventails et VBAT dessinés à la main,
 nets de liaison routés en premier, rip-up et reroutage des nets murés
 ([note 04](04-routeur-et-garanties.md)). Puissance et horloge attendent
 le même traitement, court maintenant que l'outillage existe. Le
-quadrant 4 x 4 est un cas à part : ses 47 nets ouverts viennent de
-trois champs d'échappées que rien ne traverse (multiplexeurs face à
-face, décodeurs à une rangée de vias, colonne d'amplification), et il
-lui faut des éventails dessinés à la main comme aux liens du cerveau,
-un à deux jours.
+quadrant 4 x 4 est un cas à part : ses éventails et ses échappées
+dessinés à la main (04/10) l'ont fait passer de 47 à 24 nets ouverts,
+et ce qui reste est un écart de capacité de la bande de 20 mm, mesuré
+voie par voie, qui demande une décision de conception (bande plus
+large, six couches ou cellule allégée, note 04).
 
 ## 5. Cartes nues maintenant, assemblage plus tard
 

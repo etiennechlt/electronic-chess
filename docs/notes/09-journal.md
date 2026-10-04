@@ -407,6 +407,33 @@ quatre commandes.
   FH12-16S obsolète et en rupture. Même famille d'erreur qu'au point 11
   de la note 22, détectée cette fois par un test.
 
+## 04/10/2026, les éventails du quadrant 4 x 4, et le palier
+
+- Le lot décrit le 20/09 est fait (note 04, section « Ce que le routeur
+  ne peut pas trouver (quadrant 4 x 4) ») : les deux multiplexeurs
+  tournés sur une même colonne avec leurs seize entrées dessinées à la
+  main (vias dans deux colonnes par côté), les vingt-quatre broches de
+  chaque décodeur et les broches des trois amplificateurs échappées
+  sous leur boîtier, l'étage de sortie et la résistance du rail
+  d'impulsion ramenés dans la zone de liaison, U2 tourné pour que ses
+  sorties partent du côté des grilles, la voie de grille des cellules
+  sur la face arrière, le budget du routeur triplé, et un rip-up qui
+  cherche le mur avec le routeur lui-même au lieu de soulever les
+  voisins des pastilles.
+- Vingt-quatre builds de quarante à quatre-vingts minutes, quatre à la
+  fois : 47 nets ouverts au départ, 39, 43, 38, 30, 23, 23, 27, 25, 26
+  (les variantes et leur sens dans la note 04). U3 en tête de zone et
+  les ordres de routage « longs d'abord » font pire. Le build commité
+  (q44x) laisse 24 nets ouverts et 31 éléments non connectés au DRC.
+- Le palier est mesuré : dans les rangées de la dernière cellule de la
+  bande 0 et sous les décodeurs, il y a à peu près autant de voies que
+  de lignes à faire passer, et un routeur séquentiel n'emplit pas un
+  couloir. Le rip-up trouve le mur (deux à cinq nets) et une levée sur
+  deux est défaite faute de place pour les nets soulevés. Ce qui reste
+  est une décision de conception : autoroutes dessinées à la main pour
+  les cellules lointaines (un à deux jours, sans certitude), bande de
+  24 mm, six couches, ou cellule allégée.
+
 ## Où en est la ligne de temps
 
 Phase 0 faite ; la phase 1 (maquette) est conçue mais ne sera pas

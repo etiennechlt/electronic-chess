@@ -354,11 +354,44 @@ routage de quarante minutes. Le lot, dans `tools/quadgen/strip.py`
 Résultat, build par build (nets en morceaux après le routage et le
 rip-up, avant la passe de finition) : 39 (q44e, premiers éventails),
 43 (q44g, deux rangées aux décodeurs), 38 (q44h, face arrière à 1,5),
-30 (q44i et q44j, étage de sortie à la liaison, broches impaires sous
-le boîtier) ; les builds suivants, avec les vingt-quatre broches des
-décodeurs sous le boîtier, les éventails compacts et le rip-up par
-recherche du mur, sont en cours au moment de ce commit, leur résultat
-sera consigné ici et dans le README de la carte.
+30 (q44i, étage de sortie à la liaison, broches impaires sous le
+boîtier), 23 (q44m, vingt-quatre broches sous le boîtier, éventails
+compacts, rip-up par recherche du mur), 23 (q44o et q44q, voie de
+grille sur B.Cu, puis U2 tourné), 27 (q44s, U3 en tête de zone), 25 et
+26 (q44w et q44x, échappées des amplificateurs, face arrière à 1,5 puis
+3,0). Les ordres de routage hybrid et far_first ont fait pire (35 et
+plus). Le build commité est q44x, la configuration par défaut du
+générateur : 24 nets en morceaux après la passe de finition, 31
+éléments non connectés au DRC, aucun défaut d'isolement.
+
+**Ce que disent les sondes à ce palier.** Les nets qui restent sont
+toujours des lignes de bande (grilles DRIVE et DAMP, lignes M) et
+quelques nets de la zone, et le rip-up par recherche du mur trouve bien
+ce qui les bloque, deux à cinq nets chaque fois, mais une levée sur
+deux est défaite : les nets soulevés ne retrouvent pas de chemin. Le
+compte des voies le dit (`census.py` et `wall_probe.py` dans le
+bac à sable de la session) : dans les rangées de la dernière cellule de
+la bande 0, In1 a 2 mm libres et In2 3 à 5 mm pour une trentaine de
+lignes qui doivent les traverser (les lignes des cellules 1 à 3, au
+nord de la bande d'échappée, plus les lignes de commande et le retour
+de l'étage de sortie), soit à peu près autant de voies que de lignes
+une fois comptées les colonnes de vias de chaque cellule (4,2 ; 5,4 ;
+6,7 ; 7,1 ; 10,77 ; 15,6 ; 16,55 ; 19,05 mm) et les bus. Sous les
+décodeurs, les trois couloirs entre les colonnes de vias font une
+cinquantaine de voies pour autant de lignes. Un routeur séquentiel
+n'emplit pas un couloir à cent pour cent ; les vingt-cinq nets ouverts
+sont l'écart entre la capacité et la demande, pas un défaut de
+recherche.
+
+**Ce qui reste possible, par ordre de coût.** Des autoroutes dessinées
+à la main pour les douze lignes des trois cellules lointaines de chaque
+bande, colonne par colonne entre les vias des cellules (le plan est
+dans le journal du 04/10), un à deux jours de plus sans certitude ;
+desserrer la bande, en largeur (24 mm au lieu de 20, la bordure de bois
+suit) ou en couches (six au lieu de quatre, environ le double du prix
+de la carte nue) ; ou alléger la cellule (passifs 0402, voie de grille
+plus courte), ce qui rouvre le quadrant 2 x 2. Ces trois options sont
+des décisions de conception, pas de routage.
 
 ## Les quatre passes formelles
 

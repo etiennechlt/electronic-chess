@@ -117,11 +117,15 @@ vérifiées à chaque build. Bilan dans son
 et la passe de finition : 47 nets ouverts, 52 éléments non connectés au
 DRC, tous expliqués par trois champs d'échappées que rien ne traverse
 (les deux multiplexeurs LFCSP face à face, les décodeurs à une rangée
-de vias, la colonne d'amplification). Le lot qui le ferme est le motif
-qui a fermé le cerveau, des éventails dessinés à la main dans le
-générateur, un à deux jours de travail ; il est décrit dans la
-[note 04](04-routeur-et-garanties.md) et n'est pas engagé. Bilan dans
-son [README](../../hardware/quadrant/README.md).
+de vias, la colonne d'amplification). Le lot des éventails à la main a
+été fait les 20/09 et 04/10 (multiplexeurs tournés et empilés avec
+leurs seize entrées dessinées, décodeurs et amplificateurs échappés
+sous leur boîtier, étage de sortie à la liaison, rip-up par recherche
+du mur) : 24 nets ouverts au build commité, pour une cause désormais
+mesurée, la capacité de la bande de 20 mm dans les rangées de ses
+cellules et sous les décodeurs. Les options restantes sont des
+décisions de conception ([note 04](04-routeur-et-garanties.md)). Bilan
+dans son [README](../../hardware/quadrant/README.md).
 
 La revue du routage contre les règles de la profession
 ([note 21](21-routage-et-regles-de-l-art.md)) avait laissé deux points à
@@ -217,6 +221,14 @@ puissance et l'horloge, non reconstruites depuis. Le quadrant 4 x 4,
 régénéré, reste à 47 nets ouverts pour une cause qui lui est propre,
 trois champs d'échappées que rien ne traverse, et n'a pas d'archive :
 ses éventails à la main sont le lot suivant, un à deux jours.
+
+**État au 04/10/2026.** Le quadrant 4 x 4 est passé de 47 à 24 nets
+ouverts par les éventails et échappées dessinés à la main et un rip-up
+qui cherche le mur ; le reste est un écart de capacité de la bande,
+mesuré voie par voie, qui demande une décision (bande de 24 mm, six
+couches ou cellule allégée, [note 04](04-routeur-et-garanties.md)).
+Toujours pas d'archive pour lui ; le 2 x 2, le banc et le cerveau
+restent les cartes commandables.
 
 **Sortie.** Tout le matériel de la phase 1 reçu et inventorié contre
 la BOM, pièces imprimées ajustées à blanc dans le socle.

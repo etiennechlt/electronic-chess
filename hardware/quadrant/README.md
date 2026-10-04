@@ -59,19 +59,29 @@ ou un net du frontal reste ouvert : la liste imprimée est ce qu'il reste
   G = 20, OPA2810 en Sallen-Key passe-haut et passe-bas, OPA2810 en
   tampon VREF et étage de sortie, écrêtage vers 3V3 et RC de sortie.
 - Zone du milieu (43,8 mm entre les deux groupes de cellules, ancrée
-  aux bandes d'échappée) : les deux décodeurs TSSOP l'un sous l'autre
-  sur l'axe de la bande, les deux mux LFCSP côte à côte décalés d'un
-  demi-pas pour que leurs vias d'éventail s'intercalent, les
-  amplificateurs dessous ; les passifs occupent les colonnes que les
-  éventails laissent libres de part et d'autre des décodeurs, sous le
-  FPC et à côté de l'étage de sortie.
+  aux bandes d'échappée), du haut vers le bas : les deux décodeurs
+  TSSOP empilés (le 74HC154 tourné de 180 degrés, adresses à l'ouest,
+  sorties des bobines 1 à 11 à l'est, du côté des grilles), chacune de
+  leurs vingt-quatre broches prolongée sous le boîtier jusqu'à un via
+  (quatre colonnes au pas double des pastilles) ; le mux des bobines 1
+  à 8, tourné de 270 degrés, ses seize entrées dessinées à la main en
+  éventails (voies au pas de 0,6 mm, vias dans deux colonnes par côté) ;
+  les deux amplificateurs côte à côte, broches échappées sous le
+  boîtier ; le mux des bobines 9 à 16 et ses éventails. Tous les
+  boîtiers à vias sont dans la bande ouest ; les passifs occupent la
+  bande est, entre le rail 3V3 et le bord, par affinité.
 - Zone du connecteur (25,7 mm) : FPC 16 broches, commutateur de rail
-  d'impulsion (AO3401A, AO3400A, 10 ohms 2010), réserve 10 µF ; les
-  points de test sont dans les colonnes latérales.
+  d'impulsion (AO3401A, AO3400A, et la 10 ohms 2010 à côté), réserve
+  10 µF, l'étage de sortie (OPA2810 avec ses résistances et son
+  condensateur) pour que seul le signal filtré traverse la bande ; le
+  point de test de sortie y reste, ceux de VREF et du bus d'excitation
+  sont au pied de la bande, à côté de leur bus.
 - Bus sur In1 côté est : 5VA, VREF, DRIVE_BUS, VIN et GND ; 3V3 et
   5V_LED sur In2. Les lignes de mesure M{k} vers les mux et les lignes
-  de grille des décodeurs sont routées par le routeur A* multicouche,
-  puis un contrôle d'isolement exact valide toute la carte.
+  de grille des décodeurs sont routées par le routeur A* multicouche
+  depuis les vias dessinés à la main, un rip-up cherche le mur de
+  chaque net resté en morceaux, puis un contrôle d'isolement exact
+  valide toute la carte.
 - Les vias d'empilement des bobines sont décalées radialement hors des
   bandes de spires (1,3 mm dans le creux ou au-delà du rayon extérieur,
   reliées par un tronçon radial) : posées sur le rayon même, elles
@@ -100,30 +110,34 @@ PYTHONPATH=tools .venv/bin/python -m quadgen build --render docs/images/quadrant
 
 ## Résultat du build
 
-Généré par `python -m quadgen build` le 20/09/2026, avec la comptabilité
-de connexité exacte, les descentes de masse en premier et la passe de
-finition partagée ([note 04](../../docs/notes/04-routeur-et-garanties.md)) :
+Généré par `python -m quadgen build` le 04/10/2026, avec les éventails
+et les échappées dessinés à la main, le rip-up par recherche du mur et
+la passe de finition partagée
+([note 04](../../docs/notes/04-routeur-et-garanties.md)) :
 
 | Bobines | LED | Segments | Vias | Raccords de la passe | Routes LED et alimentation ouvertes | Nets ouverts | Défauts d'isolement |
 |---|---|---|---|---|---|---|---|
-| 16 | 32 | 32926 | 838 | 22 | 0 | 47 | 0 |
+| 16 | 32 | 33171 | 946 | 15 | 0 | 24 | 0 |
 
-Nets ouverts, par cause (le détail et le plan sont dans la note 04,
-section « Ce que le routeur ne peut pas trouver (quadrant 4 x 4) ») :
-
-- 21 lignes M des cellules vers les multiplexeurs (A et B), plus
-  MUXA_OUT, MUX_A0 et MUX_A2 : les champs d'échappées des deux LFCSP-32
-  au pas de 0,5 mm, dont seuls les vias des bouts de rangée sont
-  atteignables ;
-- 9 sorties DRIVE du 74HC4514 et 6 sorties DAMP du 74HC154 : une rangée
-  de vias au pas de 0,65 mm, couloirs perpendiculaires à la bande ;
-- la colonne d'amplification (LP_IN, LP_OUT, LP_FB, OUT_FB, OUT_STAGE),
-  PULSE_EN, 5VA en quatre pièces, sept îlots du plan de masse.
+Le build commité du 20/09 en laissait 47 ; les éventails des
+multiplexeurs, les échappées sous boîtier des décodeurs et des
+amplificateurs, l'étage de sortie ramené à la liaison, le 74HC154
+tourné et le rip-up par recherche du mur ont fermé le reste, dans
+l'ordre raconté par la note 04. Ce qui reste ouvert : douze lignes de
+grille (DRIVE 2, 3, 10, 11, 12, 14, 15 et DAMP 2, 3, 9, 10, 16), neuf
+lignes M (bobines 1, 2, 3 et 5 des deux côtés, 14 B), le retour du
+filtre vers l'étage de sortie (LP_OUT), la référence en huit pièces et
+un îlot du plan de masse. La cause est mesurée
+voie par voie dans la note 04 : dans les rangées de la dernière cellule
+de la bande 0 et sous les décodeurs, la bande de 20 mm offre à peu près
+autant de voies que de lignes à faire passer, et un routeur séquentiel
+n'emplit pas un couloir ; le rip-up trouve le mur de chaque net, deux à
+cinq nets, et une levée sur deux est défaite faute de place pour ce
+qu'elle soulève. Les options restantes (autoroutes à la main pour les
+cellules lointaines, bande de 24 mm, six couches, cellule allégée) sont
+des décisions de conception.
 
 Aucune archive de fabrication : `tools/gerbers.py` refuse une carte au
-routage ouvert. Le lot suivant, les éventails dessinés à la main des
-multiplexeurs et des décodeurs sur le motif du cerveau, est décrit dans
-la note 04 et planifié dans la
-[note 07](../../docs/notes/07-etat-et-reste-a-faire.md).
+routage ouvert.
 
-DRC KiCad 7 (`tools/drc.py`, zones remplies) : 688 signalements, 52 éléments non connectés (les nets ouverts ci-dessus), erreurs restantes : aucune ; avertissements sans effet sur la fabrication : lib_footprint_issues 199, silk_over_copper 199, silk_overlap 199, track_dangling 67, via_dangling 19, silk_edge_clearance 5. Le contrôle d'isolement exact du générateur ne signale aucun défaut. Les vias d'éventail des boîtiers fins font 0,45 mm (perçage 0,2 mm), dans les capacités standard de JLCPCB, à confirmer sur le devis.
+DRC KiCad 7 (`tools/drc.py`, zones remplies) : 686 signalements, 31 éléments non connectés (les 24 nets ouverts ci-dessus), erreurs restantes : aucune ; avertissements sans effet sur la fabrication : lib_footprint_issues 199, silk_over_copper 199, silk_overlap 199, via_dangling 60, track_dangling 28, silk_edge_clearance 1. Le contrôle d'isolement exact du générateur ne signale aucun défaut. Les vias d'éventail et d'échappée font 0,45 mm (perçage 0,2 mm), dans les capacités standard de JLCPCB, à confirmer sur le devis.
