@@ -52,6 +52,7 @@ GATE_PD_VIA_X = 6.7  # east of the 0402 pull-down, before the 0805 damping resis
 CELL_CLAMP_GAP_MM = 0.3  # the B clamp's row, that far above the damping resistor
 CELL_WEST_VIA_X = 4.2  # west of the gate pull-down, before the escape lanes
 CELL_GATE_LANE_MM = 1.1  # the gate's lane under the cell, that far below its pad
+CELL_GATE_LAYER = {"reduced": "In2.Cu", "full": "B.Cu"}  # the lane's layer, by quadrant
 NFET_VIA_X = 10.77  # between the damping resistor and the source of the N-FET
 BUS_X = {net: x for net, x, _w in BUSES_IN1}
 
@@ -122,6 +123,7 @@ def hand_routes(b: Builder) -> None:
     def V(net, x, y):
         b.seed_via(net, round(x, 3), round(y, 3), *b.STRIP_VIA_MM)
 
+    gate_layer = CELL_GATE_LAYER["reduced" if is_reduced(b.cfg) else "full"]
     for coil in lay.coils:
         cr = cell_refs(coil.idx + 1)
         # ---- west column: the two clamp diodes, ground and 5VA
@@ -168,14 +170,17 @@ def hand_routes(b: Builder) -> None:
             V("VREF", x_via, east.y)
         # ---- the gate of the exciting FET: its pull-down is in the west
         # column and the FET in the east one, and the only way across the
-        # cell is under it, on the inner layer the 5 V grid leaves free
+        # cell is under it, on the inner layer the 5 V grid leaves free.
+        # On the full quadrant the lane runs on the back layer instead,
+        # through the ground pour: sixteen lanes across the middle of In2
+        # walled the lines that run the strip on it (CELL_GATE_LAYER).
         gate, pull = pads[(cr["nfet"], "1")], pads[(cr["gate_pd"], "1")]
         y_lane = round(gate.y + CELL_GATE_LANE_MM, 3)
         T(pull.net, "F.Cu", [(pull.x, pull.y), (CELL_WEST_VIA_X, pull.y)], thin)
         V(pull.net, CELL_WEST_VIA_X, pull.y)
         T(
             pull.net,
-            "In2.Cu",
+            gate_layer,
             [
                 (CELL_WEST_VIA_X, pull.y),
                 (CELL_WEST_VIA_X, y_lane),
