@@ -120,9 +120,14 @@ DEC_BODY_PINS = tuple(str(n) for n in range(1, 25))
 # from the package axis: the outer column clears the tips of the pads by
 # 0.3 mm, the inner one the outer column's vias by 0.9 mm on the diagonal
 DEC_BODY_VIA_MM = {1: 1.6, 0: 0.95}  # by pin parity
-# y of the packages from the top of the zone: the decoders stacked, the
-# mux of band 0 with its fans, the amplifier row, the mux of band 1
-FULL_ZONE_Y = {"U1": 4.6, "U2": 13.2, "U3": 22.35, "U5": 29.9, "U7": 29.9, "U4": 37.45}
+# y of the packages from the top of the zone: the mux of band 0 with its
+# fans at the head, so its sixteen lines leave toward their cells without
+# crossing the decoders (whose via columns under the body leave three
+# corridors, some fifty lanes, for everything that runs the zone), then
+# the two decoders stacked, the amplifier row, the mux of band 1. Each
+# fan ends 5.2 mm from the mux centre; a decoder's pads reach 3.8 mm
+# from its centre, an amplifier's courtyard 2.7 mm.
+FULL_ZONE_Y = {"U3": 5.35, "U1": 14.5, "U2": 23.1, "U5": 30.25, "U7": 30.25, "U4": 38.3}
 FULL_AMP_X = {"U5": 4.15, "U7": 11.55}  # side by side, U7's east pads over the via slot
 FULL_EAST_X0 = 12.4  # the eastern band, past the fanout vias of the western packages
 LINK_EAST_X0 = 10.4  # the rows of the link zone, east of the FPC's fanout field
@@ -139,14 +144,14 @@ GROUPS_FULL: tuple[tuple[tuple[str, ...], tuple[str, ...]], ...] = (
     # filter capacitor: every net of the stage stays in the link zone and
     # only the filter output (LP_OUT) crosses band 0 to reach it
     (("U8", "R23", "R24", "R25", "C24"), ("link",)),
+    (("C7", "C14", "C15", "R12", "R13", "R14", "C16"), ("mux", "amp")),
     (("C5", "C6", "C3", "C4"), ("dec",)),
     (("R5", "R6", "C13", "C23", "C22"), ("dec", "mux")),
-    (("C14", "C15", "R12", "R13", "R14", "C16"), ("mux", "amp")),
     (
         ("C17", "C18", "R15", "R16", "R17", "R18", "R19", "R20", "R21", "R22", "C19", "C20", "C21"),
         ("amp", "mux", "dec"),
     ),
-    (("C7", "C8"), ("mux", "dec")),
+    (("C8",), ("mux", "dec")),
 )
 
 
@@ -485,12 +490,12 @@ def _placements_full(
     cfg: BoardConfig, lay: Layout, circuit: Circuit, out: dict[str, Placement]
 ) -> dict[str, Placement]:
     """The floor plan of the full quadrant's strip, cells already placed
-    in `out`. Middle zone, top to bottom: the two decoders stacked, the
-    mux of band 0 with its fans north (toward its cells) and south (a
-    U-turn under the package), the two amplifiers of the chain side by
-    side, the mux of band 1 with its fans; every package with fanout
-    vias inside the western band (see MUX_X_MM). The output stage and
-    the reference buffer (U8) live by the link, where the output goes.
+    in `out`. Middle zone, top to bottom: the mux of band 0 with its fans
+    north (toward its cells) and south (a U-turn round the package), the
+    two decoders stacked, the two amplifiers of the chain side by side,
+    the mux of band 1 with its fans; every package with fanout vias
+    inside the western band (see MUX_X_MM). The output stage and the
+    reference buffer (U8) live by the link, where the output goes.
     Passives fill the eastern band by affinity."""
     q = cfg.plateau.quadrant
     by_ref = {c.ref: c for c in circuit.components}
@@ -550,7 +555,9 @@ def _placements_full(
     # the eastern band in rows of upright 0603 (3.2 mm) where a package
     # stands beside, flat rows where a stretch is too short for one
     e = FULL_EAST_X0
-    zone_end = top + 43.3  # the fan of the second mux ends at 42.6, the next band starts at 43.8
+    zone_end = top + 43.3  # the fan of the second mux ends at 43.4, the next band starts at 43.8
+    dec_top = top + FULL_ZONE_Y["U1"] - 4.15  # courtyard of the decoders' stack
+    dec_bottom = top + FULL_ZONE_Y["U2"] + 4.15
     regions = {
         "link": [
             (x_lo, 10.0, fpc_bottom + 0.8, tp_y - 1.25 - 0.4, False),
@@ -560,16 +567,18 @@ def _placements_full(
             (LINK_U8_X0 + u8_w + SHELF_GAP, x_hi, link_bottom + 0.8, zone_bottom, True),
             (2.05 + tp_w / 2.0 + SHELF_GAP, 10.0, tp_y - 1.25 - 0.4 + 0.05, zone_bottom, False),
         ],
-        "dec": [
-            (e, x_hi, top + 0.4, top + 3.6, False),  # two flat rows of decoupling
-            (e, x_hi, top + 3.85, top + 14.1, True),
-            (e, x_hi, top + 14.1, top + 17.35, False),
+        # beside the first mux: upright rows, then a flat row down to the
+        # decoders; beside the decoders: upright rows; beside the second
+        # mux: upright rows from the amplifiers' foot to the zone's end
+        "mux": [
+            (e, x_hi, top + 0.4, dec_top - 3.4, True),
+            (e, x_hi, dec_top - 3.4, dec_top - 0.25, False),
+            (e, x_hi, amp_bottom + 0.25, zone_end, True),
         ],
-        "mux": [(e, x_hi, top + 17.6, top + 24.5, True), (e, x_hi, top + 36.6, zone_end, True)],
+        "dec": [(e, x_hi, dec_top, dec_bottom, True)],
         "amp": [
-            (e, x_hi, amp_bottom + 0.25, top + 36.4, True),
             (FULL_AMP_X["U7"] + 3.7 + 0.25, x_hi, amp_top, amp_bottom, False),
-            (e, x_hi, top + 24.5, amp_top - 0.25, False),
+            (e, x_hi, dec_bottom + 0.25, amp_top - 0.25, False),
         ],
     }
     next_y: dict[tuple[str, int], float] = {}
