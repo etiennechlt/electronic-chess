@@ -199,13 +199,14 @@ def test_supply_buses_have_a_via_channel(cfg):
     off it, which is what the DRC of the 18/09/2026 counted."""
     from quadgen.escape import FANOUT_VIA_PAD_MM
     from quadgen.layout import make_layout
-    from quadgen.strip import BUS_3V3_IN2, BUSES_IN1
+    from quadgen.strip import BUSES_IN1, strip_bus_3v3
 
     lay = make_layout(cfg)
     clr = cfg.plateau.quadrant.routing.track_clearance_mm
     reach = FANOUT_VIA_PAD_MM / 2.0 + clr  # a via center to a foreign edge
     in1 = list(BUSES_IN1)
-    in2 = [BUS_3V3_IN2, ("5V_LED", lay.strip_w - 2.4, cfg.plateau.quadrant.routing.ring_track_mm)]
+    ring = cfg.plateau.quadrant.routing.ring_track_mm
+    in2 = [strip_bus_3v3(cfg), ("5V_LED", lay.strip_w - 2.4, ring)]
     for side, other_side in ((in1, in2), (in2, in1)):
         for net, x, w in side:
             for other, ox, ow in other_side:

@@ -295,23 +295,70 @@ Ni l'ordre des nets (variante « fine_first », les broches fines en
 premier) ni le coût de la face arrière n'y changent rien : la
 géométrie interdit, le routeur ne cherche pas mal.
 
-Ce qu'il faut est le motif qui a fermé le cerveau : des éventails
-dessinés à la main dans le générateur, chaque broche prolongée sur la
-face avant en une voie en escalier qui se termine par un petit via posé
-là où il tient, les vias étalés au pas du millimètre, et le routeur qui
-continue depuis ces vias sur les couches internes. Sur le 4 x 4 cela
-demande de tourner les deux multiplexeurs pour que leurs côtés
-d'entrées regardent le nord et le sud (vers les cellules) et non le
-bord ou l'autre boîtier, de dessiner quatre éventails de huit broches
-et deux éventails de douze pour les décodeurs, puis d'assigner à
-chacune des 32 lignes M et des 32 lignes de grille une colonne sur In2
-ou B.Cu entre les vias des cellules, la plus lointaine à l'extérieur.
-Un lot de un à deux jours, chaque vérification coûtant un routage de
-27 minutes ; il n'a pas été engagé le 20/09. Conséquence pour la
-commande : aucune archive du 4 x 4 n'existe (`tools/gerbers.py`
-refuse une carte au routage ouvert) et son prix
-([note 23](23-commande-jlcpcb.md), section 8) reste une extrapolation
-du devis du 2 x 2.
+Ce qu'il fallait est le motif qui a fermé le cerveau, des éventails
+dessinés à la main dans le générateur, et il a été fait en deux temps
+(le 20/09 au soir, puis le 04/10), chaque vérification coûtant un
+routage de quarante minutes. Le lot, dans `tools/quadgen/strip.py`
+(plan de la zone), `hand.py` (dessins) et `board.py` (routeur) :
+
+1. **Les multiplexeurs tournés et empilés.** U3 et U4 sont sur la même
+   colonne (`MUX_X_MM`, 6,8 mm du bord), tournés de 270 degrés : la
+   rangée des entrées B regarde le nord, celle des entrées A le sud,
+   les adresses l'ouest et les sorties l'est. Les seize entrées de
+   chaque boîtier sont dessinées par `mux_fans` : un moignon au-delà de
+   la pastille, une voie vers l'est ou vers l'ouest (la pastille du
+   bout de rangée prend la voie la plus proche, la suivante une voie
+   plus loin, au pas de 0,6 mm, aucune voie ne croise un moignon), et
+   un petit via au bout, dans deux colonnes par côté (2,4 et 3,0 mm de
+   l'axe du boîtier, alternées) : les vias d'une colonne sont à deux
+   voies l'un de l'autre, une route passe entre eux, et l'espace sous
+   le boîtier entre les deux demi-éventails, 3,75 mm, reste le couloir
+   de tout ce qui descend la zone. Les quatre premiers vias en diagonale
+   (0,6 mm plus loin l'un que l'autre, essai q44e à q44j) ne laissaient
+   que 2,6 mm.
+2. **Les décodeurs qui s'échappent sous le boîtier.** U1 et U2 sont
+   empilés à `DEC_X_MM` (6,35 mm). Une rangée de vias au pas de
+   0,65 mm n'a pas de sortie (le réseau ne libère que la ligne exacte
+   du via) ; deux rangées alternées enferment la rangée extérieure
+   entre les vias de l'intérieure (0,15 mm de fenêtre sur le réseau,
+   essai q44g : plus de grilles ouvertes qu'avec une rangée). D'où
+   `decoder_escapes` : chaque broche se prolonge vers l'intérieur sur
+   la face avant, entre les deux rangées de pastilles, jusqu'à un via
+   sous le corps du boîtier, les broches impaires à 1,6 mm de l'axe,
+   les paires à 0,95 mm, quatre colonnes au pas double de celui des
+   pastilles, chaque via atteignable depuis les couches internes. Les
+   deux broches 3V3 du 74HC4514 (la validation de verrou liée haut, et
+   l'alimentation), face à face, sont jointes sur la face avant : le
+   routeur tirait ce lien sur In1 le long de la tête de zone et murait
+   toute la bande 0.
+3. **Le plan de la zone.** Du haut vers le bas : les deux décodeurs,
+   U3 avec ses éventails (au nord vers ses cellules, au sud un
+   demi-tour sous le boîtier), les deux amplificateurs côte à côte
+   (U5 à l'ouest, U7 à l'est), U4 avec ses éventails ; tous les
+   boîtiers à vias dans la bande ouest, les passifs dans la bande est
+   (12,4 à 19,2 mm) où seul leur propre bus leur donne un via, le rail
+   3V3 à 12,4 mm. L'étage de sortie (U8 avec R23, R24, R25, C24) et la
+   résistance du rail d'impulsion (R9, à côté de Q1) sont dans la zone
+   de liaison : coupés en deux entre les deux zones, ils faisaient
+   traverser la bande 0 à cinq nets de plus (OUT_FB, OUT_STAGE,
+   AMP_OUT, VREF_DIV, PULSE_RAIL en piste large). Les points de test
+   VREF et DRIVE_BUS sont au pied de la bande, à côté de leur bus.
+4. **Le routeur.** Budget de six millions de nœuds par route (un
+   demi-tour sous un multiplexeur en demandait plus de deux), rip-up
+   par recherche du mur (section suivante), et deux ordres de routage
+   en option (`QUADGEN_STRIP_ORDER`, hybrid et far_first) ; le coût de
+   la face arrière (`QUADGEN_BCU_COST`) a été ramené à 1,5 pour le
+   quadrant complet, ce qui a fermé cinq nets sur la géométrie
+   précédente et aucun sur la nouvelle.
+
+Résultat, build par build (nets en morceaux après le routage et le
+rip-up, avant la passe de finition) : 39 (q44e, premiers éventails),
+43 (q44g, deux rangées aux décodeurs), 38 (q44h, face arrière à 1,5),
+30 (q44i et q44j, étage de sortie à la liaison, broches impaires sous
+le boîtier) ; les builds suivants, avec les vingt-quatre broches des
+décodeurs sous le boîtier, les éventails compacts et le rip-up par
+recherche du mur, sont en cours au moment de ce commit, leur résultat
+sera consigné ici et dans le README de la carte.
 
 ## Les quatre passes formelles
 
@@ -411,7 +458,7 @@ passe ferme sort de la liste des nets ouverts, quoi que le routeur en
 ait dit ; un net qu'elle ne ferme pas y reste avec la raison du
 routeur.
 
-## Rip-up et reroutage (`tools/boardgen/core.py`)
+## Rip-up et reroutage (`tools/boardgen/core.py`, `tools/quadgen/board.py`)
 
 Le cerveau, une fois les éventails des liens dessinés et VBAT posé à
 la main, restait chaotique : chaque correction fermait deux nets et en
@@ -451,6 +498,25 @@ c'est là que finissent les derniers ouverts (AMP_OUT4 muré par 3V3 et
 communication autour de l'isolateur), d'où les quatre sorties
 analogiques et les deux lignes UART de l'isolateur ajoutées à la liste
 des nets routés en premier, quand la carte est vide.
+
+Le quadrant 4 x 4 a montré la limite de « ce qui possède la grille à
+moins de 0,6 mm des pièces » : le mur d'une ligne qui traverse la
+bande n'est presque jamais à côté de ses pastilles, et les levées de
+voisins ne fermaient rien (q44g : trente levées, toutes défaites).
+`Builder.reroute_walled` cherche donc le mur avec le routeur lui-même
+(`MultiRouter.blockers`) : la même recherche A* depuis la plus petite
+pièce du net, mais où les cellules possédées par les nets soulevables
+sont franchissables au prix de vingt pas chacune (les vias restent
+interdits hors des cellules libres) ; les propriétaires des cellules
+que le chemin le moins cher traverse sont le mur, deux à six nets en
+pratique, où qu'il se trouve. S'il n'existe aucun chemin même ainsi, le
+net est muré par ce qui ne bouge pas (seeds, moignons, alimentations,
+nets routés en premier), et la levée est inutile. La levée est gardée
+si moins de nets restent en morceaux, ou si autant restent mais le net
+visé est fermé et ce qui s'est ouvert à sa place est plus court que
+lui : un net court laissé à la passe de finition vaut mieux qu'une
+ligne de bande ouverte. Budget quarante minutes, douze nets soulevés
+au plus par levée.
 
 ## La saturation, et ce qu'elle cachait
 

@@ -27,6 +27,7 @@ import math
 import os
 import sys
 import time
+from collections import Counter
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -45,6 +46,7 @@ from .circuit import build_quadrant_circuit
 from .connect import (
     CHECK_SLOP_MM,
     Piece,
+    cells_of,
     close_net,
     connectivity_check,
     ground_drops,
@@ -67,7 +69,7 @@ from .escape import (
 )
 from .layout import LED_ROLES, Layout, Led, make_layout
 from .router import MultiRouter, Raster
-from .strip import BUS_3V3_IN2, BUSES_IN1, strip_placements
+from .strip import BUSES_IN1, strip_bus_3v3, strip_escape_options, strip_placements
 
 COPPER_LAYERS = ["F.Cu", "In1.Cu", "In2.Cu", "B.Cu"]
 NET_5V, NET_GND = "5V_LED", "GND"
@@ -100,6 +102,8 @@ class Track:
     layer: str
     width: float
     pts: list[tuple[float, float]]
+    # the lines written to the board file, so a rip-up can lift the item
+    body: list[str] = field(default_factory=list, compare=False, repr=False)
 
 
 @dataclass
@@ -109,6 +113,7 @@ class Via:
     y: float
     pad: float
     drill: float
+    body: list[str] = field(default_factory=list, compare=False, repr=False)
 
 
 @dataclass
@@ -153,6 +158,7 @@ class BuildResult:
     outline_mm: tuple[float, float] = (0.0, 0.0)
     leds: list[tuple[str, tuple[float, float]]] = field(default_factory=list)
     led_tracks: list = field(default_factory=list)  # (net, layer, width, pts)
+    rip_up_log: list[str] = field(default_factory=list)  # lifts of the rip-up rounds
     led_vias: list = field(default_factory=list)  # (x, y)
     tracks: list[Track] = field(default_factory=list)
     vias: list[Via] = field(default_factory=list)
@@ -206,8 +212,9 @@ class Builder:
     def track(self, net: str, layer: str, pts, width: float | None = None) -> Track:
         width = self.w if width is None else width
         pts = [(float(x), float(y)) for x, y in pts]
+        n0 = len(self.board.body)
         self.board.polyline(pts, width, layer, self.board.net(net))
-        item = Track(net, layer, width, pts)
+        item = Track(net, layer, width, pts, body=self.board.body[n0:])
         self.res.tracks.append(item)
         self.res.led_tracks.append((net, layer, width, pts))
         r = width / 2.0 + self.inflate
@@ -219,7 +226,7 @@ class Builder:
 
     def via(
         self, net: str, x: float, y: float, pad: float | None = None, drill: float | None = None
-    ) -> None:
+    ) -> Via | None:
         """A via, unless one of the same net already overlaps it (the strip
         router restarts from the escape via of a cell entry and may put
         its own a lattice cell away): two overlapping pads are one piece of
@@ -229,13 +236,16 @@ class Builder:
         for v in self.res.vias:
             reach = (v.pad + pad) / 2.0 - 0.02
             if v.net == net and (v.x - x) ** 2 + (v.y - y) ** 2 <= reach * reach:
-                return
+                return None
+        n0 = len(self.board.body)
         self.board.via(x, y, pad, drill, self.board.net(net))
-        self.res.vias.append(Via(net, float(x), float(y), pad, drill))
+        item = Via(net, float(x), float(y), pad, drill, body=self.board.body[n0:])
+        self.res.vias.append(item)
         self.res.led_vias.append((float(x), float(y)))
         for (_rl, excl), ras in self.base.items():
             if excl != net:
                 ras.disc(x, y, pad / 2.0 + self.inflate)
+        return item
 
     def footprint(
         self,
@@ -645,6 +655,7 @@ class Builder:
         self._pre_strip = len(self.res.tracks)
         lay = self.lay
         placements = strip_placements(self.cfg, lay, self.circuit)
+        options = strip_escape_options(self.cfg)
         self.stubs: list[tuple[str, list, float, bool]] = []
         pending: list = []
         for ref, (x, y, rot) in placements.items():
@@ -652,7 +663,7 @@ class Builder:
             fp = load_footprint(comp.part.footprint)
             self.footprint(fp, ref, comp.value, x, y, rot, dict(comp.pins))
             self.res.placements[ref] = (x, y, rot)
-            pending.extend(escape_stubs(fp, x, y, rot, dict(comp.pins)))
+            pending.extend(escape_stubs(fp, x, y, rot, dict(comp.pins), **options.get(ref, {})))
         # the FPC pins without a dedicated fan-out escape like any package
         jx, jy, jrot = self.res.placements["J1"]
         j_nets = {
@@ -694,7 +705,7 @@ class Builder:
         for net, x, w in BUSES_IN1:
             span = y_full if net in self.BUS_FULL_NETS else (y0, y1)
             self.track(net, "In1.Cu", [(x, span[0]), (x, span[1])], w)
-        net, x, w = BUS_3V3_IN2
+        net, x, w = strip_bus_3v3(self.cfg)
         self.track(net, "In2.Cu", [(x, y_full[0]), (x, y_full[1])], w)
 
     # ------------------------------------------------------------ strip routing
@@ -704,7 +715,7 @@ class Builder:
     WIDE_NETS = ("VIN", "5VA", "3V3", "DRIVE_BUS", "PULSE_RAIL", NET_GND)
     EXIT_LAYER = "In2.Cu"  # the fanout exits of the fine-pitch packages continue here
     STRIP_VIA_MM = (FANOUT_VIA_PAD_MM, FANOUT_VIA_DRILL_MM)  # the strip's vias, all small
-    STRIP_MAX_NODES = 2_000_000
+    STRIP_MAX_NODES = 6_000_000  # a U-turn under a mux needs more than 2 M on the full quadrant
     DROP_MAX_NODES = 200_000
     # the ground pour of the strip on the back layer: a via in it needs free
     # copper around it for the pour to reach it
@@ -714,7 +725,19 @@ class Builder:
     # routing order of the strip's nets: "span" (shortest first) or
     # "fine_first" (the nets with the most fine-pitch escapes first, while
     # the corridors around their packages are still free)
-    STRIP_ORDER = os.environ.get("QUADGEN_STRIP_ORDER", "span")  # experiments: fine_first
+    # "hybrid": the nets that live inside one cell or inside the middle
+    # zone first (span under HYBRID_LOCAL_MM), then the lines between a
+    # cell and the zone longest first, then the rest; "far_first": the
+    # lines to the far cells (span over FAR_MM) first of all, then as
+    # "hybrid"
+    STRIP_ORDER = os.environ.get("QUADGEN_STRIP_ORDER", "span")  # fine_first, hybrid, far_first
+    HYBRID_LOCAL_MM = 24.0  # a cell is 7.4 mm tall and its parts span 15.3 mm
+    FAR_MM = 55.0  # past the escape band of its own half of the strip
+    # QUADGEN_LONG_FIRST=1 (full quadrant): the nets that run the strip
+    # between a cell and the middle zone (the mux inputs, the two gates of
+    # every cell) go right after STRIP_FIRST, longest first. An experiment
+    # of the 20/09: it left more nets open than the span order.
+    STRIP_LONG_PREFIXES = ("M", "DRIVE", "DAMP")
     # The nets that cross the whole strip between fine-pitch packages, in
     # the order they are routed, before everything else: last, they find
     # the narrows between the decoders and the muxes already taken, and
@@ -819,8 +842,6 @@ class Builder:
         lattice inflated for the thin one, every route painted into both;
         shortest span first, ground last; what cannot be closed is listed
         with its reason, for pcbnew."""
-        lay = self.lay
-        W = lay.strip_w
         seed_tracks: dict[str, list[Track]] = {}
         for net, layer, width, pts in self.seeds:
             seed_tracks.setdefault(net, []).append(self.track(net, layer, pts, width))
@@ -837,6 +858,28 @@ class Builder:
             "thin": self._strip_router(self.STRIP_THIN_MM / 2.0),
         }
         self._routers = routers  # kept for inspection after a run
+        self._seed_tracks = seed_tracks
+        self._routed = {}
+        self._strip_round(routers, self.STRIP_MAX_NODES, None, True)
+        if os.environ.get("QUADGEN_RIP_UP", "1") != "0":
+            self.reroute_walled()
+
+    def _strip_round(
+        self,
+        routers: dict[str, MultiRouter],
+        max_nodes: int,
+        only: set[str] | None,
+        ground: bool,
+        lead: tuple[str, ...] = (),
+    ) -> None:
+        """One round of the lattice router over the strip's nets (`only`
+        restricts them): the ground drops first when `ground`, then
+        `lead`, the nets routed first (STRIP_FIRST), the rest by rank;
+        the pour is stitched at the end of a ground round. The copper each
+        route draws is remembered per net, so a rip-up can lift it."""
+        lay = self.lay
+        W = lay.strip_w
+        via_pad, via_drill = self.STRIP_VIA_MM
         ref = routers["thin"]
         pads_of: dict[str, list[PadItem]] = {}
         for p in self.res.pads:
@@ -854,8 +897,12 @@ class Builder:
         for t in self.res.tracks[: self._pre_strip]:
             pre_strip.setdefault(t.net, []).append(t)
         skip = {"", NET_5V, "LED_DIN", "LED_DOUT", NET_GND}
-        nets = [n for n in pads_of if n not in skip and not n.startswith("LED_L")]
-        if NET_GND in pads_of:
+        nets = [
+            n
+            for n in pads_of
+            if n not in skip and not n.startswith("LED_L") and (only is None or n in only)
+        ]
+        if ground and NET_GND in pads_of:
             nets.append(NET_GND)  # dropped to the pour, piece by piece, after the rest
         pieces_of = {
             net: net_pieces(
@@ -866,7 +913,7 @@ class Builder:
                 vias_of.get(net, []),
                 self.stubs,
                 self.EXIT_LAYER,
-                first=seed_tracks.get(net, []) + pre_strip.get(net, []),
+                first=self._seed_tracks.get(net, []) + pre_strip.get(net, []),
             )
             for net in nets
         }
@@ -918,8 +965,6 @@ class Builder:
                 1 for la, cs in cells.items() for i, j in cs if mr.own[la][j, i] in (mr.FREE, nid)
             )
 
-        via_pad, via_drill = self.STRIP_VIA_MM
-
         def legal(mr, net, cells):
             """The cells of a piece a route may start or end on now: those
             the net owns or nobody does (a corridor cell another net's route
@@ -939,7 +984,7 @@ class Builder:
             wide = net in self.WIDE_NETS and not drop
             mr = routers["wide"] if wide else routers["thin"]
             width = self.STRIP_WIDE_MM if wide else self.STRIP_THIN_MM
-            budget = self.DROP_MAX_NODES if drop else self.STRIP_MAX_NODES
+            budget = self.DROP_MAX_NODES if drop else max_nodes
             starts, goals = legal(mr, net, starts), legal(mr, net, goals)
             found = mr.route(net, starts, goals, max_nodes=budget)
             if found is None and wide:
@@ -954,7 +999,7 @@ class Builder:
             clash = self._route_clash(net, tracks, vias, width, via_pad)
             if clash and mr is routers["wide"]:
                 mr, width = routers["thin"], self.STRIP_THIN_MM
-                found = mr.route(net, starts, goals, max_nodes=self.STRIP_MAX_NODES)
+                found = mr.route(net, starts, goals, max_nodes=max_nodes)
                 if found is not None:
                     tracks, vias = found
                     clash = self._route_clash(net, tracks, vias, width, via_pad)
@@ -966,23 +1011,37 @@ class Builder:
             clash = self._route_clash(net, exits, [], STUB_WIDTH_MM, via_pad) if exits else None
             if clash:
                 return f"stub copper blocked, {clash}"
-            for la, pts in tracks:
-                self.track(net, la, pts, width)
-            for la, pts in exits:
-                self.track(net, la, pts, STUB_WIDTH_MM)
-            for x, y in vias:
-                self.via(net, x, y, via_pad, via_drill)
+            drawn = [self.track(net, la, pts, width) for la, pts in tracks]
+            drawn += [self.track(net, la, pts, STUB_WIDTH_MM) for la, pts in exits]
+            placed = [v for v in (self.via(net, x, y, via_pad, via_drill) for x, y in vias) if v]
+            self._routed.setdefault(net, []).append((drawn, placed))
             paint(net, tracks, vias, width)
             if exits:
                 paint(net, exits, [], STUB_WIDTH_MM)
             return tracks, vias, mr
+
+        from .variant import is_reduced
+
+        long_first = not is_reduced(self.cfg) and bool(os.environ.get("QUADGEN_LONG_FIRST"))
 
         def rank(net):
             if net in self.STRIP_FIRST:
                 return (0, self.STRIP_FIRST.index(net), 0.0)
             if self.STRIP_ORDER == "fine_first":
                 return (1, -len(stubs_of.get(net, [])), span(net))
-            return (1, 0, span(net))
+            structural = net.startswith(self.STRIP_LONG_PREFIXES) and (
+                net[-1].isdigit() or net[-2:] in ("_A", "_B", "_N")
+            )
+            if long_first and structural:
+                return (1, 0, -span(net))
+            if self.STRIP_ORDER in ("hybrid", "far_first"):
+                sp = span(net)
+                if self.STRIP_ORDER == "far_first" and structural and sp >= self.FAR_MM:
+                    return (1, 0, -sp)
+                if sp < self.HYBRID_LOCAL_MM:
+                    return (2, 0, sp)
+                return (3, 0, -sp) if structural else (4, 0, sp)
+            return (2, 0, span(net))
 
         verbose = bool(os.environ.get("QUADGEN_VERBOSE"))  # progress of the routing
         if NET_GND in nets:
@@ -1005,6 +1064,7 @@ class Builder:
                 drops = [line for line in self.res.open_nets if line.startswith(NET_GND)]
                 print(f"  {NET_GND}: {len(drops)} piece(s) without a drop", file=sys.stderr)
         order = sorted([n for n in nets if n != NET_GND], key=rank)
+        order = [n for n in lead if n in order] + [n for n in order if n not in lead]
         for net in order:
             pieces = pieces_of[net]
             if len(pieces) < 2:
@@ -1028,6 +1088,196 @@ class Builder:
             self._stitch_pour(functools.partial(attempt, NET_GND, drop=True))
             if verbose:
                 print(f"  {NET_GND}: {self.res.pour_islands} pour island(s)", file=sys.stderr)
+
+    # ---------------------------------------------------- rip-up and reroute
+    RIP_UP_ROUNDS = 3
+    RIP_UP_NODES = 2_000_000
+    RIP_UP_PENALTY = 20.0  # per lattice cell of a liftable net the wall search may cross
+    RIP_UP_BUDGET_S = 2400.0  # no new lift past this, the pass takes over
+    RIP_UP_MAX_LIFT = 12  # a net walled by more nets than this is left to the pass
+
+    def _strip_nets(self) -> set[str]:
+        """The nets whose pads all lie in the strip (not the coils' own
+        nets nor the LED chain, which reach past it)."""
+        W = self.lay.strip_w
+        inside = {p.net for p in self.res.pads if p.x < W + 1.0 and p.net}
+        beyond = {p.net for p in self.res.pads if p.x >= W + 1.0}
+        skip = {"", NET_5V, "LED_DIN", "LED_DOUT", NET_GND}
+        return {n for n in inside - beyond if n not in skip and not n.startswith(("LED_L", "__"))}
+
+    def _strip_spans(self) -> dict[str, float]:
+        """The span (width plus height of the pads' extent) of every net of
+        the strip: what ranks the routing order, and the rip-up's trades."""
+        xs: dict[str, list[float]] = {}
+        ys: dict[str, list[float]] = {}
+        W = self.lay.strip_w
+        for p in self.res.pads:
+            if p.x < W + 1.0 and p.net:
+                xs.setdefault(p.net, []).append(p.x)
+                ys.setdefault(p.net, []).append(p.y)
+        return {n: (max(xs[n]) - min(xs[n])) + (max(ys[n]) - min(ys[n])) for n in xs}
+
+    def _strip_nets_in_pieces(self) -> set[str]:
+        """The strip nets the exact connectivity check finds in pieces."""
+        nets = self._strip_nets()
+        lines = connectivity_check(
+            [t for t in self.res.tracks if t.net in nets],
+            [v for v in self.res.vias if v.net in nets],
+            [p for p in self.res.pads if p.net in nets],
+            COPPER_LAYERS,
+        )
+        return {line.split(":", 1)[0] for line in lines}
+
+    def _blockers(self, mr: MultiRouter, net: str, liftable: set[str]) -> set[str] | None:
+        """The routed nets a route of `net` would have to cross: the
+        lattice router searches again from its smallest piece with the
+        copper of `liftable` passable at a price (MultiRouter.blockers),
+        and the owners of the cells the cheapest path takes are the wall,
+        wherever it stands between the pieces. None when no path exists
+        even so: the net is walled by what cannot be lifted."""
+        nid = mr.nid(net)
+        pieces = net_pieces(
+            mr,
+            COPPER_LAYERS,
+            [p for p in self.res.pads if p.net == net],
+            [t for t in self.res.tracks if t.net == net],
+            [v for v in self.res.vias if v.net == net],
+            self.stubs,
+            self.EXIT_LAYER,
+            first=self._seed_tracks.get(net, []),
+        )
+        if len(pieces) < 2:
+            return set()
+        small = min(pieces, key=lambda pc: sum(len(c) for c in pc.cells.values()))
+        others = cells_of([pc for pc in pieces if pc is not small])
+
+        def legal(cells):
+            return {
+                la: [(i, j) for i, j in cs if mr.own[la][j, i] in (mr.FREE, nid)]
+                for la, cs in cells.items()
+            }
+
+        soft = [mr.net_ids[n] for n in liftable if n in mr.net_ids]
+        crossed = mr.blockers(
+            net,
+            legal(small.cells),
+            legal(others),
+            soft,
+            penalty=self.RIP_UP_PENALTY,
+            max_nodes=self.RIP_UP_NODES,
+        )
+        if crossed is None:
+            return None
+        names = {v: k for k, v in mr.net_ids.items()}
+        return {names[k] for k in crossed if k in names and not names[k].startswith("__")}
+
+    def _lift(self, nets: set[str]) -> None:
+        """Removes every route the rounds drew for `nets`, from the result
+        and from the board file; seeds, escape stubs and pads stay."""
+        tracks: list[Track] = []
+        vias: list[Via] = []
+        for net in nets:
+            for drawn, placed in self._routed.pop(net, []):
+                tracks += drawn
+                vias += placed
+        gone_t = {id(t) for t in tracks}
+        gone_v = {id(v) for v in vias}
+        self.res.tracks = [t for t in self.res.tracks if id(t) not in gone_t]
+        self.res.vias = [v for v in self.res.vias if id(v) not in gone_v]
+        gone_led = {(t.net, t.layer, t.width, tuple(t.pts)) for t in tracks}
+        self.res.led_tracks = [
+            item
+            for item in self.res.led_tracks
+            if (item[0], item[1], item[2], tuple(item[3])) not in gone_led
+        ]
+        counts = Counter(line for item in tracks + vias for line in getattr(item, "body", ()))
+        body = []
+        for line in self.board.body:
+            if counts.get(line, 0) > 0:
+                counts[line] -= 1
+                continue
+            body.append(line)
+        self.board.body = body
+        self._clash_key = None
+
+    def reroute_walled(self) -> None:
+        """Rip-up and reroute for what the round left in pieces: one net
+        at a time, its routes and those of the routed nets that wall it in
+        (`_blockers`, the nets the cheapest path would cross; seeds,
+        escape stubs, the supplies and the nets routed first never move)
+        lifted and routed again, the net first; a lift that leaves as
+        many nets in pieces is undone. QUADGEN_RIP_UP=0 skips the rounds."""
+        fixed = {NET_GND, *self.WIDE_NETS, *self.STRIP_FIRST}
+        t0 = time.time()
+        for k in range(1, self.RIP_UP_ROUNDS + 1):
+            open_nets = self._strip_nets_in_pieces()
+            if not open_nets:
+                return
+            count = len(open_nets)
+            spans = self._strip_spans()
+            for net in sorted(open_nets - fixed):
+                if time.time() - t0 > self.RIP_UP_BUDGET_S:
+                    self.res.rip_up_log.append(f"rip-up {k}: budget spent, {count} net(s) left")
+                    return
+                if net not in self._strip_nets_in_pieces():
+                    continue  # closed by an earlier lift of this sweep
+                liftable = {n for n in self._routed if n not in fixed and n != net}
+                blockers = self._blockers(self._routers["thin"], net, liftable)
+                if blockers is None:
+                    self.res.rip_up_log.append(
+                        f"rip-up {k}, {net}: walled by copper that cannot be lifted"
+                    )
+                    continue
+                blockers = {n for n in blockers if n in liftable}
+                if len(blockers) > self.RIP_UP_MAX_LIFT:
+                    self.res.rip_up_log.append(
+                        f"rip-up {k}, {net}: {len(blockers)} nets in the way, too many to lift"
+                    )
+                    continue
+                ripped = blockers | {net}
+                saved = (
+                    list(self.res.tracks),
+                    list(self.res.vias),
+                    list(self.res.led_tracks),
+                    list(self.board.body),
+                    {n: list(r) for n, r in self._routed.items()},
+                    list(self.res.open_nets),
+                    self._routers,
+                )
+                self._lift(ripped)
+                self.res.open_nets = [
+                    line for line in self.res.open_nets if line.split(":", 1)[0] not in ripped
+                ]
+                routers = {
+                    "wide": self._strip_router(self.STRIP_WIDE_MM / 2.0),
+                    "thin": self._strip_router(self.STRIP_THIN_MM / 2.0),
+                }
+                self._routers = routers
+                self._strip_round(routers, self.RIP_UP_NODES, ripped, False, lead=(net,))
+                left = self._strip_nets_in_pieces()
+                after = len(left)
+                line = (
+                    f"rip-up {k}, {net}: {len(blockers)} net(s) lifted "
+                    f"({', '.join(sorted(blockers))}), nets in pieces {count} -> {after}"
+                )
+                # kept when fewer nets stay in pieces, or as many but the net
+                # is closed and what opened instead is shorter than it was:
+                # a short net left to the finishing pass is the better deal
+                opened = left - open_nets
+                traded = after == count and net not in left
+                traded = traded and all(spans.get(n, 0.0) < spans.get(net, 0.0) for n in opened)
+                if after > count or (after == count and not traded):
+                    tracks, vias, led, body, routed, kept, routers = saved
+                    self.res.tracks, self.res.vias, self.res.led_tracks = tracks, vias, led
+                    self.board.body, self._routed, self.res.open_nets = body, routed, kept
+                    self._routers = routers
+                    self._clash_key = None
+                    self.res.rip_up_log.append(line + ", undone")
+                    continue
+                count = after
+                self.res.rip_up_log.append(line)
+            if count >= len(open_nets):
+                return
 
     def finish_routes(self) -> None:
         """Exact-geometry joints for what the lattice left open in the strip

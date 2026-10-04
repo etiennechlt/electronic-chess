@@ -69,6 +69,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"wrote {out / f'{name}.kicad_pcb'}: {summary(result)}")
     for line in result.open_routes:
         print(f"  open: {line}")
+    for line in result.rip_up_log:
+        print(f"  {line}")
     for line in result.open_nets:
         print(f"  open net: {line}")
     for line in result.clearance_errors[:20]:

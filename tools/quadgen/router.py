@@ -317,8 +317,43 @@ class MultiRouter:
         (layer, row, column, direction), so a long search costs no Python
         memory. Returns (tracks, vias) or None."""
         n = self.nid(net)
-        nl, ny, nx = len(self.layers), self.ny, self.nx
         free = np.stack([(self.own[la] == self.FREE) | (self.own[la] == n) for la in self.layers])
+        k = self._search(n, starts, goals, free, free, 0.0, max_nodes)
+        return None if k is None else self._unwind(self._parent, k)
+
+    def blockers(
+        self,
+        net: str,
+        starts: dict[str, list[tuple[int, int]]],
+        goals: dict[str, list[tuple[int, int]]],
+        soft: list[int],
+        penalty: float = 20.0,
+        max_nodes: int = 250_000,
+    ) -> set[int] | None:
+        """The nets a route of `net` would have to cross: the same search
+        with the cells owned by the nets of `soft` passable at `penalty`
+        per cell (vias still only where every layer is free), and the
+        owners of the soft cells the cheapest path takes. None when no
+        path exists even so (the net is walled by what cannot move)."""
+        n = self.nid(net)
+        own = np.stack([self.own[la] for la in self.layers])
+        free = (own == self.FREE) | (own == n)
+        passable = free | np.isin(own, np.array(soft, dtype=np.int16))
+        k = self._search(n, starts, goals, free, passable, penalty, max_nodes)
+        if k is None:
+            return None
+        crossed = set()
+        for li, i, j, _d in self._cells(self._parent, k):
+            if not free[li, j, i]:
+                crossed.add(int(own[li, j, i]))
+        return crossed - {n, self.FREE, self.MULTI}
+
+    def _search(self, n, starts, goals, free, passable, penalty: float, max_nodes: int):
+        """The A* proper: from any start cell to any goal cell over the
+        cells of `passable` (those of `free` at the plain cost, the rest
+        at `penalty` more per cell); returns the key of the goal reached
+        in the parent array, None when the budget runs out first."""
+        nl, ny, nx = len(self.layers), self.ny, self.nx
         via_ok = np.ones((ny, nx), dtype=bool)
         for la in self.layers:
             via_ok &= (self.own_via[la] == self.FREE) | (self.own_via[la] == n)
@@ -361,7 +396,7 @@ class MultiRouter:
             if g > best[k]:
                 continue
             if goal[li, j, i]:
-                return self._unwind(parent, k)
+                return k
             expanded += 1
             if expanded > max_nodes:
                 return None
@@ -369,9 +404,11 @@ class MultiRouter:
                 ni, nj = i + dx, j + dy
                 if not (0 <= ni < nx and 0 <= nj < ny):
                     continue
-                if not free[li, nj, ni] and not goal[li, nj, ni]:
+                if not passable[li, nj, ni] and not goal[li, nj, ni]:
                     continue
                 ng = g + self.step_cost[li] + (3.0 if d and nd != d else 0.0)
+                if penalty and not free[li, nj, ni]:
+                    ng += penalty
                 nk = idx(li, ni, nj, nd)
                 if ng < best[nk]:
                     best[nk] = ng
@@ -389,7 +426,9 @@ class MultiRouter:
                         heapq.heappush(heap, (ng + h(i, j), ng, l2, i, j, 0))
         return None
 
-    def _unwind(self, parent, k: int):
+    def _cells(self, parent, k: int) -> list[tuple[int, int, int, int]]:
+        """The (layer, column, row, direction) cells of the path ending
+        at key `k`, start first."""
         ny, nx = self.ny, self.nx
         cells = []
         while k >= 0:
@@ -402,6 +441,10 @@ class MultiRouter:
             cells.append((li, i, j, d))
             k = int(parent[k])
         cells.reverse()
+        return cells
+
+    def _unwind(self, parent, k: int):
+        cells = self._cells(parent, k)
         tracks, vias = [], []
         run: list[tuple[float, float]] = []
         cur_l = cells[0][0]

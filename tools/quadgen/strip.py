@@ -22,6 +22,7 @@ from analoggen.sexp import atom, find_all, find_one, parse
 from chessboard_calc.config import BoardConfig
 
 from .circuit import cell_refs
+from .escape import ONE_ROW_FROM_MM
 from .layout import Layout
 
 Placement = tuple[float, float, float]  # x, y, rotation
@@ -87,9 +88,92 @@ BUSES_IN1 = (
     ("DRIVE_BUS", 15.6, 0.5),
     ("VIN", 16.55, 0.6),
 )
+BUS_X_IN1 = {net: x for net, x, _w in BUSES_IN1}
 BUS_3V3_IN2 = ("3V3", 12.2, 0.4)
+# on the full quadrant the rail stands 0.2 mm further east: the outer via
+# row of the decoders' east side needs the room (strip_escape_options)
+BUS_3V3_IN2_FULL = ("3V3", 12.4, 0.4)
 
 SHELF_GAP = 0.25
+
+# ---- the middle zone of the full quadrant (two muxes). A via crosses every
+# layer, and the buses above leave it room only west of the 3V3 rail
+# (x < 11.6) and in two slots (14.8 to 15.0, 18.5 to 19.3): every package
+# whose pins need vias stands in that western band, and the passives fill
+# the eastern band, where only their own bus (a decoupling capacitor on
+# 5VA) or a slot gives them a via.
+MUX_X_MM = 6.8  # both muxes on one column: fans and logic fanouts inside the band
+# rotation 270: the M_B row (pins 1 to 8) faces north, the M_A row (17 to
+# 24) south, the addresses (9 to 16) west, the outputs (25 to 32) east
+MUX_ROT = 270.0
+MUX_FAN_PINS = tuple(str(n) for n in (*range(1, 9), *range(17, 25)))  # fanned by hand
+# decoders: two via rows a side (0.8 and 1.5 mm past the stubs), the outer
+# west one 0.675 mm off the edge, the outer east one 0.2 off the 3V3 rail
+DEC_X_MM = 6.35
+# every pin of each decoder escapes under the body (hand.decoder_escapes):
+# a runway inward on the top layer to a via in one of two columns a side,
+# the odd pins in the outer one, the even in the inner, each column at
+# twice the pad pitch so every via keeps its exits; the columns outside
+# the package, where a via row boxed its neighbours in, stay empty, and
+# the band beside the decoders is free for the lines running the strip
+DEC_BODY_PINS = tuple(str(n) for n in range(1, 25))
+# from the package axis: the outer column clears the tips of the pads by
+# 0.3 mm, the inner one the outer column's vias by 0.9 mm on the diagonal
+DEC_BODY_VIA_MM = {1: 1.6, 0: 0.95}  # by pin parity
+# y of the packages from the top of the zone: the decoders stacked, the
+# mux of band 0 with its fans, the amplifier row, the mux of band 1
+FULL_ZONE_Y = {"U1": 4.6, "U2": 13.2, "U3": 22.35, "U5": 29.9, "U7": 29.9, "U4": 37.45}
+FULL_AMP_X = {"U5": 4.15, "U7": 11.55}  # side by side, U7's east pads over the via slot
+FULL_EAST_X0 = 12.4  # the eastern band, past the fanout vias of the western packages
+LINK_EAST_X0 = 10.4  # the rows of the link zone, east of the FPC's fanout field
+LINK_U8_X0 = 10.0  # the output amplifier, under those rows (its pads clear the field)
+# the passives of the full quadrant, by the package they serve, and the
+# regions they go to in order: the output stage with its amplifier by the
+# link, the decoders' decoupling and the reference divider at the head of
+# the eastern band, the instrumentation amplifier's network beside the
+# first mux, the filters beside and under the amplifiers, the decoupling
+# of the muxes beside them
+GROUPS_FULL: tuple[tuple[tuple[str, ...], tuple[str, ...]], ...] = (
+    (("U6", "C2"), ("link",)),  # the inverter and the bulk 5VA under the FPC
+    # the output stage with its feedback pair, its series resistor and its
+    # filter capacitor: every net of the stage stays in the link zone and
+    # only the filter output (LP_OUT) crosses band 0 to reach it
+    (("U8", "R23", "R24", "R25", "C24"), ("link",)),
+    (("C5", "C6", "C3", "C4"), ("dec",)),
+    (("R5", "R6", "C13", "C23", "C22"), ("dec", "mux")),
+    (("C14", "C15", "R12", "R13", "R14", "C16"), ("mux", "amp")),
+    (
+        ("C17", "C18", "R15", "R16", "R17", "R18", "R19", "R20", "R21", "R22", "C19", "C20", "C21"),
+        ("amp", "mux", "dec"),
+    ),
+    (("C7", "C8"), ("mux", "dec")),
+)
+
+
+def strip_bus_3v3(cfg: BoardConfig) -> tuple[str, float, float]:
+    """The 3V3 rail of the strip (net, x, width) on In2 for this variant."""
+    from .variant import is_reduced
+
+    return BUS_3V3_IN2 if is_reduced(cfg) else BUS_3V3_IN2_FULL
+
+
+def strip_escape_options(cfg: BoardConfig) -> dict[str, dict]:
+    """Per package options of `escape_stubs` for the strip: none on the
+    reduced quadrant (its links are drawn by hand from its own pads); on
+    the full one the muxes' M rows are fanned by hand, and so are the odd
+    pins of the decoders, whose even pins get one via row (the pins left
+    stand at twice the pad pitch)."""
+    from .variant import is_reduced
+
+    if is_reduced(cfg):
+        return {}
+    return {
+        "U3": {"skip": MUX_FAN_PINS},
+        "U4": {"skip": MUX_FAN_PINS},
+        "U1": {"skip": DEC_BODY_PINS, "one_row_from_mm": ONE_ROW_FROM_MM},
+        "U2": {"skip": DEC_BODY_PINS, "one_row_from_mm": ONE_ROW_FROM_MM},
+    }
+
 
 # The passives by the package they serve, with the regions of the strip
 # they go to, in order of preference: the instrumentation amplifier's
@@ -274,6 +358,8 @@ def strip_placements(cfg: BoardConfig, lay: Layout, circuit: Circuit) -> dict[st
         cr = cell_refs(coil.idx + 1)
         for role, (x, dy, rot) in template.items():
             out[cr[role]] = (x, round(coil.cell_y + dy, 3), rot)
+    if "U4" in by_ref:
+        return _placements_full(cfg, lay, circuit, out)
     # middle zone: the two TSSOP decoders stacked on the strip axis (pads
     # east and west, fanout 1.9 mm past the pad tips), the two LFCSP muxes
     # side by side below them, the amplifiers under the muxes, and the
@@ -391,6 +477,116 @@ def strip_placements(cfg: BoardConfig, lay: Layout, circuit: Circuit) -> dict[st
     if leftovers:
         raise ValueError(f"middle zone overflow: {[b.ref for b in leftovers]} do not fit")
     # fixed places overlap guard
+    _check_no_overlap(out, by_ref)
+    return out
+
+
+def _placements_full(
+    cfg: BoardConfig, lay: Layout, circuit: Circuit, out: dict[str, Placement]
+) -> dict[str, Placement]:
+    """The floor plan of the full quadrant's strip, cells already placed
+    in `out`. Middle zone, top to bottom: the two decoders stacked, the
+    mux of band 0 with its fans north (toward its cells) and south (a
+    U-turn under the package), the two amplifiers of the chain side by
+    side, the mux of band 1 with its fans; every package with fanout
+    vias inside the western band (see MUX_X_MM). The output stage and
+    the reference buffer (U8) live by the link, where the output goes.
+    Passives fill the eastern band by affinity."""
+    q = cfg.plateau.quadrant
+    by_ref = {c.ref: c for c in circuit.components}
+    st = q.strip
+    top = lay.cell_ys[2 * lay.n - 1] + st.cell_pitch_mm / 2.0
+    x_lo, x_hi = 0.8, lay.strip_w - 0.8
+    for ref in ("U1", "U2"):
+        out[ref] = (DEC_X_MM, top + FULL_ZONE_Y[ref], 0.0)
+    for ref in ("U3", "U4"):
+        out[ref] = (MUX_X_MM, top + FULL_ZONE_Y[ref], MUX_ROT)
+    for ref, x in FULL_AMP_X.items():
+        out[ref] = (x, top + FULL_ZONE_Y[ref], 0.0)
+
+    def box_of(comp):
+        w, h = courtyard(load_footprint(comp.part.footprint))
+        return Box(comp.ref, w, h, 0.0)
+
+    # the link zone as on the reduced quadrant: rail switch, bulk capacitor
+    # and output clamp next to the FPC, in upright rows east of the pin hole
+    near_link = ["Q1", "Q2", "R7", "R8", "R10", "C1", "D3"]
+    hole_x, hole_y = lay.pin_hole_xy
+    packed = shelf_pack(
+        [box_of(by_ref[r]) for r in near_link], LINK_EAST_X0, x_hi, hole_y + 2.6, upright=True
+    )
+    out.update(packed)
+    if max(y for _x, y, _r in packed.values()) > st.connector_zone_mm - 1.0:
+        raise ValueError("connector zone overflow")
+    # the pulse rail resistor flat in the last of those rows, next to the
+    # switch it follows: the rail then never leaves the link zone (from
+    # the middle zone it crossed band 0 as a wide track)
+    r10_x, r10_y, _rot = packed["R10"]
+    r9_x = r10_x + box_of(by_ref["R10"]).h / 2.0 + SHELF_GAP + box_of(by_ref["R9"]).w / 2.0
+    out["R9"] = (round(r9_x, 3), r10_y, 0.0)
+    fpc_w, _fpc_h = courtyard(load_footprint(q.link.footprint))
+    fpc_bottom = lay.connector_xy[1] + fpc_w / 2.0
+    link_bottom = max(y + 2.0 for _x, y, _r in packed.values())
+    zone_bottom = st.connector_zone_mm - 0.5
+    tp_y = zone_bottom - 1.25
+    # the output test point stays by the link; the reference and the drive
+    # bus run the whole strip on In1, so their test points sit at its foot,
+    # on the free row past the last cell, each beside its bus
+    out["TP1"] = (2.05, tp_y, 0.0)
+    tp_w, _tp_h = courtyard(load_footprint(by_ref["TP1"].part.footprint))
+    tail_y = round(lay.board_h - q.routing.edge_clearance_mm - tp_w / 2.0 - 0.05, 3)
+    out["TP2"] = (13.0, tail_y, 0.0)
+    out["TP3"] = (BUS_X_IN1["DRIVE_BUS"], tail_y, 0.0)
+    # the ground test point in the south-west corner of the zone, west of
+    # the fan of the second mux
+    out["TP4"] = (1.75, top + 42.0, 0.0)
+    u8_w, _u8_h = courtyard(load_footprint(by_ref["U8"].part.footprint))
+    amp_top = top + FULL_ZONE_Y["U5"] - 2.7  # courtyard of the amplifier row
+    amp_bottom = top + FULL_ZONE_Y["U5"] + 2.7
+    # the eastern band in rows of upright 0603 (3.2 mm) where a package
+    # stands beside, flat rows where a stretch is too short for one
+    e = FULL_EAST_X0
+    zone_end = top + 43.3  # the fan of the second mux ends at 42.6, the next band starts at 43.8
+    regions = {
+        "link": [
+            (x_lo, 10.0, fpc_bottom + 0.8, tp_y - 1.25 - 0.4, False),
+            # the output amplifier under the rows of the switch, the passives
+            # of its stage upright beside it and flat beside the test point
+            (LINK_U8_X0, LINK_U8_X0 + u8_w + 0.05, link_bottom + 0.8, zone_bottom, False),
+            (LINK_U8_X0 + u8_w + SHELF_GAP, x_hi, link_bottom + 0.8, zone_bottom, True),
+            (2.05 + tp_w / 2.0 + SHELF_GAP, 10.0, tp_y - 1.25 - 0.4 + 0.05, zone_bottom, False),
+        ],
+        "dec": [
+            (e, x_hi, top + 0.4, top + 3.6, False),  # two flat rows of decoupling
+            (e, x_hi, top + 3.85, top + 14.1, True),
+            (e, x_hi, top + 14.1, top + 17.35, False),
+        ],
+        "mux": [(e, x_hi, top + 17.6, top + 24.5, True), (e, x_hi, top + 36.6, zone_end, True)],
+        "amp": [
+            (e, x_hi, amp_bottom + 0.25, top + 36.4, True),
+            (FULL_AMP_X["U7"] + 3.7 + 0.25, x_hi, amp_top, amp_bottom, False),
+            (e, x_hi, top + 24.5, amp_top - 0.25, False),
+        ],
+    }
+    next_y: dict[tuple[str, int], float] = {}
+    known = {ref for refs, _regions in GROUPS_FULL for ref in refs}
+    leftovers: list[Box] = []
+    for refs, keys in GROUPS_FULL:
+        boxes = [box_of(by_ref[r]) for r in refs if r in by_ref and r not in out]
+        leftovers += _pack_regions(boxes, keys, regions, next_y, out)
+    leftovers += sorted(
+        (
+            box_of(comp)
+            for comp in circuit.components
+            if comp.ref not in out
+            and comp.ref not in known
+            and not comp.ref.startswith(("LD", "CL", "NT", "J"))
+        ),
+        key=lambda b: -(b.w * b.h),
+    )
+    leftovers = _pack_regions(leftovers, tuple(regions), regions, next_y, out)
+    if leftovers:
+        raise ValueError(f"middle zone overflow: {[b.ref for b in leftovers]} do not fit")
     _check_no_overlap(out, by_ref)
     return out
 

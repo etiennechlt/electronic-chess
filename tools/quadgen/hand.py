@@ -32,8 +32,8 @@ from __future__ import annotations
 
 from .board import NET_GND, Builder
 from .circuit import cell_refs
-from .escape import STUB_WIDTH_MM, runway_end
-from .strip import BUSES_IN1
+from .escape import STUB_BEYOND_MM, STUB_WIDTH_MM, runway_end
+from .strip import BUSES_IN1, DEC_BODY_PINS, DEC_BODY_VIA_MM, MUX_FAN_PINS
 from .variant import is_reduced
 
 # the via column of a cell, between the resistor column (pads end at
@@ -73,6 +73,21 @@ LINK_GAIN_COL_X = 11.925  # the one free column of the top layer, east of the fi
 LINK_GAIN_VIA_X = 10.9  # the inner-layer descent, west of the lane of the second cell
 LINK_GAIN_ROWS = (87.1, 87.7)  # the two lanes of the pair, north one to the near pin
 LINK_GAIN_DOWN_X = (4.5, 5.4)  # where each turns down, under the body of the amplifier
+# ---- the fans of the two muxes of the full quadrant (mux_fans). Each M
+# row (eight pads at 0.5 mm, facing north or south) leaves on the top
+# layer: every pad a stub past its edge, then a lane east or west, the
+# outermost pad the lane nearest the row, the next one lane further out,
+# so no lane crosses a stub; the lanes end in small vias in two columns
+# a side, alternately, so the vias of a column stand two lanes apart and
+# a route passes between them, and a lane clears the via of the lane
+# before it by a full lane pitch. Two columns, not four on a diagonal:
+# the room under the package between the two half fans is the corridor
+# of everything that runs the zone north to south. The router continues
+# from the vias on the inner layers: toward the cells for the row facing
+# them, under the package for the row facing away.
+MUX_FAN_OUT_MM = 2.4  # the inner column, from the package centre (the row spans +-1.75)
+MUX_FAN_STEP_MM = 0.6  # the outer column that much further out
+MUX_FAN_PITCH_MM = 0.6  # 0.2 mm lanes, 0.4 mm apart; a lane passes a via 0.6 mm away
 
 
 def _gap(a, b) -> float:
@@ -227,6 +242,65 @@ def hand_routes(b: Builder) -> None:
     # its turn to be routed comes.
     if is_reduced(b.cfg):
         _links(b, pads, T, V)
+    else:
+        decoder_escapes(b, pads, T, V)
+        mux_fans(b, pads, T, V)
+
+
+def decoder_escapes(b: Builder, pads: dict, T, V) -> None:
+    """Every pin of the two decoders (DEC_BODY_PINS) escapes under the
+    package: a runway inward on the top layer, between the pad rows, to
+    a small via in one of two columns a side (DEC_BODY_VIA_MM, by the
+    parity of the pin), so the vias of a column stand at twice the pad
+    pitch and a route leaves every one of them on the inner layers. The
+    two 3V3 pins of the drive decoder (the latch enable tied high, and
+    the supply) face each other across the package: they are joined on
+    the top layer too, so the router never runs that link on an inner
+    layer along the head of the zone."""
+    thin = STUB_WIDTH_MM
+    for ref in ("U1", "U2"):
+        if (ref, "1") not in pads:
+            continue
+        xc, _y, _rot = b.res.placements[ref]
+        for n in DEC_BODY_PINS:
+            p = pads[(ref, n)]
+            if not p.net or p.net.startswith("__"):
+                continue
+            out = DEC_BODY_VIA_MM[int(n) % 2]
+            x_via = xc - out if p.x < xc else xc + out
+            T(p.net, "F.Cu", [(p.x, p.y), (x_via, p.y)], thin)
+            V(p.net, x_via, p.y)
+    latch, supply = pads[("U1", "1")], pads[("U1", "24")]
+    if latch.net != supply.net or abs(latch.y - supply.y) > 1e-6:
+        raise ValueError("U1: pins 1 and 24 are expected on 3V3, facing each other")
+    T(latch.net, "F.Cu", [(latch.x, latch.y), (supply.x, supply.y)], thin)
+
+
+def mux_fans(b: Builder, pads: dict, T, V) -> None:
+    """The fans of the M rows of the two muxes (MUX_FAN_*), drawn from
+    the real pads: the rows facing north and south of each package."""
+    thin = STUB_WIDTH_MM
+    for ref in ("U3", "U4"):
+        if (ref, "1") not in pads:
+            continue
+        _x, yc, _rot = b.res.placements[ref]
+        row = [pads[(ref, n)] for n in MUX_FAN_PINS]
+        for sign in (-1.0, 1.0):  # north row, then south row
+            pins = sorted((p for p in row if (p.y - yc) * sign > 1.0), key=lambda p: p.x)
+            if len(pins) != 8:
+                raise ValueError(f"{ref}: {len(pins)} pads in the row facing {sign:+.0f}")
+            xc = sum(p.x for p in pins) / 8.0
+            half = max(pins[0].w, pins[0].h) / 2.0  # the pad's long axis points out
+            y_s = pins[0].y + sign * (half + STUB_BEYOND_MM)
+            for k, p in enumerate(pins):
+                west = k < 4
+                i = k if west else 7 - k
+                y_lane = y_s + sign * MUX_FAN_PITCH_MM * i
+                out = MUX_FAN_OUT_MM + MUX_FAN_STEP_MM * (i % 2)
+                x_end = xc + (-1.0 if west else 1.0) * out
+                T(p.net, "F.Cu", [(p.x, p.y), (p.x, y_lane)], thin)
+                T(p.net, "F.Cu", [(p.x, y_lane), (x_end, y_lane)], thin)
+                V(p.net, x_end, y_lane)
 
 
 def _links(b: Builder, pads: dict, T, V) -> None:

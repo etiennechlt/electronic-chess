@@ -28,6 +28,7 @@ FANOUT_VIA_PAD_MM = 0.45  # small via: a 0.2 mm track passes one at the 0.5 mm p
 FANOUT_VIA_DRILL_MM = 0.2
 BAND_WIDTH_MM = 0.7  # escape band around each runway, closed to other nets
 EXIT_MM = 2.0  # corridor claimed past the fanout via on the exit layer, no copper
+ONE_ROW_FROM_MM = 0.6  # from this pad pitch one via row is enough (a via and its clearance fit)
 
 # net, pad number, [start, end], runway length, fanout via at the runway end
 Stub = tuple[str, str, list[tuple[float, float]], float, bool]
@@ -60,16 +61,26 @@ def pad_pitch(fp: Footprint) -> float:
 
 
 def escape_stubs(
-    fp: Footprint, x: float, y: float, rot: float, pad_nets: dict[str, str]
+    fp: Footprint,
+    x: float,
+    y: float,
+    rot: float,
+    pad_nets: dict[str, str],
+    skip: tuple[str, ...] = (),
+    one_row_from_mm: float = ONE_ROW_FROM_MM,
 ) -> list[Stub]:
     """Stubs for every connected pad of a fine-pitch footprint placed at
-    (x, y, rot); empty for a coarse footprint."""
+    (x, y, rot); empty for a coarse footprint. The pads numbered in `skip`
+    get none (their escapes are drawn by hand); `one_row_from_mm` is the
+    pad pitch from which the vias sit in one row instead of two (two rows
+    at 0.65 mm leave 0.85 mm between the vias of a row, enough for a
+    route to thread through to the inner row)."""
     if pad_pitch(fp) >= FINE_PITCH_MM:
         return []
     out: list[Stub] = []
     lateral: list[float] = []  # position along the row, to alternate the via rows
     for pad in fp.pads:
-        if pad.kind != "smd" or not pad_nets.get(pad.number):
+        if pad.kind != "smd" or not pad_nets.get(pad.number) or pad.number in skip:
             continue
         if math.hypot(pad.dx, pad.dy) < 0.3 or max(pad.size) > 1.6 and min(pad.size) > 0.5:
             continue  # exposed pad (at the origin, or large): no stub
@@ -105,7 +116,7 @@ def escape_stubs(
     # alternate the two via rows along every side so neighbouring vias sit
     # two pitches apart and a runway track passes the other row's via
     # (one row is enough from a 0.6 mm pitch: a via and its clearance fit)
-    one_row = pad_pitch(fp) >= 0.6
+    one_row = pad_pitch(fp) >= one_row_from_mm
     by_side: dict[tuple[float, float], list[int]] = {}
     for k, (dx, dy, _t) in enumerate(lateral):
         by_side.setdefault((dx, dy), []).append(k)
