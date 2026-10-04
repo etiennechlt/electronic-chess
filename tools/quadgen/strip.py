@@ -497,8 +497,12 @@ def _placements_full(
     st = q.strip
     top = lay.cell_ys[2 * lay.n - 1] + st.cell_pitch_mm / 2.0
     x_lo, x_hi = 0.8, lay.strip_w - 0.8
-    for ref in ("U1", "U2"):
-        out[ref] = (DEC_X_MM, top + FULL_ZONE_Y[ref], 0.0)
+    # the damping decoder is turned round: its address pins then face
+    # west like those of the muxes, and its outputs for the cells of band
+    # 0 (DAMP1 to DAMP8) leave east, on the side of the P-FET gates they
+    # drive, instead of crossing the strip once per cell
+    out["U1"] = (DEC_X_MM, top + FULL_ZONE_Y["U1"], 0.0)
+    out["U2"] = (DEC_X_MM, top + FULL_ZONE_Y["U2"], 180.0)
     for ref in ("U3", "U4"):
         out[ref] = (MUX_X_MM, top + FULL_ZONE_Y[ref], MUX_ROT)
     for ref, x in FULL_AMP_X.items():
