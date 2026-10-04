@@ -33,7 +33,7 @@ from __future__ import annotations
 from .board import NET_GND, Builder
 from .circuit import cell_refs
 from .escape import STUB_BEYOND_MM, STUB_WIDTH_MM, runway_end
-from .strip import BUSES_IN1, DEC_BODY_PINS, DEC_BODY_VIA_MM, MUX_FAN_PINS
+from .strip import BUSES_IN1, DEC_BODY_PINS, DEC_BODY_VIA_MM, MUX_FAN_PINS, SOIC_BODY_VIA_MM
 from .variant import is_reduced
 
 # the via column of a cell, between the resistor column (pads end at
@@ -249,6 +249,7 @@ def hand_routes(b: Builder) -> None:
         _links(b, pads, T, V)
     else:
         decoder_escapes(b, pads, T, V)
+        soic_escapes(b, pads, T, V)
         mux_fans(b, pads, T, V)
 
 
@@ -279,6 +280,29 @@ def decoder_escapes(b: Builder, pads: dict, T, V) -> None:
     if latch.net != supply.net or abs(latch.y - supply.y) > 1e-6:
         raise ValueError("U1: pins 1 and 24 are expected on 3V3, facing each other")
     T(latch.net, "F.Cu", [(latch.x, latch.y), (supply.x, supply.y)], thin)
+
+
+def soic_escapes(b: Builder, pads: dict, T, V) -> None:
+    """The pins of the amplifiers escape under the package like those of
+    the decoders: a runway inward on the top layer to a small via in a
+    column SOIC_BODY_VIA_MM from the package axis (west, east; None for
+    a side the router handles). At the 1.27 mm pitch of the SOIC one
+    column a side is enough for a route to pass between the vias."""
+    thin = STUB_WIDTH_MM
+    for ref, (west, east) in SOIC_BODY_VIA_MM.items():
+        if (ref, "1") not in pads:
+            continue
+        xc, _y, _rot = b.res.placements[ref]
+        for n in range(1, 9):
+            p = pads[(ref, str(n))]
+            if not p.net or p.net.startswith("__"):
+                continue
+            out = west if p.x < xc else east
+            if out is None:
+                continue
+            x_via = xc - out if p.x < xc else xc + out
+            T(p.net, "F.Cu", [(p.x, p.y), (x_via, p.y)], thin)
+            V(p.net, x_via, p.y)
 
 
 def mux_fans(b: Builder, pads: dict, T, V) -> None:

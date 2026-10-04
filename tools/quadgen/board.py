@@ -1265,7 +1265,10 @@ class Builder:
                 # a short net left to the finishing pass is the better deal
                 opened = left - open_nets
                 traded = after == count and net not in left
-                traded = traded and all(spans.get(n, 0.0) < spans.get(net, 0.0) for n in opened)
+                traded = traded and all(
+                    spans.get(n, 0.0) < spans.get(net, 0.0) and not n.startswith("C")
+                    for n in opened  # never a coil's own net, the sense path
+                )
                 if after > count or (after == count and not traded):
                     tracks, vias, led, body, routed, kept, routers = saved
                     self.res.tracks, self.res.vias, self.res.led_tracks = tracks, vias, led

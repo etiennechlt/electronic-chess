@@ -120,6 +120,14 @@ DEC_BODY_PINS = tuple(str(n) for n in range(1, 25))
 # from the package axis: the outer column clears the tips of the pads by
 # 0.3 mm, the inner one the outer column's vias by 0.9 mm on the diagonal
 DEC_BODY_VIA_MM = {1: 1.6, 0: 0.95}  # by pin parity
+# the amplifiers (SOIC-8) escape under the body too (hand.soic_escapes):
+# the pins of U5 and U7 face each other across half a millimetre and
+# U7's east pins face the passives of the eastern band, so no via fits
+# beside them; the columns, from each package axis, west and east, keep
+# U7's east column off the 3V3 rail and U8's in the via slot between the
+# reference and the drive buses (U8's west pins face the free room under
+# the FPC and escape by the router)
+SOIC_BODY_VIA_MM = {"U5": (0.9, 0.9), "U7": (0.9, 0.2), "U8": (None, 1.175)}
 # y of the packages from the top of the zone: the mux of band 0 with its
 # fans at the head, so its sixteen lines leave toward their cells without
 # crossing the decoders (whose via columns under the body leave three
