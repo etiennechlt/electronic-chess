@@ -274,6 +274,18 @@ pre code{background:none; padding:0; font-size:inherit;}
 </section>
 
 <section>
+<p class="eyebrow">Ce que ça coûte</p>
+<h2>Une centaine d'euros, module compris</h2>
+<div class="cards">
+<div class="card cool"><p class="big">110 €</p><p class="what">tout compris, TTC : les composants des quatre nappes avec 10 % de rechange, le lot de cinq cartes nues, la carte ESP32-S3</p></div>
+<div class="card cool"><p class="big">39 €</p><p class="what">les composants seuls pour 64 cases ; les 71 capteurs en font l'essentiel (33 USD)</p></div>
+<div class="card warm"><p class="big">126 €</p><p class="what">pour comparer : les trois circuits analogiques des quatre quadrants LC, rechanges comprises (fiche du plateau)</p></div>
+<div class="card warm"><p class="big">141 €</p><p class="what">la variante RFID à un lecteur par case, composants seuls, lecteurs clones ; quatre fois plus en NXP d'origine</p></div>
+</div>
+<p>Des estimations, pas des devis : relevés web du 7 octobre 2026, statut noté ligne par ligne dans le dépôt, conversion à 0,92 EUR par USD et TVA de 20 % ajoutée, port exclu. Le lot de cartes n'a pas de prix publié à cette taille et se chiffre sur devis ; les aimants, le bois et le feutre sont déjà ceux du plateau. Le détail, ligne par ligne, est dans la lecture « Implémentation ».</p>
+</section>
+
+<section>
 <p class="eyebrow">Et la RFID ?</p>
 <h2>Pourquoi l'étiquette ne suffit pas</h2>
 <p>L'étiquette dans la pièce fonctionne : à 5,5 mm de l'antenne sous la case, elle reçoit 3,2 fois le champ minimal qu'exige la norme. Le problème est ailleurs. Une antenne RFID est un circuit accordé très fin, comme une corde de guitare tendue juste comme il faut. Pour lire 64 cases avec un seul lecteur, il faudrait brancher et débrancher ces 64 cordes avec un aiguilleur électronique. Or cet aiguilleur ajoute une résistance et une capacité qui désaccordent complètement la corde : elle ne sonne plus. Il reste à mettre un lecteur complet sous chaque case, soit 64 lecteurs, pour un coût du même ordre que l'électronique de la détection LC, qui, elle, reconnaît les pièces à tous les coups.</p>
@@ -586,7 +598,7 @@ pre code{background:none; padding:0; font-size:inherit;}
 <table>
 <thead><tr><th>topologie</th><th>composants</th><th>remarque</th></tr></thead>
 <tbody>
-<tr><td>Un lecteur par case</td><td>64 x (MFRC522, quartz 27,12 MHz, adaptation), SPI partagé, 64 chip select par registres à décalage</td><td>un émetteur à la fois ; pas de RF qui traverse la carte ; de l'ordre de 190 EUR, estimation</td></tr>
+<tr><td>Un lecteur par case</td><td>64 x (MFRC522, quartz 27,12 MHz, adaptation), SPI partagé, 64 chip select par registres à décalage</td><td>un émetteur à la fois ; pas de RF qui traverse la carte ; 141 EUR TTC de composants en lecteurs clones, rechanges comprises (lecture « Implémentation »)</td></tr>
 <tr><td>Un lecteur, arbre de commutation en 50 Ω</td><td>9 SP8T, 64 réseaux d'adaptation, un PN5180</td><td>64 lignes RF sur la carte, 64 accords à mettre au point</td></tr>
 <tr><td>Lecteur sur le chariot</td><td>un lecteur, aucune antenne fixe</td><td>phase 2 seulement, lecture à la demande</td></tr>
 <tr><td>Pas de RFID</td><td>rien</td><td>identité par la logique de jeu depuis la position initiale, promotion demandée au joueur</td></tr>
@@ -594,6 +606,12 @@ pre code{background:none; padding:0; font-size:inherit;}
 </table>
 </div>
 <p>Lecteurs candidats dans le yaml : MFRC522, PN5180. Cohabitation avec le LC si les deux existaient : lecture NFC hors fenêtre de mesure, comme les trames LED ; l'étiquette sans ferrite, résonante à 16,1 MHz, charge peu le ringdown et son décalage est absorbé par la calibration par pièce, à vérifier par une M1 avec et sans étiquette.</p>
+</section>
+
+<section>
+<p class="eyebrow">Coût</p>
+<h2>Ce que la couche Hall coûte, et à quoi la comparer</h2>
+<p>Composants des quatre nappes, rechange de 10 % comprise : <b>36 USD</b>, dont 33 USD pour les 71 DRV5053OA à 0,46 USD ; le reste (multiplexeurs, P-FET, passifs, embases) ne pèse rien. Avec le lot de cinq cartes nues (50 USD, ordre de grandeur à confirmer par devis) et la carte ESP32-S3-WROOM-1 (14 USD), le prototype autonome du brief fait <b>100 USD, soit 110 EUR TTC</b>. À comparer aux 114 USD des trois références analogiques des quatre quadrants LC (126 EUR TTC, fiche du plateau) : la couche de présence coûte le tiers du frontal d'identité, pour une carte deux couches sans chaîne analogique. La variante RFID à un lecteur par case ajoute 127 USD de composants en lecteurs clones (141 EUR TTC), avant toute carte.</p>
 </section>
 
 <section>
@@ -757,6 +775,42 @@ python3 scripts/gen_config.py ../../../config/board.yaml main/hallscan_config.h
 <p>Les entrées ADC1 du S3 sont les GPIO 1 à 10 ; les numéros sont ceux du yaml et restent à confirmer contre le brochage du module avant tout câblage. Les capteurs sont en 3,3 V, les multiplexeurs aussi ; la sortie du DRV5053OA (1,02 V au repos, ±278 mV pour un pion) entre directement dans l'ADC à 12 dB d'atténuation.</p>
 <h2>La nappe Hall d'un quadrant, à dessiner</h2>
 <p>Deux couches, 200 x 200 mm, posée sur le quadrant dans la lame d'air, ou seule pour l'étape intermédiaire : 16 capteurs DRV5053OA en SOT-23 au centre des cases, un CD74HC4067, 4 P-FET de rangée avec leur résistance de grille, un condensateur de découplage par capteur, un connecteur. Le bus de la nappe du quadrant LC suffit à l'adresser depuis le cerveau (<code>MUX_A0..A2</code> plus un enable comme quatrième bit, <code>AMP_OUT</code> pour la sortie) ; pour l'ESP32-S3 du brief, un connecteur à huit fils (3,3 V, masse, sortie, quatre adresses, une ou quatre lignes de rangée).</p>
+</section>
+
+<section>
+<p class="eyebrow">Prix</p>
+<h2>Ce que ça coûte, ligne à ligne</h2>
+<p>Quantités dérivées du yaml (64 cases, quatre quadrants, 4 groupes d'alimentation), prix lus dans <code>docs/prix-hall.csv</code> (et <code>docs/prix-plateau.csv</code> pour les lignes que le plateau achète déjà), avec le statut et la source de chaque ligne ; règle de rechange de <code>tools/bomagg.py</code> (10 %, jamais moins de un, deux dès dix pièces) ; canal le moins cher ligne à ligne ; 0,92 EUR par USD et 20 % de TVA dans les totaux TTC. Tout est « estimated » : relevés web du 7 octobre 2026, à revalider au panier.</p>
+<div class="tbl">
+<table>
+<thead><tr><th>ligne</th><th class="n">exact</th><th class="n">à acheter</th><th class="n">unitaire (USD)</th><th>canal</th><th class="n">total (USD)</th><th>statut</th></tr></thead>
+<tbody>
+<tr><td><code>DRV5053OAQDBZR</code><br><span class="muted">capteur Hall DRV5053OA, SOT-23</span></td><td class="n">64</td><td class="n">71</td><td class="n">0,46</td><td>lcsc</td><td class="n">32,66</td><td><span title="LCSC C165150 0.4601 USD par 30 mais rupture (prix de reference); Farnell 0.524 EUR HT et DigiKey 0.52 EUR a l unite, convertis; releves web du 2026-10-07">estimated</span></td></tr>
+<tr><td><code>CD74HC4067SM96</code><br><span class="muted">multiplexeur CD74HC4067, 16 vers 1</span></td><td class="n">4</td><td class="n">5</td><td class="n">0,27</td><td>lcsc</td><td class="n">1,35</td><td><span title="TSSOP-24: LCSC C98457 0.2668 USD 6496 en stock (instantane non date); Mouser 1.17 USD a l unite; le SOIC M96 (C496123) est en rupture a 0.69; 2026-10-07">estimated</span></td></tr>
+<tr><td><code>AO3401A</code><br><span class="muted">P-FET de rangée</span></td><td class="n">16</td><td class="n">18</td><td class="n">0,052</td><td>lcsc</td><td class="n">0,94</td><td><span title="meme famille que l'AO3400A">estimated</span></td></tr>
+<tr><td><code>10k@R_0603_1608Metric</code><br><span class="muted">résistance de grille 10 kΩ, 0603</span></td><td class="n">16</td><td class="n">18</td><td class="n">0,0015</td><td>lcsc</td><td class="n">0,03</td><td><span title="1 %, tarif de reel">estimated</span></td></tr>
+<tr><td><code>100n@C_0603_1608Metric</code><br><span class="muted">découplage 100 nF, 0603, par capteur et par mux</span></td><td class="n">68</td><td class="n">75</td><td class="n">0,0025</td><td>lcsc</td><td class="n">0,19</td><td><span title="X7R 50 V, tarif de reel">estimated</span></td></tr>
+<tr><td><code>PinHeader_1x10_P2.54mm</code><br><span class="muted">embase 2,54 mm vers l'ESP32, une par nappe</span></td><td class="n">4</td><td class="n">5</td><td class="n">0,1</td><td>lcsc</td><td class="n">0,5</td><td><span title="embase male 2.54 mm, tarif courant">estimated</span></td></tr>
+<tr><td><code>PCB_200x200_2L_x5</code><br><span class="muted">cartes nues 200 x 200 mm, 2 couches, lot de 5 (minimum)</span></td><td class="n">1</td><td class="n">1</td><td class="n">50</td><td>lcsc</td><td class="n">50</td><td><span title="JLCPCB 2 couches 200 x 200 mm, lot de 5 (minimum), hors port: aucun prix publie trouve, ordre de grandeur hors palier 100 x 100, devis a demander avant commande; 2026-10-07">estimated</span></td></tr>
+<tr><td><code>ESP32-S3-DevKitC-1-N8R8</code><br><span class="muted">carte de développement ESP32-S3</span></td><td class="n">1</td><td class="n">1</td><td class="n">14</td><td>mouser</td><td class="n">14</td><td><span title="DigiKey 12.85 EUR HT, Mouser 11.26 GBP, convertis a 14 USD; module seul a l unite si le cerveau le porte; 2026-10-07">estimated</span></td></tr>
+</tbody>
+</table>
+</div>
+<p><b>Couche Hall, prototype autonome : 96 USD au compte exact, 100 USD avec les rechanges, soit 92 EUR HT et 110 EUR TTC.</b> Composants seuls : 36 USD (39 EUR TTC). Non compté : le port, la variante branchée sur le cerveau (quatre connecteurs FPC au lieu des embases, pas de carte de développement), et le SS39ET en remplacement du capteur (environ deux fois le prix unitaire, voir la fiche). Le lot de cartes est le poste incertain : aucun prix publié à 200 x 200 mm, devis JLCPCB à demander avant de conclure.</p>
+<div class="tbl">
+<table>
+<thead><tr><th>variante RFID, un lecteur par case</th><th class="n">exact</th><th class="n">à acheter</th><th class="n">unitaire (USD)</th><th>canal</th><th class="n">total (USD)</th><th>statut</th></tr></thead>
+<tbody>
+<tr><td><code>MFRC522_QFN32</code><br><span class="muted">lecteur 13,56 MHz par case (MFRC522, QFN-32)</span></td><td class="n">64</td><td class="n">71</td><td class="n">1,3</td><td>lcsc</td><td class="n">92,3</td><td><span title="variante RFID: clone JSMSEMI QFN-32 LCSC C2760772 1.3009 USD (instantane 2024); NXP MFRC52202HN1 4.19 GBP par 100 chez RS, converti; 2026-10-07">estimated</span></td></tr>
+<tr><td><code>XTAL_27.12MHz</code><br><span class="muted">quartz 27,12 MHz par lecteur</span></td><td class="n">64</td><td class="n">71</td><td class="n">0,15</td><td>lcsc</td><td class="n">10,65</td><td><span title="variante RFID: quartz 27.12 MHz 3225, tarif courant">estimated</span></td></tr>
+<tr><td><code>NFC_matching_set</code><br><span class="muted">filtre et adaptation d'antenne, une dizaine de passifs</span></td><td class="n">64</td><td class="n">71</td><td class="n">0,2</td><td>lcsc</td><td class="n">14,2</td><td><span title="variante RFID: filtre EMC et adaptation d une antenne, une dizaine de passifs 0603">estimated</span></td></tr>
+<tr><td><code>NTAG213_25mm</code><br><span class="muted">étiquette NTAG213 ø25 mm, une par pièce</span></td><td class="n">34</td><td class="n">38</td><td class="n">0,27</td><td>mouser</td><td class="n">10,26</td><td><span title="variante RFID: etiquette ronde 25 mm, GoToTags 0.25 a 0.45 USD par 100, eBay 0.28; 2026-10-07">estimated</span></td></tr>
+</tbody>
+</table>
+</div>
+<p><b>Variante RFID : 127 USD de composants avec les rechanges, 141 EUR TTC</b>, en lecteurs clones ; les MFRC522 NXP d'origine coûtent environ quatre fois plus l'unité. Sans la carte quatre fois plus dense qu'elle impose, ni le port. Pour mémoire, les trois références analogiques des quatre quadrants LC font 114 USD rechanges comprises.</p>
+<pre><code># regénérer les tableaux après toute édition des fiches de prix ou du yaml
+PYTHONPATH=tools python3 -m docfig pages</code></pre>
 </section>
 
 <section>

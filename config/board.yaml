@@ -432,6 +432,7 @@ hall_rfid:                     # alternative or intermediate layer, evaluated in
   sensors:                     # SOT-23 parts only: the SIP SS49E stands 4 mm on its legs
                                # and does not fit under the plywood (gap.air_mm)
     - part: DRV5053OA          # TI, -11 mV/mT option, 2.5 to 38 V, 1.02 V at B = 0
+      mpn: DRV5053OAQDBZR      # purchase reference (docs/prix-hall.csv)
       package: SOT-23
       height_mm: 1.3
       supply_v: 3.3
@@ -442,6 +443,7 @@ hall_rfid:                     # alternative or intermediate layer, evaluated in
       power_on_us: 100.0       # settling after the row supply switches on, to verify
       note: "least sensitive option, so the king at nominal gap stays in the linear range"
     - part: SS39ET             # Honeywell SS49E family in SOT-23, ratiometric, 2.7 to 6.5 V
+      mpn: SS39ET
       package: SOT-23
       height_mm: 1.3
       supply_v: 3.3
@@ -469,6 +471,7 @@ hall_rfid:                     # alternative or intermediate layer, evaluated in
     thickness_extra_mm: { knight: 3.0, bishop: 3.0, rook: 8.0, queen: 8.0, king: 8.0 }
   mux:
     part: CD74HC4067           # 16:1 analog mux, one per quadrant, address lines shared
+    mpn: CD74HC4067SM96        # TSSOP-24, the package in stock (docs/prix-hall.csv)
     channels: 16
     ron_ohm: 100.0             # 70 typ at 4.5 V; estimate at 3.3 V, to verify
     c_off_pF: 5.0              # per switch I/O, channel off
@@ -477,8 +480,10 @@ hall_rfid:                     # alternative or intermediate layer, evaluated in
   power_gating:
     groups: 4                  # sensor supply switched per row of each quadrant: one
                                # high-side switch per row, four rows, all quadrants together
+    fet: AO3401A               # the P-FET the mockup already uses as damp switch
   esp32:                       # standalone prototype of the brief: the module of the clock
     module: ESP32-S3-WROOM-1
+    devkit: ESP32-S3-DevKitC-1-N8R8   # the standalone prototype buys the module on its board
     adc_bits: 12
     adc_full_scale_mv: 3100.0  # ADC1 at 12 dB attenuation
     adc_noise_lsb_rms: 3.0     # after averaging, to measure
@@ -509,6 +514,7 @@ hall_rfid:                     # alternative or intermediate layer, evaluated in
       q_target: 20.0           # bandwidth for the 848 kHz subcarrier
     tag:                       # round sticker in the base, under the piece coil
       part: NTAG213
+      order_key: NTAG213_25mm  # round sticker, docs/prix-hall.csv
       d_out_mm: 25.0
       d_in_mm: 19.0
       turns: 7

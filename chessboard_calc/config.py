@@ -626,6 +626,7 @@ class ClockCfg(_Model):
 
 class HallSensorCfg(_Model):
     part: str
+    mpn: str
     package: str
     height_mm: float
     supply_v: float
@@ -680,6 +681,7 @@ class HallSizeCodingCfg(_Model):
 
 class HallMuxCfg(_Model):
     part: str
+    mpn: str
     channels: int
     ron_ohm: float
     c_off_pF: float
@@ -689,6 +691,7 @@ class HallMuxCfg(_Model):
 
 class HallGatingCfg(_Model):
     groups: int
+    fet: str
 
     @field_validator("groups")
     @classmethod
@@ -700,6 +703,7 @@ class HallGatingCfg(_Model):
 
 class HallEsp32Cfg(_Model):
     module: str
+    devkit: str
     adc_bits: int
     adc_full_scale_mv: float
     adc_noise_lsb_rms: float
@@ -725,6 +729,7 @@ class NfcAntennaCfg(_Model):
 
 class NfcTagCfg(_Model):
     part: str
+    order_key: str
     d_out_mm: float
     d_in_mm: float
     turns: int

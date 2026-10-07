@@ -27,6 +27,16 @@ from .hall import (
     fig_hall_stack,
     fig_nfc_switch,
 )
+from .hallbom import (
+    SPARE_RATE,
+    USD_TO_EUR,
+    VAT,
+    Basket,
+    hall_basket,
+    hall_parts_basket,
+    lc_front_end_usd,
+    rfid_basket,
+)
 from .page import check, document
 
 PIECE_FR = {
@@ -108,6 +118,21 @@ def _pin_rows(cfg: BoardConfig) -> str:
     return "\n".join(rows)
 
 
+def _cost_rows(basket: Basket) -> str:
+    rows = []
+    for ln in basket.lines:
+        unit = "" if ln.unit_usd is None else fr_num(ln.unit_usd, 4 if ln.unit_usd < 0.1 else 2)
+        source = ln.source.replace('"', "&quot;")
+        rows.append(
+            f'<tr><td><code>{ln.key}</code><br><span class="muted">{ln.label}</span></td>'
+            f'<td class="n">{ln.quantity}</td><td class="n">{ln.buy}</td>'
+            f'<td class="n">{unit}</td><td>{ln.channel}</td>'
+            f'<td class="n">{fr_num(ln.total_usd, 2)}</td>'
+            f'<td><span title="{source}">{ln.status}</span></td></tr>'
+        )
+    return "\n".join(rows)
+
+
 def _spans(cfg: BoardConfig, size_coded: bool) -> str:
     rep = amplitude_classes(cfg, cfg.pitch.plateau_mm, size_coded=size_coded)
     parts = []
@@ -144,6 +169,13 @@ def hall_page(cfg: BoardConfig) -> str:
     raw3["sense_coil"]["layers"] = 3
     s3 = pcb_sense_coil(BoardConfig.model_validate(raw3), p)
     z_json, bp_json, bk_json = curve_json(cfg)
+    hall_all = hall_basket(cfg)
+    hall_parts = hall_parts_basket(cfg)
+    rfid = rfid_basket(cfg)
+    lc_fe_usd = lc_front_end_usd()
+    lc_fe_eur_ttc = lc_fe_usd * USD_TO_EUR * (1.0 + VAT)
+    by_key = {ln.key: ln for ln in hall_all.lines}
+    sensor_line = by_key[sensor.mpn]
 
     def counts(field_mt: float) -> str:
         return str(int(round(field_mt * sensor.sensitivity_mv_per_mt / lsb)))
@@ -284,6 +316,26 @@ def hall_page(cfg: BoardConfig) -> str:
         "N_FETS": str(
             hr.power_gating.groups * (cfg.plateau.grid // cfg.plateau.quadrant.squares) ** 2
         ),
+        "HALL_COST_ROWS": _cost_rows(hall_all),
+        "RFID_COST_ROWS": _cost_rows(rfid),
+        "HALL_EXACT_USD": fr_num(hall_all.exact_usd, 0),
+        "HALL_BUY_USD": fr_num(hall_all.buy_usd, 0),
+        "HALL_EUR_HT": fr_num(hall_all.eur_ht, 0),
+        "HALL_EUR_TTC": fr_num(hall_all.eur_ttc, 0),
+        "HALL_PARTS_USD": fr_num(hall_parts.buy_usd, 0),
+        "HALL_PARTS_EUR_TTC": fr_num(hall_parts.eur_ttc, 0),
+        "PCB_USD": fr_num(by_key["PCB_200x200_2L_x5"].total_usd, 0),
+        "DEVKIT_USD": fr_num(by_key[hr.esp32.devkit].total_usd, 0),
+        "SENSOR_UNIT_USD": fr_num(sensor_line.unit_usd or 0.0, 2),
+        "SENSOR_LINE_USD": fr_num(sensor_line.total_usd, 0),
+        "SENSOR_BUY": str(sensor_line.buy),
+        "RFID_BUY_USD": fr_num(rfid.buy_usd, 0),
+        "RFID_EUR_TTC": fr_num(rfid.eur_ttc, 0),
+        "LC_FE_USD": fr_num(lc_fe_usd, 0),
+        "LC_FE_EUR_TTC": fr_num(lc_fe_eur_ttc, 0),
+        "SPARE_PCT": fr_num(SPARE_RATE * 100, 0),
+        "USD_EUR": fr_num(USD_TO_EUR, 2),
+        "VAT_PCT": fr_num(VAT * 100, 0),
     }
     page = document("Hall + RFID", HALL_BODY, HALL_SCRIPT, HALL_CSS)
     for k, val in v.items():
@@ -383,6 +435,18 @@ HALL_BODY = r"""<div class="wrap">
 </ul></div>
 </div>
 <p>Pour jouer une partie normale, le plateau sait qui est où depuis la position de départ, et il suit chaque coup case par case : l'identité ne manque qu'au moment de la promotion, où l'on peut demander au joueur. C'est le compromis des plateaux du commerce les plus simples. La détection LC du projet, elle, reconnaît chaque pièce ; la couche Hall en devient le complément, pas le remplaçant.</p>
+</section>
+
+<section>
+<p class="eyebrow">Ce que ça coûte</p>
+<h2>Une centaine d'euros, module compris</h2>
+<div class="cards">
+<div class="card cool"><p class="big">{{HALL_EUR_TTC}} €</p><p class="what">tout compris, TTC : les composants des quatre nappes avec {{SPARE_PCT}} % de rechange, le lot de cinq cartes nues, la carte ESP32-S3</p></div>
+<div class="card cool"><p class="big">{{HALL_PARTS_EUR_TTC}} €</p><p class="what">les composants seuls pour 64 cases ; les {{SENSOR_BUY}} capteurs en font l'essentiel ({{SENSOR_LINE_USD}} USD)</p></div>
+<div class="card warm"><p class="big">{{LC_FE_EUR_TTC}} €</p><p class="what">pour comparer : les trois circuits analogiques des quatre quadrants LC, rechanges comprises (fiche du plateau)</p></div>
+<div class="card warm"><p class="big">{{RFID_EUR_TTC}} €</p><p class="what">la variante RFID à un lecteur par case, composants seuls, lecteurs clones ; quatre fois plus en NXP d'origine</p></div>
+</div>
+<p>Des estimations, pas des devis : relevés web du 7 octobre 2026, statut noté ligne par ligne dans le dépôt, conversion à {{USD_EUR}} EUR par USD et TVA de {{VAT_PCT}} % ajoutée, port exclu. Le lot de cartes n'a pas de prix publié à cette taille et se chiffre sur devis ; les aimants, le bois et le feutre sont déjà ceux du plateau. Le détail, ligne par ligne, est dans la lecture « Implémentation ».</p>
 </section>
 
 <section>
@@ -494,7 +558,7 @@ HALL_BODY = r"""<div class="wrap">
 <table>
 <thead><tr><th>topologie</th><th>composants</th><th>remarque</th></tr></thead>
 <tbody>
-<tr><td>Un lecteur par case</td><td>64 x (MFRC522, quartz 27,12 MHz, adaptation), SPI partagé, 64 chip select par registres à décalage</td><td>un émetteur à la fois ; pas de RF qui traverse la carte ; de l'ordre de 190 EUR, estimation</td></tr>
+<tr><td>Un lecteur par case</td><td>64 x (MFRC522, quartz 27,12 MHz, adaptation), SPI partagé, 64 chip select par registres à décalage</td><td>un émetteur à la fois ; pas de RF qui traverse la carte ; {{RFID_EUR_TTC}} EUR TTC de composants en lecteurs clones, rechanges comprises (lecture « Implémentation »)</td></tr>
 <tr><td>Un lecteur, arbre de commutation en 50 Ω</td><td>9 SP8T, 64 réseaux d'adaptation, un PN5180</td><td>64 lignes RF sur la carte, 64 accords à mettre au point</td></tr>
 <tr><td>Lecteur sur le chariot</td><td>un lecteur, aucune antenne fixe</td><td>phase 2 seulement, lecture à la demande</td></tr>
 <tr><td>Pas de RFID</td><td>rien</td><td>identité par la logique de jeu depuis la position initiale, promotion demandée au joueur</td></tr>
@@ -502,6 +566,12 @@ HALL_BODY = r"""<div class="wrap">
 </table>
 </div>
 <p>Lecteurs candidats dans le yaml : {{READERS}}. Cohabitation avec le LC si les deux existaient : lecture NFC hors fenêtre de mesure, comme les trames LED ; l'étiquette sans ferrite, résonante à {{TAG_F}} MHz, charge peu le ringdown et son décalage est absorbé par la calibration par pièce, à vérifier par une M1 avec et sans étiquette.</p>
+</section>
+
+<section>
+<p class="eyebrow">Coût</p>
+<h2>Ce que la couche Hall coûte, et à quoi la comparer</h2>
+<p>Composants des quatre nappes, rechange de {{SPARE_PCT}} % comprise : <b>{{HALL_PARTS_USD}} USD</b>, dont {{SENSOR_LINE_USD}} USD pour les {{SENSOR_BUY}} {{SENSOR}} à {{SENSOR_UNIT_USD}} USD ; le reste (multiplexeurs, P-FET, passifs, embases) ne pèse rien. Avec le lot de cinq cartes nues ({{PCB_USD}} USD, ordre de grandeur à confirmer par devis) et la carte {{ESP}} ({{DEVKIT_USD}} USD), le prototype autonome du brief fait <b>{{HALL_BUY_USD}} USD, soit {{HALL_EUR_TTC}} EUR TTC</b>. À comparer aux {{LC_FE_USD}} USD des trois références analogiques des quatre quadrants LC ({{LC_FE_EUR_TTC}} EUR TTC, fiche du plateau) : la couche de présence coûte le tiers du frontal d'identité, pour une carte deux couches sans chaîne analogique. La variante RFID à un lecteur par case ajoute {{RFID_BUY_USD}} USD de composants en lecteurs clones ({{RFID_EUR_TTC}} EUR TTC), avant toute carte.</p>
 </section>
 
 <section>
@@ -585,6 +655,32 @@ python3 scripts/gen_config.py ../../../config/board.yaml main/hallscan_config.h
 <p>Les entrées ADC1 du S3 sont les GPIO 1 à 10 ; les numéros sont ceux du yaml et restent à confirmer contre le brochage du module avant tout câblage. Les capteurs sont en 3,3 V, les multiplexeurs aussi ; la sortie du {{SENSOR}} ({{VQ}} V au repos, ±{{OUT_PAWN_MV}} mV pour un pion) entre directement dans l'ADC à 12 dB d'atténuation.</p>
 <h2>La nappe Hall d'un quadrant, à dessiner</h2>
 <p>Deux couches, 200 x 200 mm, posée sur le quadrant dans la lame d'air, ou seule pour l'étape intermédiaire : 16 capteurs {{SENSOR}} en SOT-23 au centre des cases, un {{MUX}}, {{GROUPS}} P-FET de rangée avec leur résistance de grille, un condensateur de découplage par capteur, un connecteur. Le bus de la nappe du quadrant LC suffit à l'adresser depuis le cerveau (<code>MUX_A0..A2</code> plus un enable comme quatrième bit, <code>AMP_OUT</code> pour la sortie) ; pour l'ESP32-S3 du brief, un connecteur à huit fils (3,3 V, masse, sortie, quatre adresses, une ou quatre lignes de rangée).</p>
+</section>
+
+<section>
+<p class="eyebrow">Prix</p>
+<h2>Ce que ça coûte, ligne à ligne</h2>
+<p>Quantités dérivées du yaml ({{GRID2}} cases, quatre quadrants, {{GROUPS}} groupes d'alimentation), prix lus dans <code>docs/prix-hall.csv</code> (et <code>docs/prix-plateau.csv</code> pour les lignes que le plateau achète déjà), avec le statut et la source de chaque ligne ; règle de rechange de <code>tools/bomagg.py</code> ({{SPARE_PCT}} %, jamais moins de un, deux dès dix pièces) ; canal le moins cher ligne à ligne ; {{USD_EUR}} EUR par USD et {{VAT_PCT}} % de TVA dans les totaux TTC. Tout est « estimated » : relevés web du 7 octobre 2026, à revalider au panier.</p>
+<div class="tbl">
+<table>
+<thead><tr><th>ligne</th><th class="n">exact</th><th class="n">à acheter</th><th class="n">unitaire (USD)</th><th>canal</th><th class="n">total (USD)</th><th>statut</th></tr></thead>
+<tbody>
+{{HALL_COST_ROWS}}
+</tbody>
+</table>
+</div>
+<p><b>Couche Hall, prototype autonome : {{HALL_EXACT_USD}} USD au compte exact, {{HALL_BUY_USD}} USD avec les rechanges, soit {{HALL_EUR_HT}} EUR HT et {{HALL_EUR_TTC}} EUR TTC.</b> Composants seuls : {{HALL_PARTS_USD}} USD ({{HALL_PARTS_EUR_TTC}} EUR TTC). Non compté : le port, la variante branchée sur le cerveau (quatre connecteurs FPC au lieu des embases, pas de carte de développement), et le {{SENSOR2}} en remplacement du capteur (environ deux fois le prix unitaire, voir la fiche). Le lot de cartes est le poste incertain : aucun prix publié à 200 x 200 mm, devis JLCPCB à demander avant de conclure.</p>
+<div class="tbl">
+<table>
+<thead><tr><th>variante RFID, un lecteur par case</th><th class="n">exact</th><th class="n">à acheter</th><th class="n">unitaire (USD)</th><th>canal</th><th class="n">total (USD)</th><th>statut</th></tr></thead>
+<tbody>
+{{RFID_COST_ROWS}}
+</tbody>
+</table>
+</div>
+<p><b>Variante RFID : {{RFID_BUY_USD}} USD de composants avec les rechanges, {{RFID_EUR_TTC}} EUR TTC</b>, en lecteurs clones ; les MFRC522 NXP d'origine coûtent environ quatre fois plus l'unité. Sans la carte quatre fois plus dense qu'elle impose, ni le port. Pour mémoire, les trois références analogiques des quatre quadrants LC font {{LC_FE_USD}} USD rechanges comprises.</p>
+<pre><code># regénérer les tableaux après toute édition des fiches de prix ou du yaml
+PYTHONPATH=tools python3 -m docfig pages</code></pre>
 </section>
 
 <section>

@@ -170,7 +170,7 @@ de marché, non relevées) :
 
 | Topologie | Composants | Ordre de grandeur | Remarque |
 |---|---|---|---|
-| Un lecteur par case | 64 x (MFRC522 en HVQFN32, quartz 27,12 MHz, adaptation), SPI partagé, 64 chip select par registres à décalage | 64 x 3 EUR, 190 EUR environ | un émetteur à la fois, le logiciel l'impose ; pas de RF qui traverse la carte |
+| Un lecteur par case | 64 x (MFRC522 en HVQFN32, quartz 27,12 MHz, adaptation), SPI partagé, 64 chip select par registres à décalage | 127 USD de composants en lecteurs clones, rechanges comprises, étiquettes incluses, soit 141 EUR TTC (`docs/prix-hall.csv`) ; environ quatre fois plus en NXP d'origine | un émetteur à la fois, le logiciel l'impose ; pas de RF qui traverse la carte |
 | Un lecteur, arbre de commutation 50 ohm | 9 SP8T, 64 adaptations, 1 PN5180 | 80 à 100 EUR environ | 64 lignes RF sur la carte, mise au point de 64 accords |
 | Lecteur sur le chariot | 1 lecteur, aucune antenne fixe | 10 EUR | phase 2 seulement, lecture à la demande en déplaçant le chariot |
 | Pas de RFID | | 0 | identité par la logique de jeu depuis la position initiale, promotion demandée par l'horloge ou l'application |
@@ -234,6 +234,20 @@ RFID à un lecteur par case.
 | Rapport | `python -m chessboard_calc report` | section « Hall + RFID alternative » pour chaque pas |
 | Tests | `tests/test_hall.py`, `tests/test_nfc.py`, `tests/test_hallscan_config.py` | forme fermée et dipôle, marges, un groupe avec aimants uniformes et trois avec aimants codés, puissance, cadence, verdict du mux, gardes qui tirent, en-tête généré |
 | Firmware du scanner | `firmware/esp32/hallscan/` | logique C99 testée sur PC et en CI (seuils, hystérésis, anti-rebond, ligne `B` de la note 12), en-tête généré du yaml, projet ESP-IDF pour l'ESP32-S3 |
+
+**Ce que la couche Hall coûte.** Les quantités viennent du yaml, les
+prix de `docs/prix-hall.csv` (statut et source par ligne, relevés web du
+07/10/2026, tous « estimated ») et de la fiche du plateau pour les
+lignes déjà achetées, avec la règle de rechange de `tools/bomagg.py` ;
+la page `docs/pages/hall-rfid.html` les tabule ligne à ligne. Composants
+des quatre nappes : 36 USD rechanges comprises, dont 33 USD pour les
+71 DRV5053OA à 0,46 USD ; avec le lot de cinq cartes nues 200 x 200 mm
+(50 USD, aucun prix publié à cette taille, devis à demander) et la carte
+ESP32-S3-DevKitC-1 (14 USD), le prototype autonome du brief fait
+100 USD, soit 110 EUR TTC. Le frontal analogique des quatre quadrants LC
+(ADG1607, AD8421, OPA2810) fait 114 USD rechanges comprises : la couche
+de présence coûte le tiers de la couche d'identité. La variante RFID à
+un lecteur par case ajoute 127 USD de composants en lecteurs clones.
 
 Ce qui n'est pas fait : la carte KiCad de la nappe Hall (elle attend
 la décision de la section 7 ; `boardgen` sait la produire, c'est un

@@ -51,7 +51,10 @@ pas.
   [note 24](notes/24-hall-et-rfid.md), chiffres du champ de l'aimant de
   pièce au capteur, seuils, courant, cadence, bilan NFC et verdict du
   multiplexeur, avec le scanner Hall prototypé dans
-  [`firmware/esp32/hallscan`](../firmware/esp32/hallscan/README.md).
+  [`firmware/esp32/hallscan`](../firmware/esp32/hallscan/README.md) ;
+  son coût ligne à ligne (capteurs, cartes, ESP32, variante RFID) vient
+  de [`prix-hall.csv`](prix-hall.csv) et se lit dans la page
+  [Hall + RFID](pages/hall-rfid.html), lecture « Implémentation ».
 - **Baisser le coût des cartes** : la [note 16](notes/16-cout-des-cartes.md),
   état de la réflexion sur le quadrant et le format 100 x 100, avec
   les décisions à prendre avant tout devis.
