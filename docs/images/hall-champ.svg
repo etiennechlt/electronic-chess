@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="docfig" viewBox="0 0 900 360" role="img" aria-label="Champ au capteur en fonction de la distance entre l aimant et la plaque de Hall, pour le pion et le roi : 25,3 et 32,1 mT a l entrefer nominal, le seuil de presence a 10,3 mT, le roi souleve de 15 mm sous le relachement">
+<style>
+svg.docfig{font-family:"IBM Plex Sans", "Segoe UI", "DejaVu Sans", Helvetica, Arial, sans-serif;color:#1a1e1d}
+.lbl{font-size:12.5px;fill:#1a1e1d}
+.lbl.small{font-size:11px}
+.lbl.strong{font-weight:600}
+.muted{fill:#4f5754}
+.mono{font-family:"IBM Plex Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace}
+.glyph{font-size:20px;font-family:"Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2", "DejaVu Sans", sans-serif}
+.title{font-size:14px;font-weight:600;fill:#1a1e1d}
+.axis{stroke:currentColor;stroke-width:1.2;fill:none;opacity:.55}
+.tick{stroke:currentColor;stroke-width:1;opacity:.55}
+.grid{stroke:currentColor;stroke-width:1;opacity:.12}
+.dash{stroke:currentColor;stroke-width:1;stroke-dasharray:5 4;opacity:.5;fill:none}
+.brk{stroke:currentColor;stroke-width:1.2;opacity:.6;fill:none}
+.trace{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.trace.ghost{opacity:.35;stroke-dasharray:3 3}
+.env{fill:none;stroke-width:1.2;stroke-dasharray:4 4;opacity:.7}
+.q-high{stroke:#2a78d6}
+.q-low{stroke:#eb6834}
+.q-high-t{fill:#2a78d6;font-weight:600}
+.q-low-t{fill:#eb6834;font-weight:600}
+.mark{stroke-width:1.6}
+.dot{fill:#ffffff;stroke-width:2.5}
+.band{fill:rgba(42,120,214,.09)}
+.peak-black{fill:#2a78d6;stroke:#2a78d6;stroke-width:1.5;stroke-linejoin:round;opacity:.9}
+.peak-white{fill:#ffffff;stroke:#2a78d6;stroke-width:1.8;stroke-linejoin:round}
+.tipbox{fill:#ffffff;stroke:#d3d8d4}
+.lay-pcb{fill:#c4d9c0} .lay-air{fill:#f7f9f7} .lay-wood{fill:#e6d3b1} .lay-felt{fill:#c9ccc4}
+.copper{fill:#c8843a}
+.piece{fill:#efe6d6;stroke:currentColor;stroke-width:1.2;opacity:.95}
+.bundle{fill:url(#wire);stroke:currentColor;stroke-width:1}
+.cap{fill:#eb6834;stroke:none}
+.magnet{fill:#8b8f92;opacity:.75}
+.field{fill:none;stroke:#2a78d6;stroke-width:1.6;opacity:.8}
+.seg{fill:#e9eef4;stroke:#d3d8d4}
+.seg-pulse{fill:#eb6834;opacity:.35;stroke:#eb6834}
+.seg-listen{fill:rgba(42,120,214,.09);stroke:#2a78d6}
+.box{fill:#ffffff;stroke:#d3d8d4;stroke-width:1.2}
+.box-piece{stroke:#2a78d6;stroke-width:1.8}
+.box-mcu{fill:#e9eef4;stroke:#2a78d6;stroke-width:1.8}
+.box-soft{fill:#e9eef4;stroke:#d3d8d4;stroke-width:1.2}
+.box-warm{fill:#ffffff;stroke:#eb6834;stroke-width:1.6}
+.wire{stroke:currentColor;stroke-width:1.4;fill:none;opacity:.7}
+.wire-a{stroke:#2a78d6;stroke-width:2;fill:none}
+.wire-p{stroke:#eb6834;stroke-width:2;fill:none}
+.zone{fill:none;stroke:#d3d8d4;stroke-width:1.2;stroke-dasharray:6 4}
+.coil{fill:none;stroke:#c8843a;stroke-width:2}
+.puck{fill:#efe6d6;stroke:currentColor;stroke-width:1.2}
+</style>
+<rect width="900" height="360" fill="#ffffff"/>
+<rect class="band" x="208.3" y="40" width="25.4" height="260"/>
+<text class="lbl muted" x="239.6" y="48.0">entrefer nominal à maximal : 6,9 à 7,8 mm</text>
+<line class="grid" x1="70" y1="300.0" x2="860" y2="300.0"/>
+<text class="lbl mono" x="62.0" y="304.0" text-anchor="end">0</text>
+<line class="grid" x1="70" y1="237.5" x2="860" y2="237.5"/>
+<text class="lbl mono" x="62.0" y="241.5" text-anchor="end">10</text>
+<line class="grid" x1="70" y1="175.0" x2="860" y2="175.0"/>
+<text class="lbl mono" x="62.0" y="179.0" text-anchor="end">20</text>
+<line class="grid" x1="70" y1="112.5" x2="860" y2="112.5"/>
+<text class="lbl mono" x="62.0" y="116.5" text-anchor="end">30</text>
+<line class="grid" x1="70" y1="50.0" x2="860" y2="50.0"/>
+<text class="lbl mono" x="62.0" y="54.0" text-anchor="end">40</text>
+<line class="tick" x1="154.6" y1="300" x2="154.6" y2="305"/>
+<text class="lbl mono" x="154.6" y="320.0" text-anchor="middle">5</text>
+<line class="tick" x1="295.7" y1="300" x2="295.7" y2="305"/>
+<text class="lbl mono" x="295.7" y="320.0" text-anchor="middle">10</text>
+<line class="tick" x1="436.8" y1="300" x2="436.8" y2="305"/>
+<text class="lbl mono" x="436.8" y="320.0" text-anchor="middle">15</text>
+<line class="tick" x1="577.9" y1="300" x2="577.9" y2="305"/>
+<text class="lbl mono" x="577.9" y="320.0" text-anchor="middle">20</text>
+<line class="tick" x1="718.9" y1="300" x2="718.9" y2="305"/>
+<text class="lbl mono" x="718.9" y="320.0" text-anchor="middle">25</text>
+<line class="tick" x1="860.0" y1="300" x2="860.0" y2="305"/>
+<text class="lbl mono" x="860.0" y="320.0" text-anchor="middle">30</text>
+<line class="axis" x1="70" y1="300" x2="860" y2="300"/>
+<text class="lbl muted" x="860.0" y="338.0" text-anchor="end">distance de l'aimant à la plaque de Hall, en mm</text>
+<text class="lbl muted" x="62.0" y="32.0" text-anchor="end">mT</text>
+<line class="dash" x1="70" y1="235.4" x2="860" y2="235.4"/>
+<text class="lbl muted" x="854.0" y="230.4" text-anchor="end">seuil de présence : 10,3 mT</text>
+<line class="dash" x1="70" y1="254.8" x2="860" y2="254.8"/>
+<text class="lbl muted" x="854.0" y="249.8" text-anchor="end">relâchement : 7,2 mT</text>
+<polyline class="trace q-low" points="70.0,50.0 77.1,50.0 84.1,50.0 91.2,50.0 98.2,50.0 105.3,50.0 112.3,50.0 119.4,50.0 126.4,50.0 133.5,50.0 140.5,50.0 147.6,50.0 154.6,54.2 161.7,68.3 168.8,81.5 175.8,94.0 182.9,105.7 189.9,116.6 197.0,126.9 204.0,136.6 211.1,145.6 218.1,154.1 225.2,162.0 232.2,169.4 239.3,176.4 246.3,182.9 253.4,189.0 260.4,194.8 267.5,200.2 274.6,205.2 281.6,209.9 288.7,214.4 295.7,218.6 302.8,222.5 309.8,226.2 316.9,229.7 323.9,233.0 331.0,236.1 338.0,239.0 345.1,241.7 352.1,244.3 359.2,246.8 366.2,249.1 373.3,251.3 380.4,253.3 387.4,255.3 394.5,257.2 401.5,258.9 408.6,260.6 415.6,262.2 422.7,263.7 429.7,265.1 436.8,266.4 443.8,267.7 450.9,268.9 457.9,270.1 465.0,271.2 472.1,272.3 479.1,273.3 486.2,274.2 493.2,275.2 500.3,276.0 507.3,276.9 514.4,277.7 521.4,278.4 528.5,279.2 535.5,279.8 542.6,280.5 549.6,281.2 556.7,281.8 563.8,282.3 570.8,282.9 577.9,283.4 584.9,284.0 592.0,284.5 599.0,284.9 606.1,285.4 613.1,285.8 620.2,286.2 627.2,286.7 634.3,287.0 641.3,287.4 648.4,287.8 655.4,288.1 662.5,288.5 669.6,288.8 676.6,289.1 683.7,289.4 690.7,289.7 697.8,290.0 704.8,290.2 711.9,290.5 718.9,290.7 726.0,291.0 733.0,291.2 740.1,291.4 747.1,291.7 754.2,291.9 761.2,292.1 768.3,292.3 775.4,292.5 782.4,292.6 789.5,292.8 796.5,293.0 803.6,293.2 810.6,293.3 817.7,293.5 824.7,293.6 831.8,293.8 838.8,293.9 845.9,294.1 852.9,294.2 860.0,294.3"/>
+<polyline class="trace q-high" points="70.0,50.0 77.1,50.0 84.1,50.0 91.2,50.0 98.2,50.0 105.3,50.0 112.3,50.0 119.4,50.0 126.4,50.0 133.5,50.0 140.5,50.0 147.6,50.0 154.6,50.0 161.7,50.0 168.8,50.0 175.8,56.2 182.9,66.2 189.9,75.8 197.0,85.1 204.0,94.1 211.1,102.6 218.1,110.8 225.2,118.7 232.2,126.2 239.3,133.5 246.3,140.4 253.4,146.9 260.4,153.2 267.5,159.3 274.6,165.0 281.6,170.5 288.7,175.7 295.7,180.7 302.8,185.5 309.8,190.0 316.9,194.4 323.9,198.5 331.0,202.5 338.0,206.3 345.1,209.9 352.1,213.3 359.2,216.6 366.2,219.7 373.3,222.7 380.4,225.6 387.4,228.3 394.5,230.9 401.5,233.4 408.6,235.8 415.6,238.1 422.7,240.3 429.7,242.3 436.8,244.3 443.8,246.3 450.9,248.1 457.9,249.8 465.0,251.5 472.1,253.1 479.1,254.7 486.2,256.2 493.2,257.6 500.3,258.9 507.3,260.2 514.4,261.5 521.4,262.7 528.5,263.9 535.5,265.0 542.6,266.0 549.6,267.1 556.7,268.1 563.8,269.0 570.8,269.9 577.9,270.8 584.9,271.7 592.0,272.5 599.0,273.3 606.1,274.0 613.1,274.8 620.2,275.5 627.2,276.1 634.3,276.8 641.3,277.4 648.4,278.0 655.4,278.6 662.5,279.2 669.6,279.7 676.6,280.3 683.7,280.8 690.7,281.3 697.8,281.8 704.8,282.2 711.9,282.7 718.9,283.1 726.0,283.5 733.0,283.9 740.1,284.3 747.1,284.7 754.2,285.1 761.2,285.4 768.3,285.8 775.4,286.1 782.4,286.4 789.5,286.8 796.5,287.1 803.6,287.4 810.6,287.7 817.7,287.9 824.7,288.2 831.8,288.5 838.8,288.7 845.9,289.0 852.9,289.2 860.0,289.4"/>
+<circle class="dot q-low" cx="233.6" cy="170.9" r="5"/>
+<text class="lbl" x="243.6" y="188.9">pion, entrefer maximal : 20,7 mT</text>
+<circle class="dot q-high" cx="208.3" cy="99.2" r="5"/>
+<text class="lbl" x="218.3" y="89.2">roi posé : 32,1 mT</text>
+<circle class="dot q-high" cx="631.5" cy="276.5" r="5"/>
+<text class="lbl" x="641.5" y="266.5">roi soulevé de 15 mm : 3,8 mT</text>
+<text class="lbl q-high-t" x="854.0" y="94.0" text-anchor="end">roi, ferrite ø17,5 mm</text>
+<text class="lbl q-low-t" x="854.0" y="110.0" text-anchor="end">pion, ferrite ø12,5 mm</text>
+</svg>

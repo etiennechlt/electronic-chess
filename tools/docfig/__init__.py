@@ -16,7 +16,9 @@ from chessboard_calc.config import BoardConfig
 
 from .bench import fig_bench_nucleo, fig_brain_blocks, fig_scan_cycle
 from .common import standalone
+from .hall import fig_hall_classes, fig_hall_curve, fig_hall_scan, fig_hall_stack, fig_nfc_switch
 from .page_bench import bench_page
+from .page_hall import hall_page
 from .page_q import q_page
 from .page_tuto import tuto_page
 from .q import (
@@ -45,6 +47,11 @@ FIGURES: dict[str, Callable[[BoardConfig], str]] = {
     "tuto-shield.svg": fig_shield_assembly,
     "tuto-puck.svg": fig_puck_making,
     "tuto-tests.svg": fig_bench_tests,
+    "hall-coupe.svg": fig_hall_stack,
+    "hall-champ.svg": fig_hall_curve,
+    "hall-classes.svg": fig_hall_classes,
+    "hall-scanner.svg": fig_hall_scan,
+    "nfc-commutation.svg": fig_nfc_switch,
 }
 
 
@@ -52,6 +59,7 @@ PAGES: dict[str, Callable[[BoardConfig], str]] = {
     "facteur-q.html": q_page,
     "cerveau-banc.html": bench_page,
     "tuto-banc.html": tuto_page,
+    "hall-rfid.html": hall_page,
 }
 
 

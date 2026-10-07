@@ -15,6 +15,11 @@ résonateurs LC passifs, identité par la fréquence), et dit ce qu'elle
 vaut comme **alternative** et comme **étape intermédiaire**. Rien
 n'est décidé ici ; la section 7 liste ce qu'une ADR trancherait.
 
+La même évaluation existe en page autonome à trois niveaux de lecture
+(simplifié, technique, implémentation), figures embarquées :
+[`docs/pages/hall-rfid.html`](../pages/hall-rfid.html), générée par
+`python -m docfig pages` des mêmes fonctions que cette note.
+
 Tous les chiffres viennent de la section `hall_rfid` de
 `config/board.yaml`, calculés par `chessboard_calc.hall` et
 `chessboard_calc.nfc`, imprimés par `python -m chessboard_calc report`

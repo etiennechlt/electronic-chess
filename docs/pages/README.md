@@ -1,6 +1,6 @@
 # Pages d'explication
 
-Les trois textes de vulgarisation du projet, en pages autonomes : un
+Les textes de vulgarisation du projet, en pages autonomes : un
 seul fichier chacune, schémas embarqués, lisible hors du dépôt et
 envoyable telle quelle.
 
@@ -9,6 +9,7 @@ envoyable telle quelle.
 | [facteur-q.html](facteur-q.html) | [note 18](../notes/18-facteur-q.md) | le facteur Q sans électronique préalable, avec les chiffres réels du projet |
 | [cerveau-banc.html](cerveau-banc.html) | [note 19](../notes/19-cerveau-et-banc-nucleo.md) | ce que fait la carte cerveau, et le banc Nucleo qui va confronter le calcul à la mesure |
 | [tuto-banc.html](tuto-banc.html) | [note 20](../notes/20-tuto-banc.md) | quoi commander, comment assembler, comment tester, du dépôt à la première mesure |
+| [hall-rfid.html](hall-rfid.html) | [note 24](../notes/24-hall-et-rfid.md) | l'alternative Hall + RFID en trois lectures (simplifiée, technique, implémentation), avec les courbes de champ et le verdict du multiplexeur |
 
 Elles sont générées, jamais écrites à la main :
 

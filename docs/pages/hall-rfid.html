@@ -1,0 +1,832 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hall + RFID</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f3f5f2; --surface:#ffffff; --ink:#1a1e1d; --ink-2:#4f5754; --ink-3:#7d8582; --rule:#d3d8d4;
+  --q-high:#2a78d6; --q-low:#eb6834; --band:rgba(42,120,214,.09); --tint:#e9eef4;
+  --wood:#e6d3b1; --felt:#c9ccc4; --air:#f7f9f7; --pcb:#c4d9c0; --copper:#c8843a; --magnet:#8b8f92; --piece:#efe6d6;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15191a; --surface:#1e2324; --ink:#e8ecea; --ink-2:#a8b0ac; --ink-3:#7c8582; --rule:#343d3b;
+    --q-high:#3987e5; --q-low:#d95926; --band:rgba(57,135,229,.14); --tint:#232b30;
+    --wood:#6b5836; --felt:#4a4f4b; --air:#1b2021; --pcb:#2f4a33; --copper:#d0894a; --magnet:#6b7073; --piece:#3a3630;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15191a; --surface:#1e2324; --ink:#e8ecea; --ink-2:#a8b0ac; --ink-3:#7c8582; --rule:#343d3b;
+  --q-high:#3987e5; --q-low:#d95926; --band:rgba(57,135,229,.14); --tint:#232b30;
+  --wood:#6b5836; --felt:#4a4f4b; --air:#1b2021; --pcb:#2f4a33; --copper:#d0894a; --magnet:#6b7073; --piece:#3a3630;
+  color-scheme:dark;
+}
+body{background:var(--bg); color:var(--ink); font-family:"IBM Plex Sans","Segoe UI",Roboto,Helvetica,Arial,sans-serif; font-size:16px; line-height:1.55; margin:0;}
+.wrap{max-width:920px; margin:0 auto; padding-block:40px 64px; padding-inline:16px;}
+h1,h2{font-family:"Bricolage Grotesque","IBM Plex Sans",Helvetica,Arial,sans-serif; text-wrap:balance; line-height:1.1; margin:0;}
+h1{font-size:clamp(2.4rem,6vw,3.6rem); font-weight:700; letter-spacing:-.01em;}
+h2{font-size:clamp(1.45rem,3vw,1.9rem); font-weight:600; margin-top:.2em;}
+.eyebrow{font-family:"IBM Plex Mono",Menlo,Consolas,monospace; font-size:.74rem; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); margin:0 0 .5rem;}
+.lede{font-size:1.2rem; line-height:1.5; color:var(--ink-2); max-width:62ch; margin:1rem 0 0;}
+p{max-width:68ch; margin:.9rem 0;}
+ul,ol{max-width:68ch; padding-left:1.2rem;}
+li{margin:.35rem 0;}
+section{margin-top:3.2rem; padding-top:2rem; border-top:1px solid var(--rule);}
+.keep{margin-top:2rem; background:var(--surface); border:1px solid var(--rule); border-left:4px solid var(--q-high); padding:1rem 1.2rem; border-radius:6px; max-width:68ch;}
+.keep p{margin:.3rem 0;}
+.keep strong{color:var(--q-high);}
+figure{margin:1.6rem 0 0;}
+.fig-scroll{overflow-x:auto; position:relative; background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:12px 8px;}
+.fig-scroll svg{display:block; width:100%; min-width:640px; height:auto; color:var(--ink); font-family:"IBM Plex Sans",Helvetica,Arial,sans-serif;}
+figcaption{font-size:.92rem; color:var(--ink-2); margin-top:.6rem; max-width:72ch;}
+figcaption b{color:var(--ink);}
+svg .lbl{font-size:12.5px; fill:var(--ink);}
+svg .lbl.small{font-size:11px;}
+svg .lbl.strong{font-weight:600;}
+svg .muted{fill:var(--ink-2);}
+svg .mono{font-family:"IBM Plex Mono",Menlo,Consolas,monospace;}
+svg .glyph{font-size:20px; font-family:"Segoe UI Symbol","Apple Symbols","Noto Sans Symbols 2","DejaVu Sans",sans-serif;}
+svg .title{font-size:14px; font-weight:600; fill:var(--ink);}
+svg .axis{stroke:currentColor; stroke-width:1.2; fill:none; opacity:.55;}
+svg .tick{stroke:currentColor; stroke-width:1; opacity:.55;}
+svg .grid{stroke:currentColor; stroke-width:1; opacity:.12;}
+svg .dash{stroke:currentColor; stroke-width:1; stroke-dasharray:5 4; opacity:.5; fill:none;}
+svg .brk{stroke:currentColor; stroke-width:1.2; opacity:.6; fill:none;}
+svg .trace{fill:none; stroke-width:2; stroke-linejoin:round; stroke-linecap:round;}
+svg .trace.ghost{opacity:.35; stroke-dasharray:3 3;}
+svg .env{fill:none; stroke-width:1.2; stroke-dasharray:4 4; opacity:.7;}
+svg .q-high{stroke:var(--q-high);}
+svg .q-low{stroke:var(--q-low);}
+svg .q-high-t{fill:var(--q-high); font-weight:600;}
+svg .q-low-t{fill:var(--q-low); font-weight:600;}
+svg .mark{stroke-width:1.6;}
+svg .dot{fill:var(--surface); stroke-width:2.5;}
+svg .band{fill:var(--band);}
+svg .peak-black{fill:var(--q-high); stroke:var(--q-high); stroke-width:1.5; stroke-linejoin:round; opacity:.9;}
+svg .peak-white{fill:var(--surface); stroke:var(--q-high); stroke-width:1.8; stroke-linejoin:round;}
+svg .peak{cursor:default;}
+svg .peak:hover .peak-black, svg .peak:hover .peak-white{stroke:var(--q-low);}
+svg .tipbox{fill:var(--surface); stroke:var(--rule);}
+svg .lay-pcb{fill:var(--pcb);} svg .lay-air{fill:var(--air);} svg .lay-wood{fill:var(--wood);} svg .lay-felt{fill:var(--felt);}
+svg .copper{fill:var(--copper);}
+svg .piece{fill:var(--piece); stroke:currentColor; stroke-width:1.2; opacity:.95;}
+svg .bundle{fill:url(#wire); stroke:currentColor; stroke-width:1;}
+svg .cap{fill:var(--q-low); stroke:none;}
+svg .magnet{fill:var(--magnet); opacity:.75;}
+svg .field{fill:none; stroke:var(--q-high); stroke-width:1.6; opacity:.8;}
+svg .seg{fill:var(--tint); stroke:var(--rule);}
+svg .seg-pulse{fill:var(--q-low); opacity:.35; stroke:var(--q-low);}
+svg .seg-listen{fill:var(--band); stroke:var(--q-high);}
+svg .box{fill:var(--surface); stroke:var(--rule); stroke-width:1.2;}
+svg .box-piece{stroke:var(--q-high); stroke-width:1.8;}
+svg .box-mcu{fill:var(--tint); stroke:var(--q-high); stroke-width:1.8;}
+svg .box-soft{fill:var(--tint); stroke:var(--rule); stroke-width:1.2;}
+svg .box-warm{fill:var(--surface); stroke:var(--q-low); stroke-width:1.6;}
+svg .wire{stroke:currentColor; stroke-width:1.4; fill:none; opacity:.7;}
+svg .wire-a{stroke:var(--q-high); stroke-width:2; fill:none;}
+svg .wire-p{stroke:var(--q-low); stroke-width:2; fill:none;}
+svg .zone{fill:none; stroke:var(--rule); stroke-width:1.2; stroke-dasharray:6 4;}
+svg .coil{fill:none; stroke:var(--copper); stroke-width:2;}
+svg .puck{fill:var(--piece); stroke:currentColor; stroke-width:1.2;}
+.tip{position:absolute; pointer-events:none; background:var(--surface); color:var(--ink); border:1px solid var(--rule); border-radius:6px; padding:.45rem .6rem; font-size:.84rem; line-height:1.35; box-shadow:0 4px 14px rgba(0,0,0,.12); max-width:260px; z-index:2;}
+.formulas{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; margin:1.2rem 0; max-width:900px;}
+.formula{background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:.8rem .95rem;}
+.formula .f{font-family:"IBM Plex Mono",Menlo,Consolas,monospace; font-size:1.02rem; margin:0 0 .35rem; color:var(--ink);}
+.formula .d{font-size:.88rem; color:var(--ink-2); margin:0;}
+table{border-collapse:collapse; width:100%; font-size:.9rem; margin-top:1rem; font-variant-numeric:tabular-nums;}
+th,td{padding:.42rem .55rem; border-bottom:1px solid var(--rule); text-align:left; vertical-align:top;}
+td.n,th.n{text-align:right; white-space:nowrap;}
+th{font-family:"IBM Plex Mono",Menlo,Consolas,monospace; font-size:.74rem; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); font-weight:500;}
+.tbl{overflow-x:auto;}
+dl{display:grid; grid-template-columns:max-content 1fr; gap:.5rem 1.2rem; max-width:80ch; margin:1rem 0 0;}
+dt{font-weight:600; color:var(--ink);}
+dd{margin:0; color:var(--ink-2);}
+@media (max-width:560px){ dl{grid-template-columns:1fr;} dd{margin-bottom:.5rem;} }
+.foot{margin-top:3rem; padding-top:1rem; border-top:1px solid var(--rule); font-size:.84rem; color:var(--ink-3); max-width:72ch;}
+code{font-family:"IBM Plex Mono",Menlo,Consolas,monospace; font-size:.9em; background:var(--tint); padding:.05em .3em; border-radius:3px;}
+
+.modes{display:flex; flex-wrap:wrap; gap:8px; margin:1.6rem 0 0; position:sticky; top:env(safe-area-inset-top,0px); background:var(--bg); padding-block:.6rem; z-index:3;}
+.mode-btn{font:inherit; font-weight:600; font-size:.95rem; padding:.5rem 1rem; border-radius:999px; border:1px solid var(--rule); background:var(--surface); color:var(--ink-2); cursor:pointer;}
+.mode-btn:hover{border-color:var(--q-high); color:var(--ink);}
+.mode-btn.is-on{background:var(--q-high); border-color:var(--q-high); color:#fff;}
+.mode-btn:focus-visible{outline:2px solid var(--q-low); outline-offset:2px;}
+.mode-note{font-size:.85rem; color:var(--ink-3); margin:.5rem 0 0; max-width:68ch;}
+.mode > section:first-of-type{border-top:0; margin-top:1.6rem; padding-top:0;}
+.cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin:1.2rem 0; max-width:900px;}
+.card{background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:.9rem 1rem; min-width:0;}
+.card .big{font-family:"Bricolage Grotesque","IBM Plex Sans",Helvetica,Arial,sans-serif; font-size:1.8rem; font-weight:700; line-height:1.1; margin:0; font-variant-numeric:tabular-nums;}
+.card .big small{font-size:.95rem; font-weight:500; color:var(--ink-2);}
+.card .what{font-size:.86rem; color:var(--ink-2); margin:.35rem 0 0;}
+.card.warm{border-left:4px solid var(--q-low);}
+.card.cool{border-left:4px solid var(--q-high);}
+.yesno{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; margin:1.2rem 0; max-width:900px;}
+.yesno div{background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:.8rem 1rem; min-width:0;}
+.yesno h3{margin:0 0 .4rem; font-size:1rem;}
+.yesno ul{margin:0; padding-left:1.1rem;}
+pre{background:var(--tint); border:1px solid var(--rule); border-radius:6px; padding:.8rem 1rem; overflow-x:auto; font-family:"IBM Plex Mono",Menlo,Consolas,monospace; font-size:.84rem; line-height:1.5; max-width:900px;}
+pre code{background:none; padding:0; font-size:inherit;}
+.steps{counter-reset:step; list-style:none; padding:0; max-width:72ch;}
+.steps li{position:relative; padding-left:2.4rem; margin:.7rem 0;}
+.steps li::before{counter-increment:step; content:counter(step); position:absolute; left:0; top:.05rem; width:1.7rem; height:1.7rem; border-radius:50%; background:var(--q-high); color:#fff; font-weight:600; font-size:.85rem; display:grid; place-items:center;}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+<p class="eyebrow">Échiquier à résonateurs LC · note 24</p>
+<h1>Hall + RFID</h1>
+<p class="lede">Une autre façon de savoir où sont les pièces : un capteur magnétique sous chaque case, qui sent l'aimant que chaque pièce porte déjà, et une étiquette sans contact pour dire laquelle. Évaluée contre la détection LC du projet, comme remplacement et comme étape intermédiaire. Trois lectures de la même page : choisissez la vôtre.</p>
+
+<nav class="modes" aria-label="Niveau de lecture">
+<button type="button" class="mode-btn is-on" data-mode="simple" id="btn-simple" aria-pressed="true">Simplifié</button>
+<button type="button" class="mode-btn" data-mode="technique" id="btn-technique" aria-pressed="false">Technique</button>
+<button type="button" class="mode-btn" data-mode="implementation" id="btn-implementation" aria-pressed="false">Implémentation</button>
+</nav>
+<p class="mode-note">Même chiffres dans les trois lectures, calculés depuis le yaml du dépôt ; seul le niveau de détail change.</p>
+
+<!-- ======================= SIMPLIFIÉ ======================= -->
+<div class="mode" id="simple">
+<section>
+<p class="eyebrow">En deux minutes</p>
+<h2>L'idée</h2>
+<p>Chaque pièce de cet échiquier porte dans sa base un petit disque de ferrite, un aimant doux et bon marché, prévu à l'origine pour qu'un chariot caché sous le plateau puisse plus tard déplacer la pièce. Un capteur à effet Hall, un composant de la taille d'un grain de riz, mesure un champ magnétique. En posant un capteur sous chaque case, le plateau sait en permanence si une pièce est posée dessus ou non : l'aimant est là, ou il n'est plus là.</p>
+<p>Ce que le capteur ne sait pas, c'est <b>quelle</b> pièce est posée. Un pion et une dame font à peu près le même champ. C'est pour cela que le brief ajoute une étiquette sans contact (RFID, la technologie des cartes de transport) dans chaque pièce, lue par une antenne sous la case. Le projet, lui, identifie les pièces autrement : chaque pièce contient un petit circuit accordé qui « sonne » à sa propre note quand la case le frappe, comme douze diapasons différents.</p>
+<div class="keep">
+<p><strong>Oui pour savoir où sont les pièces.</strong> Un pion posé donne 25,3 mT au capteur, un roi soulevé de 15 mm n'en donne plus que 3,8 : impossible de les confondre, et les pièces voisines ne gênent pas.</p>
+<p><strong>Non pour savoir lesquelles.</strong> Les aimants du projet donnent tous des champs qui se recouvrent : 1 seul groupe. L'étiquette RFID le saurait, mais lire 64 antennes avec un seul lecteur ne marche pas ; il faudrait un lecteur par case.</p>
+<p><strong>Donc : une bonne première étape, pas un remplacement.</strong> Une carte simple, les pièces inchangées, et tout ce qui ne dépend pas de l'identité (jouer, arbitrer, allumer les cases, l'horloge) peut avancer pendant que la détection LC finit ses mesures.</p>
+</div>
+</section>
+
+<section>
+<p class="eyebrow">Comment ça marche</p>
+<h2>Un aimant, un capteur, 6,9 mm entre les deux</h2>
+<figure>
+<div class="fig-scroll"><svg class="docfig" viewBox="0 0 900 380" role="img" aria-label="Coupe verticale : le capteur Hall en boitier SOT-23 pose sur le circuit imprime dans la lame d air, sous le contreplaque et le feutre, lit l aimant ferrite de la base de la piece a 6,9 mm">
+<defs><marker id="harr-s" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker><pattern id="wire-s" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="currentColor" stroke-width="1.6"/></pattern></defs>
+<rect class="lay-pcb" x="60" y="314.4" width="780" height="25.6"/>
+<rect class="lay-air" x="60" y="282.4" width="780" height="32.0"/>
+<rect class="lay-wood" x="60" y="234.4" width="780" height="48.0"/>
+<rect class="lay-felt" x="60" y="226.4" width="780" height="8.0"/>
+<rect class="box-mcu" x="426.8" y="293.6" width="46.4" height="20.8" rx="2"/>
+<line class="wire-a" x1="432.8" y1="304.8" x2="467.2" y2="304.8"/>
+<text class="lbl" x="483.2" y="308.0">DRV5053OA en SOT-23, 1,3 mm de haut</text>
+<path class="piece" d="M310.0 226.4 v-130.0 q0 -14 14 -14 h252.0 q14 0 14 14 v130.0 z"/>
+<path class="piece" d="M416 82.4 q34 -30 68 0 z"/>
+<rect class="bundle" style="fill:url(#wire-s)" x="342.0" y="190.4" width="64.8" height="32.0"/>
+<rect class="bundle" style="fill:url(#wire-s)" x="493.2" y="190.4" width="64.8" height="32.0"/>
+<rect class="magnet" x="350.0" y="124.4" width="200.0" height="64.0" rx="3"/>
+<text class="lbl" x="450.0" y="160.4" text-anchor="middle">ferrite ø12,5 x 4 mm</text>
+<text class="lbl muted" x="302.0" y="210.4" text-anchor="end">bobine LC (si la pièce en a une)</text>
+<path class="field" d="M410 190.4 C378.0 234.4, 378.0 282.4, 426.0 301.8" marker-end="url(#harr-s)"/>
+<path class="field" d="M450 190.4 C450.0 234.4, 450.0 282.4, 450.0 301.8" marker-end="url(#harr-s)"/>
+<path class="field" d="M490 190.4 C522.0 234.4, 522.0 282.4, 474.0 301.8" marker-end="url(#harr-s)"/>
+<text class="lbl q-high-t" x="560.0" y="250.4">B = 25,3 mT au capteur</text>
+<text class="lbl muted" x="560.0" y="266.4">pour un pion posé, entrefer nominal</text>
+<text class="lbl" x="66.0" y="331.2">circuit imprimé 1,6 mm</text>
+<text class="lbl" x="66.0" y="302.4">air 2 mm : LED, frontal, et le capteur</text>
+<text class="lbl" x="66.0" y="262.4">contreplaqué 3 mm</text>
+<text class="lbl" x="66.0" y="234.4">feutre 0,5 mm</text>
+<line class="mark" x1="852" y1="188.4" x2="852" y2="304.8" marker-start="url(#harr-s)" marker-end="url(#harr-s)"/>
+<text class="lbl" x="846.0" y="112.4" text-anchor="end">6,9 mm de l'aimant à la plaque de Hall</text>
+<text class="lbl muted" x="60.0" y="18.0">base d'un pion, 17,5 mm de diamètre ; au pas de 50 mm, épaisseurs à l'échelle</text>
+</svg></div>
+<figcaption><b>La coupe sous une case.</b> La pièce repose sur le feutre et le contreplaqué ; dessous, une lame d'air de 2 mm où tiennent les LED et, désormais, le capteur, collé sur le circuit imprimé. L'aimant de la pièce est à 6,9 mm de la plaque sensible du capteur. Le champ qui lui parvient vaut 25,3 millitesla pour un pion : un aimant de frigo fait quelques dizaines de millitesla à son contact.</figcaption>
+</figure>
+<p>Le champ d'un aimant décroît vite avec la distance. C'est ce qui rend la chose fiable : posée, la pièce est tout près et le champ est fort ; soulevée de quelques centimètres, le champ s'effondre. Le plateau décide « présente » au-dessus d'un seuil, « absente » en dessous d'un second seuil un peu plus bas, pour ne pas hésiter quand la main tremble.</p>
+<figure>
+<div class="fig-scroll" id="fig-curve"><svg class="docfig" viewBox="0 0 900 360" role="img" aria-label="Champ au capteur en fonction de la distance entre l aimant et la plaque de Hall, pour le pion et le roi : 25,3 et 32,1 mT a l entrefer nominal, le seuil de presence a 10,3 mT, le roi souleve de 15 mm sous le relachement" data-curve="1">
+<rect class="band" x="208.3" y="40" width="25.4" height="260"/>
+<text class="lbl muted" x="239.6" y="48.0">entrefer nominal à maximal : 6,9 à 7,8 mm</text>
+<line class="grid" x1="70" y1="300.0" x2="860" y2="300.0"/>
+<text class="lbl mono" x="62.0" y="304.0" text-anchor="end">0</text>
+<line class="grid" x1="70" y1="237.5" x2="860" y2="237.5"/>
+<text class="lbl mono" x="62.0" y="241.5" text-anchor="end">10</text>
+<line class="grid" x1="70" y1="175.0" x2="860" y2="175.0"/>
+<text class="lbl mono" x="62.0" y="179.0" text-anchor="end">20</text>
+<line class="grid" x1="70" y1="112.5" x2="860" y2="112.5"/>
+<text class="lbl mono" x="62.0" y="116.5" text-anchor="end">30</text>
+<line class="grid" x1="70" y1="50.0" x2="860" y2="50.0"/>
+<text class="lbl mono" x="62.0" y="54.0" text-anchor="end">40</text>
+<line class="tick" x1="154.6" y1="300" x2="154.6" y2="305"/>
+<text class="lbl mono" x="154.6" y="320.0" text-anchor="middle">5</text>
+<line class="tick" x1="295.7" y1="300" x2="295.7" y2="305"/>
+<text class="lbl mono" x="295.7" y="320.0" text-anchor="middle">10</text>
+<line class="tick" x1="436.8" y1="300" x2="436.8" y2="305"/>
+<text class="lbl mono" x="436.8" y="320.0" text-anchor="middle">15</text>
+<line class="tick" x1="577.9" y1="300" x2="577.9" y2="305"/>
+<text class="lbl mono" x="577.9" y="320.0" text-anchor="middle">20</text>
+<line class="tick" x1="718.9" y1="300" x2="718.9" y2="305"/>
+<text class="lbl mono" x="718.9" y="320.0" text-anchor="middle">25</text>
+<line class="tick" x1="860.0" y1="300" x2="860.0" y2="305"/>
+<text class="lbl mono" x="860.0" y="320.0" text-anchor="middle">30</text>
+<line class="axis" x1="70" y1="300" x2="860" y2="300"/>
+<text class="lbl muted" x="860.0" y="338.0" text-anchor="end">distance de l'aimant à la plaque de Hall, en mm</text>
+<text class="lbl muted" x="62.0" y="32.0" text-anchor="end">mT</text>
+<line class="dash" x1="70" y1="235.4" x2="860" y2="235.4"/>
+<text class="lbl muted" x="854.0" y="230.4" text-anchor="end">seuil de présence : 10,3 mT</text>
+<line class="dash" x1="70" y1="254.8" x2="860" y2="254.8"/>
+<text class="lbl muted" x="854.0" y="249.8" text-anchor="end">relâchement : 7,2 mT</text>
+<polyline class="trace q-low" points="70.0,50.0 77.1,50.0 84.1,50.0 91.2,50.0 98.2,50.0 105.3,50.0 112.3,50.0 119.4,50.0 126.4,50.0 133.5,50.0 140.5,50.0 147.6,50.0 154.6,54.2 161.7,68.3 168.8,81.5 175.8,94.0 182.9,105.7 189.9,116.6 197.0,126.9 204.0,136.6 211.1,145.6 218.1,154.1 225.2,162.0 232.2,169.4 239.3,176.4 246.3,182.9 253.4,189.0 260.4,194.8 267.5,200.2 274.6,205.2 281.6,209.9 288.7,214.4 295.7,218.6 302.8,222.5 309.8,226.2 316.9,229.7 323.9,233.0 331.0,236.1 338.0,239.0 345.1,241.7 352.1,244.3 359.2,246.8 366.2,249.1 373.3,251.3 380.4,253.3 387.4,255.3 394.5,257.2 401.5,258.9 408.6,260.6 415.6,262.2 422.7,263.7 429.7,265.1 436.8,266.4 443.8,267.7 450.9,268.9 457.9,270.1 465.0,271.2 472.1,272.3 479.1,273.3 486.2,274.2 493.2,275.2 500.3,276.0 507.3,276.9 514.4,277.7 521.4,278.4 528.5,279.2 535.5,279.8 542.6,280.5 549.6,281.2 556.7,281.8 563.8,282.3 570.8,282.9 577.9,283.4 584.9,284.0 592.0,284.5 599.0,284.9 606.1,285.4 613.1,285.8 620.2,286.2 627.2,286.7 634.3,287.0 641.3,287.4 648.4,287.8 655.4,288.1 662.5,288.5 669.6,288.8 676.6,289.1 683.7,289.4 690.7,289.7 697.8,290.0 704.8,290.2 711.9,290.5 718.9,290.7 726.0,291.0 733.0,291.2 740.1,291.4 747.1,291.7 754.2,291.9 761.2,292.1 768.3,292.3 775.4,292.5 782.4,292.6 789.5,292.8 796.5,293.0 803.6,293.2 810.6,293.3 817.7,293.5 824.7,293.6 831.8,293.8 838.8,293.9 845.9,294.1 852.9,294.2 860.0,294.3"/>
+<polyline class="trace q-high" points="70.0,50.0 77.1,50.0 84.1,50.0 91.2,50.0 98.2,50.0 105.3,50.0 112.3,50.0 119.4,50.0 126.4,50.0 133.5,50.0 140.5,50.0 147.6,50.0 154.6,50.0 161.7,50.0 168.8,50.0 175.8,56.2 182.9,66.2 189.9,75.8 197.0,85.1 204.0,94.1 211.1,102.6 218.1,110.8 225.2,118.7 232.2,126.2 239.3,133.5 246.3,140.4 253.4,146.9 260.4,153.2 267.5,159.3 274.6,165.0 281.6,170.5 288.7,175.7 295.7,180.7 302.8,185.5 309.8,190.0 316.9,194.4 323.9,198.5 331.0,202.5 338.0,206.3 345.1,209.9 352.1,213.3 359.2,216.6 366.2,219.7 373.3,222.7 380.4,225.6 387.4,228.3 394.5,230.9 401.5,233.4 408.6,235.8 415.6,238.1 422.7,240.3 429.7,242.3 436.8,244.3 443.8,246.3 450.9,248.1 457.9,249.8 465.0,251.5 472.1,253.1 479.1,254.7 486.2,256.2 493.2,257.6 500.3,258.9 507.3,260.2 514.4,261.5 521.4,262.7 528.5,263.9 535.5,265.0 542.6,266.0 549.6,267.1 556.7,268.1 563.8,269.0 570.8,269.9 577.9,270.8 584.9,271.7 592.0,272.5 599.0,273.3 606.1,274.0 613.1,274.8 620.2,275.5 627.2,276.1 634.3,276.8 641.3,277.4 648.4,278.0 655.4,278.6 662.5,279.2 669.6,279.7 676.6,280.3 683.7,280.8 690.7,281.3 697.8,281.8 704.8,282.2 711.9,282.7 718.9,283.1 726.0,283.5 733.0,283.9 740.1,284.3 747.1,284.7 754.2,285.1 761.2,285.4 768.3,285.8 775.4,286.1 782.4,286.4 789.5,286.8 796.5,287.1 803.6,287.4 810.6,287.7 817.7,287.9 824.7,288.2 831.8,288.5 838.8,288.7 845.9,289.0 852.9,289.2 860.0,289.4"/>
+<circle class="dot q-low" cx="233.6" cy="170.9" r="5"/>
+<text class="lbl" x="243.6" y="188.9">pion, entrefer maximal : 20,7 mT</text>
+<circle class="dot q-high" cx="208.3" cy="99.2" r="5"/>
+<text class="lbl" x="218.3" y="89.2">roi posé : 32,1 mT</text>
+<circle class="dot q-high" cx="631.5" cy="276.5" r="5"/>
+<text class="lbl" x="641.5" y="266.5">roi soulevé de 15 mm : 3,8 mT</text>
+<text class="lbl q-high-t" x="854.0" y="94.0" text-anchor="end">roi, ferrite ø17,5 mm</text>
+<text class="lbl q-low-t" x="854.0" y="110.0" text-anchor="end">pion, ferrite ø12,5 mm</text>
+<g class="hxh" hidden="hidden"><line class="dash" x1="0" y1="40" x2="0" y2="300"/><circle class="dot q-low" r="5"/><circle class="dot q-high" r="5"/><rect class="tipbox" width="210" height="38" rx="4"/><text class="lbl mono" x="0" y="0"></text><text class="lbl mono" x="0" y="0"></text></g>
+</svg><div class="tip" id="tip-curve" hidden></div></div>
+<figcaption><b>Le champ selon la distance,</b> pour la plus petite pièce (pion) et la plus grosse (roi). La bande bleue est la plage normale quand la pièce est posée. Passez la souris sur la courbe pour lire les valeurs.</figcaption>
+</figure>
+</section>
+
+<section>
+<p class="eyebrow">Ce que ça donne</p>
+<h2>Quatre chiffres à retenir</h2>
+<div class="cards">
+<div class="card cool"><p class="big">584 <small>fois par seconde</small></p><p class="what">le plateau relit ses 64 cases ; la détection LC du projet ne balaie que 5 fois par seconde au repos</p></div>
+<div class="card cool"><p class="big">1,9<small> x</small></p><p class="what">de marge entre « posée » et « soulevée de 15 mm », pour la pièce la plus difficile</p></div>
+<div class="card warm"><p class="big">1 <small>groupe</small></p><p class="what">c'est tout ce que l'amplitude du champ permet de distinguer avec les aimants du projet : présence, pas identité</p></div>
+<div class="card warm"><p class="big">44 h <small>au lieu de 51</small></p><p class="what">d'autonomie sur batterie, en n'alimentant les capteurs que par rangées ; 31 h si on les laisse tous allumés</p></div>
+</div>
+<div class="yesno">
+<div><h3>Ce que la couche Hall sait faire</h3><ul>
+<li>dire quelles cases sont occupées, et le voir changer en une fraction de seconde ;</li>
+<li>voir une pièce quitter sa case avant même qu'elle soit reposée ailleurs ;</li>
+<li>distinguer les blancs des noirs si l'on retourne les aimants d'un camp (en option) ;</li>
+<li>fonctionner avec les pièces telles qu'elles sont déjà prévues.</li>
+</ul></div>
+<div><h3>Ce qu'elle ne sait pas faire</h3><ul>
+<li>reconnaître une pièce : pion, cavalier ou dame se ressemblent pour elle ;</li>
+<li>donc remettre une position arbitraire sur le plateau sans aide ;</li>
+<li>savoir en quoi un pion a été promu.</li>
+</ul></div>
+</div>
+<p>Pour jouer une partie normale, le plateau sait qui est où depuis la position de départ, et il suit chaque coup case par case : l'identité ne manque qu'au moment de la promotion, où l'on peut demander au joueur. C'est le compromis des plateaux du commerce les plus simples. La détection LC du projet, elle, reconnaît chaque pièce ; la couche Hall en devient le complément, pas le remplaçant.</p>
+</section>
+
+<section>
+<p class="eyebrow">Et la RFID ?</p>
+<h2>Pourquoi l'étiquette ne suffit pas</h2>
+<p>L'étiquette dans la pièce fonctionne : à 5,5 mm de l'antenne sous la case, elle reçoit 3,2 fois le champ minimal qu'exige la norme. Le problème est ailleurs. Une antenne RFID est un circuit accordé très fin, comme une corde de guitare tendue juste comme il faut. Pour lire 64 cases avec un seul lecteur, il faudrait brancher et débrancher ces 64 cordes avec un aiguilleur électronique. Or cet aiguilleur ajoute une résistance et une capacité qui désaccordent complètement la corde : elle ne sonne plus. Il reste à mettre un lecteur complet sous chaque case, soit 64 lecteurs, pour un coût du même ordre que l'électronique de la détection LC, qui, elle, reconnaît les pièces à tous les coups.</p>
+<div class="keep">
+<p><strong>Le verdict.</strong> Hall : oui, tout de suite, comme couche de présence, sur une carte simple. RFID : non sur le plateau, sauf en secours si la détection LC échouait à ses mesures. Détection LC : toujours la voie de l'identité.</p>
+</div>
+</section>
+</div>
+
+<!-- ======================= TECHNIQUE ======================= -->
+<div class="mode" id="technique">
+<section>
+<p class="eyebrow">Le modèle</p>
+<h2>Le champ d'un disque de ferrite au capteur</h2>
+<p>L'aimant de pièce est un disque de ferrite SrFe (Br = 0,4 T, ADR 0002), ø12,5 mm pour le pion à ø17,5 mm pour les pièces lourdes, 4 mm d'épaisseur, posé au-dessus de la bobine LC de 2 mm. Un disque uniformément aimanté équivaut à une nappe de courant K = Br/µ0 sur sa surface latérale : on l'empile en boucles de courant dont le champ hors axe est exact (intégrales elliptiques complètes), la même méthode par filaments que le couplage LC du dépôt. Sur l'axe, l'empilement retrouve la forme fermée à 10<sup>-3</sup> près ; en champ lointain, le dipôle.</p>
+<div class="formulas">
+<div class="formula"><p class="f">B(z) = Br/2 · [ (z+t)/√(R²+(z+t)²) − z/√(R²+z²) ]</p><p class="d">sur l'axe, z depuis la face de l'aimant, t son épaisseur, R son rayon</p></div>
+<div class="formula"><p class="f">B<sub>z</sub>(ρ, z) = Σ boucles µ0 I/(2π) · [K(k) + (R²−ρ²−z²)/((R−ρ)²+z²) · E(k)] / √((R+ρ)²+z²)</p><p class="d">hors axe, pour la case voisine ; k² = 4Rρ/((R+ρ)²+z²)</p></div>
+<div class="formula"><p class="f">B ≈ µ0 · 2m / (4π r³), m = Br·V/µ0</p><p class="d">dipôle en champ lointain, la vérification du modèle</p></div>
+<div class="formula"><p class="f">z = air + bois + feutre + bobine − plaque = 6,9 mm</p><p class="d">2 + 3 + 0,5 + 2 − 0,6 mm ; 7,8 mm à l'entrefer maximal</p></div>
+</div>
+<figure>
+<div class="fig-scroll"><svg class="docfig" viewBox="0 0 900 380" role="img" aria-label="Coupe verticale : le capteur Hall en boitier SOT-23 pose sur le circuit imprime dans la lame d air, sous le contreplaque et le feutre, lit l aimant ferrite de la base de la piece a 6,9 mm">
+<defs><marker id="harr-t" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker><pattern id="wire-t" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="currentColor" stroke-width="1.6"/></pattern></defs>
+<rect class="lay-pcb" x="60" y="314.4" width="780" height="25.6"/>
+<rect class="lay-air" x="60" y="282.4" width="780" height="32.0"/>
+<rect class="lay-wood" x="60" y="234.4" width="780" height="48.0"/>
+<rect class="lay-felt" x="60" y="226.4" width="780" height="8.0"/>
+<rect class="box-mcu" x="426.8" y="293.6" width="46.4" height="20.8" rx="2"/>
+<line class="wire-a" x1="432.8" y1="304.8" x2="467.2" y2="304.8"/>
+<text class="lbl" x="483.2" y="308.0">DRV5053OA en SOT-23, 1,3 mm de haut</text>
+<path class="piece" d="M310.0 226.4 v-130.0 q0 -14 14 -14 h252.0 q14 0 14 14 v130.0 z"/>
+<path class="piece" d="M416 82.4 q34 -30 68 0 z"/>
+<rect class="bundle" style="fill:url(#wire-t)" x="342.0" y="190.4" width="64.8" height="32.0"/>
+<rect class="bundle" style="fill:url(#wire-t)" x="493.2" y="190.4" width="64.8" height="32.0"/>
+<rect class="magnet" x="350.0" y="124.4" width="200.0" height="64.0" rx="3"/>
+<text class="lbl" x="450.0" y="160.4" text-anchor="middle">ferrite ø12,5 x 4 mm</text>
+<text class="lbl muted" x="302.0" y="210.4" text-anchor="end">bobine LC (si la pièce en a une)</text>
+<path class="field" d="M410 190.4 C378.0 234.4, 378.0 282.4, 426.0 301.8" marker-end="url(#harr-t)"/>
+<path class="field" d="M450 190.4 C450.0 234.4, 450.0 282.4, 450.0 301.8" marker-end="url(#harr-t)"/>
+<path class="field" d="M490 190.4 C522.0 234.4, 522.0 282.4, 474.0 301.8" marker-end="url(#harr-t)"/>
+<text class="lbl q-high-t" x="560.0" y="250.4">B = 25,3 mT au capteur</text>
+<text class="lbl muted" x="560.0" y="266.4">pour un pion posé, entrefer nominal</text>
+<text class="lbl" x="66.0" y="331.2">circuit imprimé 1,6 mm</text>
+<text class="lbl" x="66.0" y="302.4">air 2 mm : LED, frontal, et le capteur</text>
+<text class="lbl" x="66.0" y="262.4">contreplaqué 3 mm</text>
+<text class="lbl" x="66.0" y="234.4">feutre 0,5 mm</text>
+<line class="mark" x1="852" y1="188.4" x2="852" y2="304.8" marker-start="url(#harr-t)" marker-end="url(#harr-t)"/>
+<text class="lbl" x="846.0" y="112.4" text-anchor="end">6,9 mm de l'aimant à la plaque de Hall</text>
+<text class="lbl muted" x="60.0" y="18.0">base d'un pion, 17,5 mm de diamètre ; au pas de 50 mm, épaisseurs à l'échelle</text>
+</svg></div>
+<figcaption><b>Coupe à l'échelle.</b> Le capteur est en SOT-23 (1,3 mm) dans la lame d'air de 2 mm ; le SS49E du brief, un SIP de 4 mm sur pattes, n'y tient pas, d'où le DRV5053OA (11 mV/mT, le moins sensible de sa famille, pour que le roi reste dans la plage linéaire) ou le SS39ET, même puce que le SS49E en SOT-23.</figcaption>
+</figure>
+</section>
+
+<section>
+<p class="eyebrow">Présence</p>
+<h2>Champs, seuils et marges au pas de 50 mm</h2>
+<div class="tbl">
+<table>
+<thead><tr><th>pièce</th><th class="n">aimant (mm)</th><th class="n">B nominal (mT)</th><th class="n">B entrefer max (mT)</th><th class="n">B soulevée de 15 mm (mT)</th><th class="n">B case voisine (mT)</th><th class="n">sortie (mV / LSB)</th></tr></thead>
+<tbody>
+<tr><td>pion</td><td class="n">12,5 x 4</td><td class="n">25,3</td><td class="n">20,7</td><td class="n">2,1</td><td class="n">-0,11</td><td class="n">278 / 367</td></tr>
+<tr><td>cavalier</td><td class="n">15 x 4</td><td class="n">29,4</td><td class="n">24,6</td><td class="n">2,9</td><td class="n">-0,16</td><td class="n">323 / 427</td></tr>
+<tr><td>fou</td><td class="n">15 x 4</td><td class="n">29,4</td><td class="n">24,6</td><td class="n">2,9</td><td class="n">-0,16</td><td class="n">323 / 427</td></tr>
+<tr><td>tour</td><td class="n">17,5 x 4</td><td class="n">32,1</td><td class="n">27,6</td><td class="n">3,8</td><td class="n">-0,22</td><td class="n">353 / 467</td></tr>
+<tr><td>dame</td><td class="n">17,5 x 4</td><td class="n">32,1</td><td class="n">27,6</td><td class="n">3,8</td><td class="n">-0,22</td><td class="n">353 / 467</td></tr>
+<tr><td>roi</td><td class="n">17,5 x 4</td><td class="n">32,1</td><td class="n">27,6</td><td class="n">3,8</td><td class="n">-0,22</td><td class="n">353 / 467</td></tr>
+</tbody>
+</table>
+</div>
+<p>Seuil de présence à 50 % du champ le plus faible attendu (pion à l'entrefer maximal, 20,7 mT) : <b>10,3 mT</b> ; relâchement 15 % plus bas : <b>7,2 mT</b>. Le roi soulevé de 15 mm donne 3,8 mT, soit une marge de <b>1,9</b> sous le relâchement (critère 1,5). 8 rois sur les cases voisines, latérales et diagonales, ajoutent 1,2 mT en tout, soit <b>-24,7 dB</b> du pion le plus faible (critère -20 dB, celui de la chaîne LC). Le roi appuyé (entrefer réduit du budget d'inclinaison de 0,5 mm) fait 35 mT, dans la plage linéaire du capteur.</p>
+<figure>
+<div class="fig-scroll" id="fig-curve-t"><svg class="docfig" viewBox="0 0 900 360" role="img" aria-label="Champ au capteur en fonction de la distance entre l aimant et la plaque de Hall, pour le pion et le roi : 25,3 et 32,1 mT a l entrefer nominal, le seuil de presence a 10,3 mT, le roi souleve de 15 mm sous le relachement" data-curve="1">
+<rect class="band" x="208.3" y="40" width="25.4" height="260"/>
+<text class="lbl muted" x="239.6" y="48.0">entrefer nominal à maximal : 6,9 à 7,8 mm</text>
+<line class="grid" x1="70" y1="300.0" x2="860" y2="300.0"/>
+<text class="lbl mono" x="62.0" y="304.0" text-anchor="end">0</text>
+<line class="grid" x1="70" y1="237.5" x2="860" y2="237.5"/>
+<text class="lbl mono" x="62.0" y="241.5" text-anchor="end">10</text>
+<line class="grid" x1="70" y1="175.0" x2="860" y2="175.0"/>
+<text class="lbl mono" x="62.0" y="179.0" text-anchor="end">20</text>
+<line class="grid" x1="70" y1="112.5" x2="860" y2="112.5"/>
+<text class="lbl mono" x="62.0" y="116.5" text-anchor="end">30</text>
+<line class="grid" x1="70" y1="50.0" x2="860" y2="50.0"/>
+<text class="lbl mono" x="62.0" y="54.0" text-anchor="end">40</text>
+<line class="tick" x1="154.6" y1="300" x2="154.6" y2="305"/>
+<text class="lbl mono" x="154.6" y="320.0" text-anchor="middle">5</text>
+<line class="tick" x1="295.7" y1="300" x2="295.7" y2="305"/>
+<text class="lbl mono" x="295.7" y="320.0" text-anchor="middle">10</text>
+<line class="tick" x1="436.8" y1="300" x2="436.8" y2="305"/>
+<text class="lbl mono" x="436.8" y="320.0" text-anchor="middle">15</text>
+<line class="tick" x1="577.9" y1="300" x2="577.9" y2="305"/>
+<text class="lbl mono" x="577.9" y="320.0" text-anchor="middle">20</text>
+<line class="tick" x1="718.9" y1="300" x2="718.9" y2="305"/>
+<text class="lbl mono" x="718.9" y="320.0" text-anchor="middle">25</text>
+<line class="tick" x1="860.0" y1="300" x2="860.0" y2="305"/>
+<text class="lbl mono" x="860.0" y="320.0" text-anchor="middle">30</text>
+<line class="axis" x1="70" y1="300" x2="860" y2="300"/>
+<text class="lbl muted" x="860.0" y="338.0" text-anchor="end">distance de l'aimant à la plaque de Hall, en mm</text>
+<text class="lbl muted" x="62.0" y="32.0" text-anchor="end">mT</text>
+<line class="dash" x1="70" y1="235.4" x2="860" y2="235.4"/>
+<text class="lbl muted" x="854.0" y="230.4" text-anchor="end">seuil de présence : 10,3 mT</text>
+<line class="dash" x1="70" y1="254.8" x2="860" y2="254.8"/>
+<text class="lbl muted" x="854.0" y="249.8" text-anchor="end">relâchement : 7,2 mT</text>
+<polyline class="trace q-low" points="70.0,50.0 77.1,50.0 84.1,50.0 91.2,50.0 98.2,50.0 105.3,50.0 112.3,50.0 119.4,50.0 126.4,50.0 133.5,50.0 140.5,50.0 147.6,50.0 154.6,54.2 161.7,68.3 168.8,81.5 175.8,94.0 182.9,105.7 189.9,116.6 197.0,126.9 204.0,136.6 211.1,145.6 218.1,154.1 225.2,162.0 232.2,169.4 239.3,176.4 246.3,182.9 253.4,189.0 260.4,194.8 267.5,200.2 274.6,205.2 281.6,209.9 288.7,214.4 295.7,218.6 302.8,222.5 309.8,226.2 316.9,229.7 323.9,233.0 331.0,236.1 338.0,239.0 345.1,241.7 352.1,244.3 359.2,246.8 366.2,249.1 373.3,251.3 380.4,253.3 387.4,255.3 394.5,257.2 401.5,258.9 408.6,260.6 415.6,262.2 422.7,263.7 429.7,265.1 436.8,266.4 443.8,267.7 450.9,268.9 457.9,270.1 465.0,271.2 472.1,272.3 479.1,273.3 486.2,274.2 493.2,275.2 500.3,276.0 507.3,276.9 514.4,277.7 521.4,278.4 528.5,279.2 535.5,279.8 542.6,280.5 549.6,281.2 556.7,281.8 563.8,282.3 570.8,282.9 577.9,283.4 584.9,284.0 592.0,284.5 599.0,284.9 606.1,285.4 613.1,285.8 620.2,286.2 627.2,286.7 634.3,287.0 641.3,287.4 648.4,287.8 655.4,288.1 662.5,288.5 669.6,288.8 676.6,289.1 683.7,289.4 690.7,289.7 697.8,290.0 704.8,290.2 711.9,290.5 718.9,290.7 726.0,291.0 733.0,291.2 740.1,291.4 747.1,291.7 754.2,291.9 761.2,292.1 768.3,292.3 775.4,292.5 782.4,292.6 789.5,292.8 796.5,293.0 803.6,293.2 810.6,293.3 817.7,293.5 824.7,293.6 831.8,293.8 838.8,293.9 845.9,294.1 852.9,294.2 860.0,294.3"/>
+<polyline class="trace q-high" points="70.0,50.0 77.1,50.0 84.1,50.0 91.2,50.0 98.2,50.0 105.3,50.0 112.3,50.0 119.4,50.0 126.4,50.0 133.5,50.0 140.5,50.0 147.6,50.0 154.6,50.0 161.7,50.0 168.8,50.0 175.8,56.2 182.9,66.2 189.9,75.8 197.0,85.1 204.0,94.1 211.1,102.6 218.1,110.8 225.2,118.7 232.2,126.2 239.3,133.5 246.3,140.4 253.4,146.9 260.4,153.2 267.5,159.3 274.6,165.0 281.6,170.5 288.7,175.7 295.7,180.7 302.8,185.5 309.8,190.0 316.9,194.4 323.9,198.5 331.0,202.5 338.0,206.3 345.1,209.9 352.1,213.3 359.2,216.6 366.2,219.7 373.3,222.7 380.4,225.6 387.4,228.3 394.5,230.9 401.5,233.4 408.6,235.8 415.6,238.1 422.7,240.3 429.7,242.3 436.8,244.3 443.8,246.3 450.9,248.1 457.9,249.8 465.0,251.5 472.1,253.1 479.1,254.7 486.2,256.2 493.2,257.6 500.3,258.9 507.3,260.2 514.4,261.5 521.4,262.7 528.5,263.9 535.5,265.0 542.6,266.0 549.6,267.1 556.7,268.1 563.8,269.0 570.8,269.9 577.9,270.8 584.9,271.7 592.0,272.5 599.0,273.3 606.1,274.0 613.1,274.8 620.2,275.5 627.2,276.1 634.3,276.8 641.3,277.4 648.4,278.0 655.4,278.6 662.5,279.2 669.6,279.7 676.6,280.3 683.7,280.8 690.7,281.3 697.8,281.8 704.8,282.2 711.9,282.7 718.9,283.1 726.0,283.5 733.0,283.9 740.1,284.3 747.1,284.7 754.2,285.1 761.2,285.4 768.3,285.8 775.4,286.1 782.4,286.4 789.5,286.8 796.5,287.1 803.6,287.4 810.6,287.7 817.7,287.9 824.7,288.2 831.8,288.5 838.8,288.7 845.9,289.0 852.9,289.2 860.0,289.4"/>
+<circle class="dot q-low" cx="233.6" cy="170.9" r="5"/>
+<text class="lbl" x="243.6" y="188.9">pion, entrefer maximal : 20,7 mT</text>
+<circle class="dot q-high" cx="208.3" cy="99.2" r="5"/>
+<text class="lbl" x="218.3" y="89.2">roi posé : 32,1 mT</text>
+<circle class="dot q-high" cx="631.5" cy="276.5" r="5"/>
+<text class="lbl" x="641.5" y="266.5">roi soulevé de 15 mm : 3,8 mT</text>
+<text class="lbl q-high-t" x="854.0" y="94.0" text-anchor="end">roi, ferrite ø17,5 mm</text>
+<text class="lbl q-low-t" x="854.0" y="110.0" text-anchor="end">pion, ferrite ø12,5 mm</text>
+<g class="hxh" hidden="hidden"><line class="dash" x1="0" y1="40" x2="0" y2="300"/><circle class="dot q-low" r="5"/><circle class="dot q-high" r="5"/><rect class="tipbox" width="210" height="38" rx="4"/><text class="lbl mono" x="0" y="0"></text><text class="lbl mono" x="0" y="0"></text></g>
+</svg><div class="tip" id="tip-curve-t" hidden></div></div>
+<figcaption><b>B(z) du pion et du roi.</b> Bande bleue : entrefer nominal à maximal. Pointillés : seuil et relâchement. Le point du roi soulevé est à z = 21,9 mm.</figcaption>
+</figure>
+<p>Côté ADC (ESP32-S3-WROOM-1, 12 bits, 3 100 mV pleine échelle, 0,757 mV par LSB) : le pion à l'entrefer maximal fait 300 LSB, 100 fois le bruit estimé de 3 LSB efficaces après moyennage. Le repos du DRV5053OA à 1,02 V tombe au milieu de la plage, ce qui laisse la place aux deux polarités.</p>
+</section>
+
+<section>
+<p class="eyebrow">Identité</p>
+<h2>Ce qu'une amplitude peut séparer</h2>
+<p>Chaque classe d'aimant occupe un intervalle de champ quand l'entrefer varie de nominal moins 0,5 mm à maximal plus 0,5 mm. Deux intervalles qui se recouvrent sont un seul groupe.</p>
+<figure>
+<div class="fig-scroll"><svg class="docfig" viewBox="0 0 900 330" role="img" aria-label="Intervalles de champ de chaque classe d aimant quand l entrefer varie : avec des aimants uniformes les trois se recouvrent, 1 groupe ; avec des epaisseurs codees 3 groupes separes">
+<line class="grid" x1="230.0" y1="40" x2="230.0" y2="290"/>
+<text class="lbl mono" x="230.0" y="306.0" text-anchor="middle">0</text>
+<line class="grid" x1="320.0" y1="40" x2="320.0" y2="290"/>
+<text class="lbl mono" x="320.0" y="306.0" text-anchor="middle">10</text>
+<line class="grid" x1="410.0" y1="40" x2="410.0" y2="290"/>
+<text class="lbl mono" x="410.0" y="306.0" text-anchor="middle">20</text>
+<line class="grid" x1="500.0" y1="40" x2="500.0" y2="290"/>
+<text class="lbl mono" x="500.0" y="306.0" text-anchor="middle">30</text>
+<line class="grid" x1="590.0" y1="40" x2="590.0" y2="290"/>
+<text class="lbl mono" x="590.0" y="306.0" text-anchor="middle">40</text>
+<line class="grid" x1="680.0" y1="40" x2="680.0" y2="290"/>
+<text class="lbl mono" x="680.0" y="306.0" text-anchor="middle">50</text>
+<line class="grid" x1="770.0" y1="40" x2="770.0" y2="290"/>
+<text class="lbl mono" x="770.0" y="306.0" text-anchor="middle">60</text>
+<line class="grid" x1="860.0" y1="40" x2="860.0" y2="290"/>
+<text class="lbl mono" x="860.0" y="306.0" text-anchor="middle">70</text>
+<text class="lbl muted" x="860.0" y="324.0" text-anchor="end">champ au capteur, en mT</text>
+<line class="dash" x1="323.0" y1="36" x2="323.0" y2="290"/>
+<text class="lbl muted" x="327.0" y="48.0">seuil 10,3 mT</text>
+<text class="lbl strong" x="20.0" y="56.0">aimants uniformes (le projet) : 1 groupe(s) séparable(s)</text>
+<rect class="seg-listen" x="396.8" y="70.0" width="88.2" height="18" rx="3"/>
+<text class="lbl" x="220.0" y="83.0" text-anchor="end">pion, 4 mm</text>
+<text class="lbl small muted" x="491.0" y="83.0">19 à 28</text>
+<rect class="seg-listen" x="431.3" y="96.0" width="90.2" height="18" rx="3"/>
+<text class="lbl" x="220.0" y="109.0" text-anchor="end">cavalier/fou, 4 mm</text>
+<text class="lbl small muted" x="527.5" y="109.0">22 à 32</text>
+<rect class="seg-listen" x="458.0" y="122.0" width="86.7" height="18" rx="3"/>
+<text class="lbl" x="220.0" y="135.0" text-anchor="end">tour/dame/roi, 4 mm</text>
+<text class="lbl small muted" x="550.7" y="135.0">25 à 35</text>
+<text class="lbl strong" x="20.0" y="170.0">épaisseurs codées (variante) : 3 groupe(s) séparable(s)</text>
+<rect class="seg-pulse" x="396.8" y="184.0" width="88.2" height="18" rx="3"/>
+<text class="lbl" x="220.0" y="197.0" text-anchor="end">pion, 4 mm</text>
+<text class="lbl small muted" x="491.0" y="197.0">19 à 28</text>
+<rect class="seg-pulse" x="510.7" y="210.0" width="121.6" height="18" rx="3"/>
+<text class="lbl" x="220.0" y="223.0" text-anchor="end">cavalier/fou, 7 mm</text>
+<text class="lbl small muted" x="638.3" y="223.0">31 à 45</text>
+<rect class="seg-pulse" x="644.1" y="236.0" width="148.7" height="18" rx="3"/>
+<text class="lbl" x="220.0" y="249.0" text-anchor="end">tour/dame/roi, 12 mm</text>
+<text class="lbl small muted" x="798.8" y="249.0">46 à 63</text>
+</svg></div>
+<figcaption><b>Aimants uniformes : 1 groupe</b> (pion (4 mm) de 19 à 28 mT ; cavalier, fou (4 mm) de 22 à 32 mT ; tour, dame, roi (4 mm) de 25 à 35 mT). <b>Épaisseurs codées : 3 groupes</b> (pion (4 mm) de 19 à 28 mT ; cavalier, fou (7 mm) de 31 à 45 mT ; tour, dame, roi (12 mm) de 46 à 63 mT), à 63 mT au plus, encore linéaire pour le DRV5053OA. Variante du yaml : cavalier +3 mm, fou +3 mm, tour +8 mm, dame +8 mm, roi +8 mm.</figcaption>
+</figure>
+<p>C'est la version chiffrée du « 2 à 4 classes au mieux » de l'ADR 0001. Retourner les aimants d'un camp double le compte par le signe de la sortie (six classes), mais interdit un aimant permanent sur le chariot : il repousserait un camp. Jamais douze classes ; l'identité reste à la fréquence LC.</p>
+</section>
+
+<section>
+<p class="eyebrow">Courant et cadence</p>
+<h2>64 capteurs, quatre multiplexeurs, un ADC</h2>
+<div class="tbl">
+<table>
+<thead><tr><th>capteur</th><th>alimentation</th><th class="n">mA</th><th class="n">W</th><th class="n">autonomie humain contre humain (h), 51 sans</th></tr></thead>
+<tbody>
+<tr><td>DRV5053OA</td><td>continue</td><td class="n">147</td><td class="n">0,49</td><td class="n">31</td></tr>
+<tr><td>DRV5053OA</td><td>4 groupes</td><td class="n">37</td><td class="n">0,12</td><td class="n">44</td></tr>
+<tr><td>SS39ET</td><td>continue</td><td class="n">384</td><td class="n">1,27</td><td class="n">19</td></tr>
+<tr><td>SS39ET</td><td>4 groupes</td><td class="n">96</td><td class="n">0,32</td><td class="n">36</td></tr>
+</tbody>
+</table>
+</div>
+<p>Le courant de repos est le point dur : 147 mA pour 64 DRV5053OA en continu, 384 mA pour la puce du SS49E, plus que le plateau entier au repos. Un P-FET côté haut par rangée de quadrant (4 groupes) n'alimente que la rangée lue : la moyenne tombe à 37 mA et l'autonomie remonte à 44 h.</p>
+<figure>
+<div class="fig-scroll"><svg class="docfig" viewBox="0 0 960 430" role="img" aria-label="Schema bloc du scanner : quatre quadrants de seize capteurs Hall, un multiplexeur par quadrant, quatre entrees ADC de l ESP32-S3, quatre bits d adresse partages, quatre commutateurs d alimentation par rangee, la ligne B vers la console">
+<defs><marker id="sarr-t" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+<text class="lbl mono muted" x="20.0" y="22.0">QUADRANTS</text>
+<text class="lbl mono muted" x="330.0" y="22.0">MULTIPLEXEURS</text>
+<text class="lbl mono muted" x="600.0" y="22.0">ESP32-S3-WROOM-1</text>
+<rect class="box" x="20.0" y="40.0" width="230.0" height="62.0" rx="6"/>
+<text class="lbl strong" x="135.0" y="60.0" text-anchor="middle">quadrant 1 : 16 capteurs DRV5053OA</text>
+<text class="lbl small" x="135.0" y="75.0" text-anchor="middle">4 rangées de 4, un P-FET chacune</text>
+<text class="lbl small" x="135.0" y="90.0" text-anchor="middle">sortie analogique, 3,3 V, masse</text>
+<rect class="box" x="330.0" y="48.0" width="180.0" height="46.0" rx="6"/>
+<text class="lbl strong" x="420.0" y="67.5" text-anchor="middle">CD74HC4067</text>
+<text class="lbl small" x="420.0" y="82.5" text-anchor="middle">16 vers 1</text>
+<line class="wire-a" x1="250.0" y1="71.0" x2="330.0" y2="71.0" marker-end="url(#sarr-t)"/>
+<line class="wire-a" x1="510.0" y1="71.0" x2="600.0" y2="71.0" marker-end="url(#sarr-t)"/>
+<text class="lbl small mono" x="515.0" y="64.0">ADC_Q1</text>
+<rect class="box" x="20.0" y="122.0" width="230.0" height="62.0" rx="6"/>
+<text class="lbl strong" x="135.0" y="142.0" text-anchor="middle">quadrant 2 : 16 capteurs DRV5053OA</text>
+<text class="lbl small" x="135.0" y="157.0" text-anchor="middle">4 rangées de 4, un P-FET chacune</text>
+<text class="lbl small" x="135.0" y="172.0" text-anchor="middle">sortie analogique, 3,3 V, masse</text>
+<rect class="box" x="330.0" y="130.0" width="180.0" height="46.0" rx="6"/>
+<text class="lbl strong" x="420.0" y="149.5" text-anchor="middle">CD74HC4067</text>
+<text class="lbl small" x="420.0" y="164.5" text-anchor="middle">16 vers 1</text>
+<line class="wire-a" x1="250.0" y1="153.0" x2="330.0" y2="153.0" marker-end="url(#sarr-t)"/>
+<line class="wire-a" x1="510.0" y1="153.0" x2="600.0" y2="153.0" marker-end="url(#sarr-t)"/>
+<text class="lbl small mono" x="515.0" y="146.0">ADC_Q2</text>
+<rect class="box" x="20.0" y="204.0" width="230.0" height="62.0" rx="6"/>
+<text class="lbl strong" x="135.0" y="224.0" text-anchor="middle">quadrant 3 : 16 capteurs DRV5053OA</text>
+<text class="lbl small" x="135.0" y="239.0" text-anchor="middle">4 rangées de 4, un P-FET chacune</text>
+<text class="lbl small" x="135.0" y="254.0" text-anchor="middle">sortie analogique, 3,3 V, masse</text>
+<rect class="box" x="330.0" y="212.0" width="180.0" height="46.0" rx="6"/>
+<text class="lbl strong" x="420.0" y="231.5" text-anchor="middle">CD74HC4067</text>
+<text class="lbl small" x="420.0" y="246.5" text-anchor="middle">16 vers 1</text>
+<line class="wire-a" x1="250.0" y1="235.0" x2="330.0" y2="235.0" marker-end="url(#sarr-t)"/>
+<line class="wire-a" x1="510.0" y1="235.0" x2="600.0" y2="235.0" marker-end="url(#sarr-t)"/>
+<text class="lbl small mono" x="515.0" y="228.0">ADC_Q3</text>
+<rect class="box" x="20.0" y="286.0" width="230.0" height="62.0" rx="6"/>
+<text class="lbl strong" x="135.0" y="306.0" text-anchor="middle">quadrant 4 : 16 capteurs DRV5053OA</text>
+<text class="lbl small" x="135.0" y="321.0" text-anchor="middle">4 rangées de 4, un P-FET chacune</text>
+<text class="lbl small" x="135.0" y="336.0" text-anchor="middle">sortie analogique, 3,3 V, masse</text>
+<rect class="box" x="330.0" y="294.0" width="180.0" height="46.0" rx="6"/>
+<text class="lbl strong" x="420.0" y="313.5" text-anchor="middle">CD74HC4067</text>
+<text class="lbl small" x="420.0" y="328.5" text-anchor="middle">16 vers 1</text>
+<line class="wire-a" x1="250.0" y1="317.0" x2="330.0" y2="317.0" marker-end="url(#sarr-t)"/>
+<line class="wire-a" x1="510.0" y1="317.0" x2="600.0" y2="317.0" marker-end="url(#sarr-t)"/>
+<text class="lbl small mono" x="515.0" y="310.0">ADC_Q4</text>
+<rect class="box-mcu" x="600.0" y="60.0" width="180.0" height="230.0" rx="6"/>
+<text class="lbl strong" x="690.0" y="126.5" text-anchor="middle">ESP32-S3-WROOM-1</text>
+<text class="lbl small" x="690.0" y="141.5" text-anchor="middle">ADC1, 12 bits</text>
+<text class="lbl small" x="690.0" y="156.5" text-anchor="middle">8 lectures par case</text>
+<text class="lbl small" x="690.0" y="171.5" text-anchor="middle"></text>
+<text class="lbl small" x="690.0" y="186.5" text-anchor="middle">hallscan.c :</text>
+<text class="lbl small" x="690.0" y="201.5" text-anchor="middle">ligne de base par case,</text>
+<text class="lbl small" x="690.0" y="216.5" text-anchor="middle">seuil et hystérésis,</text>
+<text class="lbl small" x="690.0" y="231.5" text-anchor="middle">anti-rebond</text>
+<path class="wire-p" d="M600 310 H420 V 265" marker-end="url(#sarr-t)"/>
+<text class="lbl small" x="430.0" y="330.0">MUX_S0..S3 : adresse commune aux 4 multiplexeurs</text>
+<path class="wire" d="M600 350 H135 V 368" marker-end="url(#sarr-t)"/>
+<text class="lbl small" x="145.0" y="388.0">ROW_EN0..3 : une rangée alimentée à la fois (courant moyen divisé par 4)</text>
+<line class="wire" x1="780.0" y1="175.0" x2="850.0" y2="175.0" marker-end="url(#sarr-t)"/>
+<rect class="box" x="850.0" y="150.0" width="100.0" height="50.0" rx="6"/>
+<text class="lbl strong" x="900.0" y="171.5" text-anchor="middle">console</text>
+<text class="lbl small" x="900.0" y="186.5" text-anchor="middle">115200 bauds</text>
+<text class="lbl mono" x="850.0" y="222.0">B,........</text>
+<text class="lbl small muted" x="850.0" y="238.0">à chaque changement</text>
+<text class="lbl" x="600.0" y="318.0"></text>
+<text class="lbl strong" x="20.0" y="412.0">un scan : 82 µs par case, 1,7 ms par plateau, 584 fois par seconde</text>
+</svg></div>
+<figcaption><b>Le scanner.</b> Une case coûte 2 µs de commutation du CD74HC4067 plus 8 lectures de 10 µs, soit 82 µs ; les quatre multiplexeurs sont lus en parallèle sur quatre entrées ADC1 ; avec 100 µs de mise sous tension par rangée, le plateau est relu en 1,7 ms, 584 fois par seconde (762 sans commutation).</figcaption>
+</figure>
+</section>
+
+<section>
+<p class="eyebrow">Sur le quadrant LC</p>
+<h2>Où mettre le capteur</h2>
+<p>Au centre de la case, et nulle part ailleurs : en bord de spirale, la pièce voisine donne un champ comparable à la pièce propre (même calcul hors axe) et l'attribution est perdue. Le centre de la spirale est libre sur 22,5 mm, mais les quatre couches portent chacune une spirale : aucune piste ne sort du centre sans croiser des spires.</p>
+<div class="tbl">
+<table>
+<thead><tr><th>option</th><th>ce qu'elle coûte</th></tr></thead>
+<tbody>
+<tr><td>Quadrant en six couches</td><td>un palier de prix de carte ; rien ne change à la bobine</td></tr>
+<tr><td>Spirale sur trois couches, la quatrième aux pistes Hall</td><td>même inductance cible : 7 spires par couche au lieu de 5, piste de 1,1 mm au lieu de 1,6, ESR de 0,59 à 0,9 Ω, Q de la bobine de case en baisse d'un tiers</td></tr>
+<tr><td>Nappe Hall séparée, 0,6 mm, posée sur le quadrant dans la lame d'air</td><td>0,6 + 1,3 mm sous les 2 mm d'air, juste ; des pistes au-dessus des spirales à tenir en diaphonie ; la seule option qui existe avant le quadrant et sans lui</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section>
+<p class="eyebrow">RFID</p>
+<h2>Le bilan de liaison tient, la commutation non</h2>
+<p>Cas standard : étiquette NTAG213 (ISO 14443A, 13,56 MHz) de ø25 mm à 7 spires au fond de la base (1,96 µH, résonance propre à 16,1 MHz avec les 50 pF de la puce), boucle carrée de 35 mm à 2 spires gravée sous la case (0,32 µH, X<sub>L</sub> = 27 Ω, accord par 433 pF). À 5,5 mm : k = 0,22, et 100 mA dans la boucle font 4,8 A/m à l'étiquette, 3,2 fois le minimum ISO de 1,5 A/m (3,1 fois à l'entrefer maximal). Le couplage se calcule avec la même inductance mutuelle que le LC.</p>
+<div class="formulas">
+<div class="formula"><p class="f">Q = X<sub>L</sub> / R<sub>série</sub></p><p class="d">Q = 20 visé pour la sous-porteuse à 848 kHz, soit 1,4 Ω de résistance série en tout</p></div>
+<div class="formula"><p class="f">C = 1 / (ω² L)</p><p class="d">433 pF d'accord ; les voies fermées du mux en accrochent 125 de plus</p></div>
+<div class="formula"><p class="f">H = N I R² / (2 (R²+z²)<sup>3/2</sup>)</p><p class="d">champ sur l'axe de la boucle, à comparer au minimum ISO 14443</p></div>
+</div>
+<figure>
+<div class="fig-scroll"><svg class="docfig" viewBox="0 0 900 280" role="img" aria-label="Trois grandeurs de la boucle NFC, ce qu il faut contre ce que donne le multiplexeur analogique : resistance serie 1,4 contre 100 ohm, Q 20 contre 0,27, desaccord de 12 pour cent">
+<text class="lbl q-high-t" x="300.0" y="30.0">ce qu'il faut</text>
+<text class="lbl q-low-t" x="500.0" y="30.0">ce que donne le CD74HC4067</text>
+<text class="lbl strong" x="20.0" y="70.0">résistance série dans la boucle</text>
+<rect class="seg-listen" x="300" y="56" width="7.0" height="16" rx="3"/>
+<text class="lbl small" x="315.0" y="69.0">1,4 Ω pour Q = 20</text>
+<rect class="seg-pulse" x="300" y="78" width="520.0" height="16" rx="3"/>
+<text class="lbl small" x="828.0" y="91.0">100 Ω de résistance passante</text>
+<text class="lbl strong" x="20.0" y="140.0">facteur Q de la boucle</text>
+<rect class="seg-listen" x="300" y="126" width="520.0" height="16" rx="3"/>
+<text class="lbl small" x="828.0" y="139.0">20 visé</text>
+<rect class="seg-pulse" x="300" y="148" width="6.9" height="16" rx="3"/>
+<text class="lbl small" x="314.9" y="161.0">0,27 avec le multiplexeur</text>
+<text class="lbl strong" x="20.0" y="210.0">capacité sur la boucle accordée</text>
+<rect class="seg-listen" x="300" y="196" width="520.0" height="16" rx="3"/>
+<text class="lbl small" x="828.0" y="209.0">433 pF d'accord</text>
+<rect class="seg-pulse" x="300" y="218" width="150.0" height="16" rx="3"/>
+<text class="lbl small" x="458.0" y="231.0">125 pF parasites : -12 % de fréquence</text>
+<text class="lbl muted" x="20.0" y="262.0">verdict du modèle : ok=non ; un commutateur ne peut vivre que dans la section adaptée à 50 Ω, jamais dans la boucle</text>
+</svg></div>
+<figcaption><b>Le CD74HC4067 dans la boucle.</b> 100 Ω de résistance passante pour 1,4 Ω admis : Q = 0,27. 125 pF parasites sur 433 pF d'accord : 12 % de fréquence, pour une bande passante de 5 %. L'ADR 0001 l'avait écrit à la main ; le modèle le chiffre.</figcaption>
+</figure>
+<div class="tbl">
+<table>
+<thead><tr><th>topologie</th><th>composants</th><th>remarque</th></tr></thead>
+<tbody>
+<tr><td>Un lecteur par case</td><td>64 x (MFRC522, quartz 27,12 MHz, adaptation), SPI partagé, 64 chip select par registres à décalage</td><td>un émetteur à la fois ; pas de RF qui traverse la carte ; de l'ordre de 190 EUR, estimation</td></tr>
+<tr><td>Un lecteur, arbre de commutation en 50 Ω</td><td>9 SP8T, 64 réseaux d'adaptation, un PN5180</td><td>64 lignes RF sur la carte, 64 accords à mettre au point</td></tr>
+<tr><td>Lecteur sur le chariot</td><td>un lecteur, aucune antenne fixe</td><td>phase 2 seulement, lecture à la demande</td></tr>
+<tr><td>Pas de RFID</td><td>rien</td><td>identité par la logique de jeu depuis la position initiale, promotion demandée au joueur</td></tr>
+</tbody>
+</table>
+</div>
+<p>Lecteurs candidats dans le yaml : MFRC522, PN5180. Cohabitation avec le LC si les deux existaient : lecture NFC hors fenêtre de mesure, comme les trames LED ; l'étiquette sans ferrite, résonante à 16,1 MHz, charge peu le ringdown et son décalage est absorbé par la calibration par pièce, à vérifier par une M1 avec et sans étiquette.</p>
+</section>
+
+<section>
+<p class="eyebrow">Autres pas</p>
+<h2>Les cases de 55 ou 60 mm du brief</h2>
+<div class="tbl">
+<table>
+<thead><tr><th>pas (mm)</th><th class="n">B pion nominal (mT)</th><th class="n">B roi soulevé (mT)</th><th class="n">marge au soulèvement</th><th class="n">diaphonie de 8 voisins (dB)</th><th class="n">groupes, aimants codés</th><th class="n">k NFC</th><th class="n">marge ISO</th></tr></thead>
+<tbody>
+<tr><td>40</td><td class="n">17,3</td><td class="n">2,3</td><td class="n">2,1</td><td class="n">-21,2</td><td class="n">2</td><td class="n">0,29</td><td class="n">3,8</td></tr>
+<tr><td>50 (le projet)</td><td class="n">25,3</td><td class="n">3,8</td><td class="n">1,9</td><td class="n">-24,7</td><td class="n">3</td><td class="n">0,22</td><td class="n">3,2</td></tr>
+<tr><td>55</td><td class="n">28,3</td><td class="n">4,6</td><td class="n">1,8</td><td class="n">-26</td><td class="n">3</td><td class="n">0,19</td><td class="n">3</td></tr>
+<tr><td>60</td><td class="n">30,6</td><td class="n">5,4</td><td class="n">1,7</td><td class="n">-27,1</td><td class="n">3</td><td class="n">0,16</td><td class="n">2,8</td></tr>
+</tbody>
+</table>
+</div>
+<p>L'aimant suit le diamètre de la base, donc le pas. La diaphonie s'améliore avec le pas, la marge au soulèvement se resserre un peu (un roi plus gros se voit de plus loin), tout reste dans les critères : le pas reste une question d'ergonomie et de couloir de déplacement, pas de capteur.</p>
+</section>
+</div>
+
+<!-- ======================= IMPLÉMENTATION ======================= -->
+<div class="mode" id="implementation">
+<section>
+<p class="eyebrow">Dans le dépôt</p>
+<h2>Ce qui existe</h2>
+<div class="tbl">
+<table>
+<thead><tr><th>livrable</th><th>où</th><th>ce qu'il fait</th></tr></thead>
+<tbody>
+<tr><td>Source des nombres</td><td><code>config/board.yaml</code>, section <code>hall_rfid</code> ; modèles typés dans <code>chessboard_calc/config.py</code></td><td>capteurs candidats, géométrie, seuils, mux, groupes d'alimentation, ESP32-S3, antenne et étiquette NFC ; trois valeurs de fiche marquées « to verify »</td></tr>
+<tr><td>Modèle Hall</td><td><code>chessboard_calc/hall.py</code></td><td><code>disc_bz_mT</code> (champ exact hors axe), <code>hall_budget</code> (champs, seuils, diaphonie, marges ADC), <code>amplitude_classes</code>, <code>hall_power</code>, <code>hall_scan</code>, <code>check</code></td></tr>
+<tr><td>Modèle NFC</td><td><code>chessboard_calc/nfc.py</code></td><td><code>antenna</code>, <code>tag</code>, <code>link</code>, <code>switch_verdict</code>, <code>analog_mux_verdict</code>, <code>check</code></td></tr>
+<tr><td>Rapport</td><td><code>python -m chessboard_calc report</code></td><td>section « Hall + RFID alternative » de chaque pas</td></tr>
+<tr><td>Tests</td><td><code>tests/test_hall.py</code>, <code>tests/test_nfc.py</code>, <code>tests/test_hallscan_config.py</code></td><td>forme fermée et dipôle, marges, 1 groupe avec aimants uniformes et 3 avec aimants codés, autonomie, cadence, verdict du mux, gardes qui tirent, en-tête généré</td></tr>
+<tr><td>Firmware</td><td><code>firmware/esp32/hallscan/</code></td><td>logique C99 testée sur PC et en CI, en-tête généré du yaml, projet ESP-IDF pour l'ESP32-S3-WROOM-1</td></tr>
+<tr><td>Cette page et la note</td><td><code>docs/pages/hall-rfid.html</code>, <code>docs/notes/24-hall-et-rfid.md</code></td><td>la page est générée par <code>python -m docfig pages</code> des mêmes fonctions ; la note porte le verdict et les décisions à prendre</td></tr>
+</tbody>
+</table>
+</div>
+<p>Ce qui n'existe pas encore : la carte KiCad de la nappe Hall (elle attend une décision, <code>boardgen</code> sait la produire), la compilation ESP-IDF (pas de chaîne en CI, comme pour le pont et l'horloge), et la relecture des trois valeurs de fiche.</p>
+</section>
+
+<section>
+<p class="eyebrow">Le scanner</p>
+<h2>Firmware : 64 cases en 1,7 ms</h2>
+<figure>
+<div class="fig-scroll"><svg class="docfig" viewBox="0 0 960 430" role="img" aria-label="Schema bloc du scanner : quatre quadrants de seize capteurs Hall, un multiplexeur par quadrant, quatre entrees ADC de l ESP32-S3, quatre bits d adresse partages, quatre commutateurs d alimentation par rangee, la ligne B vers la console">
+<defs><marker id="sarr-i" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+<text class="lbl mono muted" x="20.0" y="22.0">QUADRANTS</text>
+<text class="lbl mono muted" x="330.0" y="22.0">MULTIPLEXEURS</text>
+<text class="lbl mono muted" x="600.0" y="22.0">ESP32-S3-WROOM-1</text>
+<rect class="box" x="20.0" y="40.0" width="230.0" height="62.0" rx="6"/>
+<text class="lbl strong" x="135.0" y="60.0" text-anchor="middle">quadrant 1 : 16 capteurs DRV5053OA</text>
+<text class="lbl small" x="135.0" y="75.0" text-anchor="middle">4 rangées de 4, un P-FET chacune</text>
+<text class="lbl small" x="135.0" y="90.0" text-anchor="middle">sortie analogique, 3,3 V, masse</text>
+<rect class="box" x="330.0" y="48.0" width="180.0" height="46.0" rx="6"/>
+<text class="lbl strong" x="420.0" y="67.5" text-anchor="middle">CD74HC4067</text>
+<text class="lbl small" x="420.0" y="82.5" text-anchor="middle">16 vers 1</text>
+<line class="wire-a" x1="250.0" y1="71.0" x2="330.0" y2="71.0" marker-end="url(#sarr-i)"/>
+<line class="wire-a" x1="510.0" y1="71.0" x2="600.0" y2="71.0" marker-end="url(#sarr-i)"/>
+<text class="lbl small mono" x="515.0" y="64.0">ADC_Q1</text>
+<rect class="box" x="20.0" y="122.0" width="230.0" height="62.0" rx="6"/>
+<text class="lbl strong" x="135.0" y="142.0" text-anchor="middle">quadrant 2 : 16 capteurs DRV5053OA</text>
+<text class="lbl small" x="135.0" y="157.0" text-anchor="middle">4 rangées de 4, un P-FET chacune</text>
+<text class="lbl small" x="135.0" y="172.0" text-anchor="middle">sortie analogique, 3,3 V, masse</text>
+<rect class="box" x="330.0" y="130.0" width="180.0" height="46.0" rx="6"/>
+<text class="lbl strong" x="420.0" y="149.5" text-anchor="middle">CD74HC4067</text>
+<text class="lbl small" x="420.0" y="164.5" text-anchor="middle">16 vers 1</text>
+<line class="wire-a" x1="250.0" y1="153.0" x2="330.0" y2="153.0" marker-end="url(#sarr-i)"/>
+<line class="wire-a" x1="510.0" y1="153.0" x2="600.0" y2="153.0" marker-end="url(#sarr-i)"/>
+<text class="lbl small mono" x="515.0" y="146.0">ADC_Q2</text>
+<rect class="box" x="20.0" y="204.0" width="230.0" height="62.0" rx="6"/>
+<text class="lbl strong" x="135.0" y="224.0" text-anchor="middle">quadrant 3 : 16 capteurs DRV5053OA</text>
+<text class="lbl small" x="135.0" y="239.0" text-anchor="middle">4 rangées de 4, un P-FET chacune</text>
+<text class="lbl small" x="135.0" y="254.0" text-anchor="middle">sortie analogique, 3,3 V, masse</text>
+<rect class="box" x="330.0" y="212.0" width="180.0" height="46.0" rx="6"/>
+<text class="lbl strong" x="420.0" y="231.5" text-anchor="middle">CD74HC4067</text>
+<text class="lbl small" x="420.0" y="246.5" text-anchor="middle">16 vers 1</text>
+<line class="wire-a" x1="250.0" y1="235.0" x2="330.0" y2="235.0" marker-end="url(#sarr-i)"/>
+<line class="wire-a" x1="510.0" y1="235.0" x2="600.0" y2="235.0" marker-end="url(#sarr-i)"/>
+<text class="lbl small mono" x="515.0" y="228.0">ADC_Q3</text>
+<rect class="box" x="20.0" y="286.0" width="230.0" height="62.0" rx="6"/>
+<text class="lbl strong" x="135.0" y="306.0" text-anchor="middle">quadrant 4 : 16 capteurs DRV5053OA</text>
+<text class="lbl small" x="135.0" y="321.0" text-anchor="middle">4 rangées de 4, un P-FET chacune</text>
+<text class="lbl small" x="135.0" y="336.0" text-anchor="middle">sortie analogique, 3,3 V, masse</text>
+<rect class="box" x="330.0" y="294.0" width="180.0" height="46.0" rx="6"/>
+<text class="lbl strong" x="420.0" y="313.5" text-anchor="middle">CD74HC4067</text>
+<text class="lbl small" x="420.0" y="328.5" text-anchor="middle">16 vers 1</text>
+<line class="wire-a" x1="250.0" y1="317.0" x2="330.0" y2="317.0" marker-end="url(#sarr-i)"/>
+<line class="wire-a" x1="510.0" y1="317.0" x2="600.0" y2="317.0" marker-end="url(#sarr-i)"/>
+<text class="lbl small mono" x="515.0" y="310.0">ADC_Q4</text>
+<rect class="box-mcu" x="600.0" y="60.0" width="180.0" height="230.0" rx="6"/>
+<text class="lbl strong" x="690.0" y="126.5" text-anchor="middle">ESP32-S3-WROOM-1</text>
+<text class="lbl small" x="690.0" y="141.5" text-anchor="middle">ADC1, 12 bits</text>
+<text class="lbl small" x="690.0" y="156.5" text-anchor="middle">8 lectures par case</text>
+<text class="lbl small" x="690.0" y="171.5" text-anchor="middle"></text>
+<text class="lbl small" x="690.0" y="186.5" text-anchor="middle">hallscan.c :</text>
+<text class="lbl small" x="690.0" y="201.5" text-anchor="middle">ligne de base par case,</text>
+<text class="lbl small" x="690.0" y="216.5" text-anchor="middle">seuil et hystérésis,</text>
+<text class="lbl small" x="690.0" y="231.5" text-anchor="middle">anti-rebond</text>
+<path class="wire-p" d="M600 310 H420 V 265" marker-end="url(#sarr-i)"/>
+<text class="lbl small" x="430.0" y="330.0">MUX_S0..S3 : adresse commune aux 4 multiplexeurs</text>
+<path class="wire" d="M600 350 H135 V 368" marker-end="url(#sarr-i)"/>
+<text class="lbl small" x="145.0" y="388.0">ROW_EN0..3 : une rangée alimentée à la fois (courant moyen divisé par 4)</text>
+<line class="wire" x1="780.0" y1="175.0" x2="850.0" y2="175.0" marker-end="url(#sarr-i)"/>
+<rect class="box" x="850.0" y="150.0" width="100.0" height="50.0" rx="6"/>
+<text class="lbl strong" x="900.0" y="171.5" text-anchor="middle">console</text>
+<text class="lbl small" x="900.0" y="186.5" text-anchor="middle">115200 bauds</text>
+<text class="lbl mono" x="850.0" y="222.0">B,........</text>
+<text class="lbl small muted" x="850.0" y="238.0">à chaque changement</text>
+<text class="lbl" x="600.0" y="318.0"></text>
+<text class="lbl strong" x="20.0" y="412.0">un scan : 82 µs par case, 1,7 ms par plateau, 584 fois par seconde</text>
+</svg></div>
+<figcaption><b>Architecture du prototype autonome du brief.</b> Quatre CD74HC4067 (16 vers 1), un par quadrant, adresses communes ; quatre entrées ADC1 ; 16 P-FET de rangée ; la ligne <code>B</code> d'occupation de la note 12 sur la console.</figcaption>
+</figure>
+<pre><code>firmware/esp32/hallscan/
+  main/hallscan.h, hallscan.c     logique : lignes de base, seuil et hystérésis, anti-rebond, ligne B
+  main/hallscan_config.h          GÉNÉRÉ du yaml : seuils en comptes ADC, broches, cadence, cases par canal
+  main/main.c                     ESP-IDF : ADC en lecture unitaire, adresses, rangées, console
+  scripts/gen_config.py           le générateur de l'en-tête (chessboard_calc.hall)
+  test/test_hallscan.c            test hôte, lancé par la CI</code></pre>
+<p>Les seuils de l'en-tête sont ceux du rapport, convertis en comptes ADC par la sensibilité du DRV5053OA et le pas de 0,757 mV : repos <code>HALL_BASELINE_COUNTS 1348</code>, présence <code>HALL_ON_COUNTS 150</code>, relâchement <code>HALL_OFF_COUNTS 105</code>, anti-rebond sur 3 scans. Un test du dépôt vérifie que l'en-tête commité est exactement ce que le générateur écrit.</p>
+<ol class="steps">
+<li>Rangée <code>g</code> alimentée (<code>ROW_EN&lt;g&gt;</code> bas), attente de 100 µs.</li>
+<li>Pour chaque canal de la rangée : adresse sur <code>MUX_S0..S3</code>, 2 µs, puis sur chacun des quatre multiplexeurs la moyenne de 8 lectures.</li>
+<li><code>hallscan_update</code> : écart à la ligne de base, seuil ou relâchement, anti-rebond ; une ligne <code>B,</code> suivie de 64 caractères (<code>.</code> vide, <code>?</code> occupée, <code>w</code> et <code>b</code> si la polarité code le camp) part dès qu'une case change d'état publié.</li>
+<li>Console : <code>z</code> prend l'échiquier vide comme lignes de base, <code>r</code> sort les comptes bruts en CSV, <code>b</code> renvoie la ligne courante.</li>
+</ol>
+<pre><code># test de la logique sur PC (ce que fait la CI)
+cc -Wall -Wextra -Werror -Imain test/test_hallscan.c main/hallscan.c -o /tmp/test_hallscan &amp;&amp; /tmp/test_hallscan
+
+# regénérer l'en-tête après toute édition de hall_rfid dans le yaml
+python3 scripts/gen_config.py ../../../config/board.yaml main/hallscan_config.h
+
+# cible (ESP-IDF 5.x)
+. ~/esp/esp-idf/export.sh &amp;&amp; idf.py set-target esp32s3 &amp;&amp; idf.py build flash monitor</code></pre>
+</section>
+
+<section>
+<p class="eyebrow">Câblage</p>
+<h2>Broches de l'ESP32-S3-WROOM-1</h2>
+<div class="tbl">
+<table>
+<thead><tr><th>signal</th><th class="n">broche</th><th>rôle</th></tr></thead>
+<tbody>
+<tr><td><code>ADC_Q1</code></td><td class="n">GPIO1</td><td>sortie du multiplexeur du quadrant, entrée ADC1</td></tr>
+<tr><td><code>ADC_Q2</code></td><td class="n">GPIO2</td><td>sortie du multiplexeur du quadrant, entrée ADC1</td></tr>
+<tr><td><code>ADC_Q3</code></td><td class="n">GPIO3</td><td>sortie du multiplexeur du quadrant, entrée ADC1</td></tr>
+<tr><td><code>ADC_Q4</code></td><td class="n">GPIO4</td><td>sortie du multiplexeur du quadrant, entrée ADC1</td></tr>
+<tr><td><code>MUX_S0</code></td><td class="n">GPIO5</td><td>bit d'adresse, commun aux quatre multiplexeurs</td></tr>
+<tr><td><code>MUX_S1</code></td><td class="n">GPIO6</td><td>bit d'adresse, commun aux quatre multiplexeurs</td></tr>
+<tr><td><code>MUX_S2</code></td><td class="n">GPIO7</td><td>bit d'adresse, commun aux quatre multiplexeurs</td></tr>
+<tr><td><code>MUX_S3</code></td><td class="n">GPIO8</td><td>bit d'adresse, commun aux quatre multiplexeurs</td></tr>
+<tr><td><code>ROW_EN0</code></td><td class="n">GPIO9</td><td>grille du P-FET d'une rangée, actif bas</td></tr>
+<tr><td><code>ROW_EN1</code></td><td class="n">GPIO10</td><td>grille du P-FET d'une rangée, actif bas</td></tr>
+<tr><td><code>ROW_EN2</code></td><td class="n">GPIO11</td><td>grille du P-FET d'une rangée, actif bas</td></tr>
+<tr><td><code>ROW_EN3</code></td><td class="n">GPIO12</td><td>grille du P-FET d'une rangée, actif bas</td></tr>
+</tbody>
+</table>
+</div>
+<p>Les entrées ADC1 du S3 sont les GPIO 1 à 10 ; les numéros sont ceux du yaml et restent à confirmer contre le brochage du module avant tout câblage. Les capteurs sont en 3,3 V, les multiplexeurs aussi ; la sortie du DRV5053OA (1,02 V au repos, ±278 mV pour un pion) entre directement dans l'ADC à 12 dB d'atténuation.</p>
+<h2>La nappe Hall d'un quadrant, à dessiner</h2>
+<p>Deux couches, 200 x 200 mm, posée sur le quadrant dans la lame d'air, ou seule pour l'étape intermédiaire : 16 capteurs DRV5053OA en SOT-23 au centre des cases, un CD74HC4067, 4 P-FET de rangée avec leur résistance de grille, un condensateur de découplage par capteur, un connecteur. Le bus de la nappe du quadrant LC suffit à l'adresser depuis le cerveau (<code>MUX_A0..A2</code> plus un enable comme quatrième bit, <code>AMP_OUT</code> pour la sortie) ; pour l'ESP32-S3 du brief, un connecteur à huit fils (3,3 V, masse, sortie, quatre adresses, une ou quatre lignes de rangée).</p>
+</section>
+
+<section>
+<p class="eyebrow">Pour continuer</p>
+<h2>Les décisions, dans l'ordre</h2>
+<ol class="steps">
+<li><b>Couche Hall de présence : oui ou non, et sur quelle carte.</b> La nappe séparée pour l'étape intermédiaire ; six couches ou spirale à trois couches pour l'intégrer au quadrant ensuite.</li>
+<li><b>Capteur et alimentation.</b> DRV5053OA par groupes de rangées ; SS39ET si le prix ou le stock l'imposent, par groupes obligatoirement.</li>
+<li><b>Codage par polarité ou par épaisseur : non</b> tant que l'aimant permanent du chariot reste candidat ; à rouvrir si l'électroaimant est choisi.</li>
+<li><b>RFID sur le plateau : non en phase 1.</b> Repli à un lecteur par case si la mesure M2 échoue ; lecteur sur le chariot à étudier en phase 2.</li>
+<li><b>Mesure M12 à ajouter au protocole.</b> B(z) et B(ρ) d'un aimant de pièce relevés au capteur de la nappe, comparés à <code>hall.disc_bz_mT</code> ; puis la courbe de soulèvement, qui fixe les seuils réels à la place des fractions du yaml.</li>
+</ol>
+<p>Quand une décision tombe, elle s'écrit dans le yaml (section <code>hall_rfid</code>), le rapport, les tests, l'en-tête du firmware et cette page suivent sans recopie.</p>
+</section>
+</div>
+
+<p class="foot">Chiffres calculés par <code>chessboard_calc</code> depuis <code>config/board.yaml</code> du dépôt electronic-chess, octobre 2026 ; schémas de <code>tools/docfig</code>, note 24 du dépôt.</p>
+</div>
+<script>
+(function(){
+  var modes = ['simple', 'technique', 'implementation'];
+  var btns = document.querySelectorAll('.mode-btn');
+  function show(m, push){
+    if (modes.indexOf(m) < 0) m = 'simple';
+    modes.forEach(function(k){ var el = document.getElementById(k); if (el) el.hidden = (k !== m); });
+    Array.prototype.forEach.call(btns, function(b){
+      var on = b.getAttribute('data-mode') === m;
+      b.classList.toggle('is-on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    try { localStorage.setItem('hall-rfid-mode', m); } catch (e) {}
+    if (push) { try { history.replaceState(null, '', '#' + m); } catch (e) {} }
+  }
+  var start = (location.hash || '').replace('#', '');
+  if (modes.indexOf(start) < 0) { try { start = localStorage.getItem('hall-rfid-mode') || 'simple'; } catch (e) { start = 'simple'; } }
+  show(start, false);
+  Array.prototype.forEach.call(btns, function(b){
+    b.addEventListener('click', function(){ show(b.getAttribute('data-mode'), true); });
+  });
+  window.addEventListener('hashchange', function(){ show((location.hash || '').replace('#', ''), false); });
+
+  var Z = [2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0, 4.25, 4.5, 4.75, 5.0, 5.25, 5.5, 5.75, 6.0, 6.25, 6.5, 6.75, 7.0, 7.25, 7.5, 7.75, 8.0, 8.25, 8.5, 8.75, 9.0, 9.25, 9.5, 9.75, 10.0, 10.25, 10.5, 10.75, 11.0, 11.25, 11.5, 11.75, 12.0, 12.25, 12.5, 12.75, 13.0, 13.25, 13.5, 13.75, 14.0, 14.25, 14.5, 14.75, 15.0, 15.25, 15.5, 15.75, 16.0, 16.25, 16.5, 16.75, 17.0, 17.25, 17.5, 17.75, 18.0, 18.25, 18.5, 18.75, 19.0, 19.25, 19.5, 19.75, 20.0, 20.25, 20.5, 20.75, 21.0, 21.25, 21.5, 21.75, 22.0, 22.25, 22.5, 22.75, 23.0, 23.25, 23.5, 23.75, 24.0, 24.25, 24.5, 24.75, 25.0, 25.25, 25.5, 25.75, 26.0, 26.25, 26.5, 26.75, 27.0, 27.25, 27.5, 27.75, 28.0, 28.25, 28.5, 28.75, 29.0, 29.25, 29.5, 29.75, 30.0], BP = [77.55, 73.68, 69.89, 66.2, 62.64, 59.21, 55.92, 52.78, 49.79, 46.95, 44.27, 41.73, 39.33, 37.08, 34.96, 32.96, 31.09, 29.34, 27.69, 26.15, 24.7, 23.35, 22.08, 20.89, 19.78, 18.73, 17.75, 16.84, 15.98, 15.17, 14.41, 13.7, 13.03, 12.4, 11.81, 11.25, 10.72, 10.23, 9.76, 9.32, 8.91, 8.52, 8.15, 7.8, 7.47, 7.15, 6.85, 6.57, 6.31, 6.05, 5.81, 5.59, 5.37, 5.16, 4.97, 4.78, 4.6, 4.44, 4.27, 4.12, 3.97, 3.83, 3.7, 3.57, 3.45, 3.34, 3.22, 3.12, 3.02, 2.92, 2.82, 2.73, 2.65, 2.57, 2.49, 2.41, 2.34, 2.27, 2.2, 2.14, 2.07, 2.01, 1.96, 1.9, 1.85, 1.8, 1.75, 1.7, 1.65, 1.61, 1.56, 1.52, 1.48, 1.44, 1.41, 1.37, 1.34, 1.3, 1.27, 1.24, 1.21, 1.18, 1.15, 1.12, 1.09, 1.07, 1.04, 1.02, 1.0, 0.97, 0.95, 0.93, 0.91], BK = [68.54, 66.44, 64.32, 62.2, 60.07, 57.97, 55.88, 53.82, 51.8, 49.82, 47.89, 46.0, 44.17, 42.39, 40.67, 39.01, 37.41, 35.86, 34.38, 32.95, 31.58, 30.27, 29.01, 27.8, 26.65, 25.54, 24.49, 23.48, 22.52, 21.6, 20.72, 19.88, 19.08, 18.32, 17.59, 16.9, 16.24, 15.6, 15.0, 14.42, 13.87, 13.35, 12.85, 12.37, 11.91, 11.47, 11.05, 10.66, 10.27, 9.91, 9.56, 9.23, 8.91, 8.6, 8.31, 8.03, 7.76, 7.5, 7.25, 7.02, 6.79, 6.57, 6.36, 6.16, 5.97, 5.78, 5.6, 5.43, 5.27, 5.11, 4.96, 4.81, 4.67, 4.53, 4.4, 4.28, 4.16, 4.04, 3.93, 3.82, 3.71, 3.61, 3.51, 3.42, 3.33, 3.24, 3.16, 3.07, 2.99, 2.92, 2.84, 2.77, 2.7, 2.64, 2.57, 2.51, 2.45, 2.39, 2.33, 2.27, 2.22, 2.17, 2.12, 2.07, 2.02, 1.98, 1.93, 1.89, 1.85, 1.8, 1.76, 1.73, 1.69];
+  var X0 = 70, PX = (860 - 70) / 28, YB = 300, PY = (300 - 50) / 40;
+  Array.prototype.forEach.call(document.querySelectorAll('svg[data-curve]'), function(svg){
+    var xh = svg.querySelector('.hxh');
+    if (!xh) return;
+    var line = xh.querySelector('line'), dots = xh.querySelectorAll('circle');
+    var box = xh.querySelector('rect'), txts = xh.querySelectorAll('text');
+    svg.addEventListener('pointermove', function(ev){
+      var r = svg.getBoundingClientRect();
+      var xv = (ev.clientX - r.left) * 900 / r.width;
+      var z = (xv - X0) / PX + Z[0];
+      if (z < Z[0] || z > Z[Z.length - 1]) { xh.hidden = true; return; }
+      var i = Math.round((z - Z[0]) / 0.25); if (i < 0) i = 0; if (i >= Z.length) i = Z.length - 1;
+      var x = X0 + (Z[i] - Z[0]) * PX;
+      line.setAttribute('x1', x); line.setAttribute('x2', x);
+      dots[0].setAttribute('cx', x); dots[0].setAttribute('cy', YB - Math.min(BP[i], 40) * PY);
+      dots[1].setAttribute('cx', x); dots[1].setAttribute('cy', YB - Math.min(BK[i], 40) * PY);
+      var bx = x + 12; if (bx + 210 > 860) bx = x - 222;
+      var y = YB - Math.min(BK[i], 40) * PY;
+      if (y < 60) y = 60;
+      box.setAttribute('x', bx); box.setAttribute('y', y - 48);
+      txts[0].setAttribute('x', bx + 8); txts[0].setAttribute('y', y - 32);
+      txts[0].textContent = Z[i].toFixed(2).replace('.', ',') + ' mm : roi ' + BK[i].toFixed(1).replace('.', ',') + ' mT';
+      txts[1].setAttribute('x', bx + 8); txts[1].setAttribute('y', y - 16);
+      txts[1].textContent = 'pion ' + BP[i].toFixed(1).replace('.', ',') + ' mT';
+      xh.hidden = false;
+    });
+    svg.addEventListener('pointerleave', function(){ xh.hidden = true; });
+  });
+})();
+</script>
+</body>
+</html>

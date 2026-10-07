@@ -89,7 +89,8 @@ pas.
   note, schémas embarqués et lisibles hors du dépôt :
   [le facteur Q](pages/facteur-q.html),
   [le cerveau et le banc](pages/cerveau-banc.html),
-  [monter le banc](pages/tuto-banc.html). Elles sont générées par
+  [monter le banc](pages/tuto-banc.html), et la note 24 en trois
+  lectures, [Hall + RFID](pages/hall-rfid.html). Elles sont générées par
   `python -m docfig pages`, des mêmes fonctions et du même yaml que les
   notes, donc jamais désynchronisées d'elles.
 - **Modifier une carte** :
