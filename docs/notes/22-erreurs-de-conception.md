@@ -340,6 +340,14 @@ déduplication de vias du générateur générique dans `coilgen`, et
 vérifier les perçages en géométrie exacte comme les gardes de cuivre le
 sont déjà, plutôt que sur la grille du routeur.
 
+**Mise à jour du 07/10/2026.** La carte bobines est fermée sans porter
+la déduplication : ses vias superposés étaient tous ceux de la chaîne
+de LED, que le pilote simple coupe par le yaml (`leds.fitted: false`).
+Les seize défauts restants venaient de la bande de masse du connecteur
+sur ses propres pastilles ; corrigés, DRC zéro. La déduplication reste
+à porter le jour où la variante éclairée ou la carte moteurs repasse
+en fabrication.
+
 ## 13. Le build mesurait la garde avec une autre règle que KiCad
 
 **Le fait.** La carte analogique sortait du build annoncée « DRC

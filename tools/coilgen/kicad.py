@@ -155,15 +155,18 @@ class Board:
         x,
         y,
         pads: list[tuple[str, float, float, float, float, int, str]],
+        ref_at: tuple[float, float] = (0.0, -2.6),
     ) -> None:
         """One footprint with plated through-hole pads.
 
-        pads: (number, dx, dy, pad_d, drill_d, net_index, net_name).
+        pads: (number, dx, dy, pad_d, drill_d, net_index, net_name);
+        ref_at: where the reference prints, relative to the footprint.
         """
         lines = [
             f'  (footprint "coilgen:{value}" (layer "F.Cu") (at {_f(x)} {_f(y)})',
             "    (attr through_hole)",
-            f'    (fp_text reference "{ref}" (at 0 -2.6) (layer "F.SilkS")',
+            f'    (fp_text reference "{ref}" (at {_f(ref_at[0])} {_f(ref_at[1])})'
+            ' (layer "F.SilkS")',
             "      (effects (font (size 1 1) (thickness 0.15)))",
             "    )",
             f'    (fp_text value "{value}" (at 0 2.6) (layer "F.Fab")',

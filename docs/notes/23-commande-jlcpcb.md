@@ -134,8 +134,8 @@ Trois choix, à trancher explicitement :
 
 | Carte | État | Ce qui manque |
 |---|---|---|
-| `mockup-2x2/coil-board` | 251 violations bloquantes au DRC, 2 éléments non connectés | fermer le routage, dédupliquer les vias superposés ; carte retirée du plan (ADR 0010) |
-| `mockup-2x2/analog-board` | routage fermé, DRC zéro, archive à jour | rien techniquement, mais elle ne sert qu'avec la carte bobines ci dessus ; carte retirée du plan |
+| `mockup-2x2/coil-board` | fermée le 07/10/2026 en carte passive (LED coupées par le yaml) : DRC zéro, archive et empreinte commitées | rien : commandable nue, c'est la carte du [pilote simple](../bom-pilote.md) |
+| `mockup-2x2/analog-board` | routage fermé, DRC zéro, archive à jour | rien : commandable nue avec la carte bobines, c'est le shield soudé à la main du pilote simple |
 | `brain` | routage fermé le 20/09, DRC zéro, archive et empreinte commitées | rien pour des cartes nues ; codes LCSC à vérifier avant un assemblage |
 | `power` | 69 éléments non connectés (12 nets, dont `BAT-` entier, 15 morceaux) | idem |
 | `clock` | 51 éléments non connectés (11 nets, dont `VBUS`, 7 morceaux : pastilles USB-C inatteignables par le routeur) | idem |

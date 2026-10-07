@@ -141,11 +141,13 @@ def test_the_order_audit_clears_the_boards_whose_routing_is_closed():
     }
     # every archive in the repository matches its board
     assert [a.name for a in audits.values() if a.archive and a.digest != "ok"] == []
-    # the boards ordered as bare PCBs are clear, and say so
-    for name in ("quadrant-2x2", "bench", "brain"):
+    # the boards ordered as bare PCBs are clear, and say so (the coil
+    # board of the simple pilot is passive: nothing to assemble either)
+    for name in ("quadrant-2x2", "bench", "brain", "coil-board"):
         assert audits[name].ready_bare, name
+    assert audits["coil-board"].parts == 0
     # a board whose routing is open ships no archive at all
-    for name in ("quadrant", "power", "clock", "coil-board"):
+    for name in ("quadrant", "power", "clock"):
         assert audits[name].archive is None, name
     # and the assembly BOM of the ordered boards is known to be partial
     assert audits["quadrant-2x2"].assembled < audits["quadrant-2x2"].parts

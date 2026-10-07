@@ -9,7 +9,7 @@ imprimés par les builds de référence commités.
 | Livrable | État |
 |---|---|
 | Calculs `chessboard_calc`, yaml, ADR 0001 à 0009 | complets, épinglés par les tests |
-| Carte bobines (4 couches, spirales + 8 LED de camp) | générée, gardes vertes, gerbers commités |
+| Carte bobines (4 couches, spirales, passive : LED coupées par `leds.fitted`) | carte du pilote simple du 07/10/2026 : DRC KiCad zéro, gerbers et empreinte commités, [fiche du pilote](../bom-pilote.md) |
 | Carte analogique (chaîne complète + tampon LED) | générée : 499 pistes, 259 vias, DRC zéro, 12 raccords de finition posés |
 | Firmware Nucleo G474 | compile en CI, deux voies, calibration flash, pilote LED |
 | Mécanique CadQuery | pucks, gabarits de bobinage, support aimant, gabarit de perçage bois, STL/STEP exportés |

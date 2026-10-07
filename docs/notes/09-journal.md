@@ -434,6 +434,26 @@ quatre commandes.
   les cellules lointaines (un à deux jours, sans certitude), bande de
   24 mm, six couches, ou cellule allégée.
 
+## 07/10/2026, le pilote simple : la carte bobines passive
+
+- Demande : un pilote au minimum de composants, dans le palier
+  100 x 100, une seule carte à concevoir, le traitement sur un shield
+  soudé à la main à côté de la Nucleo. C'est la maquette de l'ADR 0008
+  sans ses LED : la carte bobines de `coilgen` redevient la carte à
+  commander.
+- Sans les LED, les 251 violations de la carte tombent à seize, toutes
+  dues à la bande de masse du connecteur qui passait sur ses pastilles.
+  Bande déplacée au bord, repère `J1` rentré, sérigraphie rognée :
+  DRC KiCad zéro, zéro liaison ouverte, gerbers et empreinte commités.
+  L'interrupteur est dans le yaml (`leds.fitted`), la variante éclairée
+  reste disponible et non vérifiée.
+- [Fiche du pilote](../bom-pilote.md) : 130 à 195 EUR TTC tout
+  compris avec la carte analogique existante soudée à la main (buck et
+  isolateur non montés), contre 220 à 283 pour le quadrant 2 x 2 avec
+  son frontal embarqué. Le modèle prédit 0,12 à 0,74 V crête sur la
+  spirale : la chaîne de gain de l'ADR 0008 saturerait, à mesurer à
+  l'oscilloscope avant de souder le shield.
+
 ## Où en est la ligne de temps
 
 Phase 0 faite ; la phase 1 (maquette) est conçue mais ne sera pas

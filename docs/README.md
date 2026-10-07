@@ -22,6 +22,10 @@ pas.
   comme référence de la chaîne analogique) : la
   [fiche d'approvisionnement](bom-maquette.md) et le
   [README de la carte analogique](../hardware/mockup-2x2/analog-board/README.md).
+- **Le pilote simple** (07/10/2026) : une carte bobines passive
+  100 x 100 et un shield soudé à la main, la
+  [fiche du pilote](bom-pilote.md) dit ce qu'il réunit, ses trois
+  options de shield et ce qu'il coûte.
 - **Comprendre la mesure** :
   [principe](notes/01-principe-de-mesure.md), ADR
   [0001](adr/0001-lc-resonators-for-piece-identification.md) et

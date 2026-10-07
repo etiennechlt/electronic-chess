@@ -2,7 +2,10 @@
 
 > Remplacée par l'ADR 0010 : la maquette n'est plus construite, le
 > plateau 8 x 8 est conçu directement en quadrants. Ce dossier reste
-> la référence de la chaîne analogique et du routage.
+> la référence de la chaîne analogique et du routage. Depuis le
+> 07/10/2026 sa carte bobines, rendue passive, est la carte du
+> **pilote simple** et la carte analogique son shield possible :
+> voir la [fiche du pilote](../../docs/bom-pilote.md).
 
 Deux cartes (ADR 0008) : la carte bobines (100 x 100, 4 couches,
 passive) et la carte analogique (100 x 62, 2 couches, assemblée). Le
@@ -41,11 +44,13 @@ visionneuse.
 
 ## 1. Commander
 
-### Carte bobines (~15 EUR les 5)
+### Carte bobines (8 à 15 EUR les 5, plus l'option cuivre interne)
 
-`sh hardware/mockup-2x2/coil-board/export.sh` produit
-`coil-board-gerbers.zip` (aussi commité). JLCPCB : 4 couches, 1,6 mm,
-1 oz, pas d'assemblage.
+`sh hardware/mockup-2x2/coil-board/export.sh` regénère la carte et
+produit `coil-board-gerbers.zip` (commité avec son empreinte). JLCPCB :
+4 couches, 1,6 mm, 1 oz externe, cuivre interne 1 oz en option (note 23,
+paragraphe 3.1), pas d'assemblage : la carte est passive, les LED sont
+coupées par `leds.fitted` dans le yaml.
 
 ### Carte analogique (~60 EUR les 5 dont 2 assemblées)
 

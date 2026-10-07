@@ -225,6 +225,8 @@ mockup:
     route_track_mm: 0.5          # coil-to-connector interconnect width
     leds:                        # camp indicator, ADR 0009
       part: WS2812B              # 5050, official KiCad symbol+footprint pair
+      fitted: false              # simple pilot: a passive board, spirals and joint only;
+                                 # true restores the lit variant described below
       per_square: 2              # two opposite corners (NW and SE)
       corner_inset_mm: 4.5       # LED center from both edges of its square
       light_hole_d_mm: 2.5       # light dots drilled in the wooden surface

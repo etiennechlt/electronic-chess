@@ -274,6 +274,7 @@ class JointCfg(_Model):
 
 class LedsCfg(_Model):
     part: str
+    fitted: bool  # False: a passive board, no LED placed (the simple pilot)
     per_square: int
     corner_inset_mm: float
     light_hole_d_mm: float

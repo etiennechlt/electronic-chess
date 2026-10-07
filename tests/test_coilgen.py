@@ -121,16 +121,21 @@ def test_serialized_board_is_balanced_and_complete(build):
     text = build.board.serialize()
     assert text.count("(") == text.count(")")
     assert text.count("(via ") == 12 + len(build.led_vias)
-    # joint + 4 mount + 4 magnet + 8 LED + 8 decoupling
-    assert text.count("(footprint ") == 1 + 4 + 4 + 16
+    # joint + 4 mount + 4 magnet, plus one LED and one decoupling each when fitted
+    assert text.count("(footprint ") == 1 + 4 + 4 + 2 * len(build.leds)
     assert "Edge.Cuts" in text and "F.SilkS" in text
     seg_count = text.count("(segment ")
     assert seg_count > 5000  # four coils, four layers of sampled spirals
 
 
 def test_led_subsystem(cfg, build):
-    """Eight chained LEDs at opposite corners, clear of the spirals."""
+    """Eight chained LEDs at opposite corners, clear of the spirals; none
+    at all, and no LED copper, when the yaml says the board is passive."""
     leds = cfg.mockup.coil_board.leds
+    if not leds.fitted:
+        assert build.leds == [] and build.led_tracks == [] and build.led_vias == []
+        assert not build.placements
+        return
     assert len(build.leds) == 4 * leds.per_square
     p = cfg.pitch.mockup_mm
     per_square: dict[str, list] = {}
@@ -198,6 +203,13 @@ def test_the_coil_board_carries_its_bills(cfg):
     placements = result.placements
     leds = sorted(r for r in placements if r.startswith("LD"))
     caps = sorted(r for r in placements if r.startswith("CL"))
+    if not cfg.mockup.coil_board.leds.fitted:
+        # a passive board: the bills carry their header and nothing else
+        assert not placements
+        assert bom_csv(cfg, placements).strip().count("\n") == 0
+        assert jlc_bom_csv(cfg, placements).strip().count("\n") == 0
+        assert jlc_cpl_csv(cfg, placements).strip().count("\n") == 0
+        return
     assert len(leds) == len(caps) == len(cfg.mockup.coil_board.leds.chain_squares)
 
     bom = bom_csv(cfg, placements)

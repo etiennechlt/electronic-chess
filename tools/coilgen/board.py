@@ -101,7 +101,7 @@ def build_coil_board(cfg: BoardConfig) -> BuildResult:
     via_drill = cfg.sense_coil.via_drill_mm
     via_pad = 2.0 * via_drill
 
-    board = Board(thickness_mm=cfg.gap.pcb_mm, title="Damier LC, maquette 2x2, carte bobines")
+    board = Board(thickness_mm=cfg.gap.pcb_mm, title="Damier LC, pilote 2x2, carte bobines")
     result = BuildResult(
         board=board,
         track_width_mm=width,
@@ -180,16 +180,21 @@ def build_coil_board(cfg: BoardConfig) -> BuildResult:
                 ],
             )
 
-    # GND strip linking the two shield pins above the pad row.
+    # GND strip linking the two shield pins above the pad row, kept clear
+    # of the pads in between (pad radius plus the clearance) and of the
+    # board edge (the edge clearance plus a tenth, so the rule never sits
+    # on an equality).
     gnd_pad_xs = [px for px, (n, _t) in zip(pad_xs, PAD_PLAN, strict=True) if n == "GND"]
+    strip_y = mock.edge_clearance_mm + route_w / 2.0 + 0.1
+    assert strip_y + route_w / 2.0 + mock.track_clearance_mm < pad_row_y - mock.joint.pad_d_mm / 2
     board.polyline(
         [
             (gnd_pad_xs[0], pad_row_y),
-            (gnd_pad_xs[0], 1.2),
-            (gnd_pad_xs[-1], 1.2),
+            (gnd_pad_xs[0], strip_y),
+            (gnd_pad_xs[-1], strip_y),
             (gnd_pad_xs[-1], pad_row_y),
         ],
-        1.0,
+        route_w,
         "F.Cu",
         gnd,
     )
@@ -209,9 +214,20 @@ def build_coil_board(cfg: BoardConfig) -> BuildResult:
                 net_name,
             )
         )
-    board.tht_pad_footprint("J1", f"COIL_JOINT_1x{joint.pins}", w_mm / 2.0, pad_row_y, pads)
+    # The reference sits west of the pad row, inside the board: above the
+    # row it would print on the edge.
+    span = (joint.pins - 1) * joint.pitch_mm
+    board.tht_pad_footprint(
+        "J1",
+        f"COIL_JOINT_1x{joint.pins}",
+        w_mm / 2.0,
+        pad_row_y,
+        pads,
+        ref_at=(-(span / 2.0 + 2.5), 0.0),
+    )
 
-    _place_leds(cfg, board, result, centers, pad_xs, r_out)
+    if mock.leds.fitted:
+        _place_leds(cfg, board, result, centers, pad_xs, r_out)
 
     # Mounting holes.
     inset = mock.mounting_hole_inset_mm
@@ -244,12 +260,21 @@ def build_coil_board(cfg: BoardConfig) -> BuildResult:
 
     # Board outline and silkscreen.
     board.gr_rect(0.0, 0.0, w_mm, h_mm, "Edge.Cuts")
-    board.gr_line(0.0, h_mm / 2.0, w_mm, h_mm / 2.0, "F.SilkS", 0.15)
-    board.gr_line(w_mm / 2.0, 8.0, w_mm / 2.0, h_mm, "F.SilkS", 0.15)
+    # Square lines stop short of the edge: the fabricator clips silk there.
+    silk_in = 1.0
+    board.gr_line(silk_in, h_mm / 2.0, w_mm - silk_in, h_mm / 2.0, "F.SilkS", 0.15)
+    board.gr_line(w_mm / 2.0, 8.0, w_mm / 2.0, h_mm - silk_in, "F.SilkS", 0.15)
     for name, (cx, cy) in centers.items():
         board.gr_text(name, cx, cy - 3.0, "F.SilkS", 2.0)
         board.gr_circle(cx, cy, 1.0, "F.SilkS", 0.15)
-    board.gr_text("DAMIER LC / MAQUETTE 2x2 / BOBINES p50", w_mm / 2.0, h_mm - 3.0, "F.SilkS", 1.5)
+    variant = "LED" if mock.leds.fitted else "PASSIVE"
+    board.gr_text(
+        f"DAMIER LC / PILOTE 2x2 / BOBINES p{pitch:.0f} {variant}",
+        w_mm / 2.0,
+        h_mm - 3.0,
+        "F.SilkS",
+        1.5,
+    )
     board.gr_text("AIMANT", mcx, mcy + 4.0, "F.SilkS", 1.5)
     board.gr_text("coilgen rev A", w_mm / 2.0, h_mm - 6.5, "B.SilkS", 1.2, mirror=True)
     return result
