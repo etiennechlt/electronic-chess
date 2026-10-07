@@ -45,6 +45,13 @@ pas.
   commise sur les cartes, ce qui l'a révélée, sa cause, sa correction
   et le contrôle automatique qui la rattrape désormais. À lire avant
   de toucher à un générateur ou de commander.
+- **Évaluer l'alternative Hall + RFID** (un capteur Hall par case, une
+  étiquette NFC par pièce) comme remplacement ou comme étape
+  intermédiaire avant la chaîne LC : la
+  [note 24](notes/24-hall-et-rfid.md), chiffres du champ de l'aimant de
+  pièce au capteur, seuils, courant, cadence, bilan NFC et verdict du
+  multiplexeur, avec le scanner Hall prototypé dans
+  [`firmware/esp32/hallscan`](../firmware/esp32/hallscan/README.md).
 - **Baisser le coût des cartes** : la [note 16](notes/16-cout-des-cartes.md),
   état de la réflexion sur le quadrant et le format 100 x 100, avec
   les décisions à prendre avant tout devis.
@@ -104,7 +111,7 @@ pas.
 | Chemin | Contenu |
 |---|---|
 | `config/board.yaml` | source unique de toutes les valeurs |
-| `chessboard_calc/` | calculs (fréquences, couloir, bobines, couplage, énergie) et CLI de rapport |
+| `chessboard_calc/` | calculs (fréquences, couloir, bobines, couplage, énergie, couche Hall et NFC de la note 24) et CLI de rapport |
 | `tools/coilgen/` | générateur complet de la carte bobines (spirales, LED, joint) |
 | `tools/analoggen/` | générateur complet de la carte analogique (schéma, PCB routé, BOM, SPICE) |
 | `tools/quadgen/` | générateur du quadrant 4 x 4 : spirales, échappées, LED, frontal complet (schéma, placement, routage) |
@@ -116,7 +123,7 @@ pas.
 | `hardware/bench/` | carte de banc, shield Nucleo-64 qui alimente et relie le quadrant 2 x 2 (note 19) |
 | `hardware/mockup-2x2/` | artefacts générés : KiCad, gerbers, BOM JLC, guides |
 | `firmware/board/` | firmware du cerveau (STM32G474, quatre quadrants, 128 LED) en CMSIS nu |
-| `firmware/esp32/` | pont radio du cerveau et horloge (ESP-IDF, NimBLE), logique d'horloge testée sur PC |
+| `firmware/esp32/` | pont radio du cerveau, horloge (ESP-IDF, NimBLE) et scanner Hall de la note 24 ; logique d'horloge et scanner testés sur PC |
 | `firmware/mockup/` | firmware de la maquette Nucleo, référence |
 | `mechanical/` | CadQuery : plateau 8 x 8 (module, bases, ailes), horloge, pucks, gabarits ; rendus et vue interactive |
 | `measurements/` | protocole M1 à M11, gabarits CSV, analyse |
@@ -153,6 +160,7 @@ pas.
 | [21](notes/21-routage-et-regles-de-l-art.md) | Le routage devant les règles du métier : conforme, écarts assumés, corrections |
 | [22](notes/22-erreurs-de-conception.md) | Erreurs de conception des cartes, et le contrôle qui empêche chacune de revenir |
 | [23](notes/23-commande-jlcpcb.md) | Commander chez JLCPCB : ce qui part, les options, ce qui manque pour l'assemblage |
+| [24](notes/24-hall-et-rfid.md) | Hall + RFID : évaluation comme alternative ou étape intermédiaire, scanner Hall prototypé |
 
 Décisions formelles : [index des ADR](adr/README.md). Conventions de
 contribution : `CLAUDE.md` à la racine (langue, typographie, source

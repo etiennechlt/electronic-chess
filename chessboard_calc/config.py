@@ -624,6 +624,143 @@ class ClockCfg(_Model):
     usb_c_slot_mm: tuple[float, float]
 
 
+class HallSensorCfg(_Model):
+    part: str
+    package: str
+    height_mm: float
+    supply_v: float
+    sensitivity_mv_per_mt: float
+    quiescent_out_v: float
+    out_range_v: tuple[float, float]
+    i_supply_ma: float
+    power_on_us: float
+    note: str
+
+    @model_validator(mode="after")
+    def _quiescent_inside_range(self) -> HallSensorCfg:
+        lo, hi = self.out_range_v
+        if not lo < self.quiescent_out_v < hi:
+            raise ValueError("quiescent output must sit inside the output range")
+        if self.sensitivity_mv_per_mt <= 0.0:
+            raise ValueError("sensitivity is the magnitude, positive")
+        return self
+
+
+class HallLayoutCfg(_Model):
+    die_height_mm: float
+    magnet_above_coil: bool
+    lift_detect_mm: float
+    tilt_budget_mm: float
+    neighbors_worst_case: int
+
+
+class HallPresenceCfg(_Model):
+    threshold_fraction: float
+    hysteresis_fraction: float
+    min_lift_margin: float
+    debounce_scans: int
+
+    @model_validator(mode="after")
+    def _fractions(self) -> HallPresenceCfg:
+        if not 0.0 < self.hysteresis_fraction < self.threshold_fraction < 1.0:
+            raise ValueError("need 0 < hysteresis < threshold < 1, as fractions")
+        return self
+
+
+class HallSizeCodingCfg(_Model):
+    thickness_extra_mm: dict[PieceType, float]
+
+    @field_validator("thickness_extra_mm")
+    @classmethod
+    def _non_negative(cls, v: dict[PieceType, float]) -> dict[PieceType, float]:
+        if any(extra < 0.0 for extra in v.values()):
+            raise ValueError("extra thickness is additive, never negative")
+        return v
+
+
+class HallMuxCfg(_Model):
+    part: str
+    channels: int
+    ron_ohm: float
+    c_off_pF: float
+    c_on_pF: float
+    t_settle_us: float
+
+
+class HallGatingCfg(_Model):
+    groups: int
+
+    @field_validator("groups")
+    @classmethod
+    def _positive(cls, v: int) -> int:
+        if v < 1:
+            raise ValueError("at least one supply group")
+        return v
+
+
+class HallEsp32Cfg(_Model):
+    module: str
+    adc_bits: int
+    adc_full_scale_mv: float
+    adc_noise_lsb_rms: float
+    adc_sample_us: float
+    samples_per_square: int
+    pins: dict[str, int]
+
+    @model_validator(mode="after")
+    def _pins_unique(self) -> HallEsp32Cfg:
+        gpios = list(self.pins.values())
+        if len(gpios) != len(set(gpios)):
+            raise ValueError("ESP32 GPIO used twice")
+        return self
+
+
+class NfcAntennaCfg(_Model):
+    side_ratio: float
+    turns: int
+    track_mm: float
+    gap_mm: float
+    q_target: float
+
+
+class NfcTagCfg(_Model):
+    part: str
+    d_out_mm: float
+    d_in_mm: float
+    turns: int
+    c_in_pF: float
+    height_in_base_mm: float
+
+
+class NfcCfg(_Model):
+    f_hz: float
+    h_min_a_per_m: float
+    antenna_current_ma_rms: float
+    antenna: NfcAntennaCfg
+    tag: NfcTagCfg
+    reader_candidates: tuple[str, ...]
+
+
+class HallRfidCfg(_Model):
+    """The Hall plus RFID alternative of note 24: numbers only, no verdict."""
+
+    sensors: tuple[HallSensorCfg, ...]
+    layout: HallLayoutCfg
+    presence: HallPresenceCfg
+    color_by_polarity: bool
+    size_coding: HallSizeCodingCfg
+    mux: HallMuxCfg
+    power_gating: HallGatingCfg
+    esp32: HallEsp32Cfg
+    nfc: NfcCfg
+
+    @model_validator(mode="after")
+    def _at_least_one_sensor(self) -> HallRfidCfg:
+        if not self.sensors:
+            raise ValueError("name at least one Hall sensor candidate")
+        return self
+
+
 class BoardConfig(_Model):
     schema_version: int
     pitch: PitchCfg
@@ -644,6 +781,7 @@ class BoardConfig(_Model):
     mockup: MockupCfg
     plateau: PlateauCfg
     clock: ClockCfg
+    hall_rfid: HallRfidCfg
 
 
 @dataclass(frozen=True)

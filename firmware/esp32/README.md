@@ -8,6 +8,7 @@ composant commun.
 | `common/` | analyseur de lignes du protocole (`proto.c`) et service Nordic UART sur NimBLE (`nus.c`), périphérique pour le pont, central pour l'horloge |
 | `bridge/` | pont du cerveau : relais UART (STM32, 115200 bauds à travers l'ADuM1201) vers BLE, et retour ; WiFi et client Lichess plus tard |
 | `clock/` | horloge à bascule : minuterie Fischer, Bronstein, simple ou libre, barre (deux microrupteurs), encodeur pour les presets, buzzer, écran ILI9341 2,4 pouces, liaison BLE au pont |
+| `hallscan/` | scanner Hall de la note 24 : 64 capteurs par quatre CD74HC4067 sur l'ADC, alimentation par rangées, ligne `B` d'occupation ; logique testée sur PC, en-tête généré du yaml ([README](hallscan/README.md)) |
 
 Le protocole est décrit dans `docs/notes/12-protocole.md`.
 
@@ -15,6 +16,8 @@ Le protocole est décrit dans `docs/notes/12-protocole.md`.
 
 - La logique de l'horloge (`clock/main/chessclock.c`) est testée sur
   PC : `cc -Iclock/main clock/test/test_chessclock.c clock/main/chessclock.c && ./a.out`.
+- Le scanner Hall (`hallscan/main/hallscan.c`) de même :
+  `cc -Ihallscan/main hallscan/test/test_hallscan.c hallscan/main/hallscan.c && ./a.out`.
   L'analyseur de lignes compile en C standard.
 - Les parties ESP-IDF (NimBLE, UART, LEDC, esp_lcd) sont écrites contre
   l'API d'ESP-IDF 5.2 mais **ne sont pas compilées par la CI** du dépôt
@@ -24,6 +27,7 @@ Le protocole est décrit dans `docs/notes/12-protocole.md`.
 . ~/esp/esp-idf/export.sh
 cd firmware/esp32/bridge && idf.py set-target esp32s3 && idf.py build flash monitor
 cd firmware/esp32/clock  && idf.py set-target esp32s3 && idf.py build flash monitor
+cd firmware/esp32/hallscan && idf.py set-target esp32s3 && idf.py build flash monitor
 ```
 
 ## Broches

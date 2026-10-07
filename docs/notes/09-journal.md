@@ -441,3 +441,24 @@ construite : le plateau 8 x 8 est engagé directement (ADR 0010), avec
 son module plateau, ses bases et son horloge modélisés. Suivent le
 générateur de quadrant, le cerveau, l'horloge, puis les mesures.
 Voir [l'état](07-etat-et-reste-a-faire.md).
+
+## 07/10/2026, l'alternative Hall + RFID évaluée
+
+- Un brief extérieur propose un capteur Hall par case (64 capteurs par
+  quatre CD74HC4067 sur l'ADC d'un ESP32) et une couche RFID pour
+  l'identité. Évaluation chiffrée dans la
+  [note 24](24-hall-et-rfid.md) : champ exact du disque de ferrite au
+  capteur (`chessboard_calc.hall`), présence robuste (pion à 21 mT à
+  l'entrefer maximal, roi soulevé de 15 mm à 3,8 mT, diaphonie
+  -24,7 dB), pas d'identité par l'amplitude avec les aimants du projet
+  (un seul groupe ; trois à six avec aimants codés), 147 mA en
+  continu ramenés à 37 mA par rangées, 1,7 ms par plateau. Côté NFC
+  (`chessboard_calc.nfc`), le bilan de liaison tient (3,2 fois le
+  minimum ISO) mais le mux analogique laisse un Q de 0,27 et détune de
+  12 % : l'ADR 0001 est confirmée par le calcul.
+- Verdict : pas une alternative au LC pour l'identité, mais la bonne
+  étape intermédiaire (nappe Hall deux couches, pièces inchangées) et
+  une couche de présence à garder. Prototype : section `hall_rfid` du
+  yaml, modules, rapport, tests, et le scanner `firmware/esp32/hallscan`
+  (logique testée en CI, en-tête généré du yaml). Les décisions restent
+  à prendre (section 7 de la note).
