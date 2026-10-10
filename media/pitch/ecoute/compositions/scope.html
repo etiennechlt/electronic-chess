@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        /* The thread of the film: an oscilloscope line under the image, which
+           rings when a piece is identified. Hidden where a scene draws its own. */
+        #scope-root {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+        }
+        .scope-band {
+          position: absolute;
+          left: 72px;
+          top: 1262px;
+          width: 888px;
+          height: 36px;
+        }
+        .scope-band svg {
+          width: 888px;
+          height: 36px;
+          overflow: visible;
+        }
+      </style>
+
+      <div id="scope-root" data-composition-id="scope" data-width="1080" data-height="1920">
+        <div id="scope-w1" class="clip scope-band" data-start="3.5" data-duration="4" data-track-index="1">
+          <svg viewBox="0 0 888 36" aria-hidden="true">
+            <line x1="0" y1="18" x2="888" y2="18" stroke="#8a97a3" stroke-width="2" opacity="0.55" />
+            <path id="scope-ping1" class="scope-ping" fill="none" stroke="#2ec4b6" stroke-width="3" />
+          </svg>
+        </div>
+        <div id="scope-w2" class="clip scope-band" data-start="11" data-duration="4" data-track-index="1">
+          <svg viewBox="0 0 888 36" aria-hidden="true">
+            <line x1="0" y1="18" x2="888" y2="18" stroke="#8a97a3" stroke-width="2" opacity="0.55" />
+          </svg>
+        </div>
+        <div id="scope-w3" class="clip scope-band" data-start="27.5" data-duration="15.5" data-track-index="1">
+          <svg viewBox="0 0 888 36" aria-hidden="true">
+            <line x1="0" y1="18" x2="888" y2="18" stroke="#8a97a3" stroke-width="2" opacity="0.55" />
+            <path id="scope-ping2" class="scope-ping" fill="none" stroke="#2ec4b6" stroke-width="3" />
+          </svg>
+        </div>
+        <div id="scope-w4" class="clip scope-band" data-start="46.5" data-duration="8.5" data-track-index="1">
+          <svg viewBox="0 0 888 36" aria-hidden="true">
+            <line x1="0" y1="18" x2="888" y2="18" stroke="#8a97a3" stroke-width="2" opacity="0.55" />
+          </svg>
+        </div>
+      </div>
+
+      <script>
+        (function () {
+          const root = document.getElementById("scope-root");
+          window.fillFacts(root);
+          const tl = gsap.timeline({ paused: true });
+          // each identification rings the line at the moment its note plays
+          [["#scope-ping1", 3.75], ["#scope-ping2", 36.4]].forEach(function (ping) {
+            const path = document.querySelector(ping[0]);
+            path.setAttribute("d", window.FILM.ringdownPath(300, 760, 18, 16, 14, 4));
+            const len = window.FILM.dashReady(path);
+            tl.fromTo(path, { strokeDashoffset: len, scaleY: 1, opacity: 1, svgOrigin: "444 18" }, { strokeDashoffset: 0, duration: 0.45, ease: "none" }, ping[1]);
+            tl.to(path, { scaleY: 0, duration: 1.4, ease: "power1.out", svgOrigin: "444 18" }, ping[1] + 0.45);
+          });
+          window.__timelines["scope"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

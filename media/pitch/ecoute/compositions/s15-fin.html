@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #s15 {
+          position: absolute;
+          inset: 0;
+          background: var(--bois);
+          overflow: hidden;
+        }
+        #s15-title {
+          position: absolute;
+          left: 72px;
+          top: 330px;
+          width: 888px;
+        }
+        .s15-line {
+          display: block;
+          font-size: 112px;
+          color: var(--encre);
+        }
+        #s15-close {
+          position: absolute;
+          left: 72px;
+          top: 720px;
+          width: 888px;
+          height: 200px;
+          overflow: visible;
+        }
+        #s15-status {
+          position: absolute;
+          left: 72px;
+          top: 1000px;
+          width: 888px;
+          font-size: 54px;
+          line-height: 1.25;
+          color: var(--encre);
+        }
+        .s15-status-line {
+          display: block;
+          margin: 0;
+        }
+        #s15-url {
+          position: absolute;
+          left: 72px;
+          top: 1180px;
+          width: 888px;
+          font-size: 31px;
+          color: rgba(20, 20, 20, 0.72);
+        }
+      </style>
+
+      <div id="s15" data-composition-id="s15-fin" data-width="1080" data-height="1920">
+        <div id="s15-title">
+          <p class="kw s15-line">L'échiquier</p>
+          <p class="kw s15-line">qui écoute</p>
+          <p class="kw s15-line">ses pièces</p>
+        </div>
+        <svg id="s15-close" viewBox="0 0 888 200" aria-hidden="true">
+          <path id="s15-wave" fill="none" stroke="#b87333" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <div id="s15-status" class="sans">
+          <p class="s15-status-line">Conception ouverte.</p>
+          <p class="s15-status-line">Phase 1 en fabrication.</p>
+        </div>
+        <p id="s15-url" class="mono">github.com/etiennechlt/electronic-chess</p>
+      </div>
+
+      <script>
+        (function () {
+          const root = document.getElementById("s15");
+          window.fillFacts(root);
+          const wave = document.getElementById("s15-wave");
+          // amplitude is tweened, not scaleY: a squashed stroke would vanish instead of lying flat
+          const ring = { amp: 1 };
+          const draw = function () {
+            wave.setAttribute("d", window.FILM.ringdownPath(8, 880, 100, 84 * ring.amp, 14, 1.4, 1200));
+          };
+          draw();
+          const len = window.FILM.dashReady(wave);
+          const tl = gsap.timeline({ paused: true });
+          gsap.utils.toArray(".s15-line").forEach(function (line, i) {
+            tl.fromTo(line, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 0.05 + i * 0.08);
+          });
+          // the closing ringdown: the scale rings (from 0.2 s) and the line settles flat
+          tl.fromTo(wave, { strokeDashoffset: len }, { strokeDashoffset: 0, duration: 0.6, ease: "power1.out" }, 0.2);
+          tl.fromTo(ring, { amp: 1 }, { amp: 0, duration: 3.4, ease: "power1.out", onUpdate: draw }, 0.9);
+          gsap.utils.toArray(".s15-status-line").forEach(function (line, i) {
+            tl.fromTo(line, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, 1.4 + i * 0.35);
+          });
+          tl.fromTo("#s15-url", { opacity: 0 }, { opacity: 1, duration: 0.4 }, 2.3);
+          window.__timelines["s15-fin"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

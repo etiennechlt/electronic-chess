@@ -1,0 +1,47 @@
+/* Shared look of the film, from the series bible (docs/serie/README.md):
+   wood, ink, copper, the two camp colours and cyan for anything measured. */
+@font-face {
+  font-family: "Archivo";
+  src: url("fonts/Archivo-latin.woff2") format("woff2");
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  font-display: block;
+}
+
+:root {
+  --bois: #d9b98c;
+  --bois-fonce: #6b4321;
+  --encre: #141414;
+  --cuivre: #b87333;
+  --blanc: #f4efe6;
+  --ambre: #ffb347;
+  --cyan: #2ec4b6;
+  --nuit: #101418; /* background of the CAD renders */
+  --panneau: #16222e;
+  --gris: #8a97a3;
+}
+
+/* keyword: one per shot, heavy wide grotesque, capitals, tight */
+.kw {
+  font-family: "Archivo", sans-serif;
+  font-weight: 900;
+  font-stretch: 100%;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+  color: var(--blanc);
+  margin: 0;
+}
+
+/* sentences: the same grotesque, bold */
+.sans {
+  font-family: "Archivo", sans-serif;
+  font-weight: 700;
+}
+
+/* everything measured or counted is set in mono */
+.mono {
+  font-family: "IBM Plex Mono", monospace;
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}

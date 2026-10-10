@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        /* Caption style of the series bible: bold grotesque, white with a black
+           outline, two lines at most, between 1300 and 1550 px, never lower.
+           These lines are also the voice-over script for a later dubbed cut. */
+        #captions-root {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+        }
+        .cap {
+          position: absolute;
+          left: 72px;
+          top: 1318px;
+          width: 888px;
+          display: flex;
+          justify-content: center;
+        }
+        .cap p {
+          margin: 0;
+          max-width: 860px;
+          text-align: center;
+          font-size: 60px;
+          line-height: 1.16;
+          color: #ffffff;
+          text-shadow:
+            -4px -4px 0 #000, 0 -4px 0 #000, 4px -4px 0 #000, 4px 0 0 #000,
+            4px 4px 0 #000, 0 4px 0 #000, -4px 4px 0 #000, -4px 0 0 #000;
+        }
+      </style>
+
+      <div id="captions-root" data-composition-id="captions" data-width="1080" data-height="1920">
+        <div id="cap-01" class="clip cap" data-start="0.3" data-duration="3.2" data-track-index="1"><p class="sans">Une pièce d'échecs.</p></div>
+        <div id="cap-02" class="clip cap" data-start="3.8" data-duration="3.7" data-track-index="1"><p class="sans">Et pourtant, le plateau sait laquelle.</p></div>
+        <div id="cap-04" class="clip cap" data-start="11.3" data-duration="3.7" data-track-index="1"><p class="sans">Dedans, une bobine et un condensateur.</p></div>
+        <div id="cap-05" class="clip cap" data-start="15.3" data-duration="3.7" data-track-index="1"><p class="sans">Le plateau frappe. La pièce sonne.</p></div>
+        <div id="cap-06" class="clip cap" data-start="19.3" data-duration="4.7" data-track-index="1"><p class="sans"><span data-fact="lines_count"></span> pièces, <span data-fact="lines_count"></span> notes, de <span data-fact="band_low_khz"></span> à <span data-fact="band_high_khz"></span> kHz.</p></div>
+        <div id="cap-07" class="clip cap" data-start="24.3" data-duration="3.2" data-track-index="1"><p class="sans">Une FFT, et la pièce est reconnue.</p></div>
+        <div id="cap-08" class="clip cap" data-start="27.8" data-duration="3.2" data-track-index="1"><p class="sans">Un plateau fin, sur batterie, sans câble.</p></div>
+        <div id="cap-09" class="clip cap" data-start="31.3" data-duration="4.2" data-track-index="1"><p class="sans">Sous le bois, <span data-fact="coils"></span> spirales et <span data-fact="leds"></span> LED.</p></div>
+        <div id="cap-10" class="clip cap" data-start="35.8" data-duration="3.7" data-track-index="1"><p class="sans">Il vérifie chaque coup, même les plus rares.</p></div>
+        <div id="cap-11" class="clip cap" data-start="39.8" data-duration="3.2" data-track-index="1"><p class="sans">Contre un moteur ou en ligne, horloge comprise.</p></div>
+        <div id="cap-13" class="clip cap" data-start="46.8" data-duration="3.2" data-track-index="1"><p class="sans">Une base qui déplace les pièces toute seule.</p></div>
+        <div id="cap-14" class="clip cap" data-start="50.3" data-duration="4.7" data-track-index="1"><p class="sans">Tout part d'un seul fichier.</p></div>
+      </div>
+
+      <script>
+        (function () {
+          const root = document.getElementById("captions-root");
+          window.fillFacts(root);
+          const tl = gsap.timeline({ paused: true });
+          // a simple pop as each line lands, nothing more
+          gsap.utils.toArray("#captions-root .cap").forEach(function (cap) {
+            const at = parseFloat(cap.getAttribute("data-start"));
+            tl.fromTo(cap.firstElementChild, { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, duration: 0.14, ease: "power2.out" }, at);
+          });
+          window.__timelines["captions"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

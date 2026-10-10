@@ -61,6 +61,30 @@ seule action de moins de deux minutes. Il ne s'active que sur demande
 les comptes rendus de commande et de mise au point, où la réponse
 brute noie l'action à faire. Licence MIT, voir `VENDORED.md`.
 
+## Ce qui vient de HyperFrames (commit bb9e507)
+
+HyperFrames rend une vidéo à partir de pages HTML animées : chaque
+plan est une composition dont le temps est déclaré par des attributs
+`data-*` et dont l'animation se cale image par image. Les skills
+servent aux films du projet (`media/pitch/`) et à la série
+([docs/serie](../serie/README.md)), pas à un lot de la note 07.
+
+| Skill | Sert à |
+|---|---|
+| `hyperframes` | point d'entrée : reprend l'état d'un projet, cadre le brief, choisit le flux |
+| `general-video` | flux de création des films sur mesure, du plan au rendu |
+| `hyperframes-core`, `hyperframes-studio` | contrat des compositions (attributs, pistes, sous-compositions, déterminisme) et rangement de la timeline |
+| `hyperframes-animation`, `hyperframes-keyframes` | mouvements calés sur le temps (GSAP), tracés SVG, recadrages |
+| `hyperframes-creative` | direction artistique, typographie, storyboard |
+| `hyperframes-cli` | `lint`, `check`, `snapshot`, `preview`, `render` |
+| `hyperframes-audio`, `media-use` | mixage des pistes placées, et sourcing ou génération des médias (voix, musique) |
+| `hyperframes-registry` | blocs et composants prêts à l'emploi du catalogue HyperFrames |
+
+Prérequis hors dépôt : Node 22 ou plus, FFmpeg, la CLI
+(`npm install -g hyperframes`) et un Chrome sans interface ; dans un
+environnement distant, `PRODUCER_HEADLESS_SHELL_PATH` pointe sur le
+Chromium déjà installé plutôt que d'en télécharger un.
+
 ## Limites à connaître
 
 - Les skills d'approvisionnement et de fiches techniques ont besoin du

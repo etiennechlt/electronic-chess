@@ -84,12 +84,13 @@ de la zone d'interface (au-dessus des 250 px du bas).
   ramenées mille fois plus bas (217 à 613 Hz), jouées en ringdown
   (attaque instantanée, décroissance exponentielle de 0,4 s), montante
   à l'ouverture, une seule note à chaque identification de pièce.
-  Proposition d'outil, à valider avant de l'écrire : un script
-  `tools/serie/signature.py` qui lit les fréquences par
-  `chessboard_calc` et écrit un `.wav` par note plus la gamme
-  complète, paramétré sur le pas de case comme tout le reste. Tant
-  qu'il n'existe pas, un synthétiseur gratuit (Vital, Surge) fait
-  l'affaire avec une sinusoïde et une enveloppe courte.
+  L'outil existe : `python -m serie signature DOSSIER` lit les
+  fréquences par `chessboard_calc` et écrit un `.wav` par note
+  (`pawn-black.wav`...) plus la gamme montante (`gamme.wav`). Ses
+  réglages (rapport de transposition, décroissance, harmoniques qui
+  font passer les notes graves sur un haut-parleur de téléphone,
+  pas de la gamme) sont dans la section `serie` de
+  `config/board.yaml`. Les films de `media/pitch/` l'utilisent.
 - **Sons de geste** : clic de relais, bip de terminal, cutter,
   perceuse : garder les sons réels des rushes plutôt que des banques.
   Ils sont plus crédibles.

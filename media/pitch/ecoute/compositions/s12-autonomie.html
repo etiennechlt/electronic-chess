@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        /* "le chiffre", the series' number card: mono, black ground, copper figure */
+        #s12 {
+          position: absolute;
+          inset: 0;
+          background: var(--encre);
+          overflow: hidden;
+        }
+        #s12-eyebrow {
+          position: absolute;
+          left: 72px;
+          top: 420px;
+          width: 888px;
+          text-align: center;
+          font-size: 30px;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          color: var(--gris);
+        }
+        #s12-figure {
+          position: absolute;
+          left: 72px;
+          top: 560px;
+          width: 888px;
+          display: flex;
+          justify-content: center;
+          align-items: baseline;
+          gap: 20px;
+          color: var(--cuivre);
+        }
+        #s12-count {
+          display: inline-block;
+          width: 520px;
+          text-align: right;
+          font-size: 400px;
+          line-height: 1;
+          font-weight: 500;
+        }
+        #s12-unit {
+          width: 300px;
+          font-size: 170px;
+          font-weight: 500;
+        }
+        #s12-sentence {
+          position: absolute;
+          left: 72px;
+          top: 1060px;
+          width: 888px;
+          text-align: center;
+          font-size: 58px;
+          line-height: 1.15;
+          color: var(--blanc);
+          margin: 0;
+        }
+        #s12-engine {
+          position: absolute;
+          left: 72px;
+          top: 1220px;
+          width: 888px;
+          text-align: center;
+          font-size: 42px;
+          color: var(--gris);
+        }
+      </style>
+
+      <div id="s12" data-composition-id="s12-autonomie" data-width="1080" data-height="1920">
+        <p id="s12-eyebrow" class="mono">Le chiffre</p>
+        <div id="s12-figure" class="mono">
+          <span id="s12-count">0</span><span id="s12-unit">h</span>
+        </div>
+        <p id="s12-sentence" class="sans">d'autonomie, humain contre humain</p>
+        <p id="s12-engine" class="mono"><span data-fact="autonomy_engine_h"></span> h contre le moteur</p>
+      </div>
+
+      <script>
+        (function () {
+          const root = document.getElementById("s12");
+          window.fillFacts(root);
+          const target = parseInt(window.FACTS.autonomy_human_h.replace(/\D/g, ""), 10);
+          const counter = document.getElementById("s12-count");
+          const state = { value: 0 };
+          const tl = gsap.timeline({ paused: true });
+          tl.fromTo("#s12-eyebrow", { opacity: 0 }, { opacity: 1, duration: 0.25 }, 0.05);
+          // count up for a second, then nothing moves: the held frame of the film
+          tl.fromTo(state, { value: 0 }, {
+            value: target,
+            duration: 1.0,
+            ease: "power2.out",
+            onUpdate: function () {
+              counter.textContent = String(Math.round(state.value));
+            },
+          }, 0.2);
+          tl.fromTo("#s12-count", { scale: 0.8, transformOrigin: "100% 80%" }, { scale: 1, duration: 1.0, ease: "power2.out", transformOrigin: "100% 80%" }, 0.2);
+          tl.fromTo("#s12-sentence", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, 0.45);
+          tl.fromTo("#s12-engine", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 1.25);
+          window.__timelines["s12-autonomie"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

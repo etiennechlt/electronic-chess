@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>L'échiquier qui écoute ses pièces</title>
+    <!-- GSAP from the local npm install (npm install): renders never fetch the network -->
+    <script src="node_modules/gsap/dist/gsap.min.js"></script>
+    <!-- facts.js is written by `python -m serie film media/pitch/ecoute` -->
+    <script src="assets/facts.js"></script>
+    <script src="film.js"></script>
+    <link rel="stylesheet" href="film.css" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #101418;
+      }
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      [data-composition-id="pitch"] > div[data-composition-src] {
+        position: absolute;
+        inset: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="pitch"
+      data-start="0"
+      data-duration="60"
+      data-width="1080"
+      data-height="1920"
+    >
+      <!-- Act 1, the mystery -->
+      <div id="el-s01" data-composition-id="s01-piece" data-composition-src="compositions/s01-piece.html" data-start="0" data-duration="3.5" data-track-index="1"></div>
+      <div id="el-s02" data-composition-id="s02-pose" data-composition-src="compositions/s02-pose.html" data-start="3.5" data-duration="4" data-track-index="1"></div>
+      <div id="el-s03" data-composition-id="s03-titre" data-composition-src="compositions/s03-titre.html" data-start="7.5" data-duration="3.5" data-track-index="1"></div>
+      <!-- Act 2, the principle -->
+      <div id="el-s04" data-composition-id="s04-dans-la-piece" data-composition-src="compositions/s04-dans-la-piece.html" data-start="11" data-duration="4" data-track-index="1"></div>
+      <div id="el-s05" data-composition-id="s05-frappe" data-composition-src="compositions/s05-frappe.html" data-start="15" data-duration="4" data-track-index="1"></div>
+      <div id="el-s06" data-composition-id="s06-douze-notes" data-composition-src="compositions/s06-douze-notes.html" data-start="19" data-duration="5" data-track-index="1"></div>
+      <div id="el-s07" data-composition-id="s07-identifiee" data-composition-src="compositions/s07-identifiee.html" data-start="24" data-duration="3.5" data-track-index="1"></div>
+      <!-- Act 3, the object -->
+      <div id="el-s08" data-composition-id="s08-plateau" data-composition-src="compositions/s08-plateau.html" data-start="27.5" data-duration="3.5" data-track-index="1"></div>
+      <div id="el-s09" data-composition-id="s09-eclate" data-composition-src="compositions/s09-eclate.html" data-start="31" data-duration="4.5" data-track-index="1"></div>
+      <div id="el-s10" data-composition-id="s10-arbitre" data-composition-src="compositions/s10-arbitre.html" data-start="35.5" data-duration="4" data-track-index="1"></div>
+      <div id="el-s11" data-composition-id="s11-horloge" data-composition-src="compositions/s11-horloge.html" data-start="39.5" data-duration="3.5" data-track-index="1"></div>
+      <div id="el-s12" data-composition-id="s12-autonomie" data-composition-src="compositions/s12-autonomie.html" data-start="43" data-duration="3.5" data-track-index="1"></div>
+      <div id="el-s13" data-composition-id="s13-chariot" data-composition-src="compositions/s13-chariot.html" data-start="46.5" data-duration="3.5" data-track-index="1"></div>
+      <!-- Act 4, the proof -->
+      <div id="el-s14" data-composition-id="s14-un-fichier" data-composition-src="compositions/s14-un-fichier.html" data-start="50" data-duration="5" data-track-index="1"></div>
+      <div id="el-s15" data-composition-id="s15-fin" data-composition-src="compositions/s15-fin.html" data-start="55" data-duration="5" data-track-index="1"></div>
+
+      <!-- The thread: the oscilloscope line, then the captions above everything -->
+      <div id="el-scope" data-composition-id="scope" data-composition-src="compositions/scope.html" data-start="0" data-duration="60" data-track-index="2"></div>
+      <div id="el-captions" data-track-kind="captions" data-composition-id="captions" data-composition-src="compositions/captions.html" data-start="0" data-duration="60" data-track-index="3"></div>
+
+      <!-- Signature sound (python -m serie): each identified piece plays its note -->
+      <audio id="snd-pose" src="assets/sons/pawn-black.wav" data-start="3.75" data-duration="2.5" data-track-index="10" data-volume="0.6"></audio>
+      <audio id="snd-frappe" src="assets/sons/pawn-black.wav" data-start="15.3" data-duration="2.5" data-track-index="10" data-volume="0.6"></audio>
+      <audio id="snd-gamme" src="assets/sons/gamme.wav" data-start="19.5" data-duration="5.8" data-track-index="11" data-volume="0.55"></audio>
+      <audio id="snd-dame" src="assets/sons/queen-white.wav" data-start="25.35" data-duration="2.5" data-track-index="10" data-volume="0.6"></audio>
+      <audio id="snd-coup" src="assets/sons/pawn-white.wav" data-start="36.4" data-duration="2.5" data-track-index="10" data-volume="0.6"></audio>
+      <audio id="snd-fin" src="assets/sons/gamme.wav" data-start="55.2" data-duration="4.8" data-track-index="11" data-volume="0.55"></audio>
+    </div>
+    <script>
+      window.__timelines["pitch"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

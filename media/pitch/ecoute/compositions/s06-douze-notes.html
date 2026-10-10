@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #s06 {
+          position: absolute;
+          inset: 0;
+          background: var(--nuit);
+          overflow: hidden;
+        }
+        #s06-kw {
+          position: absolute;
+          left: 72px;
+          top: 230px;
+          width: 888px;
+          display: flex;
+          align-items: baseline;
+          gap: 28px;
+        }
+        #s06-count {
+          font-size: 190px;
+          line-height: 1;
+          color: var(--cuivre);
+          font-weight: 500;
+        }
+        #s06-word {
+          font-size: 130px;
+        }
+        #s06-axis {
+          position: absolute;
+          left: 72px;
+          top: 440px;
+          width: 888px;
+          height: 840px;
+          overflow: visible;
+        }
+        #s06-axis text {
+          dominant-baseline: middle;
+        }
+        .s06-name {
+          font-weight: 600;
+          font-size: 30px;
+        }
+        .s06-khz {
+          font-family: "IBM Plex Mono", monospace;
+          font-size: 27px;
+          fill: #8a97a3;
+        }
+      </style>
+
+      <div id="s06" data-composition-id="s06-douze-notes" data-width="1080" data-height="1920">
+        <div id="s06-kw">
+          <span id="s06-count" class="mono" data-fact="lines_count"></span>
+          <span id="s06-word" class="kw">notes</span>
+        </div>
+        <svg id="s06-axis" viewBox="0 0 888 840" aria-hidden="true">
+          <line x1="280" y1="10" x2="280" y2="830" stroke="#8a97a3" stroke-width="2" opacity="0.4" />
+        </svg>
+      </div>
+
+      <script>
+        (function () {
+          const root = document.getElementById("s06");
+          window.fillFacts(root);
+          const F = window.FACTS;
+          const svg = document.getElementById("s06-axis");
+          const NS = "http://www.w3.org/2000/svg";
+          const color = { black: "#ffb347", white: "#f4efe6" };
+          const rows = F.lines.map(function (line, i) {
+            const y = window.FILM.freqY(line.khz);
+            const g = document.createElementNS(NS, "g");
+            g.setAttribute("id", "s06-row-" + i);
+            const bar = document.createElementNS(NS, "rect");
+            bar.setAttribute("x", 296);
+            bar.setAttribute("y", y - 9);
+            bar.setAttribute("width", 320);
+            bar.setAttribute("height", 18);
+            bar.setAttribute("rx", 3);
+            bar.setAttribute("fill", color[line.color]);
+            const name = document.createElementNS(NS, "text");
+            name.setAttribute("class", "sans s06-name");
+            name.setAttribute("x", 262);
+            name.setAttribute("y", y);
+            name.setAttribute("text-anchor", "end");
+            name.setAttribute("fill", color[line.color]);
+            name.textContent = line.name;
+            const khz = document.createElementNS(NS, "text");
+            khz.setAttribute("class", "s06-khz");
+            khz.setAttribute("x", 636);
+            khz.setAttribute("y", y);
+            khz.textContent = line.label;
+            g.append(bar, name, khz);
+            svg.appendChild(g);
+            return { bar: bar, labels: [name, khz], y: y };
+          });
+
+          const tl = gsap.timeline({ paused: true });
+          tl.fromTo("#s06-kw", { opacity: 0, scale: 1.12 }, { opacity: 1, scale: 1, duration: 0.16, ease: "power2.out" }, 0.05);
+          // one bar per note, lowest first, on the beat of the scale (it starts at 0.5 s)
+          rows.forEach(function (row, i) {
+            const at = 0.5 + i * F.scale_step_s;
+            tl.fromTo(row.bar, { scaleX: 0, svgOrigin: "296 " + row.y }, { scaleX: 1, duration: 0.2, ease: "power2.out", svgOrigin: "296 " + row.y }, at);
+            tl.fromTo(row.labels, { opacity: 0 }, { opacity: 1, duration: 0.15 }, at);
+          });
+          window.__timelines["s06-douze-notes"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

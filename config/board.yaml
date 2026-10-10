@@ -426,3 +426,12 @@ clock:                         # separate rocker chess clock, BLE to the board (
   encoder: { knob_d_mm: 14.0, x_mm: 104.0, up_slope_mm: 12.0 }
   buzzer_grille: { holes: [3, 3], pitch_mm: 5.0, hole_d_mm: 2.0, origin_mm: [12.0, 8.0] }
   usb_c_slot_mm: [9.2, 3.6]
+
+serie:                         # the twelve resonator lines made audible, for the films (docs/serie)
+  transpose_ratio: 1000        # 216.6 to 612.6 kHz heard as 216.6 to 612.6 Hz
+  decay_s: 0.4                 # exponential ringdown of every note, instant attack
+  attack_ms: 2.0               # ramp that keeps the instant attack from clicking
+  harmonics: [1.0, 0.30, 0.12] # f, 2f, 3f: a phone speaker barely carries 217 Hz alone
+  note_s: 2.5                  # rendered length of one note
+  scale_step_s: 0.3            # spacing of the ascending scale of the twelve notes
+  sample_rate_hz: 48000

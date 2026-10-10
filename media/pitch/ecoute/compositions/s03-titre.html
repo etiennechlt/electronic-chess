@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #s03 {
+          position: absolute;
+          inset: 0;
+          background: var(--bois);
+          overflow: hidden;
+        }
+        #s03-eyebrow {
+          position: absolute;
+          left: 72px;
+          top: 560px;
+          width: 888px;
+          font-size: 30px;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: rgba(20, 20, 20, 0.62);
+        }
+        #s03-title {
+          position: absolute;
+          left: 72px;
+          top: 630px;
+          width: 888px;
+        }
+        .s03-line {
+          display: block;
+          font-size: 112px;
+          color: var(--encre);
+        }
+        #s03-underline {
+          position: absolute;
+          left: 72px;
+          top: 1000px;
+          width: 700px;
+          height: 140px;
+          overflow: visible;
+        }
+      </style>
+
+      <div id="s03" data-composition-id="s03-titre" data-width="1080" data-height="1920">
+        <p id="s03-eyebrow" class="mono">Échiquier électronique à détection LC</p>
+        <div id="s03-title">
+          <p class="kw s03-line">L'échiquier</p>
+          <p class="kw s03-line">qui écoute</p>
+          <p class="kw s03-line">ses pièces</p>
+        </div>
+        <svg id="s03-underline" viewBox="0 0 700 140" aria-hidden="true">
+          <path id="s03-wave" fill="none" stroke="#b87333" stroke-width="16" stroke-linecap="round" />
+        </svg>
+      </div>
+
+      <script>
+        (function () {
+          const root = document.getElementById("s03");
+          window.fillFacts(root);
+          // the oscilloscope line arrives ringing and settles into the copper underline
+          // amplitude is tweened, not scaleY: a squashed stroke would vanish instead of lying flat
+          const wave = document.getElementById("s03-wave");
+          const ring = { amp: 1 };
+          const draw = function () {
+            wave.setAttribute("d", window.FILM.ringdownPath(8, 692, 70, 52 * ring.amp, 9, 2.2));
+          };
+          draw();
+          const tl = gsap.timeline({ paused: true });
+          gsap.utils.toArray(".s03-line").forEach(function (line, i) {
+            tl.fromTo(line, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 0.05 + i * 0.08);
+          });
+          tl.fromTo("#s03-eyebrow", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 0.35);
+          tl.fromTo(ring, { amp: 1 }, { amp: 0, duration: 0.8, ease: "power2.out", onUpdate: draw }, 0.25);
+          window.__timelines["s03-titre"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

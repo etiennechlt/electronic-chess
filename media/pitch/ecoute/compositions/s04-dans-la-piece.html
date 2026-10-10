@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #s04 {
+          position: absolute;
+          inset: 0;
+          background: var(--nuit);
+          overflow: hidden;
+        }
+        #s04-kw {
+          position: absolute;
+          left: 72px;
+          top: 262px;
+          width: 888px;
+          font-size: 100px;
+        }
+        /* the exploded render of docs/images/piece-exploded.png, cut into its
+           four layers so they can come apart: crop x 300, y 30, scale 0.754 */
+        #s04-piece {
+          position: absolute;
+          left: 470px;
+          top: 390px;
+          width: 452px;
+          height: 860px;
+        }
+        .s04-layer {
+          position: absolute;
+          left: 0;
+          width: 452px;
+          overflow: hidden;
+        }
+        .s04-layer {
+          background-image: url("assets/rendus/piece-exploded.png");
+          background-size: 905px 905px;
+          background-repeat: no-repeat;
+        }
+        #s04-felt { top: 720px; height: 136px; background-position: -226px -743px; }
+        #s04-coil { top: 562px; height: 132px; background-position: -226px -584px; }
+        #s04-magnet { top: 381px; height: 158px; background-position: -226px -403px; }
+        #s04-cap { top: 7px; height: 344px; background-position: -226px -30px; }
+        .s04-label {
+          position: absolute;
+          right: 620px;
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          font-size: 34px;
+          color: var(--blanc);
+          white-space: nowrap;
+        }
+        .s04-label i {
+          display: block;
+          width: 40px;
+          height: 2px;
+          background: var(--gris);
+        }
+        .s04-label small {
+          display: block;
+          font-size: 26px;
+          color: var(--gris);
+        }
+        #s04-l-cap { top: 548px; }
+        #s04-l-magnet { top: 829px; }
+        #s04-l-coil { top: 980px; align-items: flex-start; color: var(--cuivre); }
+        #s04-l-coil i { margin-top: 20px; background: var(--cuivre); }
+        #s04-l-felt { top: 1157px; }
+      </style>
+
+      <div id="s04" data-composition-id="s04-dans-la-piece" data-width="1080" data-height="1920">
+        <p id="s04-kw" class="kw">Rien d'actif</p>
+        <div id="s04-piece">
+          <div id="s04-felt" class="s04-layer"></div>
+          <div id="s04-coil" class="s04-layer"></div>
+          <div id="s04-magnet" class="s04-layer"></div>
+          <div id="s04-cap" class="s04-layer"></div>
+        </div>
+        <p id="s04-l-cap" class="mono s04-label">coque<i></i></p>
+        <p id="s04-l-magnet" class="mono s04-label">aimant ferrite<i></i></p>
+        <p id="s04-l-coil" class="mono s04-label">
+          <span>bobine <span data-fact="coil_uh"></span> µH<small>condensateur C0G <span data-fact="cap_tol"></span></small></span><i></i>
+        </p>
+        <p id="s04-l-felt" class="mono s04-label">feutre<i></i></p>
+      </div>
+
+      <script>
+        (function () {
+          const root = document.getElementById("s04");
+          window.fillFacts(root);
+          const tl = gsap.timeline({ paused: true });
+          tl.fromTo("#s04-kw", { opacity: 0, scale: 1.15 }, { opacity: 1, scale: 1, duration: 0.16, ease: "power2.out" }, 0.1);
+          // the layers start packed under the shell and come apart downwards
+          [["#s04-magnet", -150], ["#s04-coil", -262], ["#s04-felt", -380]].forEach(function (layer, i) {
+            tl.fromTo(layer[0], { y: layer[1], opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: "power3.out" }, 0.25 + i * 0.1);
+          });
+          ["#s04-l-cap", "#s04-l-magnet", "#s04-l-coil", "#s04-l-felt"].forEach(function (label, i) {
+            tl.fromTo(label, { opacity: 0, x: -24 }, { opacity: 1, x: 0, duration: 0.3, ease: "power2.out" }, 0.75 + i * 0.18);
+          });
+          window.__timelines["s04-dans-la-piece"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

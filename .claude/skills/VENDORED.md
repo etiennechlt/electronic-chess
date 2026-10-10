@@ -12,6 +12,7 @@ et recopier.
 | parametric-3d-printing | https://github.com/flowful-ai/cad-skill | fe42159 | PolyForm Noncommercial 1.0.0, voir parametric-3d-printing/LICENSE |
 | grill-with-docs, grilling, domain-modeling | https://github.com/mattpocock/skills (installés via `npx skills add`, fichiers réels sous `.agents/skills/`, liens symboliques ici, verrou dans `skills-lock.json`) | 74ca5fe | MIT, voir LICENSE-mattpocock-skills |
 | i-have-adhd | https://github.com/ayghri/i-have-adhd (répertoire `skills/i-have-adhd/` en amont ; le reste du dépôt est l'emballage plugin des autres assistants et n'est pas embarqué) | 839872f | MIT, voir LICENSE-i-have-adhd |
+| hyperframes, hyperframes-core, hyperframes-animation, hyperframes-keyframes, hyperframes-creative, hyperframes-cli, hyperframes-audio, hyperframes-registry, hyperframes-studio, media-use, general-video | https://github.com/heygen-com/hyperframes (répertoire `skills/` en amont : le jeu de base et le flux `general-video`) | bb9e507 | Apache 2.0, voir LICENSE-hyperframes |
 
 Notes :
 
@@ -23,6 +24,12 @@ Notes :
 - Ces répertoires sont exclus du lint du projet (ruff) : contenu amont,
   conventions amont.
 - Les cinq autres skills de pcba-design-skills (gestion de programme, brief produit, qualification d'approvisionnement, humanisation de schéma) ne sont pas embarqués : doublons du skill `bom` ou de la note 07, ou à contre-emploi sur des schémas générés.
+- HyperFrames : seuls le jeu de base (le routeur `hyperframes`, les
+  skills de domaine et `media-use`) et le flux `general-video` sont
+  embarqués. Les autres flux de création (`slideshow`,
+  `motion-graphics`, `music-to-video`...) s'installent à la demande
+  par `npx hyperframes skills update <nom>`, hors du dépôt. La CLI
+  elle-même (`npm install -g hyperframes`) n'est pas embarquée.
 - `i-have-adhd` est un style de réponse, pas un outil : il ne s'active
   que sur demande (`/i-have-adhd`, `disable-model-invocation: true`)
   et reste actif jusqu'à « stop adhd mode ». Le crochet « toujours

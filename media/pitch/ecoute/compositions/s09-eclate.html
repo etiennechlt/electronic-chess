@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #s09 {
+          position: absolute;
+          inset: 0;
+          background: var(--nuit);
+          overflow: hidden;
+        }
+        /* same frame as the end of scene 08: the board, then its layers, same camera */
+        #s09-stage {
+          position: absolute;
+          left: 0;
+          top: 430px;
+          width: 1080px;
+          height: 1080px;
+        }
+        #s09-stage img {
+          position: absolute;
+          inset: 0;
+          width: 1080px;
+          height: 1080px;
+        }
+        .s09-item {
+          position: absolute;
+          left: 72px;
+          top: 250px;
+          width: 888px;
+        }
+        .s09-item .kw {
+          font-size: 100px;
+        }
+        .s09-item .mono {
+          margin-top: 14px;
+          font-size: 34px;
+          color: var(--blanc);
+        }
+        .s09-mark {
+          position: absolute;
+          left: 40px;
+          width: 72px;
+          height: 6px;
+          border-radius: 3px;
+          background: var(--cyan);
+        }
+      </style>
+
+      <div id="s09" data-composition-id="s09-eclate" data-width="1080" data-height="1920">
+        <div id="s09-stage">
+          <img id="s09-fin" src="assets/rendus/plateau-fin.png" alt="" />
+          <img id="s09-eclate" src="assets/rendus/plateau-eclate.png" alt="" />
+        </div>
+        <div id="s09-i0" class="s09-item">
+          <p class="kw">Contreplaqué</p>
+          <p class="mono"><span data-fact="plywood_mm"></span> mm de bois sur les bobines</p>
+        </div>
+        <div id="s09-i1" class="s09-item">
+          <p class="kw"><span data-fact="quadrants"></span> quadrants</p>
+          <p class="mono"><span data-fact="quadrant_grid"></span> cases · <span data-fact="coils"></span> spirales · <span data-fact="leds"></span> LED</p>
+        </div>
+        <div id="s09-i2" class="s09-item">
+          <p class="kw">Cerveau</p>
+          <p class="mono"><span data-fact="mcu"></span>, il arbitre et il calcule</p>
+        </div>
+        <div id="s09-i3" class="s09-item">
+          <p class="kw">Batterie <span data-fact="battery"></span></p>
+          <p class="mono"><span data-fact="energy_wh"></span> Wh en cellules plates</p>
+        </div>
+        <div id="s09-m0" class="s09-mark" style="top: 760px"></div>
+        <div id="s09-m1" class="s09-mark" style="top: 838px"></div>
+        <div id="s09-m2" class="s09-mark" style="top: 960px"></div>
+        <div id="s09-m3" class="s09-mark" style="top: 1080px"></div>
+      </div>
+
+      <script>
+        (function () {
+          const root = document.getElementById("s09");
+          window.fillFacts(root);
+          const tl = gsap.timeline({ paused: true });
+          // match cut: start on scene 08's last frame, then the layers come apart
+          tl.fromTo("#s09-stage", { scale: 1.04, y: 0 }, { scale: 1.04, y: 0, duration: 0.01 }, 0);
+          tl.fromTo("#s09-eclate", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power1.inOut" }, 0.05);
+          tl.fromTo("#s09-stage", { scale: 1.04, y: 0 }, { scale: 0.77, y: -70, duration: 0.7, ease: "power2.inOut", immediateRender: false }, 0.5);
+          // one keyword at a time, top to bottom of the stack
+          const at = [1.25, 2.05, 2.85, 3.65];
+          at.forEach(function (t, i) {
+            tl.fromTo("#s09-i" + i, { opacity: 0, scale: 1.12, transformOrigin: "0% 50%" }, { opacity: 1, scale: 1, duration: 0.16, ease: "power2.out", transformOrigin: "0% 50%" }, t);
+            tl.fromTo("#s09-m" + i, { opacity: 0, scaleX: 0, transformOrigin: "0% 50%" }, { opacity: 1, scaleX: 1, duration: 0.2, ease: "power2.out", transformOrigin: "0% 50%" }, t);
+            if (i < at.length - 1) {
+              tl.to(["#s09-i" + i, "#s09-m" + i], { opacity: 0, duration: 0.1 }, at[i + 1] - 0.1);
+            }
+          });
+          window.__timelines["s09-eclate"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

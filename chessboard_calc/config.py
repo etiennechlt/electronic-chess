@@ -625,6 +625,18 @@ class ClockCfg(_Model):
     usb_c_slot_mm: tuple[float, float]
 
 
+class SerieCfg(_Model):
+    """Signature sound of the films: each resonator line, transposed into the audible."""
+
+    transpose_ratio: float
+    decay_s: float
+    attack_ms: float
+    harmonics: tuple[float, ...]
+    note_s: float
+    scale_step_s: float
+    sample_rate_hz: int
+
+
 class BoardConfig(_Model):
     schema_version: int
     pitch: PitchCfg
@@ -645,6 +657,7 @@ class BoardConfig(_Model):
     mockup: MockupCfg
     plateau: PlateauCfg
     clock: ClockCfg
+    serie: SerieCfg
 
 
 @dataclass(frozen=True)

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #s14 {
+          position: absolute;
+          inset: 0;
+          background: var(--nuit);
+          overflow: hidden;
+        }
+        #s14-kw {
+          position: absolute;
+          left: 72px;
+          top: 262px;
+          width: 888px;
+          font-size: 96px;
+        }
+        #s14-panel {
+          position: absolute;
+          left: 72px;
+          top: 400px;
+          width: 888px;
+          padding: 26px 34px;
+          border: 2px solid #22303c;
+          border-radius: 18px;
+          background: var(--panneau);
+          font-size: 30px;
+          line-height: 1.42;
+          color: var(--blanc);
+        }
+        #s14-panel .s14-line {
+          display: block;
+          white-space: pre;
+        }
+        #s14-file {
+          color: var(--gris);
+        }
+        #s14-panel .s14-value {
+          color: var(--cuivre);
+        }
+        #s14-count {
+          margin-top: 16px;
+          padding-top: 14px;
+          border-top: 2px solid #22303c;
+          color: var(--cyan);
+        }
+        #s14-links {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 1080px;
+          height: 1920px;
+          overflow: visible;
+        }
+        .s14-board {
+          position: absolute;
+          top: 940px;
+        }
+        #s14-quadrant {
+          left: 72px;
+          width: 290px;
+          height: 290px;
+        }
+        #s14-brain {
+          left: 400px;
+          width: 420px;
+          height: 299px;
+        }
+      </style>
+
+      <div id="s14" data-composition-id="s14-un-fichier" data-width="1080" data-height="1920">
+        <p id="s14-kw" class="kw">Un seul fichier</p>
+        <div id="s14-panel" class="mono">
+          <span id="s14-file" class="s14-line"># config/board.yaml</span>
+          <div id="s14-yaml"></div>
+          <span id="s14-count" class="s14-line"><span data-fact="tests"></span> tests · <span data-fact="components"></span> composants</span>
+        </div>
+        <svg id="s14-links" viewBox="0 0 1080 1920" aria-hidden="true">
+          <path class="s14-link" d="M217 900 L217 936" stroke="#b87333" stroke-width="5" stroke-linecap="round" fill="none" />
+          <path class="s14-link" d="M610 900 L610 936" stroke="#b87333" stroke-width="5" stroke-linecap="round" fill="none" />
+        </svg>
+        <img id="s14-quadrant" class="s14-board" src="assets/rendus/quadrant.png" alt="" />
+        <img id="s14-brain" class="s14-board" src="assets/rendus/brain.png" alt="" />
+      </div>
+
+      <script>
+        (function () {
+          const root = document.getElementById("s14");
+          window.fillFacts(root);
+          // the quoted lines of config/board.yaml, as facts.py read them from the file
+          const yaml = document.getElementById("s14-yaml");
+          window.FACTS.yaml_quote.forEach(function (text) {
+            const line = document.createElement("span");
+            line.className = "s14-line";
+            const cut = text.indexOf(":");
+            const key = document.createElement("span");
+            key.textContent = text.slice(0, cut + 1);
+            const value = document.createElement("span");
+            value.className = "s14-value";
+            value.textContent = text.slice(cut + 1);
+            line.append(key, value);
+            yaml.appendChild(line);
+          });
+
+          const tl = gsap.timeline({ paused: true });
+          tl.fromTo("#s14-kw", { opacity: 0, scale: 1.12 }, { opacity: 1, scale: 1, duration: 0.16, ease: "power2.out" }, 0.05);
+          tl.fromTo("#s14-panel", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }, 0.15);
+          gsap.utils.toArray("#s14-yaml .s14-line").forEach(function (line, i) {
+            tl.fromTo(line, { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.18, ease: "power2.out" }, 0.4 + i * 0.1);
+          });
+          tl.fromTo("#s14-count", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 1.35);
+          // from the file to the boards it generates
+          tl.fromTo(".s14-link", { strokeDasharray: "40 40", strokeDashoffset: 40 }, { strokeDasharray: "40 40", strokeDashoffset: 0, duration: 0.25 }, 1.6);
+          tl.fromTo(".s14-board", { clipPath: "inset(0% 0% 100% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.7, ease: "power2.out", stagger: 0.12 }, 1.8);
+          window.__timelines["s14-un-fichier"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

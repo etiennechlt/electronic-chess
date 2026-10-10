@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #s10 {
+          position: absolute;
+          inset: 0;
+          background: var(--nuit);
+          overflow: hidden;
+        }
+        #s10-kw {
+          position: absolute;
+          left: 72px;
+          top: 262px;
+          width: 888px;
+          font-size: 120px;
+        }
+        #s10-board {
+          position: absolute;
+          left: 156px;
+          top: 420px;
+          width: 720px;
+          height: 720px;
+          overflow: visible;
+        }
+        #s10-pills {
+          position: absolute;
+          left: 72px;
+          top: 1170px;
+          width: 888px;
+          display: flex;
+          justify-content: center;
+          gap: 18px;
+        }
+        .s10-pill {
+          font-size: 30px;
+          padding: 10px 24px;
+          border: 2px solid rgba(244, 239, 230, 0.45);
+          border-radius: 99px;
+          color: var(--blanc);
+          white-space: nowrap;
+        }
+      </style>
+
+      <div id="s10" data-composition-id="s10-arbitre" data-width="1080" data-height="1920">
+        <p id="s10-kw" class="kw">Arbitre</p>
+        <svg id="s10-board" viewBox="0 0 800 800" aria-hidden="true">
+          <g id="s10-squares"></g>
+          <g id="s10-pieces"></g>
+          <path id="s10-arrow" d="M450 618 L450 500" fill="none" stroke="#b87333" stroke-width="14" stroke-linecap="round" />
+          <path id="s10-head" d="M420 530 L450 490 L480 530" fill="none" stroke="#b87333" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" />
+          <g id="s10-mover">
+            <circle cx="450" cy="650" r="30" fill="#f4efe6" stroke="#141414" stroke-width="4" />
+          </g>
+          <g id="s10-leds" fill="#f4efe6" stroke="#141414" stroke-width="3">
+            <circle class="s10-led" cx="412" cy="412" r="10" />
+            <circle class="s10-led" cx="488" cy="488" r="10" />
+          </g>
+        </svg>
+        <div id="s10-pills">
+          <p class="mono s10-pill">roque</p>
+          <p class="mono s10-pill">prise en passant</p>
+          <p class="mono s10-pill">promotion</p>
+        </div>
+      </div>
+
+      <script>
+        (function () {
+          const root = document.getElementById("s10");
+          window.fillFacts(root);
+          const NS = "http://www.w3.org/2000/svg";
+          const squares = document.getElementById("s10-squares");
+          const pieces = document.getElementById("s10-pieces");
+          // an 8 x 8 board seen from above, a1 dark, white at the bottom
+          for (let f = 0; f < 8; f++) {
+            for (let r = 0; r < 8; r++) {
+              const sq = document.createElementNS(NS, "rect");
+              sq.setAttribute("x", f * 100);
+              sq.setAttribute("y", (7 - r) * 100);
+              sq.setAttribute("width", 100);
+              sq.setAttribute("height", 100);
+              sq.setAttribute("fill", (f + r) % 2 === 0 ? "#6b4321" : "#d9b98c");
+              squares.appendChild(sq);
+            }
+          }
+          function piece(f, r, white, big) {
+            const c = document.createElementNS(NS, "circle");
+            c.setAttribute("cx", f * 100 + 50);
+            c.setAttribute("cy", (7 - r) * 100 + 50);
+            c.setAttribute("r", big ? 36 : 30);
+            c.setAttribute("fill", white ? "#f4efe6" : "#141414");
+            c.setAttribute("stroke", white ? "#141414" : "#ffb347");
+            c.setAttribute("stroke-width", white ? 4 : 5);
+            pieces.appendChild(c);
+          }
+          for (let f = 0; f < 8; f++) {
+            piece(f, 0, true, true);
+            piece(f, 7, false, true);
+            piece(f, 6, false, false);
+            if (f !== 4) piece(f, 1, true, false); // e2 is the pawn that moves
+          }
+
+          const tl = gsap.timeline({ paused: true });
+          tl.fromTo("#s10-kw", { opacity: 0, scale: 1.15 }, { opacity: 1, scale: 1, duration: 0.16, ease: "power2.out" }, 0.05);
+          // e2-e4: the arrow draws, the pawn follows, the square answers with its two lights
+          tl.fromTo("#s10-arrow", { strokeDasharray: "120 120", strokeDashoffset: 120 }, { strokeDasharray: "120 120", strokeDashoffset: 0, duration: 0.4, ease: "power2.out" }, 0.3);
+          tl.fromTo("#s10-head", { opacity: 0 }, { opacity: 1, duration: 0.1 }, 0.65);
+          tl.fromTo("#s10-mover", { y: 0 }, { y: -200, duration: 0.45, ease: "power2.inOut" }, 0.45);
+          tl.fromTo(".s10-led", { scale: 0, transformOrigin: "50% 50%" }, { scale: 1, duration: 0.2, ease: "back.out(2)", transformOrigin: "50% 50%" }, 0.9);
+          tl.to(["#s10-arrow", "#s10-head"], { opacity: 0.25, duration: 0.4 }, 1.6);
+          gsap.utils.toArray(".s10-pill").forEach(function (pill, i) {
+            tl.fromTo(pill, { opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1, duration: 0.18, ease: "back.out(2)" }, 1.4 + i * 0.18);
+          });
+          window.__timelines["s10-arbitre"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>
