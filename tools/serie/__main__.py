@@ -12,13 +12,16 @@ from .facts import ROOT, counters, facts, write_js
 from .signature import write_all
 
 IMAGES = ROOT / "docs" / "images"
+COMMON = ROOT / "media" / "pitch" / "commun"
 
 
 def prepare_film(cfg, project: Path) -> None:
     """Fill `PROJECT/assets/` with what the compositions read: facts.js,
-    the notes and the scale, and the repository renders. All of it is
-    regenerated, none of it is committed."""
+    the notes, the scale and the thud, the repository renders, and a copy of
+    media/pitch/commun (style, helpers, 3D scene kit, font, meshes) shared by
+    every film. All of it is regenerated, none of it is committed."""
     assets = project / "assets"
+    shutil.copytree(COMMON, assets / "commun", dirs_exist_ok=True)
     data = facts(cfg) | counters()
     write_js(assets / "facts.js", data)
     sounds = write_all(cfg, assets / "sons")

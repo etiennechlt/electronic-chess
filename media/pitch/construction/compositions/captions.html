@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        /* Caption style of the series bible: bold grotesque, white with a black
+           outline, two lines at most, between 1300 and 1550 px, never lower.
+           These lines are also the voice-over script for a later dubbed cut. */
+        #cp-root {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+        }
+        .cap {
+          position: absolute;
+          left: 72px;
+          top: 1318px;
+          width: 888px;
+          display: flex;
+          justify-content: center;
+        }
+        .cap p {
+          margin: 0;
+          max-width: 860px;
+          text-align: center;
+          font-size: 60px;
+          line-height: 1.16;
+          color: #ffffff;
+          text-shadow:
+            -4px -4px 0 #000, 0 -4px 0 #000, 4px -4px 0 #000, 4px 0 0 #000,
+            4px 4px 0 #000, 0 4px 0 #000, -4px 4px 0 #000, -4px 0 0 #000;
+        }
+      </style>
+
+      <div id="cp-root" data-composition-id="captions" data-width="1080" data-height="1920">
+        <div id="cp-01" class="clip cap" data-start="0.3" data-duration="2.7" data-track-index="1"><p class="sans">Un échiquier qui reconnaît ses pièces.</p></div>
+        <div id="cp-03" class="clip cap" data-start="6.0" data-duration="3.0" data-track-index="1"><p class="sans">Tout part d'une coque imprimée.</p></div>
+        <div id="cp-04" class="clip cap" data-start="9.3" data-duration="3.7" data-track-index="1"><p class="sans">Des cellules plates, pour rester fin.</p></div>
+        <div id="cp-05" class="clip cap" data-start="13.4" data-duration="3.6" data-track-index="1"><p class="sans">Le cerveau et sa carte de puissance.</p></div>
+        <div id="cp-06" class="clip cap" data-start="17.3" data-duration="5.7" data-track-index="1"><p class="sans">Un quadrant par quart du plateau, tous identiques.</p></div>
+        <div id="cp-07" class="clip cap" data-start="23.4" data-duration="3.6" data-track-index="1"><p class="sans">Du bois par-dessus, la lumière passe au travers.</p></div>
+        <div id="cp-08" class="clip cap" data-start="27.3" data-duration="4.7" data-track-index="1"><p class="sans">Dans chaque pièce, une bobine et un condensateur.</p></div>
+        <div id="cp-09" class="clip cap" data-start="32.3" data-duration="5.7" data-track-index="1"><p class="sans">Chaque famille de pièces tombe sur sa note.</p></div>
+        <div id="cp-10" class="clip cap" data-start="38.3" data-duration="3.2" data-track-index="1"><p class="sans">Fini, et sur batterie.</p></div>
+        <div id="cp-11" class="clip cap" data-start="41.8" data-duration="5.7" data-track-index="1"><p class="sans">Le même plateau change de base : le chariot, en phase 2.</p></div>
+      </div>
+
+      <script>
+        (function () {
+          const root = document.getElementById("cp-root");
+          window.fillFacts(root);
+          const tl = gsap.timeline({ paused: true });
+          gsap.utils.toArray("#cp-root .cap").forEach(function (cap) {
+            const at = parseFloat(cap.getAttribute("data-start"));
+            tl.fromTo(cap.firstElementChild, { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, duration: 0.14, ease: "power2.out" }, at);
+          });
+          window.__timelines["captions"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

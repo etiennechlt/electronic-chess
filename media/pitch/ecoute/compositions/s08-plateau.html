@@ -6,18 +6,12 @@
   <body>
     <template>
       <style>
+        /* over the 3D stage of the root: the board and its pieces, slow push;
+           scene 09 starts from the same camera */
         #s08 {
           position: absolute;
           inset: 0;
-          background: var(--nuit);
           overflow: hidden;
-        }
-        #s08-render {
-          position: absolute;
-          left: 0;
-          top: 430px;
-          width: 1080px;
-          height: 1080px;
         }
         .s08-dim {
           position: absolute;
@@ -40,7 +34,6 @@
       </style>
 
       <div id="s08" data-composition-id="s08-plateau" data-width="1080" data-height="1920">
-        <img id="s08-render" src="assets/rendus/plateau-fin.png" alt="" />
         <div id="s08-side" class="s08-dim">
           <p class="kw"><span data-fact="module_cm"></span> cm</p>
           <p class="mono">de côté</p>
@@ -56,8 +49,6 @@
           const root = document.getElementById("s08");
           window.fillFacts(root);
           const tl = gsap.timeline({ paused: true });
-          // slow push on the CAD render; scene 09 starts from this last frame
-          tl.fromTo("#s08-render", { scale: 1 }, { scale: 1.04, duration: 3.5, ease: "none" }, 0);
           tl.fromTo("#s08-side", { opacity: 0, scale: 1.12, transformOrigin: "0% 50%" }, { opacity: 1, scale: 1, duration: 0.16, ease: "power2.out", transformOrigin: "0% 50%" }, 0.15);
           tl.fromTo("#s08-thick", { opacity: 0, scale: 1.12, transformOrigin: "0% 50%" }, { opacity: 1, scale: 1, duration: 0.16, ease: "power2.out", transformOrigin: "0% 50%" }, 0.85);
           window.__timelines["s08-plateau"] = tl;

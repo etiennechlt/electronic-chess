@@ -435,3 +435,8 @@ serie:                         # the twelve resonator lines made audible, for th
   note_s: 2.5                  # rendered length of one note
   scale_step_s: 0.3            # spacing of the ascending scale of the twelve notes
   sample_rate_hz: 48000
+  # The films' drawn pieces (media/pitch): Staunton-like shapes on the real
+  # base diameters. Heights are a drawing choice, not a design value.
+  piece_height_ratio: { pawn: 1.8, knight: 2.0, bishop: 2.3, rook: 1.6, queen: 2.4, king: 2.6 }
+  capacitor_mm: [2.0, 1.25, 1.25]  # 0805 C0G drawn in the opened piece, as slotted in mechanical/parts.py
+  thud: { hz: 70.0, decay_s: 0.09, noise: 0.35 }  # a layer set down in the build film

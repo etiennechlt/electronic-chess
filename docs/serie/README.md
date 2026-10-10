@@ -258,6 +258,9 @@ Une bonne part des visuels existe déjà et se régénère
 - `docs/images/coil-board.png`, `analog-board.png`, `mockup-3d.png`,
   `piece-exploded.png`, `magnet-bracket.png` : rendus des cartes et
   de la mécanique, parfaits pour les match cuts avec le réel.
+- `media/pitch/commun/` : la scène 3D des films (plateau, base chariot
+  et horloge exportés de CadQuery, pièces Staunton dessinées sur les
+  diamètres de base calculés), réutilisable pour tout plan d'objet.
 - `python -m chessboard_calc report --pitch all` : les tables de
   fréquences et de diamètres pour « le chiffre ».
 - Le routeur maison : enregistrer l'écran pendant une régénération

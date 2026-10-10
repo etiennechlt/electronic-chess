@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #fi-root {
+          position: absolute;
+          inset: 0;
+          background: var(--bois);
+          overflow: hidden;
+        }
+        #fi-title {
+          position: absolute;
+          left: 72px;
+          top: 330px;
+          width: 888px;
+        }
+        .fi-line {
+          display: block;
+          font-size: 112px;
+          color: var(--encre);
+        }
+        #fi-close {
+          position: absolute;
+          left: 72px;
+          top: 720px;
+          width: 888px;
+          height: 200px;
+          overflow: visible;
+        }
+        #fi-status {
+          position: absolute;
+          left: 72px;
+          top: 1000px;
+          width: 888px;
+          font-size: 54px;
+          line-height: 1.25;
+          color: var(--encre);
+        }
+        .fi-status-line {
+          display: block;
+          margin: 0;
+        }
+        #fi-url {
+          position: absolute;
+          left: 72px;
+          top: 1180px;
+          width: 888px;
+          font-size: 31px;
+          color: rgba(20, 20, 20, 0.72);
+        }
+        /* the series signature, as its title card: black on wood */
+        #fi-sign {
+          position: absolute;
+          left: 72px;
+          top: 1268px;
+          width: 888px;
+          font-size: 64px;
+          color: var(--encre);
+        }
+      </style>
+
+      <div id="fi-root" data-composition-id="fin" data-width="1080" data-height="1920">
+        <div id="fi-title">
+          <p class="kw fi-line">Le plateau</p>
+          <p class="kw fi-line">se</p>
+          <p class="kw fi-line">construit</p>
+        </div>
+        <svg id="fi-close" viewBox="0 0 888 200" aria-hidden="true">
+          <path id="fi-wave" fill="none" stroke="#b87333" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <div id="fi-status" class="sans">
+          <p class="fi-status-line">Conception ouverte.</p>
+          <p class="fi-status-line">Phase 1 en fabrication.</p>
+        </div>
+        <p id="fi-url" class="mono">github.com/etiennechlt/electronic-chess</p>
+        <p id="fi-sign" class="kw">Échec et Watt</p>
+      </div>
+
+      <script>
+        (function () {
+          const root = document.getElementById("fi-root");
+          window.fillFacts(root);
+          const wave = document.getElementById("fi-wave");
+          // amplitude is tweened, not scaleY: a squashed stroke would vanish instead of lying flat
+          const ring = { amp: 1 };
+          const draw = function () {
+            wave.setAttribute("d", window.FILM.ringdownPath(8, 880, 100, 84 * ring.amp, 14, 1.4, 1200));
+          };
+          draw();
+          const len = window.FILM.dashReady(wave);
+          const tl = gsap.timeline({ paused: true });
+          gsap.utils.toArray("#fi-root .fi-line").forEach(function (line, i) {
+            tl.fromTo(line, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 0.05 + i * 0.08);
+          });
+          // the closing ringdown: the scale rings (from 0.2 s) and the line settles flat
+          tl.fromTo(wave, { strokeDashoffset: len }, { strokeDashoffset: 0, duration: 0.6, ease: "power1.out" }, 0.2);
+          tl.fromTo(ring, { amp: 1 }, { amp: 0, duration: 3.4, ease: "power1.out", onUpdate: draw }, 0.9);
+          gsap.utils.toArray("#fi-root .fi-status-line").forEach(function (line, i) {
+            tl.fromTo(line, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, 1.4 + i * 0.35);
+          });
+          tl.fromTo("#fi-url", { opacity: 0 }, { opacity: 1, duration: 0.4 }, 2.3);
+          tl.fromTo("#fi-sign", { opacity: 0, scale: 1.12, transformOrigin: "0% 50%" }, { opacity: 1, scale: 1, duration: 0.2, ease: "power2.out", transformOrigin: "0% 50%" }, 3.2);
+          window.__timelines["fin"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

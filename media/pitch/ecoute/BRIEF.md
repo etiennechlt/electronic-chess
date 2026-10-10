@@ -22,8 +22,9 @@ TikTok, donc vertical d'abord. Le titre affiché suit la version.
 ## Customizations
 
 - Son de synthèse seul : la signature sonore de la série (une note par
-  pièce identifiée, la gamme des douze notes), générée par
-  `python -m serie` depuis `chessboard_calc`.
+  pièce identifiée, la gamme des douze notes, un bruit sourd quand le
+  module se pose dans la base chariot), générée par `python -m serie`
+  depuis `chessboard_calc`.
 - Direction artistique, zones sûres, sous-titres et grammaire de
   montage de la bible de la série ([docs/serie](../../../docs/serie/README.md)).
 - Tous les chiffres passent par `data-fact` et `assets/facts.js`,
@@ -34,5 +35,7 @@ TikTok, donc vertical d'abord. Le titre affiché suit la version.
 - Voix off plus tard : doublage par Étienne ou voix de synthèse
   (ElevenLabs), à décider. Les sous-titres de `compositions/captions.html`
   sont écrits pour servir de script.
-- Les images sont les rendus CAO et les tracés KiCad du dépôt ; aucun
-  prototype n'est filmé, la fin dit l'état réel du projet.
+- Les plans d'objet sont en 3D (Three.js) : les solides CadQuery du
+  dépôt et des pièces Staunton aux cotes de `chessboard_calc`, voir
+  [`../commun/scene3d.js`](../commun/scene3d.js). Aucun prototype n'est
+  filmé, la fin dit l'état réel du projet.

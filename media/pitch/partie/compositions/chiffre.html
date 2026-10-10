@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        /* "le chiffre", the series' number card: mono, black ground, copper figure */
+        #ch-root {
+          position: absolute;
+          inset: 0;
+          background: var(--encre);
+          overflow: hidden;
+        }
+        #ch-eyebrow {
+          position: absolute;
+          left: 72px;
+          top: 420px;
+          width: 888px;
+          text-align: center;
+          font-size: 30px;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          color: var(--gris);
+        }
+        #ch-figure {
+          position: absolute;
+          left: 72px;
+          top: 560px;
+          width: 888px;
+          display: flex;
+          justify-content: center;
+          align-items: baseline;
+          gap: 24px;
+          color: var(--cuivre);
+        }
+        #ch-count {
+          display: inline-block;
+          font-size: 400px;
+          line-height: 1;
+          font-weight: 500;
+        }
+        #ch-unit {
+          font-size: 150px;
+          font-weight: 500;
+        }
+        #ch-sentence {
+          position: absolute;
+          left: 72px;
+          top: 1060px;
+          width: 888px;
+          text-align: center;
+          font-size: 58px;
+          line-height: 1.15;
+          color: var(--blanc);
+          margin: 0;
+        }
+        #ch-more {
+          position: absolute;
+          left: 72px;
+          top: 1220px;
+          width: 888px;
+          text-align: center;
+          font-size: 40px;
+          color: var(--gris);
+        }
+      </style>
+
+      <div id="ch-root" data-composition-id="chiffre" data-width="1080" data-height="1920">
+        <p id="ch-eyebrow" class="mono">Le chiffre</p>
+        <div id="ch-figure" class="mono">
+          <span id="ch-count" data-fact="idle_scan_hz"></span><span id="ch-unit">/s</span>
+        </div>
+        <p id="ch-sentence" class="sans">écoutes par seconde, sur chacune des <span data-fact="squares"></span> cases</p>
+        <p id="ch-more" class="mono">moteur sur Pi ou partie en ligne</p>
+      </div>
+
+      <script>
+        (function () {
+          const root = document.getElementById("ch-root");
+          window.fillFacts(root);
+          const tl = gsap.timeline({ paused: true });
+          tl.fromTo("#ch-eyebrow", { opacity: 0 }, { opacity: 1, duration: 0.25 }, 0.05);
+          tl.fromTo("#ch-count", { opacity: 0, scale: 0.7, transformOrigin: "50% 80%" }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)", transformOrigin: "50% 80%" }, 0.2);
+          tl.fromTo("#ch-unit", { opacity: 0 }, { opacity: 1, duration: 0.25 }, 0.5);
+          tl.fromTo("#ch-sentence", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, 0.6);
+          tl.fromTo("#ch-more", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 1.4);
+          window.__timelines["chiffre"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

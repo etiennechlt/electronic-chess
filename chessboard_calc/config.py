@@ -625,8 +625,15 @@ class ClockCfg(_Model):
     usb_c_slot_mm: tuple[float, float]
 
 
+class ThudCfg(_Model):
+    hz: float
+    decay_s: float
+    noise: float
+
+
 class SerieCfg(_Model):
-    """Signature sound of the films: each resonator line, transposed into the audible."""
+    """The films: signature sound (each resonator line, transposed into the
+    audible), the set-down thud and how the 3D pieces are drawn."""
 
     transpose_ratio: float
     decay_s: float
@@ -635,6 +642,9 @@ class SerieCfg(_Model):
     note_s: float
     scale_step_s: float
     sample_rate_hz: int
+    piece_height_ratio: dict[PieceType, float]
+    capacitor_mm: tuple[float, float, float]
+    thud: ThudCfg
 
 
 class BoardConfig(_Model):

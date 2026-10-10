@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        /* Words over the 3D build: a keyword per layer and its measured detail;
+           shades keep them readable over the board. */
+        #tx-root {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+        }
+        .tx-shade {
+          position: absolute;
+          left: 0;
+          width: 1080px;
+        }
+        .tx-top {
+          top: 0;
+          height: 600px;
+          background: linear-gradient(rgba(16, 20, 24, 0.94) 72%, rgba(16, 20, 24, 0));
+        }
+        .tx-bot {
+          top: 1150px;
+          height: 520px;
+          background: linear-gradient(rgba(16, 20, 24, 0), rgba(16, 20, 24, 0.85) 14%, rgba(16, 20, 24, 0.85) 78%, rgba(16, 20, 24, 0));
+        }
+        .tx-kw {
+          position: absolute;
+          left: 72px;
+          top: 250px;
+          width: 888px;
+          font-size: 110px;
+        }
+        .tx-sub {
+          position: absolute;
+          left: 72px;
+          top: 378px;
+          width: 888px;
+          font-size: 32px;
+          color: var(--gris);
+          white-space: nowrap;
+          text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+        }
+        .tx-sub b {
+          color: var(--cuivre);
+          font-weight: 500;
+        }
+        .cuivre {
+          color: var(--cuivre);
+        }
+        .cyan {
+          color: var(--cyan);
+        }
+      </style>
+
+      <div id="tx-root" data-composition-id="textes" data-width="1080" data-height="1920">
+        <div id="tx-shade-a" class="clip tx-shade tx-top" data-start="0" data-duration="3" data-track-index="1"></div>
+        <div id="tx-shade-b" class="clip tx-shade tx-top" data-start="5.5" data-duration="42" data-track-index="1"></div>
+        <div id="tx-shade-c" class="clip tx-shade tx-bot" data-start="0" data-duration="3" data-track-index="2"></div>
+        <div id="tx-shade-d" class="clip tx-shade tx-bot" data-start="5.5" data-duration="42" data-track-index="2"></div>
+
+        <p id="tx-k01" class="clip kw tx-kw" data-start="0.1" data-duration="2.9" data-track-index="3">On le démonte</p>
+        <p id="tx-k03" class="clip kw tx-kw" data-start="5.6" data-duration="3.4" data-track-index="3">La base</p>
+        <p id="tx-k04" class="clip kw tx-kw" data-start="9" data-duration="4" data-track-index="3"><span data-fact="cells"></span> cellules</p>
+        <p id="tx-k05" class="clip kw tx-kw" data-start="13" data-duration="4" data-track-index="3">Le cerveau</p>
+        <p id="tx-k06" class="clip kw tx-kw" data-start="17" data-duration="6" data-track-index="3"><span data-fact="quadrants"></span> quadrants</p>
+        <p id="tx-k07" class="clip kw tx-kw" data-start="23" data-duration="4" data-track-index="3">Contreplaqué</p>
+        <p id="tx-k08" class="clip kw tx-kw" data-start="27" data-duration="5" data-track-index="3">Une pièce</p>
+        <p id="tx-k09" class="clip kw tx-kw" data-start="32" data-duration="6" data-track-index="3"><span data-fact="lines_count"></span> notes</p>
+        <p id="tx-k10" class="clip kw tx-kw" data-start="38" data-duration="3.5" data-track-index="3"><span data-fact="module_cm"></span> cm</p>
+        <p id="tx-k11" class="clip kw tx-kw" data-start="41.5" data-duration="6" data-track-index="3">Base chariot</p>
+
+        <p id="tx-s03" class="clip mono tx-sub" data-start="5.6" data-duration="3.4" data-track-index="4">coque imprimée · <b><span data-fact="base_height_mm"></span> mm</b></p>
+        <p id="tx-s04" class="clip mono tx-sub" data-start="9" data-duration="4" data-track-index="4"><span data-fact="battery"></span> · <b><span data-fact="energy_wh"></span> Wh</b> · cellules plates</p>
+        <p id="tx-s05" class="clip mono tx-sub" data-start="13" data-duration="4" data-track-index="4"><span data-fact="mcu"></span> · charge USB-C</p>
+        <!-- the spiral count rises with each quadrant set down (count = k × spirals per quadrant) -->
+        <p id="tx-s06a" class="clip mono tx-sub" data-start="17" data-duration="0.85" data-track-index="4">spirales</p>
+        <p id="tx-s06b" class="clip mono tx-sub" data-start="17.85" data-duration="0.9" data-track-index="4"><b class="tx-count" data-quadrants="1"></b> spirales</p>
+        <p id="tx-s06c" class="clip mono tx-sub" data-start="18.75" data-duration="0.9" data-track-index="4"><b class="tx-count" data-quadrants="2"></b> spirales</p>
+        <p id="tx-s06d" class="clip mono tx-sub" data-start="19.65" data-duration="0.9" data-track-index="4"><b class="tx-count" data-quadrants="3"></b> spirales</p>
+        <p id="tx-s06e" class="clip mono tx-sub" data-start="20.55" data-duration="2.45" data-track-index="4"><b class="tx-count" data-quadrants="4"></b> spirales · <span data-fact="leds"></span> LED</p>
+        <p id="tx-s07" class="clip mono tx-sub" data-start="23" data-duration="4" data-track-index="4"><b><span data-fact="plywood_mm"></span> mm</b> · <span data-fact="leds"></span> points lumineux</p>
+        <p id="tx-s08" class="clip mono tx-sub" data-start="30.4" data-duration="1.6" data-track-index="4"><span data-fact="line.pawn-white.name"></span> · <span class="cyan" data-fact="line.pawn-white.label"></span></p>
+        <p id="tx-s09" class="clip mono tx-sub" data-start="32" data-duration="6" data-track-index="4">du <span id="tx-lowest"></span> au <span id="tx-highest"></span></p>
+        <p id="tx-s10" class="clip mono tx-sub" data-start="38" data-duration="3.5" data-track-index="4"><b><span data-fact="thickness_mm"></span> mm</b> d'épaisseur · sur batterie</p>
+        <p id="tx-s11" class="clip mono tx-sub" data-start="41.5" data-duration="6" data-track-index="4"><b><span data-fact="gantry_thickness_mm"></span> mm</b> · CoreXY · phase 2</p>
+      </div>
+
+      <script>
+        (function () {
+          const root = document.getElementById("tx-root");
+          window.fillFacts(root);
+          const F = window.FACTS;
+          root.querySelectorAll(".tx-count").forEach(function (el) {
+            el.textContent = Number(el.getAttribute("data-quadrants")) * Number(F.spirals_per_quadrant);
+          });
+          // the scale runs from the lowest family to the highest
+          document.getElementById("tx-lowest").textContent = F.lines[0].name;
+          document.getElementById("tx-highest").textContent = F.lines[F.lines.length - 1].name;
+          const tl = gsap.timeline({ paused: true });
+          // keywords pop as they land (an inner wrapper takes the transform, the
+          // timed clip itself is the framework's); the details just appear
+          root.querySelectorAll(".tx-kw").forEach(function (el) {
+            const inner = document.createElement("span");
+            inner.style.display = "inline-block";
+            while (el.firstChild) inner.appendChild(el.firstChild);
+            el.appendChild(inner);
+            const at = parseFloat(el.getAttribute("data-start"));
+            tl.fromTo(inner, { opacity: 0, scale: 1.15, transformOrigin: "0% 50%" }, { opacity: 1, scale: 1, duration: 0.16, ease: "power2.out", transformOrigin: "0% 50%" }, at);
+          });
+          root.querySelectorAll(".tx-count").forEach(function (el) {
+            const at = parseFloat(el.parentElement.getAttribute("data-start"));
+            tl.fromTo(el, { opacity: 0.3 }, { opacity: 1, duration: 0.2 }, at);
+          });
+          window.__timelines["textes"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

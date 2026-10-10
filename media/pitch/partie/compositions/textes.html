@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        /* Words over the 3D game: a keyword per move, the score line, the
+           measured detail; shades keep them readable over the board. */
+        #tx-root {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+        }
+        .tx-shade {
+          position: absolute;
+          left: 0;
+          width: 1080px;
+        }
+        .tx-top {
+          top: 0;
+          height: 600px;
+          background: linear-gradient(rgba(16, 20, 24, 0.94) 72%, rgba(16, 20, 24, 0));
+        }
+        .tx-bot {
+          top: 1150px;
+          height: 520px;
+          background: linear-gradient(rgba(16, 20, 24, 0), rgba(16, 20, 24, 0.85) 14%, rgba(16, 20, 24, 0.85) 78%, rgba(16, 20, 24, 0));
+        }
+        .tx-kw {
+          position: absolute;
+          left: 72px;
+          top: 250px;
+          width: 888px;
+          font-size: 110px;
+        }
+        .tx-score {
+          position: absolute;
+          left: 72px;
+          top: 378px;
+          width: 888px;
+          font-size: 32px;
+          color: var(--gris);
+          white-space: nowrap;
+          text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+        }
+        .tx-score b {
+          color: var(--cuivre);
+          font-weight: 500;
+        }
+        .tx-label {
+          position: absolute;
+          left: 72px;
+          top: 1236px;
+          width: 888px;
+          font-size: 32px;
+          color: var(--blanc);
+          white-space: nowrap;
+          text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .tx-label svg {
+          width: 34px;
+          height: 34px;
+        }
+        .cyan {
+          color: var(--cyan);
+        }
+        .ambre {
+          color: var(--ambre);
+        }
+        #tx-qq {
+          display: inline-block;
+        }
+      </style>
+
+      <div id="tx-root" data-composition-id="textes" data-width="1080" data-height="1920">
+        <div id="tx-shade-a" class="clip tx-shade tx-top" data-start="0" data-duration="2.5" data-track-index="1"></div>
+        <div id="tx-shade-b" class="clip tx-shade tx-top" data-start="5.5" data-duration="35.5" data-track-index="1"></div>
+        <div id="tx-shade-c" class="clip tx-shade tx-bot" data-start="0" data-duration="2.5" data-track-index="2"></div>
+        <div id="tx-shade-d" class="clip tx-shade tx-bot" data-start="5.5" data-duration="35.5" data-track-index="2"></div>
+
+        <p id="tx-k01" class="clip kw tx-kw" data-start="0.1" data-duration="2.4" data-track-index="3">Mat en 4 coups</p>
+        <p id="tx-k03" class="clip kw tx-kw" data-start="5.6" data-duration="4.4" data-track-index="3">Détection</p>
+        <p id="tx-k04" class="clip kw tx-kw" data-start="10.1" data-duration="4.4" data-track-index="3">En ligne</p>
+        <p id="tx-k05" class="clip kw tx-kw" data-start="14.6" data-duration="3.9" data-track-index="3">Arbitre</p>
+        <p id="tx-k06" class="clip kw tx-kw" data-start="18.6" data-duration="4.4" data-track-index="3">Horloge</p>
+        <p id="tx-k07" class="clip kw tx-kw" data-start="23.1" data-duration="3.9" data-track-index="3">Sa note</p>
+        <p id="tx-k08" class="clip kw tx-kw" data-start="27.1" data-duration="3.9" data-track-index="3">L'erreur <span id="tx-qq" class="ambre">??</span></p>
+        <p id="tx-k09" class="clip kw tx-kw" data-start="31.1" data-duration="4.9" data-track-index="3">Prise</p>
+        <p id="tx-k10" class="clip kw tx-kw ambre" data-start="36.1" data-duration="4.9" data-track-index="3">Échec et mat</p>
+
+        <p id="tx-m1" class="clip mono tx-score" data-start="5.5" data-duration="4.5" data-track-index="4"><b>1. e4</b></p>
+        <p id="tx-m2" class="clip mono tx-score" data-start="10" data-duration="4.5" data-track-index="4">1. e4 <b>e5</b></p>
+        <p id="tx-m3" class="clip mono tx-score" data-start="14.5" data-duration="4" data-track-index="4">1. e4 e5 <b>2. Fc4</b></p>
+        <p id="tx-m4" class="clip mono tx-score" data-start="18.5" data-duration="4.5" data-track-index="4">1. e4 e5 2. Fc4 <b>Cc6</b></p>
+        <p id="tx-m5" class="clip mono tx-score" data-start="23" data-duration="4" data-track-index="4">1. e4 e5 2. Fc4 Cc6 <b>3. Dh5</b></p>
+        <p id="tx-m6" class="clip mono tx-score" data-start="27" data-duration="4" data-track-index="4">1. e4 e5 2. Fc4 Cc6 3. Dh5 <b>Cf6</b></p>
+        <p id="tx-m7" class="clip mono tx-score" data-start="31" data-duration="10" data-track-index="4">1. e4 e5 2. Fc4 Cc6 3. Dh5 Cf6 <b>4. Dxf7#</b></p>
+
+        <p id="tx-l03" class="clip mono tx-label" data-start="7" data-duration="3" data-track-index="5"><span data-fact="line.pawn-white.name"></span> · <span class="cyan" data-fact="line.pawn-white.label"></span></p>
+        <p id="tx-l05" class="clip mono tx-label cyan" data-start="16.1" data-duration="2.4" data-track-index="5">
+          <svg viewBox="0 0 34 34" aria-hidden="true"><path d="M5 18 L13 26 L29 8" fill="none" stroke="#2ec4b6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" /></svg>coup légal
+        </p>
+        <p id="tx-l07" class="clip mono tx-label" data-start="24.6" data-duration="2.4" data-track-index="5"><span data-fact="line.queen-white.name"></span> · <span class="cyan" data-fact="line.queen-white.label"></span></p>
+        <p id="tx-l09" class="clip mono tx-label" data-start="32.4" data-duration="3.6" data-track-index="5"><span class="ambre"><span data-fact="line.pawn-black.name"></span> retiré</span> · <span data-fact="line.queen-white.name"></span> posée</p>
+        <p id="tx-l10" class="clip mono tx-label" data-start="37" data-duration="4" data-track-index="5">partie terminée · horloge arrêtée</p>
+      </div>
+
+      <script>
+        (function () {
+          const root = document.getElementById("tx-root");
+          window.fillFacts(root);
+          const tl = gsap.timeline({ paused: true });
+          // keywords and labels pop as they land (an inner wrapper takes the
+          // transform, the timed clip itself is the framework's); the score line just appears
+          root.querySelectorAll(".tx-kw, .tx-label").forEach(function (el) {
+            const inner = document.createElement("span");
+            inner.style.display = el.classList.contains("tx-label") ? "inline-flex" : "inline-block";
+            inner.style.alignItems = "center";
+            inner.style.gap = "12px";
+            while (el.firstChild) inner.appendChild(el.firstChild);
+            el.appendChild(inner);
+            const at = parseFloat(el.getAttribute("data-start"));
+            tl.fromTo(inner, { opacity: 0, scale: 1.15, transformOrigin: "0% 50%" }, { opacity: 1, scale: 1, duration: 0.16, ease: "power2.out", transformOrigin: "0% 50%" }, at);
+          });
+          // the blunder mark lands when the knight does
+          tl.fromTo("#tx-qq", { opacity: 0, scale: 1.6 }, { opacity: 1, scale: 1, duration: 0.18, ease: "back.out(3)" }, 29.15);
+          window.__timelines["textes"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

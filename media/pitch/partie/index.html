@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>Une partie, du premier coup au mat</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./node_modules/three/build/three.module.js",
+          "three/addons/": "./node_modules/three/examples/jsm/"
+        }
+      }
+    </script>
+    <!-- GSAP and three.js from the local npm install: renders never fetch the network -->
+    <script src="node_modules/gsap/dist/gsap.min.js"></script>
+    <!-- facts.js and assets/commun are written by `python -m serie film media/pitch/partie` -->
+    <script src="assets/facts.js"></script>
+    <script src="assets/commun/film.js"></script>
+    <link rel="stylesheet" href="assets/commun/film.css" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #101418;
+      }
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      #gl {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      [data-composition-id="partie"] > div[data-composition-src] {
+        position: absolute;
+        inset: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="partie"
+      data-start="0"
+      data-duration="53"
+      data-width="1080"
+      data-height="1920"
+    >
+      <!-- the 3D game, whole film long; the cards cover it where they play -->
+      <canvas id="gl" width="1080" height="1920"></canvas>
+
+      <div id="el-textes" data-composition-id="textes" data-composition-src="compositions/textes.html" data-start="0" data-duration="41" data-track-index="2"></div>
+      <div id="el-titre" data-composition-id="titre" data-composition-src="compositions/titre.html" data-start="2.5" data-duration="3" data-track-index="1"></div>
+      <div id="el-chiffre" data-composition-id="chiffre" data-composition-src="compositions/chiffre.html" data-start="41" data-duration="5" data-track-index="1"></div>
+      <div id="el-fin" data-composition-id="fin" data-composition-src="compositions/fin.html" data-start="46" data-duration="7" data-track-index="1"></div>
+      <div id="el-captions" data-track-kind="captions" data-composition-id="captions" data-composition-src="compositions/captions.html" data-start="0" data-duration="53" data-track-index="3"></div>
+
+      <!-- each piece set down plays its own note (python -m serie) -->
+      <audio id="snd-e4" src="assets/sons/pawn-white.wav" data-start="7.0" data-duration="2.5" data-track-index="10" data-volume="0.6"></audio>
+      <audio id="snd-e5" src="assets/sons/pawn-black.wav" data-start="12.2" data-duration="2.5" data-track-index="10" data-volume="0.6"></audio>
+      <audio id="snd-fc4" src="assets/sons/bishop-white.wav" data-start="16.1" data-duration="2.5" data-track-index="10" data-volume="0.6"></audio>
+      <audio id="snd-cc6" src="assets/sons/knight-black.wav" data-start="20.7" data-duration="2.5" data-track-index="10" data-volume="0.6"></audio>
+      <audio id="snd-dh5" src="assets/sons/queen-white.wav" data-start="24.6" data-duration="2.5" data-track-index="10" data-volume="0.6"></audio>
+      <audio id="snd-cf6" src="assets/sons/knight-black.wav" data-start="29.1" data-duration="2.5" data-track-index="10" data-volume="0.6"></audio>
+      <audio id="snd-dxf7" src="assets/sons/queen-white.wav" data-start="33.3" data-duration="2.5" data-track-index="10" data-volume="0.6"></audio>
+      <audio id="snd-fin" src="assets/sons/gamme.wav" data-start="46.2" data-duration="5.8" data-track-index="11" data-volume="0.55"></audio>
+    </div>
+
+    <script>
+      window.__timelines["partie"] = gsap.timeline({ paused: true });
+    </script>
+    <script type="module">
+      import { createStage, loadMeshes, boardTop, startPosition, lightHoles, clockRig, carry, frame, smooth, WHITE_LED, AMBER_LED } from "./assets/commun/scene3d.js";
+
+      // listen at once, render once the meshes are in; the runtime waits on buildReady
+      let ready = false;
+      let last = window.__hfThreeTime || 0;
+      let renderAt = () => {};
+      window.addEventListener("hf-seek", (e) => {
+        last = e.detail.time;
+        if (ready) renderAt(last);
+      });
+      window.__hf = window.__hf || {};
+      window.__hf.buildReady = window.__hf.buildReady || {};
+      window.__hf.buildReady.partie = (async () => {
+        const { renderer, scene, camera } = createStage(document.getElementById("gl"));
+        const { layers, manifest } = await loadMeshes(scene, (m) => (m.set === "fin" && ["base", "bois"].includes(m.layer)) || m.set === "horloge");
+        const TOP = boardTop(layers);
+        const pieces = startPosition(scene, TOP);
+        const leds = lightHoles(scene, TOP);
+        const clock = clockRig(scene, layers, manifest);
+
+        // the coup du berger: piece (by starting square), from, to, start, duration, lift
+        const OUT = [262, -150];
+        const MOVES = [
+          ["e2", "e2", "e4", 6.2, 0.8, 24],
+          ["e7", "e7", "e5", 11.4, 0.8, 24],
+          ["f1", "f1", "c4", 15.2, 0.9, 26],
+          ["b8", "b8", "c6", 19.8, 0.9, 42],
+          ["d1", "d1", "h5", 23.6, 1.0, 30],
+          ["g8", "g8", "f6", 28.2, 0.9, 42],
+          ["f7", "f7", OUT, 31.6, 0.8, 50],
+          ["d1", "h5", "f7", 32.4, 0.9, 30],
+        ];
+        const byPiece = {};
+        MOVES.forEach((m) => (byPiece[m[0]] ||= []).push(m));
+        function place(t) {
+          for (const [key, moves] of Object.entries(byPiece)) {
+            const cur = moves.filter((m) => t >= m[3]).pop();
+            if (!cur) carry(pieces[key], moves[0][1], moves[0][1], 0, 1, 0, TOP, 0);
+            else carry(pieces[key], cur[1], cur[2], cur[3], cur[4], t, TOP, cur[5]);
+          }
+          // the captured pawn ends beside the board, on the table
+          const out = byPiece.f7[0];
+          if (t >= out[3]) pieces.f7.position.y -= TOP * smooth((t - out[3]) / out[4]);
+        }
+        // squares answering: white points where a white piece lands, amber for the opponent's move
+        const LIGHTS = [
+          ["e4", WHITE_LED, 7.0, 10, false],
+          ["e7", AMBER_LED, 10.4, 11.4, true], ["e5", AMBER_LED, 10.4, 12.2, true],
+          ["c4", WHITE_LED, 16.1, 18.5, false],
+          ["b8", AMBER_LED, 19.0, 19.8, true], ["c6", AMBER_LED, 19.0, 20.7, true],
+          ["h5", WHITE_LED, 24.6, 27, false],
+          ["g8", AMBER_LED, 27.4, 28.2, true], ["f6", AMBER_LED, 27.4, 29.1, true],
+          ["f7", WHITE_LED, 33.3, 36, false],
+          ["e8", AMBER_LED, 36.3, 41, true],
+        ];
+        function lights(t) {
+          leds.clear();
+          for (const [sq, hex, a, b, blink] of LIGHTS) {
+            if (t >= a && t < b) leds.set(sq, hex, blink ? (Math.floor((t - a) * 4) % 2 ? 0.25 : 1) : 1);
+          }
+        }
+        // the clock's bar rocks to the other side each time a piece is set down
+        const LANDINGS = [7.0, 12.2, 16.1, 20.7, 24.6, 29.1, 33.3];
+        function rock(t) {
+          const done = LANDINGS.filter((l) => t >= l);
+          const side = done.length % 2 ? -1 : 1;
+          const last = done.pop();
+          const u = last === undefined ? 1 : smooth((t - last) / 0.15);
+          clock.tilt(side * (2 * u - 1));
+        }
+        const SHOTS = [
+          [0, 2.5, [-170, 720, 700], [-90, 700, 730], [0, 20, 10], [0, 20, 10]],
+          [5.5, 10, [240, 240, 480], [200, 220, 430], [25, 30, 75], [25, 30, 60]],
+          [10, 14.5, [-140, 340, 330], [-120, 320, 300], [25, 30, -70], [25, 30, -75]],
+          [14.5, 18.5, [340, 340, 520], [310, 320, 490], [0, 30, 100], [-10, 30, 90]],
+          [18.5, 20.7, [-430, 340, 200], [-400, 320, 180], [-100, 30, -125], [-100, 30, -125]],
+          [20.7, 23, [100, 230, 170], [130, 210, 150], [381, 25, -27], [381, 25, -27]],
+          [23, 27, [-220, 360, 500], [-190, 340, 470], [75, 30, 75], [80, 30, 60]],
+          [27, 31, [340, 330, 250], [320, 310, 230], [100, 30, -125], [100, 30, -125]],
+          [31, 36, [270, 230, 60], [240, 210, 40], [75, 35, -125], [75, 35, -125]],
+          [36, 41, (cam, u) => { const a = -0.35 + 1.1 * u; cam.position.set(50 + Math.sin(a) * 320, 230, -150 + Math.cos(a) * 320); }, null, [50, 35, -150], [50, 35, -150]],
+        ];
+        const LIVE = [[0, 2.5], [5.5, 41]]; // the cards cover the rest
+
+        renderAt = (t) => {
+          if (!LIVE.some(([a, b]) => t >= a && t < b)) return;
+          place(t);
+          lights(t);
+          rock(t);
+          frame(camera, SHOTS, t);
+          renderer.render(scene, camera);
+        };
+        ready = true;
+        renderAt(last);
+      })();
+    </script>
+  </body>
+</html>

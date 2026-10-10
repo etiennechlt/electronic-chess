@@ -14,13 +14,20 @@ Raccords : coupes franches, sauf les raccords sur objet (08 vers 09, la
 base ouverte puis habillée en 13). Les chiffres entre accolades sont des
 clés de `assets/facts.js`.
 
+Les plans d'objet (01, 02, 04, 08 à 11, 13) sont une seule scène 3D, à
+la racine (`index.html`), sur le temps global : pièces Staunton aux
+diamètres de base calculés, plateau, base chariot et horloge exportés
+de CadQuery. Les compositions de ces plans ne portent plus que les
+mots ; les cartons et les plans d'onde (03, 05 à 07, 12, 14, 15) les
+recouvrent.
+
 ## Frame 1 : Pièce
 
 - status: animated
 - src: compositions/s01-piece.html
 - duration: 3.5s
 - transition_in: cut
-- scene: la pièce tombe et se pose, « 0 puce, 0 pile, 0 contact »
+- scene: un pion noir tombe sur un sol sombre et se pose, « 0 puce, 0 pile, 0 contact »
 - voiceover: Une pièce d'échecs.
 
 ## Frame 2 : Pose
@@ -29,7 +36,7 @@ clés de `assets/facts.js`.
 - src: compositions/s02-pose.html
 - duration: 4s
 - transition_in: cut
-- scene: vue de dessus, anneaux cyan, « pion noir » et sa fréquence
+- scene: le pion posé en e4 du plateau vide, anneaux cyan, la case s'allume, « pion noir » et sa fréquence
 - voiceover: Et pourtant, le plateau sait laquelle.
 
 ## Frame 3 : Titre
@@ -46,7 +53,7 @@ clés de `assets/facts.js`.
 - src: compositions/s04-dans-la-piece.html
 - duration: 4s
 - transition_in: cut
-- scene: la pièce éclatée, couches qui s'écartent, bobine et condensateur
+- scene: le pion ouvert, feutre, bobine et condensateur, aimant, coque s'écartent vers le bas, légendes qui suivent les pièces
 - voiceover: Dedans, une bobine et un condensateur.
 
 ## Frame 5 : Frappe
@@ -82,7 +89,7 @@ clés de `assets/facts.js`.
 - src: compositions/s08-plateau.html
 - duration: 3.5s
 - transition_in: cut
-- scene: rendu du plateau fin, côté et épaisseur
+- scene: le plateau fin et ses pièces en position de départ, lente avancée, côté et épaisseur
 - voiceover: Un plateau fin, sur batterie, sans câble.
 
 ## Frame 9 : Éclaté
@@ -91,7 +98,7 @@ clés de `assets/facts.js`.
 - src: compositions/s09-eclate.html
 - duration: 4.5s
 - transition_in: match
-- scene: même cadre que 08, le plateau éclate, quatre mots clés de haut en bas
+- scene: même cadre que 08, les couches s'écartent, quatre mots clés de haut en bas, la couche nommée s'éclaire en cyan
 - voiceover: Sous le bois, {coils} spirales et {leds} LED.
 
 ## Frame 10 : Arbitre
@@ -100,7 +107,7 @@ clés de `assets/facts.js`.
 - src: compositions/s10-arbitre.html
 - duration: 4s
 - transition_in: cut
-- scene: e2-e4, les deux points lumineux de la case, roque, prise en passant, promotion
+- scene: e2-e4 sur le plateau, les deux points lumineux de la case, roque, prise en passant, promotion
 - voiceover: Il vérifie chaque coup, même les plus rares.
 
 ## Frame 11 : Horloge
@@ -109,7 +116,7 @@ clés de `assets/facts.js`.
 - src: compositions/s11-horloge.html
 - duration: 3.5s
 - transition_in: cut
-- scene: l'horloge à bascule reliée au plateau par radio
+- scene: l'horloge à bascule, sa barre bascule à chaque coup, liaison radio
 - voiceover: Contre un moteur ou en ligne, horloge comprise.
 
 ## Frame 12 : Autonomie
@@ -126,7 +133,7 @@ clés de `assets/facts.js`.
 - src: compositions/s13-chariot.html
 - duration: 3.5s
 - transition_in: cut
-- scene: base chariot ouverte puis habillée, en option, phase 2
+- scene: la base chariot ouverte, le module plateau s'y pose avec un bruit sourd, en option, phase 2
 - voiceover: Une base qui déplace les pièces toute seule.
 
 ## Frame 14 : Un seul fichier
@@ -144,4 +151,4 @@ clés de `assets/facts.js`.
 - src: compositions/s15-fin.html
 - duration: 5s
 - transition_in: cut
-- scene: carton bois, la gamme sonne et l'onde s'amortit, état du projet et lien
+- scene: carton bois, la gamme sonne et l'onde s'amortit, état du projet, lien et signature « Échec et Watt »

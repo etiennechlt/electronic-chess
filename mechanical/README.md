@@ -6,7 +6,17 @@ Modèles paramétriques pilotés par `config/board.yaml`. Construction :
 .venv/bin/python mechanical/build_all.py     # STL + STEP dans exports/ (versionnés)
 .venv/bin/python mechanical/scenes.py        # rendus pour la doc (docs/images/)
 .venv/bin/python mechanical/viewer.py        # vue 3D interactive (exports/plateau-3d.html)
+.venv/bin/python mechanical/scenes.py --film-meshes media/pitch/commun/meshes  # maillages des films
 ```
+
+Les films de présentation ([media/pitch](../media/pitch/README.md))
+chargent les solides eux-mêmes : `--film-meshes` exporte en STL,
+couche par couche et couleur par couleur, le plateau fin (base, trois
+cellules, cartes, quatre quadrants, contreplaqué), la base chariot
+sans son module et l'horloge avec sa barre à part, plus un
+`manifest.json` (pivot de la barre). Ces maillages sont commités pour
+rendre les films sans CadQuery ; les relancer après une modification
+de la géométrie.
 
 ## Plateau 8 x 8 et horloge (ADR 0010)
 

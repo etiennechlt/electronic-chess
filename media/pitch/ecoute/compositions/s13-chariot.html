@@ -6,10 +6,11 @@
   <body>
     <template>
       <style>
+        /* over the 3D stage of the root: the carriage base open, then the
+           board module comes down into it, same camera */
         #s13 {
           position: absolute;
           inset: 0;
-          background: var(--nuit);
           overflow: hidden;
         }
         #s13-kw {
@@ -31,28 +32,11 @@
           font-weight: 500;
           color: var(--cuivre);
         }
-        #s13-stage {
-          position: absolute;
-          left: 60px;
-          top: 470px;
-          width: 960px;
-          height: 960px;
-        }
-        #s13-stage img {
-          position: absolute;
-          inset: 0;
-          width: 960px;
-          height: 960px;
-        }
       </style>
 
       <div id="s13" data-composition-id="s13-chariot" data-width="1080" data-height="1920">
         <p id="s13-kw" class="kw">En option</p>
         <p id="s13-sub" class="mono">portique CoreXY · aimant néodyme · <b>phase 2</b></p>
-        <div id="s13-stage">
-          <img id="s13-open" src="assets/rendus/plateau-chariot-ouvert.png" alt="" />
-          <img id="s13-closed" src="assets/rendus/plateau-chariot.png" alt="" />
-        </div>
       </div>
 
       <script>
@@ -62,9 +46,7 @@
           const tl = gsap.timeline({ paused: true });
           tl.fromTo("#s13-kw", { opacity: 0, scale: 1.15 }, { opacity: 1, scale: 1, duration: 0.16, ease: "power2.out" }, 0.05);
           tl.fromTo("#s13-sub", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 0.3);
-          tl.fromTo("#s13-stage", { scale: 1 }, { scale: 1.03, duration: 3.5, ease: "none" }, 0);
-          // the open base first, then the board module drops into it: same camera
-          tl.fromTo("#s13-closed", { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power1.inOut" }, 1.1);
+          // the module lands in the base at 1.7 s (root 3D scene, with its thud)
           window.__timelines["s13-chariot"] = tl;
         })();
       </script>

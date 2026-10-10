@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>Le plateau se construit</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./node_modules/three/build/three.module.js",
+          "three/addons/": "./node_modules/three/examples/jsm/"
+        }
+      }
+    </script>
+    <!-- GSAP and three.js from the local npm install: renders never fetch the network -->
+    <script src="node_modules/gsap/dist/gsap.min.js"></script>
+    <!-- facts.js and assets/commun are written by `python -m serie film media/pitch/construction` -->
+    <script src="assets/facts.js"></script>
+    <script src="assets/commun/film.js"></script>
+    <link rel="stylesheet" href="assets/commun/film.css" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #101418;
+      }
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      #gl {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      [data-composition-id="construction"] > div[data-composition-src] {
+        position: absolute;
+        inset: 0;
+      }
+      /* the opened piece's labels follow its parts on screen */
+      #labels {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      .lab {
+        position: absolute;
+        margin: 0;
+        width: max-content;
+        padding: 8px 14px;
+        border-radius: 6px;
+        background: rgba(16, 20, 24, 0.88);
+        text-align: right;
+        font-size: 30px;
+        line-height: 1.25;
+        color: var(--blanc);
+        opacity: 0;
+        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+      }
+      .lab::after {
+        content: "";
+        position: absolute;
+        right: -64px;
+        top: 26px;
+        width: 48px;
+        height: 2px;
+        background: var(--cuivre);
+      }
+      .lab .ln {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="construction"
+      data-start="0"
+      data-duration="54.5"
+      data-width="1080"
+      data-height="1920"
+    >
+      <!-- the board built layer by layer, whole film long; the cards cover it where they play -->
+      <canvas id="gl" width="1080" height="1920"></canvas>
+      <div id="labels">
+        <p id="lab-shell" class="lab mono">coque</p>
+        <p id="lab-magnet" class="lab mono"><span class="ln">aimant ferrite</span><span class="ln">Ø <span data-fact="pawn_magnet_mm"></span> mm</span></p>
+        <p id="lab-coil" class="lab mono"><span class="ln">bobine Ø <span data-fact="pawn_coil_mm"></span> mm, <span data-fact="coil_uh"></span> µH</span><span class="ln">+ condensateur C0G</span></p>
+        <p id="lab-felt" class="lab mono">feutre <span data-fact="felt_mm"></span> mm</p>
+      </div>
+
+      <div id="el-textes" data-composition-id="textes" data-composition-src="compositions/textes.html" data-start="0" data-duration="47.5" data-track-index="2"></div>
+      <div id="el-titre" data-composition-id="titre" data-composition-src="compositions/titre.html" data-start="3" data-duration="2.5" data-track-index="1"></div>
+      <div id="el-fin" data-composition-id="fin" data-composition-src="compositions/fin.html" data-start="47.5" data-duration="7" data-track-index="1"></div>
+      <div id="el-captions" data-track-kind="captions" data-composition-id="captions" data-composition-src="compositions/captions.html" data-start="0" data-duration="54.5" data-track-index="3"></div>
+
+      <!-- a thud for each layer set down (landing = drop + fall) -->
+      <audio id="snd-base" src="assets/sons/pose.wav" data-start="6.25" data-duration="0.5" data-track-index="10" data-volume="0.8"></audio>
+      <audio id="snd-cell-1" src="assets/sons/pose.wav" data-start="9.75" data-duration="0.5" data-track-index="10" data-volume="0.7"></audio>
+      <audio id="snd-cell-2" src="assets/sons/pose.wav" data-start="10.35" data-duration="0.5" data-track-index="10" data-volume="0.7"></audio>
+      <audio id="snd-cell-3" src="assets/sons/pose.wav" data-start="10.95" data-duration="0.5" data-track-index="10" data-volume="0.7"></audio>
+      <audio id="snd-cartes" src="assets/sons/pose.wav" data-start="13.85" data-duration="0.5" data-track-index="10" data-volume="0.75"></audio>
+      <audio id="snd-quad-1" src="assets/sons/pose.wav" data-start="17.85" data-duration="0.5" data-track-index="10" data-volume="0.75"></audio>
+      <audio id="snd-quad-2" src="assets/sons/pose.wav" data-start="18.75" data-duration="0.5" data-track-index="10" data-volume="0.75"></audio>
+      <audio id="snd-quad-3" src="assets/sons/pose.wav" data-start="19.65" data-duration="0.5" data-track-index="10" data-volume="0.75"></audio>
+      <audio id="snd-quad-4" src="assets/sons/pose.wav" data-start="20.55" data-duration="0.5" data-track-index="10" data-volume="0.75"></audio>
+      <audio id="snd-bois" src="assets/sons/pose.wav" data-start="23.85" data-duration="0.5" data-track-index="10" data-volume="0.8"></audio>
+      <!-- the opened piece closes and sings; then each family lands on its note of the scale -->
+      <audio id="snd-piece" src="assets/sons/pawn-white.wav" data-start="30.4" data-duration="2.5" data-track-index="11" data-volume="0.6"></audio>
+      <audio id="snd-familles" src="assets/sons/gamme.wav" data-start="32.95" data-duration="5.8" data-track-index="11" data-volume="0.6"></audio>
+      <audio id="snd-chariot" src="assets/sons/pose.wav" data-start="45.9" data-duration="0.5" data-track-index="10" data-volume="0.9"></audio>
+      <audio id="snd-fin" src="assets/sons/gamme.wav" data-start="47.7" data-duration="5.8" data-track-index="11" data-volume="0.55"></audio>
+    </div>
+
+    <script>
+      window.__timelines["construction"] = gsap.timeline({ paused: true });
+    </script>
+    <script type="module">
+      import * as THREE from "three";
+      import { createStage, loadMeshes, boardTop, startPosition, lightHoles, openedPiece, squareXZ, toScreen, smooth, clamp01, WHITE_LED } from "./assets/commun/scene3d.js";
+
+      // listen at once, render once the meshes are in; the runtime waits on buildReady
+      let ready = false;
+      let last = window.__hfThreeTime || 0;
+      let renderAt = () => {};
+      window.addEventListener("hf-seek", (e) => {
+        last = e.detail.time;
+        if (ready) renderAt(last);
+      });
+      window.__hf = window.__hf || {};
+      window.__hf.buildReady = window.__hf.buildReady || {};
+      window.__hf.buildReady.construction = (async () => {
+        const FACTS = window.FACTS;
+        const { renderer, scene, camera } = createStage(document.getElementById("gl"));
+        // a fill from the camera side: the bases are dark solids on a dark ground
+        const fill = new THREE.DirectionalLight(0xffffff, 0.8);
+        fill.position.set(600, 400, 900);
+        scene.add(fill);
+        const { layers } = await loadMeshes(scene, (m) => m.set === "fin" || m.set === "chariot");
+        const TOP = boardTop(layers);
+        const pieces = Object.values(startPosition(scene, TOP));
+        const leds = lightHoles(scene, TOP);
+
+        // ---- the build: one drop per layer, the landing is drop + FALL
+        const FALL = 0.45;
+        const DROP = {
+          "fin/base": 5.8,
+          "fin/cellule-1": 9.3,
+          "fin/cellule-2": 9.9,
+          "fin/cellule-3": 10.5,
+          "fin/cartes": 13.4,
+          "fin/quadrant-1": 17.4,
+          "fin/quadrant-2": 18.3,
+          "fin/quadrant-3": 19.2,
+          "fin/quadrant-4": 20.1,
+          "fin/bois": 23.4,
+        };
+        // the hook takes it apart in reverse order, top first
+        const FLY = [["fin/bois", 1.3], ["fin/quadrant", 1.55], ["fin/cartes", 1.8], ["fin/cellule", 2.0], ["fin/base", 2.2]];
+        const PIECES_FLY = 1.0;
+        // the twelve families fall one scale step apart, lowest note first, from PIECES_AT
+        const PIECES_AT = 32.5;
+        const STEP = FACTS.scale_step_s;
+        const family = (p) => FACTS.lines.findIndex((l) => l.slug === `${p.userData.kind}-${p.userData.white ? "white" : "black"}`);
+        pieces.forEach((p) => (p.userData.family = family(p)));
+
+        const fall = (t, t0, h = 360) => (t < t0 ? h : t < t0 + FALL ? h * (1 - ((t - t0) / FALL) ** 2) : 0);
+        const flyUp = (t, t0) => (t < t0 ? 0 : 1100 * ((t - t0) / 0.6) ** 2);
+
+        // ---- the base change: the board module (quadrants, plywood, pieces) lifts, the
+        // thin base slides out, the carriage base slides in, the module comes down onto it
+        const HOVER = 150;
+        const SLIDE = 1100;
+        const LIFT = FACTS.scene.gantry_lift;
+        const isModule = (key) => key.startsWith("fin/quadrant") || key === "fin/bois";
+        function moduleY(t) {
+          if (t < 45.0) return HOVER * smooth((t - 41.8) / 1.0);
+          const u = clamp01((t - 45.0) / 0.9);
+          return HOVER + (LIFT - HOVER) * u * u; // falls onto the base, lands at 45.9
+        }
+        const baseX = (t) => -SLIDE * smooth((t - 42.6) / 1.2);
+        const chariotX = (t) => SLIDE * (1 - smooth((t - 43.4) / 1.4));
+
+        function build(t) {
+          for (const [key, { outer }] of Object.entries(layers)) {
+            if (key === "chariot/base") {
+              outer.visible = t >= 43.3;
+              outer.position.set(chariotX(t), 0, 0);
+              continue;
+            }
+            let y;
+            if (t < 3) {
+              y = flyUp(t, FLY.find(([k]) => key.startsWith(k))[1]);
+              outer.visible = true;
+            } else {
+              y = fall(t, DROP[key]);
+              outer.visible = t >= DROP[key] - 0.6;
+            }
+            if (isModule(key)) y += moduleY(t);
+            else if (t >= 42.6) {
+              outer.position.x = baseX(t);
+              outer.visible = t < 44;
+            } else outer.position.x = 0;
+            outer.position.y = y;
+          }
+          for (const p of pieces) {
+            if (t < 3) {
+              p.position.y = TOP + flyUp(t, PIECES_FLY);
+              p.visible = true;
+              continue;
+            }
+            const t0 = PIECES_AT + p.userData.family * STEP;
+            p.position.y = TOP + fall(t, t0, 260) + moduleY(t);
+            p.visible = t >= t0 - 0.5;
+          }
+        }
+
+        // ---- the plywood lit through: a diagonal wave over the light holes once it is down
+        const FILES = "abcdefgh";
+        function lights(t) {
+          leds.clear();
+          if (t >= 24.6 && t < 27) {
+            const u = (t - 24.6) / 1.4;
+            const fade = 1 - smooth((t - 26.4) / 0.6);
+            for (let f = 0; f < 8; f++) {
+              for (let r = 0; r < 8; r++) {
+                const level = smooth((u - (f + r) / 14) / 0.15) * fade;
+                if (level > 0) leds.set(FILES[f] + (r + 1), WHITE_LED, level);
+              }
+            }
+          }
+          // the opened piece's square answers when it closes
+          if (t >= 30.4 && t < 32) leds.set(OPEN_SQ, WHITE_LED, 1);
+        }
+
+        // ---- one piece, opened above its square on the empty board, then closed
+        const OPEN_SQ = "e4";
+        const opened = openedPiece("pawn", true);
+        const [ox, oz] = squareXZ(OPEN_SQ);
+        opened.group.position.set(ox, TOP, oz);
+        scene.add(opened.group);
+        // [label, part, height above the part's origin (piece heights), half width on screen side (mm)]
+        const PAWN = FACTS.scene.pieces.pawn;
+        const LABELS = [
+          ["lab-shell", opened.parts.shell, 0.5, PAWN.base / 2],
+          ["lab-magnet", opened.parts.magnet, 0, PAWN.magnet_d / 2],
+          ["lab-coil", opened.parts.coil, 0, PAWN.coil_od / 2],
+          ["lab-felt", opened.parts.felt, 0, PAWN.base / 2],
+        ];
+        window.fillFacts(document.getElementById("labels"));
+        const labelEls = LABELS.map(([id]) => document.getElementById(id));
+        const tmp = new THREE.Vector3();
+        function piece(t) {
+          opened.group.visible = t >= 27 && t < 32;
+          opened.explode(1 - smooth((t - 29.2) / 1.2));
+        }
+        const right = new THREE.Vector3();
+        function labels(t) {
+          const show = t >= 27.4 && t < 29.4 ? smooth((t - 27.4) / 0.25) * (1 - smooth((t - 29.1) / 0.3)) : 0;
+          camera.updateMatrixWorld();
+          right.setFromMatrixColumn(camera.matrixWorld, 0);
+          LABELS.forEach(([, part, rise, half], i) => {
+            const el = labelEls[i];
+            el.style.opacity = show;
+            if (!show) return;
+            part.getWorldPosition(tmp);
+            tmp.y += rise * PAWN.height;
+            const s = toScreen(camera, tmp.addScaledVector(right, -half));
+            // the copper rule ends 16 px short of the part's left edge
+            el.style.right = `${1080 - (s.x - 16 - 64)}px`;
+            el.style.top = `${s.y - 26}px`;
+          });
+        }
+
+        // ---- one documentary camera, slow orbit; a close shot on the piece, a low one on the base change
+        const up = new THREE.Vector3(0, 1, 0);
+        function setFov(fov) {
+          if (camera.fov !== fov) {
+            camera.fov = fov;
+            camera.updateProjectionMatrix();
+          }
+        }
+        function cam(t) {
+          if (t >= 27 && t < 32) {
+            const u = smooth((t - 27) / 5);
+            setFov(34);
+            camera.position.set(ox + 200 - 30 * u, TOP + 120 - 10 * u, oz + 250 - 30 * u);
+            // the stack sits right of centre, its labels on the left
+            const target = new THREE.Vector3(ox, TOP + 30, oz);
+            const dir = target.clone().sub(camera.position).normalize();
+            const side = new THREE.Vector3().crossVectors(dir, up).normalize();
+            camera.lookAt(target.addScaledVector(side, -22));
+            return;
+          }
+          setFov(40);
+          if (t >= 41.5) {
+            const a = 0.55 + 0.12 * smooth((t - 41.5) / 6);
+            camera.position.set(Math.sin(a) * 1600, 700, Math.cos(a) * 1600);
+            camera.lookAt(0, 90, 0);
+            return;
+          }
+          const a = t < 3 ? -0.62 + 0.08 * (t / 3) : -0.7 + 0.5 * ((t - 3) / 38.5);
+          const push = smooth((t - 38) / 3.5);
+          const r = 1250 - 300 * push;
+          camera.position.set(Math.sin(a) * r, 1050 - 250 * push, Math.cos(a) * r);
+          camera.lookAt(0, 10, 0);
+        }
+
+        const LIVE = [[0, 3], [5.5, 47.5]]; // the cards cover the rest
+        renderAt = (t) => {
+          if (!LIVE.some(([a, b]) => t >= a && t < b)) {
+            labelEls.forEach((el) => (el.style.opacity = 0));
+            return;
+          }
+          build(t);
+          piece(t);
+          lights(t);
+          cam(t);
+          labels(t);
+          renderer.render(scene, camera);
+        };
+        ready = true;
+        renderAt(last);
+      })();
+    </script>
+  </body>
+</html>

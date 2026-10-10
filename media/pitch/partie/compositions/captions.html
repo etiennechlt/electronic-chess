@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        /* Caption style of the series bible: bold grotesque, white with a black
+           outline, two lines at most, between 1300 and 1550 px, never lower.
+           These lines are also the voice-over script for a later dubbed cut. */
+        #cp-root {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+        }
+        .cap {
+          position: absolute;
+          left: 72px;
+          top: 1318px;
+          width: 888px;
+          display: flex;
+          justify-content: center;
+        }
+        .cap p {
+          margin: 0;
+          max-width: 860px;
+          text-align: center;
+          font-size: 60px;
+          line-height: 1.16;
+          color: #ffffff;
+          text-shadow:
+            -4px -4px 0 #000, 0 -4px 0 #000, 4px -4px 0 #000, 4px 0 0 #000,
+            4px 4px 0 #000, 0 4px 0 #000, -4px 4px 0 #000, -4px 0 0 #000;
+        }
+      </style>
+
+      <div id="cp-root" data-composition-id="captions" data-width="1080" data-height="1920">
+        <div id="cp-01" class="clip cap" data-start="0.3" data-duration="2.2" data-track-index="1"><p class="sans">Une partie, sur un échiquier qui écoute.</p></div>
+        <div id="cp-03" class="clip cap" data-start="5.8" data-duration="4.2" data-track-index="1"><p class="sans">Il reconnaît la pièce à sa note.</p></div>
+        <div id="cp-04" class="clip cap" data-start="10.3" data-duration="4.2" data-track-index="1"><p class="sans">L'adversaire joue en ligne, les cases s'allument.</p></div>
+        <div id="cp-05" class="clip cap" data-start="14.8" data-duration="3.7" data-track-index="1"><p class="sans">Chaque coup est vérifié.</p></div>
+        <div id="cp-06" class="clip cap" data-start="18.8" data-duration="4.2" data-track-index="1"><p class="sans">L'horloge bascule seule, sans fil.</p></div>
+        <div id="cp-07" class="clip cap" data-start="23.3" data-duration="3.7" data-track-index="1"><p class="sans">Chaque pièce a sa note, la dame sonne aigu.</p></div>
+        <div id="cp-08" class="clip cap" data-start="27.3" data-duration="3.7" data-track-index="1"><p class="sans">Il ne joue pas à ta place.</p></div>
+        <div id="cp-09" class="clip cap" data-start="31.3" data-duration="4.7" data-track-index="1"><p class="sans">Il suit aussi les prises.</p></div>
+      </div>
+
+      <script>
+        (function () {
+          const root = document.getElementById("cp-root");
+          window.fillFacts(root);
+          const tl = gsap.timeline({ paused: true });
+          gsap.utils.toArray("#cp-root .cap").forEach(function (cap) {
+            const at = parseFloat(cap.getAttribute("data-start"));
+            tl.fromTo(cap.firstElementChild, { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, duration: 0.14, ease: "power2.out" }, at);
+          });
+          window.__timelines["captions"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

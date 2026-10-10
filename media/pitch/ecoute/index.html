@@ -4,12 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=1080, height=1920" />
     <title>L'échiquier qui écoute ses pièces</title>
-    <!-- GSAP from the local npm install (npm install): renders never fetch the network -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./node_modules/three/build/three.module.js",
+          "three/addons/": "./node_modules/three/examples/jsm/"
+        }
+      }
+    </script>
+    <!-- GSAP and three.js from the local npm install (npm install): renders never fetch the network -->
     <script src="node_modules/gsap/dist/gsap.min.js"></script>
-    <!-- facts.js is written by `python -m serie film media/pitch/ecoute` -->
+    <!-- facts.js and assets/commun are written by `python -m serie film media/pitch/ecoute` -->
     <script src="assets/facts.js"></script>
-    <script src="film.js"></script>
-    <link rel="stylesheet" href="film.css" />
+    <script src="assets/commun/film.js"></script>
+    <link rel="stylesheet" href="assets/commun/film.css" />
     <style>
       * {
         box-sizing: border-box;
@@ -28,9 +36,55 @@
         height: 100%;
         overflow: hidden;
       }
+      #gl {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
       [data-composition-id="pitch"] > div[data-composition-src] {
         position: absolute;
         inset: 0;
+      }
+      /* the opened piece's labels (scene 04) follow its parts on screen */
+      #labels {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      .lab {
+        position: absolute;
+        margin: 0;
+        width: max-content;
+        padding: 8px 14px;
+        border-radius: 6px;
+        background: rgba(16, 20, 24, 0.88);
+        text-align: right;
+        font-size: 34px;
+        line-height: 1.25;
+        color: var(--blanc);
+        opacity: 0;
+      }
+      .lab::after {
+        content: "";
+        position: absolute;
+        right: -64px;
+        top: 28px;
+        width: 48px;
+        height: 2px;
+        background: var(--gris);
+      }
+      .lab small {
+        display: block;
+        font-size: 26px;
+        color: var(--gris);
+      }
+      #lab-coil {
+        color: var(--cuivre);
+      }
+      #lab-coil::after {
+        background: var(--cuivre);
       }
     </style>
   </head>
@@ -43,6 +97,15 @@
       data-width="1080"
       data-height="1920"
     >
+      <!-- the 3D stage under every scene; the opaque scenes (cards, scope, spectrum, yaml) cover it -->
+      <canvas id="gl" width="1080" height="1920"></canvas>
+      <div id="labels">
+        <p id="lab-shell" class="lab mono">coque</p>
+        <p id="lab-magnet" class="lab mono">aimant ferrite</p>
+        <p id="lab-coil" class="lab mono">bobine <span data-fact="coil_uh"></span> µH<small>condensateur C0G <span data-fact="cap_tol"></span></small></p>
+        <p id="lab-felt" class="lab mono">feutre</p>
+      </div>
+
       <!-- Act 1, the mystery -->
       <div id="el-s01" data-composition-id="s01-piece" data-composition-src="compositions/s01-piece.html" data-start="0" data-duration="3.5" data-track-index="1"></div>
       <div id="el-s02" data-composition-id="s02-pose" data-composition-src="compositions/s02-pose.html" data-start="3.5" data-duration="4" data-track-index="1"></div>
@@ -73,10 +136,243 @@
       <audio id="snd-gamme" src="assets/sons/gamme.wav" data-start="19.5" data-duration="5.8" data-track-index="11" data-volume="0.55"></audio>
       <audio id="snd-dame" src="assets/sons/queen-white.wav" data-start="25.35" data-duration="2.5" data-track-index="10" data-volume="0.6"></audio>
       <audio id="snd-coup" src="assets/sons/pawn-white.wav" data-start="36.4" data-duration="2.5" data-track-index="10" data-volume="0.6"></audio>
+      <audio id="snd-chariot" src="assets/sons/pose.wav" data-start="48.2" data-duration="0.5" data-track-index="12" data-volume="0.8"></audio>
       <audio id="snd-fin" src="assets/sons/gamme.wav" data-start="55.2" data-duration="4.8" data-track-index="11" data-volume="0.55"></audio>
     </div>
     <script>
       window.__timelines["pitch"] = gsap.timeline({ paused: true });
+    </script>
+    <script type="module">
+      import * as THREE from "three";
+      import { createStage, loadMeshes, boardTop, makePiece, startPosition, lightHoles, clockRig, openedPiece, carry, squareXZ, toScreen, smooth, clamp01, WHITE_LED } from "./assets/commun/scene3d.js";
+
+      // listen at once, render once the meshes are in; the runtime waits on buildReady
+      let ready = false;
+      let last = window.__hfThreeTime || 0;
+      let renderAt = () => {};
+      window.addEventListener("hf-seek", (e) => {
+        last = e.detail.time;
+        if (ready) renderAt(last);
+      });
+      window.__hf = window.__hf || {};
+      window.__hf.buildReady = window.__hf.buildReady || {};
+      window.__hf.buildReady.pitch = (async () => {
+        const FACTS = window.FACTS;
+        const canvas = document.getElementById("gl");
+        const { renderer, scene, camera } = createStage(canvas);
+        const { layers, manifest } = await loadMeshes(scene, () => true);
+        const TOP = boardTop(layers);
+        const pieces = startPosition(scene, TOP);
+        const leds = lightHoles(scene, TOP);
+        const clock = clockRig(scene, layers, manifest);
+        const CYAN = 0x2ec4b6;
+
+        // ---- the studio: a dark floor away from the board, its own shadow light (scenes 01, 04)
+        const STUDIO = new THREE.Vector3(-1600, 0, 0);
+        const floor = new THREE.Mesh(new THREE.CircleGeometry(600, 64), new THREE.MeshStandardMaterial({ color: 0x151a20, roughness: 1 }));
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.copy(STUDIO);
+        floor.receiveShadow = true;
+        scene.add(floor);
+        // a narrow spot, so its light stays on the studio (no decay: plain intensity)
+        const spot = new THREE.SpotLight(0xffffff, 1.0, 0, 0.4, 0.6, 0);
+        spot.position.copy(STUDIO).add(new THREE.Vector3(-120, 260, 160));
+        spot.target.position.copy(STUDIO);
+        spot.castShadow = true;
+        spot.shadow.mapSize.set(1024, 1024);
+        spot.shadow.bias = -0.0004;
+        scene.add(spot, spot.target);
+
+        // scene 01: a black pawn drops onto the studio floor (0.1 to 0.45 s)
+        const lone = makePiece("pawn", false);
+        scene.add(lone);
+        function s01(t) {
+          lone.visible = t < 3.5;
+          const u = clamp01((t - 0.1) / 0.35);
+          lone.position.set(STUDIO.x, 300 * (1 - u * u * u), STUDIO.z);
+          lone.rotation.y = 0.4 + 0.15 * t;
+        }
+
+        // scene 02: the same pawn set on e4 of the empty board; rings leave it, the square lights
+        const E4 = squareXZ("e4");
+        const posed = makePiece("pawn", false);
+        scene.add(posed);
+        const rings = [0, 1, 2].map(() => {
+          const r = FACTS.scene.pieces.pawn.base / 2 + 2;
+          const m = new THREE.Mesh(new THREE.RingGeometry(r - 0.6, r + 0.6, 64), new THREE.MeshBasicMaterial({ color: CYAN, transparent: true, depthWrite: false }));
+          m.rotation.x = -Math.PI / 2;
+          m.position.set(E4[0], TOP + 0.3, E4[1]);
+          scene.add(m);
+          return m;
+        });
+        function s02(t) {
+          const on = t >= 3.5 && t < 7.5;
+          posed.visible = on;
+          const u = clamp01((t - 3.53) / 0.22);
+          posed.position.set(E4[0], TOP + 160 * (1 - u * u), E4[1]);
+          rings.forEach((ring, i) => {
+            const v = clamp01((t - 3.75 - i * 0.28) / 1.3);
+            const e = 1 - (1 - v) * (1 - v);
+            ring.visible = on && t >= 3.75 + i * 0.28 && v < 1;
+            ring.scale.setScalar(1 + 2.3 * e);
+            ring.material.opacity = 0.9 * (1 - e);
+          });
+        }
+
+        // scene 04: the piece opened on the studio floor, its layers coming apart downwards
+        const opened = openedPiece("pawn", false);
+        opened.group.position.copy(STUDIO);
+        scene.add(opened.group);
+        const PAWN = FACTS.scene.pieces.pawn;
+        // [label, part, height above the part's origin (piece heights), half width (mm), shown at]
+        const LABELS = [
+          ["lab-shell", opened.parts.shell, 0.5, PAWN.base / 2, 11.75],
+          ["lab-magnet", opened.parts.magnet, 0, PAWN.magnet_d / 2, 11.93],
+          ["lab-coil", opened.parts.coil, 0, PAWN.coil_od / 2, 12.11],
+          ["lab-felt", opened.parts.felt, 0, PAWN.base / 2, 12.29],
+        ];
+        window.fillFacts(document.getElementById("labels"));
+        const labelEls = LABELS.map(([id]) => document.getElementById(id));
+        function s04(t) {
+          opened.group.visible = t >= 11 && t < 15;
+          opened.explode(smooth((t - 11.25) / 0.7));
+        }
+        const tmp = new THREE.Vector3();
+        const right = new THREE.Vector3();
+        function labels(t) {
+          camera.updateMatrixWorld();
+          right.setFromMatrixColumn(camera.matrixWorld, 0);
+          LABELS.forEach(([, part, rise, half, at], i) => {
+            const el = labelEls[i];
+            const show = t >= at && t < 15 ? smooth((t - at) / 0.3) : 0;
+            el.style.opacity = show;
+            if (!show) return;
+            part.getWorldPosition(tmp);
+            tmp.y += rise * PAWN.height;
+            const s = toScreen(camera, tmp.addScaledVector(right, -half));
+            el.style.right = `${1080 - (s.x - 16 - 64)}px`;
+            el.style.top = `${s.y - 28}px`;
+          });
+        }
+
+        // ---- the board (scenes 08 to 11), its layers apart in 09, on the carriage base in 13
+        const ORDER = [["fin/bois", 240], ["fin/quadrant", 180], ["fin/cartes", 120], ["fin/cellule", 60], ["fin/base", 0]];
+        const rise = (key) => (ORDER.find(([k]) => key.startsWith(k)) || [null, 0])[1];
+        const isModule = (key) => key.startsWith("fin/quadrant") || key === "fin/bois";
+        const HOVER = 150;
+        const LIFT = FACTS.scene.gantry_lift;
+        const apart = (t) => (t >= 31 && t < 35.5 ? smooth((t - 31.5) / 0.7) : 0);
+        // scene 13: the module hangs over the carriage base, then comes down into it
+        function moduleY(t) {
+          const u = clamp01((t - 47.6) / 0.6);
+          return HOVER + (LIFT - HOVER) * u * u;
+        }
+        // scene 09 names the layers top to bottom; the named one glows cyan
+        const NAMED = [[32.25, "fin/bois"], [33.05, "fin/quadrant"], [33.85, "fin/cartes"], [34.65, "fin/cellule"]];
+        const glow = new THREE.Color(CYAN);
+        for (const { inner } of Object.values(layers)) {
+          inner.traverse((m) => {
+            if (m.isMesh) m.userData.emissive = m.material.emissive.clone();
+          });
+        }
+        function board(t) {
+          const chariot = t >= 46.5 && t < 50;
+          const shown = (t >= 3.5 && t < 7.5) || (t >= 27.5 && t < 43);
+          const named = t >= 31 && t < 35.5 ? NAMED.filter(([a]) => t >= a).pop() : null;
+          for (const [key, { outer, inner }] of Object.entries(layers)) {
+            if (key.startsWith("horloge")) continue;
+            if (key === "chariot/base") {
+              outer.visible = chariot;
+              continue;
+            }
+            outer.visible = shown || (chariot && isModule(key));
+            outer.position.y = chariot ? moduleY(t) : rise(key) * apart(t);
+            const lit = named && key.startsWith(named[1]);
+            inner.traverse((m) => {
+              if (!m.isMesh) return;
+              m.material.emissive.copy(lit ? glow : m.userData.emissive);
+              m.material.emissiveIntensity = lit ? 0.35 : 1;
+            });
+          }
+          const set = (t >= 27.5 && t < 43) || chariot;
+          const lift = chariot ? moduleY(t) : 240 * apart(t);
+          for (const [sq, p] of Object.entries(pieces)) {
+            p.visible = set;
+            if (sq === "e2") {
+              carry(p, "e2", "e4", 35.95, 0.45, t, TOP, 24);
+              p.position.y += lift;
+            } else p.position.y = TOP + lift;
+          }
+          // out of the way while the layers come apart (09)
+          clock.holder.visible = (t >= 27.5 && t < 31) || (t >= 35.5 && t < 43);
+          // the bar rocks over to the other side at each move of the scene
+          const flips = [40.2, 41.6].filter((f) => t >= f);
+          const u = flips.length ? smooth((t - flips[flips.length - 1]) / 0.15) : 1;
+          const side = flips.length % 2 ? -1 : 1;
+          clock.tilt(side * (2 * u - 1));
+        }
+        function lights(t) {
+          leds.clear();
+          if (t >= 3.75 && t < 7.5) leds.set("e4", WHITE_LED, 1);
+          if (t >= 36.4 && t < 39.5) leds.set("e4", WHITE_LED, smooth((t - 36.4) / 0.2));
+        }
+
+        // ---- the camera, shot by shot: [start, end, update(u, t)]; subject = film row of the target
+        const V = (x, y, z) => new THREE.Vector3(x, y, z);
+        const S = (x, y, z) => STUDIO.clone().add(V(x, y, z));
+        const lerp = (a, b, u) => a.clone().lerp(b, u);
+        function aim(from, target, fov, subject, offset = 0) {
+          camera.position.copy(from);
+          const look = target.clone();
+          if (offset) {
+            // shift the subject sideways on screen (labels on the other side)
+            const dir = target.clone().sub(from).normalize();
+            look.addScaledVector(new THREE.Vector3().crossVectors(dir, V(0, 1, 0)).normalize(), -offset);
+          }
+          camera.lookAt(look);
+          camera.fov = fov;
+          camera.setViewOffset(1080, 1920, 0, 960 - subject, 1080, 1920);
+        }
+        const SHOTS = [
+          [0, 3.5, (u) => aim(lerp(S(150, 70, 215), S(120, 62, 235), u), S(0, 15, 0), 34, 640)],
+          [3.5, 7.5, (u) => aim(lerp(V(E4[0] + 60, TOP + 230, E4[1] + 260), V(E4[0] + 50, TOP + 215, E4[1] + 245), u), V(E4[0], TOP + 8, E4[1]), 34, 640)],
+          [11, 15, (u) => aim(lerp(S(150, 95, 250), S(130, 90, 265), u), S(0, 36, 0), 34, 800, 22)],
+          [27.5, 31, (u) => aim(lerp(V(-900, 1380, 1520), V(-850, 1300, 1440), u), V(0, 10, 0), 34, 960)],
+          [31, 35.5, (u, t) => {
+            const v = smooth((t - 31.5) / 0.7);
+            aim(lerp(V(-850, 1300, 1440), V(-1000, 1450, 1700), v), lerp(V(0, 10, 0), V(0, 140, 0), v), 34, 960 + 20 * v);
+          }],
+          [35.5, 39.5, (u) => aim(lerp(V(0, 1080, 1180), V(0, 1040, 1130), u), V(0, 0, 50), 34, 840)],
+          [39.5, 43, (u) => aim(lerp(V(100, 230, 170), V(130, 210, 150), u), V(381, 25, -27), 34, 840)],
+          [46.5, 50, (u) => {
+            const a = 0.6 + 0.1 * u;
+            aim(V(Math.sin(a) * 1600, 700, Math.cos(a) * 1600), V(0, 90, 0), 40, 900);
+          }],
+        ];
+        function cam(t) {
+          const s = SHOTS.find(([a, b]) => t >= a && t < b);
+          s[2]((t - s[0]) / (s[1] - s[0]), t);
+        }
+
+        renderAt = (t) => {
+          const live = SHOTS.some(([a, b]) => t >= a && t < b);
+          canvas.style.visibility = live ? "visible" : "hidden";
+          if (!live) {
+            labelEls.forEach((el) => (el.style.opacity = 0));
+            return;
+          }
+          s01(t);
+          s02(t);
+          s04(t);
+          board(t);
+          lights(t);
+          cam(t);
+          labels(t);
+          renderer.render(scene, camera);
+        };
+        ready = true;
+        renderAt(last);
+      })();
     </script>
   </body>
 </html>

@@ -1,0 +1,328 @@
+{
+ "frame": "CadQuery, mm, z up",
+ "meshes": [
+  {
+   "file": "fin-base-3b414a.stl",
+   "set": "fin",
+   "layer": "base",
+   "color": "#3b414a"
+  },
+  {
+   "file": "fin-cellule-1-7c8994.stl",
+   "set": "fin",
+   "layer": "cellule-1",
+   "color": "#7c8994"
+  },
+  {
+   "file": "fin-cellule-2-7c8994.stl",
+   "set": "fin",
+   "layer": "cellule-2",
+   "color": "#7c8994"
+  },
+  {
+   "file": "fin-cellule-3-7c8994.stl",
+   "set": "fin",
+   "layer": "cellule-3",
+   "color": "#7c8994"
+  },
+  {
+   "file": "fin-cartes-22262b.stl",
+   "set": "fin",
+   "layer": "cartes",
+   "color": "#22262b"
+  },
+  {
+   "file": "fin-cartes-2f3b2a.stl",
+   "set": "fin",
+   "layer": "cartes",
+   "color": "#2f3b2a"
+  },
+  {
+   "file": "fin-cartes-8aa1b5.stl",
+   "set": "fin",
+   "layer": "cartes",
+   "color": "#8aa1b5"
+  },
+  {
+   "file": "fin-cartes-e6e1d6.stl",
+   "set": "fin",
+   "layer": "cartes",
+   "color": "#e6e1d6"
+  },
+  {
+   "file": "fin-quadrant-1-1d6b3c.stl",
+   "set": "fin",
+   "layer": "quadrant-1",
+   "color": "#1d6b3c"
+  },
+  {
+   "file": "fin-quadrant-1-22262b.stl",
+   "set": "fin",
+   "layer": "quadrant-1",
+   "color": "#22262b"
+  },
+  {
+   "file": "fin-quadrant-1-2f3b2a.stl",
+   "set": "fin",
+   "layer": "quadrant-1",
+   "color": "#2f3b2a"
+  },
+  {
+   "file": "fin-quadrant-1-d38a3c.stl",
+   "set": "fin",
+   "layer": "quadrant-1",
+   "color": "#d38a3c"
+  },
+  {
+   "file": "fin-quadrant-1-e6e1d6.stl",
+   "set": "fin",
+   "layer": "quadrant-1",
+   "color": "#e6e1d6"
+  },
+  {
+   "file": "fin-quadrant-1-f0c95a.stl",
+   "set": "fin",
+   "layer": "quadrant-1",
+   "color": "#f0c95a"
+  },
+  {
+   "file": "fin-quadrant-2-1d6b3c.stl",
+   "set": "fin",
+   "layer": "quadrant-2",
+   "color": "#1d6b3c"
+  },
+  {
+   "file": "fin-quadrant-2-22262b.stl",
+   "set": "fin",
+   "layer": "quadrant-2",
+   "color": "#22262b"
+  },
+  {
+   "file": "fin-quadrant-2-2f3b2a.stl",
+   "set": "fin",
+   "layer": "quadrant-2",
+   "color": "#2f3b2a"
+  },
+  {
+   "file": "fin-quadrant-2-d38a3c.stl",
+   "set": "fin",
+   "layer": "quadrant-2",
+   "color": "#d38a3c"
+  },
+  {
+   "file": "fin-quadrant-2-e6e1d6.stl",
+   "set": "fin",
+   "layer": "quadrant-2",
+   "color": "#e6e1d6"
+  },
+  {
+   "file": "fin-quadrant-2-f0c95a.stl",
+   "set": "fin",
+   "layer": "quadrant-2",
+   "color": "#f0c95a"
+  },
+  {
+   "file": "fin-quadrant-3-1d6b3c.stl",
+   "set": "fin",
+   "layer": "quadrant-3",
+   "color": "#1d6b3c"
+  },
+  {
+   "file": "fin-quadrant-3-22262b.stl",
+   "set": "fin",
+   "layer": "quadrant-3",
+   "color": "#22262b"
+  },
+  {
+   "file": "fin-quadrant-3-2f3b2a.stl",
+   "set": "fin",
+   "layer": "quadrant-3",
+   "color": "#2f3b2a"
+  },
+  {
+   "file": "fin-quadrant-3-d38a3c.stl",
+   "set": "fin",
+   "layer": "quadrant-3",
+   "color": "#d38a3c"
+  },
+  {
+   "file": "fin-quadrant-3-e6e1d6.stl",
+   "set": "fin",
+   "layer": "quadrant-3",
+   "color": "#e6e1d6"
+  },
+  {
+   "file": "fin-quadrant-3-f0c95a.stl",
+   "set": "fin",
+   "layer": "quadrant-3",
+   "color": "#f0c95a"
+  },
+  {
+   "file": "fin-quadrant-4-1d6b3c.stl",
+   "set": "fin",
+   "layer": "quadrant-4",
+   "color": "#1d6b3c"
+  },
+  {
+   "file": "fin-quadrant-4-22262b.stl",
+   "set": "fin",
+   "layer": "quadrant-4",
+   "color": "#22262b"
+  },
+  {
+   "file": "fin-quadrant-4-2f3b2a.stl",
+   "set": "fin",
+   "layer": "quadrant-4",
+   "color": "#2f3b2a"
+  },
+  {
+   "file": "fin-quadrant-4-d38a3c.stl",
+   "set": "fin",
+   "layer": "quadrant-4",
+   "color": "#d38a3c"
+  },
+  {
+   "file": "fin-quadrant-4-e6e1d6.stl",
+   "set": "fin",
+   "layer": "quadrant-4",
+   "color": "#e6e1d6"
+  },
+  {
+   "file": "fin-quadrant-4-f0c95a.stl",
+   "set": "fin",
+   "layer": "quadrant-4",
+   "color": "#f0c95a"
+  },
+  {
+   "file": "fin-bois-7a4b28.stl",
+   "set": "fin",
+   "layer": "bois",
+   "color": "#7a4b28"
+  },
+  {
+   "file": "fin-bois-d9c19a.stl",
+   "set": "fin",
+   "layer": "bois",
+   "color": "#d9c19a"
+  },
+  {
+   "file": "chariot-base-22262b.stl",
+   "set": "chariot",
+   "layer": "base",
+   "color": "#22262b"
+  },
+  {
+   "file": "chariot-base-2a2d31.stl",
+   "set": "chariot",
+   "layer": "base",
+   "color": "#2a2d31"
+  },
+  {
+   "file": "chariot-base-2f3b2a.stl",
+   "set": "chariot",
+   "layer": "base",
+   "color": "#2f3b2a"
+  },
+  {
+   "file": "chariot-base-3b414a.stl",
+   "set": "chariot",
+   "layer": "base",
+   "color": "#3b414a"
+  },
+  {
+   "file": "chariot-base-4b535d.stl",
+   "set": "chariot",
+   "layer": "base",
+   "color": "#4b535d"
+  },
+  {
+   "file": "chariot-base-7c8994.stl",
+   "set": "chariot",
+   "layer": "base",
+   "color": "#7c8994"
+  },
+  {
+   "file": "chariot-base-8aa1b5.stl",
+   "set": "chariot",
+   "layer": "base",
+   "color": "#8aa1b5"
+  },
+  {
+   "file": "chariot-base-9da5ad.stl",
+   "set": "chariot",
+   "layer": "base",
+   "color": "#9da5ad"
+  },
+  {
+   "file": "chariot-base-b9c1c9.stl",
+   "set": "chariot",
+   "layer": "base",
+   "color": "#b9c1c9"
+  },
+  {
+   "file": "chariot-base-c3c9cf.stl",
+   "set": "chariot",
+   "layer": "base",
+   "color": "#c3c9cf"
+  },
+  {
+   "file": "chariot-base-e6e1d6.stl",
+   "set": "chariot",
+   "layer": "base",
+   "color": "#e6e1d6"
+  },
+  {
+   "file": "horloge-boitier-0f1a26.stl",
+   "set": "horloge",
+   "layer": "boitier",
+   "color": "#0f1a26"
+  },
+  {
+   "file": "horloge-boitier-22262b.stl",
+   "set": "horloge",
+   "layer": "boitier",
+   "color": "#22262b"
+  },
+  {
+   "file": "horloge-boitier-2f3338.stl",
+   "set": "horloge",
+   "layer": "boitier",
+   "color": "#2f3338"
+  },
+  {
+   "file": "horloge-boitier-2f3b2a.stl",
+   "set": "horloge",
+   "layer": "boitier",
+   "color": "#2f3b2a"
+  },
+  {
+   "file": "horloge-boitier-3b414a.stl",
+   "set": "horloge",
+   "layer": "boitier",
+   "color": "#3b414a"
+  },
+  {
+   "file": "horloge-boitier-5aa0c8.stl",
+   "set": "horloge",
+   "layer": "boitier",
+   "color": "#5aa0c8"
+  },
+  {
+   "file": "horloge-boitier-8c8f95.stl",
+   "set": "horloge",
+   "layer": "boitier",
+   "color": "#8c8f95"
+  },
+  {
+   "file": "horloge-barre-e9e3d6.stl",
+   "set": "horloge",
+   "layer": "barre",
+   "color": "#e9e3d6"
+  }
+ ],
+ "clock_pivot_mm": [
+  59.73,
+  56.0,
+  30.95
+ ]
+}

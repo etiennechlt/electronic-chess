@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 from chessboard_calc import plateau, power
-from chessboard_calc.config import DEFAULT_CONFIG_PATH, BoardConfig
+from chessboard_calc.config import DEFAULT_CONFIG_PATH, BoardConfig, PieceType, resolve_geometry
 from chessboard_calc.resonance import frequency_plan
 
 from .signature import notes
@@ -92,6 +92,7 @@ def facts(cfg: BoardConfig) -> dict:
     """The film's facts. Each label is the exact text a composition shows."""
     plan = frequency_plan(cfg)
     geo = plateau.geometry(cfg)
+    pawn = resolve_geometry(cfg, geo.pitch_mm).classes[PieceType.PAWN]
     q = cfg.plateau.quadrant.squares
     lines = []
     for note, line in zip(notes(cfg), plan.lines, strict=True):
@@ -135,6 +136,51 @@ def facts(cfg: BoardConfig) -> dict:
         "autonomy_engine_h": fr(power.autonomy_h(cfg, engine_on=True)),
         "scale_step_s": cfg.serie.scale_step_s,
         "yaml_quote": yaml_quote(),
+        "squares": fr(cfg.plateau.grid**2),
+        "spirals_per_quadrant": fr(q**2),
+        "cells": fr(_cells(cfg)),
+        "base_height_mm": fr(geo.thin.height_mm),
+        "gantry_thickness_mm": fr(geo.gantry.height_mm + geo.top_module_thickness_mm),
+        "felt_mm": fr(cfg.gap.felt_mm, 1),
+        "pawn_coil_mm": fr(pawn.coil_d_out_mm, 1),
+        "pawn_magnet_mm": fr(pawn.magnet_d_mm, 1),
+        "idle_scan_hz": fr(cfg.measurement.idle_scan_hz),
+        "scene": scene(cfg),
+    }
+
+
+def _cells(cfg: BoardConfig) -> int:
+    """3S1P is three cells: series count times parallel count."""
+    m = re.fullmatch(r"(\d+)S(\d+)P", cfg.power.battery.layout)
+    return int(m.group(1)) * int(m.group(2))
+
+
+def scene(cfg: BoardConfig) -> dict:
+    """Plain numbers for the 3D scenes (mm, CadQuery frame): the pieces drawn
+    on their real bases, what is inside them, the light holes, the clock."""
+    geo = plateau.geometry(cfg)
+    classes = resolve_geometry(cfg, geo.pitch_mm).classes
+    pieces = {}
+    for piece, g in classes.items():
+        pieces[str(piece)] = {
+            "base": g.base_mm,
+            "height": round(g.base_mm * cfg.serie.piece_height_ratio[piece], 2),
+            "coil_od": g.coil_d_out_mm,
+            "coil_id": round(g.coil_d_in_mm, 2),
+            "magnet_d": g.magnet_d_mm,
+        }
+    return {
+        "pitch": geo.pitch_mm,
+        "grid": cfg.plateau.grid,
+        "pieces": pieces,
+        "coil_h": cfg.resonator.coil.height_mm,
+        "magnet_h": cfg.piece_magnet.thickness_mm,
+        "felt": cfg.gap.felt_mm,
+        "capacitor": list(cfg.serie.capacitor_mm),
+        "led_points": [[round(x, 2), round(y, 2)] for x, y in plateau.led_points(cfg)],
+        "gantry_lift": geo.gantry.top_z_mm - geo.thin.top_z_mm,
+        "clock_tilt_deg": cfg.clock.rocker.tilt_deg,
+        "scale_step_s": cfg.serie.scale_step_s,
     }
 
 
