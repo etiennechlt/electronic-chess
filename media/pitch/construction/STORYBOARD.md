@@ -109,7 +109,7 @@ de temps de cette scène et de `compositions/textes.html`.
 - src: index.html (41,5 à 47,5 s)
 - duration: 6s
 - transition_in: cut
-- scene: plan bas ; le module plateau se soulève avec ses pièces, la base fine sort, la base chariot entre, le module s'y pose, « {gantry_thickness_mm} mm · CoreXY · phase 2 »
+- scene: plan large ; le module plateau se soulève avec ses pièces, la base fine sort, la base chariot entre, le module s'y pose, « {gantry_thickness_mm} mm · CoreXY · phase 2 »
 - voiceover: Le même plateau change de base : le chariot, en phase 2.
 
 ## Frame 12 : Fin

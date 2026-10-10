@@ -32,7 +32,7 @@ Le titre affiché suit la version.
   [`../commun/scene3d.js`](../commun/scene3d.js).
 - Une seule caméra documentaire qui tourne lentement autour du plateau ;
   deux exceptions coupées franc : le gros plan sur la pièce ouverte, le
-  plan bas du changement de base.
+  plan large du changement de base.
 - Son de synthèse seul : un bruit sourd à chaque couche posée
   (`pose.wav`), la note du pion quand la pièce se referme, puis les douze
   familles de pièces qui tombent sur les douze notes de la gamme, un pas

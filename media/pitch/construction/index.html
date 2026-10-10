@@ -180,7 +180,7 @@
         // ---- the base change: the board module (quadrants, plywood, pieces) lifts, the
         // thin base slides out, the carriage base slides in, the module comes down onto it
         const HOVER = 150;
-        const SLIDE = 1100;
+        const SLIDE = 900;
         const LIFT = FACTS.scene.gantry_lift;
         const isModule = (key) => key.startsWith("fin/quadrant") || key === "fin/bois";
         function moduleY(t) {
@@ -282,7 +282,7 @@
           });
         }
 
-        // ---- one documentary camera, slow orbit; a close shot on the piece, a low one on the base change
+        // ---- one documentary camera, slow orbit; a close shot on the piece, a wide one on the base change
         const up = new THREE.Vector3(0, 1, 0);
         function setFov(fov) {
           if (camera.fov !== fov) {
@@ -305,8 +305,8 @@
           setFov(40);
           if (t >= 41.5) {
             const a = 0.55 + 0.12 * smooth((t - 41.5) / 6);
-            camera.position.set(Math.sin(a) * 1600, 700, Math.cos(a) * 1600);
-            camera.lookAt(0, 90, 0);
+            camera.position.set(Math.sin(a) * 1850, 800, Math.cos(a) * 1850);
+            camera.lookAt(30, 90, 0);
             return;
           }
           const a = t < 3 ? -0.62 + 0.08 * (t / 3) : -0.7 + 0.5 * ((t - 3) / 38.5);
