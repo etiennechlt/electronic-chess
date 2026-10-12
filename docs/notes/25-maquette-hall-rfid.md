@@ -60,7 +60,7 @@ Quatre sortes de nombres coexistent ici, et chacun dit d'où il vient :
 | Ce que la maquette mesure | B(z) et B(ρ) des aimants de pièce, la tolérance au décentrage, la diaphonie, le soulèvement, la commutation des capteurs, la liaison NFC avec une étiquette à la taille du pion, la sélectivité entre cases voisines, l'effet du métal et du chariot sous la carte, et les deux objections de l'ADR 0001 à la RFID, le multiplexeur et l'aimant dans la base |
 | Coût estimé | 240 à 380 USD chez JLCPCB et LCSC, soit 265 à 420 EUR TTC, plus les frais de dédouanement du transporteur (paragraphe 8.4) ; 50 à 95 EUR d'achats ailleurs, 110 à 185 avec le NanoVNA |
 | Délais | 15,5 à 17,5 jours d'effort en tout, dont 11 à 12 sur le chemin critique avant la commande si une autre session mène les lots 7 et 8 (le micrologiciel peut se finir pendant la fabrication) ; le lot 5 peut doubler. Puis la précommande des puces d'étiquette (lancée au lot 3), 2 à 3 semaines de fabrication et de transport, et 6 à 10 jours de mise en route et de mesures (paragraphe 10) |
-| Décidé | quatorze points, tous selon leur recommandation, le 12/10/2026 (paragraphe 11) |
+| Décidé | quatorze points, tous selon leur recommandation, le 12/10/2026 ; deux nouveaux ouverts par le lot 2, D15 et D16 (paragraphe 11) |
 
 ## 1. Ce que la maquette doit trancher
 
@@ -70,7 +70,7 @@ Quatre sortes de nombres coexistent ici, et chacun dit d'où il vient :
 | Q2 | Jusqu'où une pièce décentrée reste-t-elle vue ? | M12b : B(ρ) sur le gabarit de décalage, capteur seul puis amas de cinq capteurs | rayon de détection du capteur seul mesuré à 0,5 mm près (modèle : 6,6 mm, `hall.offset_coverage`) ; couverture de l'amas mesurée (modèle : carré de ±9,3 mm) ; décision sur le nombre de capteurs par case contre le décalage admissible d'une pièce posée à la main (décision D14) |
 | Q3 | Les pièces voisines et le soulèvement | M12c : un roi seul, successivement sur une case latérale puis sur la case diagonale, champ pris par différence avec et sans lui, au moins 256 lectures par point ; escalier de soulèvement | champ d'un voisin conforme au modèle à 0,05 mT près (-0,22 mT latéral, -0,08 mT diagonal) ; diaphonie des huit voisins recalculée par superposition avec ces valeurs, inférieure à -20 dB (`measurement.crosstalk_max_db`) ; marge de soulèvement au moins 1,5 (`hall_rfid.presence.min_lift_margin`) |
 | Q4 | Alimentation par rangées et multiplexeur | M12d : délai entre `ROW_EN` et la lecture ; alternance des voies 8 (masse) et 9 (référence) à délai variable ; voie directe contre voie multiplexée, le mux posé depuis au moins 50 µs ; courant d'une rangée, FET bloqué et ampèremètre entre les pastilles du cavalier de dérivation ; bruit sur la voie 8 | `power_on_us` et `i_supply_ma` mesurés pour le capteur monté ; temps d'établissement après commutation mesuré ; écart entre les deux chemins inférieur à 1 pas de l'ADC ; `esp32.adc_noise_lsb_rms` mesuré. `mux.ron_ohm` reste « to verify » : sans courant continu dans l'entrée de l'ADC, la résistance du mux ne se voit pas |
-| Q5 | Une étiquette à la taille du pion se lit-elle ? | M13a : taux de lecture selon l'entrefer, le décentrage, la variante d'étiquette et la conductance d'émission | 100 lectures sur 100 à l'entrefer maximal, sur les décalages de M12b jusqu'au décalage admissible, avec une marge en champ d'au moins 2 : rapport entre le champ de service (7,5 A/m au plus, le maximum ISO) et le plus faible champ qui donne encore 100 lectures sur 100. 100 sur 100 borne l'échec à 3 %, 300 sur 300 à 1 %. Le modèle (`nfc.tag_activation`, à p = 50, entrefer maximal) donne 1,3 et 1,4 pour P nue, 2,7 et 2,8 pour P + 15 pF, 3,3 et 3,6 pour G nue |
+| Q5 | Une étiquette à la taille du pion se lit-elle ? | M13a : taux de lecture selon l'entrefer, le décentrage, la variante d'étiquette et la conductance d'émission | 100 lectures sur 100 à l'entrefer maximal, sur les décalages de M12b jusqu'au décalage admissible, avec une marge en champ d'au moins 2 : rapport entre le champ de service (7,5 A/m au plus, le maximum ISO) et le plus faible champ qui donne encore 100 lectures sur 100. 100 sur 100 borne l'échec à 3 %, 300 sur 300 à 1 %. Le modèle (`nfc.tag_activation`, à p = 50, entrefer maximal, sur L60x3 et L70x2) donne 1,37 et 1,27 pour P nue, 2,09 et 2,23 pour P + 15 pF, 2,35 et 3,15 pour P + 22 pF, 2,01 et 2,50 pour G nue ; à p = 40, aucune variante n'atteint 2 sur L60x3 |
 | Q6 | Lit-on la pièce de la case voisine ? | M13b : étiquette sur la case voisine, lecteurs inactifs dans chacun de leurs états | aucune lecture voisine au champ de service défini en Q5 |
 | Q7 | Boucle L60x3 contre L70x2, lecteur NXP contre clone | M13a et M13b sur les quatre cases | choix argumenté pour le plateau, y compris la place qu'il faut au lecteur entre deux boucles (paragraphe 4.2) |
 | Q8 | « La commutation de 64 antennes est ingérable (capacité parasite des multiplexeurs à cette fréquence) » (ADR 0001) | M13c : sur une boucle L70x2, celle du modèle, 51 Ω à chacune des deux places de Rq (100 Ω dans la boucle) et 120 pF en parallèle, émetteur à conductance réduite | champ à la vignette et taux de lecture conformes au calcul du lot 2 pour ce réseau (0,87 A/m à pleine conductance, 0,37 A/m courant TVDD tenu sous la limite de M13c, `nfc.mux_emulation`) ; l'objection tient si ce champ reste sous le seuil d'activation mesuré en M13a, le Q de 0,29 du modèle ne prédisant pas à lui seul l'absence de lecture |
@@ -170,15 +170,18 @@ un erratum (décision D11).
    lecteur : le réseau accordé avec elle ne vaut que pour cette classe
    d'étiquette (sur L60x3, C1 de 75 pF au lieu de 62 avec P + 22 pF, à
    14,5 MHz ; 121 pF pour une étiquette à 14,0 MHz, l'effet est raide
-   près de la porteuse), et un réseau accordé sans elle pousserait le
-   courant d'émission à 181 mA sur L60x3 et 111 sur L70x2 avec
-   P + 22 pF, 218 et 154 mA avec une étiquette à 14,0 MHz, au-delà des
-   100 mA du MFRC522 (`nfc.matching`, option `tuned_with_tag`). À
-   p = 40, P + 22 pF tombe à 13,8 MHz et aucun réseau accordé avec elle
-   n'atteint 50 Ω. Accordée haut, vers 17 MHz, elle laisse l'adaptation
-   presque indépendante de la pièce (courant d'émission de 44 à 54 mA
-   avec ou sans elle), au prix de ce facteur trois sur la tension. La
-   planche porte les deux (paragraphe 5).
+   près de la porteuse), et à pleine conductance, sur le réseau accordé
+   avec P nue, elle tire 133 mA de courant TVDD sur L60x3 et 81 sur
+   L70x2 à p = 50, au-delà des 100 mA du MFRC522 sur L60x3
+   (`nfc.panel_supply`) ; G nue en tire 116 et G + 10 pF 205 sur L60x3.
+   À p = 40, P + 22 pF tombe à 13,8 MHz et aucun réseau accordé avec
+   elle n'atteint 50 Ω. Accordée haut, vers 17 MHz, l'étiquette P nue
+   laisse l'adaptation presque indépendante de la pièce (courant TVDD de
+   40 à 49 mA avec ou sans elle), au prix de ce facteur trois sur la
+   tension. Au champ de service, en revanche, toutes les variantes
+   restent sous 28 mA : la pleine conductance ne s'emploie qu'avec P
+   nue ou sans étiquette (mise en route et M13). La planche porte
+   toutes les variantes (paragraphe 5).
 9. **Pièce LC et étiquette dans la même base : problème ouvert.**
    L'aimant ferrite, isolant, désaccorde l'étiquette de 0,5 %
    (`nfc.tag_magnet_detune`, susceptibilité supposée de 0,10,
@@ -277,7 +280,7 @@ horizontales des boucles différentes.
 
 | Boucle | Côté | Spires | Piste et écart | Ouverture centrale | L (Mohan, filaments) | Pourquoi |
 |---|---|---|---|---|---|---|
-| L60x3 | 0,60 p = 30 mm | 3 | 1,0 et 0,5 mm | 22 mm | 0,491 et 0,485 µH | recommandée pour le plateau : 1,5 fois plus de champ par racine de watt, moitié moins de couplage aux boucles voisines (`nfc.loop_merit` : 1,49 et 0,56) |
+| L60x3 | 0,60 p = 30 mm | 3 | 1,0 et 0,5 mm | 22 mm | 0,491 et 0,485 µH | recommandée pour le plateau : 1,5 fois plus de champ par racine de watt, moitié moins de couplage aux boucles voisines (`nfc.loop_merit` : 1,49 et 0,57) |
 | L70x2 | 0,70 p = 35 mm | 2 | 1,0 et 0,5 mm | 30 mm | 0,343 et 0,339 µH | la boucle du yaml et de la note 24, la référence du modèle |
 
 Les spires sont sur la face avant ; le passage de la spire intérieure
@@ -313,9 +316,11 @@ Le modèle (`hallrfid_mockup.layout`) place chaque lecteur dans le
 couloir adjacent le plus large : ceux de B1 et B2 dans le couloir
 central, ceux de A1 et A2 ensemble dans le couloir A1|A2, qui offre
 475 mm² libres pour deux lecteurs, quand un lecteur et ses passifs en
-demandent 300 à 450. C'est juste : le lot 5 tranche (lecteur de A1
-dans la marge extérieure de sa case, passifs en 0402, ou face arrière)
-avant le placement.
+demandent 300 à 450 (`mockup.reader.area_mm2`) : il en manque 125 à
+425, ce que le rapport signale. `hallrfid_mockup.check` ne vérifie que
+le carré de `mockup.reader.footprint_square_mm` ; le lot 5 tranche
+(lecteur de A1 dans la marge extérieure de sa case, passifs en 0402, ou
+face arrière) avant le placement.
 
 ### 4.3 La chaîne Hall
 
@@ -417,18 +422,28 @@ avant le placement.
   | Rq (Q chargé) | 0,68 Ω (24,3) | 0,47 Ω (23,4) | 0,47 Ω (23,5) | 0,33 Ω (23,2) |
   | C1 | 56 + 5,6 pF | 82 + 3,3 pF | 82 + 4,7 pF | 100 + 18 pF |
   | C2 | 470 + 33 pF | 680 + 56 pF | 680 + 56 pF | 1 000 + 33 pF |
-  | Impédance, étiquette P posée | 49,1 - 0,7j Ω | 54,7 + 6,4j Ω | 51,9 + 1,4j Ω | 52,0 + 1,8j Ω |
+  | Impédance, étiquette P posée | 49,0 - 0,7j Ω | 54,7 + 6,4j Ω | 51,9 + 1,4j Ω | 52,0 + 1,8j Ω |
   | Impédance sans étiquette | 48,2 + 26,0j Ω | 57,4 + 21,0j Ω | 57,2 + 27,8j Ω | 61,2 + 12,8j Ω |
   | Courant de boucle à pleine conductance | 274 mA | 311 mA | 315 mA | 371 mA |
   | Champ sur l'axe à l'étiquette, pleine conductance | 23 A/m | 15 A/m | 30 A/m | 21 A/m |
   | Courant TVDD, nominal et au pire des tolérances | 49 et 65 mA | 44 et 59 mA | 46 et 64 mA | 46 et 66 mA |
+  | Résistance de sortie au champ de service, par broche | 60,5 Ω | 41,3 Ω | 91,2 Ω | 55,6 Ω |
+  | Niveau à `RX`, pleine conductance et service | 1,66 et 0,54 V cc | 1,65 et 0,73 V cc | 1,79 et 0,44 V cc | 1,78 et 0,63 V cc |
 
   À p = 40, la L60x3 reprend à peu près les valeurs de la L70x2 à
   p = 50. Arrondi à la série E12, le réseau de la L70x2 tombe à 55 Ω au
   lieu de 50 à p = 50, mais son accord ne bouge que de 0,35 % pour une
-  demi-bande de 2,1 % : il reste accordé. Le champ de service de 7,5 A/m
-  demande 32 % du courant de pleine conductance sur L60x3 et 50 % sur
-  L70x2 à p = 50.
+  demi-bande de 2,1 % : il reste accordé. Le champ de service, 7,5 A/m au plus fort des
+  positions admissibles (centre, décalage sur un axe et sur la
+  diagonale, `layout.admissible_offset_mm`), s'obtient en relevant la
+  résistance de sortie de l'émetteur, comme le fait le registre de
+  conductance du MFRC522 : 60,5 Ω par broche sur L60x3 et 41,3 Ω sur
+  L70x2 à p = 50, 91 et 56 Ω à p = 40 (`NfcMatching.r_drv_service_ohm`).
+  Le courant TVDD y reste sous 28 mA quelle que soit l'étiquette, mais
+  le niveau à `RX` tombe à 0,5 à 1,0 V crête à crête, sous la fenêtre
+  visée (décision D15, paragraphe 11). Au NanoVNA, dont la source de
+  50 Ω dissipe autant que le réseau, le Q lu sur |S21| vaut 12 à 13
+  (`nfc.vna_q`), non 24.
 - **Tolérances et première émission.** C1 et C2 en C0G à ±2 % ou mieux
   pour les valeurs de 10 pF et plus, à ±0,1 pF en dessous (la tolérance
   s'y exprime en pF). À ±5 %, le courant TVDD atteindrait 94 mA sur
@@ -436,7 +451,8 @@ avant le placement.
   (`nfc.tx_supply_spread`, avec et sans étiquette). L'incertitude
   dominante reste l'inductance de la boucle (plan de masse et pont non
   modélisés) : 5 % d'écart (`criteria.loop_l_tol_pct`) le porte vers 94
-  et 90 mA, 10 % à 160 mA. Chaque lecteur émet donc d'abord à conductance réduite,
+  et 90 mA avec des condensateurs exacts, 120 mA avec ceux à ±2 %, et
+  10 % à 160 mA. Chaque lecteur émet donc d'abord à conductance réduite,
   courant TVDD lu sur sa résistance de mesure, et ne passe à pleine
   conductance qu'après l'accord au NanoVNA et un courant mesuré sous
   70 mA. Une empreinte non montée en parallèle de chaque C1 et C2 sert
@@ -464,15 +480,15 @@ avant le placement.
   - pour le NanoVNA, deux 0 Ω entre TX1, TX2 et les selfs L0, qui
     isolent le lecteur pour mesurer le réseau depuis son entrée, et une
     empreinte U.FL non montée à l'entrée de chaque demi-réseau ; la
-    méthode (demi-circuit, l'autre entrée à la masse, ou balun 1:1) est
-    écrite au protocole M13 au lot 2 ;
+    méthode (balun 1:1, deux ports, ou un port en trois lectures) est
+    écrite au protocole au lot 2 ;
   - sur les boucles L70x2, les deux places de Rq acceptent 51 Ω (100 Ω
     dans la boucle) et une empreinte non montée en parallèle de la
     boucle accepte 120 pF : c'est l'émulation du multiplexeur (Q8). Ce
     montage, comme une boucle coupée, désaccorde tout le réseau :
     l'émetteur ne voit plus que la résonance série de L0 et C0 et
-    tirerait 157 mA à pleine conductance, 159 mA boucle coupée
-    (`nfc.mux_emulation`). M13c se fait donc à conductance réduite,
+    tirerait 141 mA de courant TVDD à pleine conductance, 143 mA
+    boucle coupée (`nfc.mux_emulation`). M13c se fait donc à conductance réduite,
     courant TVDD tenu sous 60 mA
     (`criteria.mux_emulation_i_tvdd_max_ma`) ; le champ tombe alors à
     0,37 A/m.
@@ -487,7 +503,7 @@ avant le placement.
   mise hors tension matérielle les fige sans dire sous quelle
   impédance. Une boucle voisine laissée flottante, accordée, sert de
   relais : entre boucles identiques, la case voisine reçoit 21 % du
-  flux de la case active avec L60x3 et 37 % avec L70x2, contre 6 % et
+  flux de la case active avec L60x3 et 36 % avec L70x2, contre 6 % et
   13 % à sorties tenues, et 2 à 3 % sans boucle voisine ; entre boucles
   différentes, jusqu'à 39 % (`nfc.neighbor_relay`, modèle à deux
   boucles, à p = 50 ; la relecture, sur quatre boucles où les deux
@@ -593,11 +609,11 @@ planche d'étiquettes).
 
   | Variante | Accord (`nfc.tag_tuning`, p = 50) | Rôle |
   |---|---|---|
-  | P nue | 17,3 MHz | accordée haut : charge faible du lecteur, adaptation presque indépendante de la pièce ; mais marge d'activation de 1,3 à 1,4 seulement au champ de service, sous le 2 de Q5 (`nfc.tag_activation`) |
-  | P + 15 pF | 15,2 MHz | compromis : marge de 2,7 à 2,8 au champ de service, la variante que le modèle retient |
-  | P + 22 pF | 14,5 MHz | tension à la puce trois fois plus forte que P nue ; lue sur une case réaccordée pour elle (paragraphe 2, point 8) |
-  | G nue | 16,1 MHz | la grande base : marge de 3,3 à 3,6 au champ de service |
-  | G + 10 pF | 14,7 MHz | ajoutée au lot 2 pour le pas de 40, où G nue n'atteint pas la marge de Q5 (1,6 à 1,7) |
+  | P nue | 17,3 MHz | accordée haut : charge faible du lecteur, adaptation presque indépendante de la pièce, la seule admise à pleine conductance ; mais marge d'activation de 1,27 à 1,37 seulement au champ de service, sous le 2 de Q5 (`nfc.tag_activation`) |
+  | P + 15 pF | 15,2 MHz | compromis : marge de 2,09 et 2,23 au champ de service, juste au-dessus de 2 |
+  | P + 22 pF | 14,5 MHz | tension à la puce trois fois plus forte que P nue ; la meilleure marge au champ de service (2,35 et 3,15) ; jamais à pleine conductance (paragraphe 2, point 8) |
+  | G nue | 16,1 MHz | la grande base : marge de 2,01 et 2,50 au champ de service |
+  | G + 10 pF | 14,7 MHz | ajoutée au lot 2 : au pas de 40, la seule G qui tient sur L70x2 (2,02) ; à p = 50, 1,89 sur L60x3 et 3,13 sur L70x2 |
   | Murata LXMS33HCNK-171 (C17590014), en option | antenne intégrée | repli sans bobine à accorder ; 66 pièces chez LCSC au relevé, délai fabricant de 28 semaines |
 
 - **Vignette de champ**, sur la même planche, non assemblée : une
@@ -672,7 +688,7 @@ le 11/10/2026 sauf mention ; le lot 3 fige chaque ligne dans
 | Tampon MISO | 74LVC125APW | C6059 | à confirmer | 1 | 0,2 environ | TSSOP-14 |
 | Quartz 27,12 MHz | X32252712MMB4SI | C29975 | à confirmer | 4 | 0,064 | |
 | Self CEM 560 nH 0805 | FHW0805UCR56JGT | C139264 | à confirmer | 8 | 0,032 | remplaçant C37297 |
-| C0G 0603, réseau d'adaptation | à choisir | lot 3 | étendue (pas de ±2 % en basique) | 40 | 0,02 à 0,1 | C0 : 220 pF (8) ; C1 et C2 : 56, 82, 470, 680, 33, 68 pF à ±2 % ou mieux, 6,8 et 2,7 pF à ±0,1 pF (32) ; 50 V |
+| C0G 0603, réseau d'adaptation | à choisir | lot 3 | étendue (pas de ±2 % en basique) | 40 | 0,02 à 0,1 | C0 : 220 pF (8) ; C1 et C2 : 56, 82, 470, 680 et 33 pF à ±2 % ou mieux, 5,6 et 3,3 pF à ±0,1 pF (32) ; 50 V |
 | Rq | 0603, 0,68 et 0,47 Ω | lot 3 | à confirmer | 8 | | |
 | C0G du quartz et de réception | 15 pF et 1 nF | lot 3 | basique si possible | 8 et 4 | 0,005 | |
 | Réception et mesure | R1, R2 (lot 2), 1 Ω de TVDD, 0 Ω | lot 3 ; C21189 pour le 0 Ω | basique | 20 environ | | |
@@ -687,7 +703,7 @@ le 11/10/2026 sauf mention ; le lot 3 fige chaque ligne dans
 Par planche d'étiquettes : 17 NT3H2111W0FHKH (C710403, étendue, 0,66 USD
 à l'unité ; précommande de 34 puces plus les pertes de pose, passée au
 lot 3, dès le gel des pièces, pour qu'elles soient au magasin JLCPCB au
-lot 10), des C0G 0402 de 15 et 22 pF, et deux Murata (1,60 USD) en
+lot 10), des C0G 0402 de 10, 15 et 22 pF, et deux Murata (1,60 USD) en
 option.
 
 Composants libres de LCSC, dans le même colis : un assortiment de C0G
@@ -935,7 +951,7 @@ lecteurs, un seul passage de trios Hall par boucle, archives cohérentes.
 
 | Lot | Contenu | Critère de sortie | Effort |
 |---|---|---|---|
-| 0. Fusion et CI | fusionner la branche de la note 24 dans `main` (deux conflits additifs : `config/board.yaml`, sections `serie` et `hall_rfid` en fin de fichier, et `chessboard_calc/config.py`, classes `SerieCfg` et `Hall*`, `Nfc*` avant `BoardConfig` et leurs deux champs), supprimer la branche ; placer derrière un `skipif` les 8 tests qui lisent les bibliothèques KiCad (ils échouent déjà sur `main`) ou ajouter un job KiCad à la CI ; commiter cette note avec la fusion ou après elle, jamais avant | `ruff check .` et `pytest` verts en CI | 0,5 j |
+| 0. Fusion et CI (fait le 11/10/2026) | fusionner la branche de la note 24 dans `main` (deux conflits additifs : `config/board.yaml`, sections `serie` et `hall_rfid` en fin de fichier, et `chessboard_calc/config.py`, classes `SerieCfg` et `Hall*`, `Nfc*` avant `BoardConfig` et leurs deux champs), supprimer la branche ; placer derrière un `skipif` les 8 tests qui lisent les bibliothèques KiCad (ils échouent déjà sur `main`) ou ajouter un job KiCad à la CI ; commiter cette note avec la fusion ou après elle, jamais avant | `ruff check .` et `pytest` verts en CI | 0,5 j |
 | 1. Ce plan et les achats | valider cette note et les décisions du paragraphe 11 ; commander aimants et NanoVNA (paragraphe 8.3) | plan accepté, achats lancés | |
 | 2. Modèle (fait le 12/10/2026) | yaml, `chessboard_calc` (dont la correction de `nfc.antenna`), rapport, tests ; protocole M12 à M14, gabarits et analyse | tests verts, valeurs marquées *(prél.)* des paragraphes 1, 2, 4 et 5 recalculées par le dépôt | 2 j |
 | 3. Gel des pièces | chaque ligne : MPN, code LCSC, classe JLCPCB, stock du jour, dans `docs/prix-hallrfid.csv` ; relecture des fiches (broches de configuration et réception du MFRC522 NXP, fiches JSMSEMI et VRC522 comparées broche à broche, brochage de la NT3H2111, capteur) ; symboles et empreintes KiCad officiels disponibles ; précommande des puces d'étiquette | aucune ligne sans code, aucune en rupture, précommande passée | 1 j |
@@ -968,11 +984,12 @@ Préparée au lot 7 (commandes de la console) et écrite dans
 3. Flashage par l'USB-C (USB-Serial-JTAG, BOOT tenu à la mise sous
    tension si le module ne s'énumère pas) ; à défaut, UART0 par les
    points de test 43 et 44 et un adaptateur USB série 3,3 V.
-4. Rangées Hall une à une : 48 mA de plus pour huit DRV5055A3 (80 au
-   plus) ; zéros relevés, un aimant passé à la main sur chaque capteur.
+4. Rangées Hall une à une, limite portée à 400 mA : 48 mA de plus
+   pour huit DRV5055A3 (80 au plus) ; zéros relevés, un aimant passé à
+   la main sur chaque capteur.
 5. Lecteurs réveillés un à un, émission coupée : 13,5 mA de plus chacun
    (19 au plus), lecture de `VersionReg` (0x91 ou 0x92 chez NXP, valeur
-   du clone notée) ; limite portée à 400 mA.
+   du clone notée).
 6. Première émission d'un seul lecteur à conductance minimale, carte
    sur ses entretoises de 30 mm loin de tout métal, courant TVDD relevé ;
    lecture d'une carte NTAG213 du commerce, puis d'une étiquette P déjà
@@ -981,7 +998,8 @@ Préparée au lot 7 (commandes de la console) et écrite dans
 
 ## 11. Décisions
 
-Prises le 12/10/2026 : les quatorze, selon la recommandation.
+Prises le 12/10/2026 : les quatorze, selon la recommandation. Le lot 2
+en ouvre deux, D15 et D16, à la suite du tableau.
 
 | # | Décision | Recommandation | Alternative |
 |---|---|---|---|
@@ -998,9 +1016,16 @@ Prises le 12/10/2026 : les quatorze, selon la recommandation.
 | D11 | Erreurs de la note 24 | **les corriger au lot 2** (paragraphe 2), et noter dans la note 24 que la nappe 4 x 4 attend M12b | |
 | D12 | Place des lecteurs et garde de masse | **dans les couloirs entre boucles, un lecteur face à sa boucle, garde de 4 mm** | garde de 2 mm (seule possible à p = 40) |
 | D13 | Aimants | **ferrite d'une seule nuance, aimantation axiale, 12, 15 et 18 mm sur 4 mm, achetés et mesurés au lot 1** | diamètres du modèle sur commande spéciale |
-| D14 | Décalage admissible d'une pièce posée à la main | **le fixer au lot 2**, provisoirement à ±8 mm (le carré que couvre l'amas), et le revoir après M12b | le laisser ouvert : M12b donne alors une courbe sans décision |
+| D14 | Décalage admissible d'une pièce posée à la main | **le fixer au lot 2**, provisoirement à ±8 mm (le carré que couvre l'amas au pas de 40, ±9,3 mm au pas de 50), et le revoir après M12b | le laisser ouvert : M12b donne alors une courbe sans décision |
 
-**Ce que chaque décision bloque.** D1 : lot 0. D5, D6, D11, D12 et
+**Ouvertes par le lot 2.**
+
+| # | Décision | Recommandation | Alternative |
+|---|---|---|---|
+| D15 | Diviseur de réception R1 et R2 : à quel niveau d'émission le calculer | **au champ de service**, `RX` dans la fenêtre de `mockup.reader.rx_target_vpp` en service, avec une seconde empreinte de R1 en série, court-circuitée par un pont à souder qu'on ouvre pour les essais à pleine conductance (mise en route, accord, M13) : le nœud C0 varie d'un facteur 3 à 4 entre les deux régimes, et aucun diviseur fixe ne tient à la fois la fenêtre en service et les 4 V crête à crête à pleine conductance (paragraphe 4.4) | garder R1 calculé à pleine conductance, `RX` à 0,5 à 1 V crête à crête en service, et vérifier en M13 que le MFRC522 lit à ce niveau en relevant son gain de réception |
+| D16 | Variante p = 40 : la boucle L60x3 n'atteint la marge de Q5 avec aucun trim d'étiquette au champ de service (P plafonne vers 1,96, G vers 1,46) | **boucles L70x2 dans les deux colonnes** de la variante p = 40, la seule boucle qui tient à ce pas (G + 10 pF compris) ; à trancher avec la variante, après M13 | garder L60x3 et rapprocher l'étiquette de la boucle (base plus mince), ou admettre une marge plus faible que M13a mesurera |
+
+**Ce que chaque décision bloque.** D15 : lot 5. D16 : la variante p = 40. D1 : lot 0. D5, D6, D11, D12 et
 D14 : lot 2. D3, D4 et D10 : lot 3. D2 : lots 5 et 9 (mires, rails,
 module posé ou non). D7 : lots 6 et 8. D13 : lot 8. D8 : lot 10. D9 et
 les achats hors JLCPCB se font au lot 1, pour que les aimants soient

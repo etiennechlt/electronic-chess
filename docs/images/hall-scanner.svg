@@ -113,5 +113,5 @@ svg.docfig{font-family:"IBM Plex Sans", "Segoe UI", "DejaVu Sans", Helvetica, Ar
 <text class="lbl mono" x="850.0" y="222.0">B,........</text>
 <text class="lbl small muted" x="850.0" y="238.0">à chaque changement</text>
 <text class="lbl" x="600.0" y="318.0"></text>
-<text class="lbl strong" x="20.0" y="412.0">un scan : 82 µs par case, 1,5 ms par plateau, 689 fois par seconde</text>
+<text class="lbl strong" x="20.0" y="412.0">un scan : 82 µs par case, 1,5 ms par plateau, 661 fois par seconde</text>
 </svg>

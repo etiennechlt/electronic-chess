@@ -30,13 +30,14 @@ technique qui n'ont pas pu être relues (résistance du CD74HC4067 à
 
 > **Erratum du 12/10/2026.** La préparation de la maquette
 > ([note 25](25-maquette-hall-rfid.md), paragraphe 2) a trouvé trois
-> erreurs, corrigées dans le dépôt au lot 2 de cette note ; les chiffres
+> erreurs, corrigées dans le dépôt au lot 2 de la note 25 ; les chiffres
 > ci-dessous sont recalculés. Le diamètre intérieur de la boucle NFC
 > comptait un écart de trop : l'inductance était sous-estimée de 7 %
 > (0,34 µH et non 0,32). Le courant du DRV5053OA lu dans la fiche était
 > sa limite de courant de sortie (2,3 mA) : il consomme 2,7 mA
 > typiques, 3,6 au plus, et sa sortie est valide 35 µs après la mise
-> sous tension, et non 100. Le CD74HC4067SM96 est en SSOP-24, non en
+> sous tension, 50 au plus, et non 100 ; le balayage attend désormais
+> la valeur maximale. Le CD74HC4067SM96 est en SSOP-24, non en
 > TSSOP-24. Trois conclusions changent de portée sans changer le
 > verdict :
 >
@@ -134,7 +135,8 @@ Ce qui en sort :
 - **La cadence est celle que le brief demande.** 82 µs par case (2 µs
   de commutation, huit lectures de 10 µs), quatre mux lus en parallèle
   sur quatre entrées ADC : 1,5 ms par plateau avec la commutation des
-  rangées, soit 690 Hz. La chaîne LC scrute à 5 Hz au repos
+  rangées (chaque rangée attend la mise sous tension maximale du
+  capteur), soit 660 Hz. La chaîne LC scrute à 5 Hz au repos
   (`measurement.idle_scan_hz`) : la couche Hall voit la pièce quitter
   la case cent fois plus vite, et voit l'état « pièce en main » que le
   LC ne distingue pas d'une case vide.

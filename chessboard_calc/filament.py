@@ -96,7 +96,9 @@ def _neumann_g(t: np.ndarray, d: np.ndarray) -> np.ndarray:
 def mutual_h(a: Filaments, b: Filaments, gmd_m: float | None = None) -> float:
     """Mutual inductance (H) of two filament sets, each filament carrying its
     weight of a unit current. With gmd_m, coincident filaments (a set with
-    itself) use that distance, which turns the result into a self inductance."""
+    itself) use that distance, which turns the result into a self inductance.
+    Only parallel pairs count; perpendicular pairs have no mutual, and an
+    oblique pair raises, since the formula does not cover it."""
     ua = a.end - a.start
     la = np.linalg.norm(ua, axis=1)
     ua = ua / la[:, None]
@@ -105,6 +107,8 @@ def mutual_h(a: Filaments, b: Filaments, gmd_m: float | None = None) -> float:
     ub = ub / lb[:, None]
     dot = ua @ ub.T
     parallel = np.abs(np.abs(dot) - 1.0) < 1e-9
+    if np.any(~parallel & (np.abs(dot) > 1e-9)):
+        raise ValueError("filaments neither parallel nor perpendicular: not modelled")
     ia, ib = np.nonzero(parallel)
     if ia.size == 0:
         return 0.0
@@ -295,15 +299,20 @@ def strip_resistance_per_m(
     track_mm: float,
     copper_mm: float,
     f_hz: float,
+    mirror_y_mm: float | None = None,
 ) -> tuple[float, ...]:
     """AC resistance per unit length (ohm/m) of each strip of a coil cross-
     section, all strips in series (same current), their mirror images at
     (-x, y) carrying the opposite current. x is the distance from the coil
     axis to the strip centre, y the height of the strip's copper centre.
+    With mirror_y_mm, the strips are the lower half of a section symmetric
+    about that height, the upper half carrying the same current: the
+    problem is folded, half the size, and the result holds for both halves.
 
     Cells interact through the exact geometric mean distance of two
     rectangles when they are close, through their centre distance when
-    they are far (where the exact formula would lose its digits)."""
+    they are far (where the exact formula would lose its digits); images
+    are always far."""
     cx, cy, cw, ch = _strip_cells(track_mm * 1e-3, copper_mm * 1e-3)
     per_strip = cx.size
     n_strips = len(x_mm)
@@ -328,6 +337,14 @@ def strip_resistance_per_m(
         log_d[i, j] = _mean_log_distance(xs[i], ys[i], ws[i], hs[i], xs[j], ys[j], ws[j], hs[j])
     log_mirror = 0.5 * np.log((xs[:, None] + xs[None, :]) ** 2 + dy * dy)
     lp = -MU0_H_PER_M / (2.0 * math.pi) * (log_d - log_mirror)
+    if mirror_y_mm is not None:
+        ym = 2.0 * mirror_y_mm * 1e-3 - ys          # the upper half, same current
+        dy_m = ys[:, None] - ym[None, :]
+        if np.min(np.abs(dy_m)) < _PEEC_NEAR * 2.0 * np.max(size):
+            raise ValueError("the folded halves are too close for the image model")
+        log_up = 0.5 * np.log(dx * dx + dy_m * dy_m)
+        log_up_mirror = 0.5 * np.log((xs[:, None] + xs[None, :]) ** 2 + dy_m * dy_m)
+        lp = lp - MU0_H_PER_M / (2.0 * math.pi) * (log_up - log_up_mirror)
     z = np.diag(RHO_CU_OHM_M / (ws * hs)) + 1j * 2.0 * math.pi * f_hz * lp
     s = np.zeros((xs.size, n_strips))
     s[np.arange(xs.size), owner] = 1.0

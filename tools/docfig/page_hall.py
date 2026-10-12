@@ -266,7 +266,9 @@ def hall_page(cfg: BoardConfig) -> str:
         "SAMPLES": str(hr.esp32.samples_per_square),
         "SAMPLE_US": fr_num(hr.esp32.adc_sample_us, 0),
         "SETTLE_US": fr_num(hr.mux.t_settle_us, 0),
-        "POWER_ON_US": fr_num(sensor.power_on_us, 0),
+        "POWER_ON_US": fr_num(
+            sensor.power_on_max_us if sensor.power_on_max_us is not None else sensor.power_on_us, 0
+        ),
         "IDLE_SCAN": fr_num(cfg.measurement.idle_scan_hz, 0),
         "MUX": hr.mux.part,
         "MUX_RON": fr_num(hr.mux.ron_ohm, 0),

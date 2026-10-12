@@ -252,7 +252,7 @@ pre code{background:none; padding:0; font-size:inherit;}
 <p class="eyebrow">Ce que ça donne</p>
 <h2>Quatre chiffres à retenir</h2>
 <div class="cards">
-<div class="card cool"><p class="big">689 <small>fois par seconde</small></p><p class="what">le plateau relit ses 64 cases ; la détection LC du projet ne balaie que 5 fois par seconde au repos</p></div>
+<div class="card cool"><p class="big">661 <small>fois par seconde</small></p><p class="what">le plateau relit ses 64 cases ; la détection LC du projet ne balaie que 5 fois par seconde au repos</p></div>
 <div class="card cool"><p class="big">1,9<small> x</small></p><p class="what">de marge entre « posée » et « soulevée de 15 mm », pour la pièce la plus difficile</p></div>
 <div class="card warm"><p class="big">1 <small>groupe</small></p><p class="what">c'est tout ce que l'amplitude du champ permet de distinguer avec les aimants du projet : présence, pas identité</p></div>
 <div class="card warm"><p class="big">43 h <small>au lieu de 51</small></p><p class="what">d'autonomie sur batterie, en n'alimentant les capteurs que par rangées ; 29 h si on les laisse tous allumés</p></div>
@@ -542,9 +542,9 @@ pre code{background:none; padding:0; font-size:inherit;}
 <text class="lbl mono" x="850.0" y="222.0">B,........</text>
 <text class="lbl small muted" x="850.0" y="238.0">à chaque changement</text>
 <text class="lbl" x="600.0" y="318.0"></text>
-<text class="lbl strong" x="20.0" y="412.0">un scan : 82 µs par case, 1,5 ms par plateau, 689 fois par seconde</text>
+<text class="lbl strong" x="20.0" y="412.0">un scan : 82 µs par case, 1,5 ms par plateau, 661 fois par seconde</text>
 </svg></div>
-<figcaption><b>Le scanner.</b> Une case coûte 2 µs de commutation du CD74HC4067 plus 8 lectures de 10 µs, soit 82 µs ; les quatre multiplexeurs sont lus en parallèle sur quatre entrées ADC1 ; avec 35 µs de mise sous tension par rangée, le plateau est relu en 1,5 ms, 689 fois par seconde (762 sans commutation).</figcaption>
+<figcaption><b>Le scanner.</b> Une case coûte 2 µs de commutation du CD74HC4067 plus 8 lectures de 10 µs, soit 82 µs ; les quatre multiplexeurs sont lus en parallèle sur quatre entrées ADC1 ; avec 50 µs de mise sous tension par rangée, le plateau est relu en 1,5 ms, 661 fois par seconde (762 sans commutation).</figcaption>
 </figure>
 </section>
 
@@ -725,7 +725,7 @@ pre code{background:none; padding:0; font-size:inherit;}
 <text class="lbl mono" x="850.0" y="222.0">B,........</text>
 <text class="lbl small muted" x="850.0" y="238.0">à chaque changement</text>
 <text class="lbl" x="600.0" y="318.0"></text>
-<text class="lbl strong" x="20.0" y="412.0">un scan : 82 µs par case, 1,5 ms par plateau, 689 fois par seconde</text>
+<text class="lbl strong" x="20.0" y="412.0">un scan : 82 µs par case, 1,5 ms par plateau, 661 fois par seconde</text>
 </svg></div>
 <figcaption><b>Architecture du prototype autonome du brief.</b> Quatre CD74HC4067 (16 vers 1), un par quadrant, adresses communes ; quatre entrées ADC1 ; 16 P-FET de rangée ; la ligne <code>B</code> d'occupation de la note 12 sur la console.</figcaption>
 </figure>
@@ -737,7 +737,7 @@ pre code{background:none; padding:0; font-size:inherit;}
   test/test_hallscan.c            test hôte, lancé par la CI</code></pre>
 <p>Les seuils de l'en-tête sont ceux du rapport, convertis en comptes ADC par la sensibilité du DRV5053OA et le pas de 0,757 mV : repos <code>HALL_BASELINE_COUNTS 1348</code>, présence <code>HALL_ON_COUNTS 150</code>, relâchement <code>HALL_OFF_COUNTS 105</code>, anti-rebond sur 3 scans. Un test du dépôt vérifie que l'en-tête commité est exactement ce que le générateur écrit.</p>
 <ol class="steps">
-<li>Rangée <code>g</code> alimentée (<code>ROW_EN&lt;g&gt;</code> bas), attente de 35 µs.</li>
+<li>Rangée <code>g</code> alimentée (<code>ROW_EN&lt;g&gt;</code> bas), attente de 50 µs.</li>
 <li>Pour chaque canal de la rangée : adresse sur <code>MUX_S0..S3</code>, 2 µs, puis sur chacun des quatre multiplexeurs la moyenne de 8 lectures.</li>
 <li><code>hallscan_update</code> : écart à la ligne de base, seuil ou relâchement, anti-rebond ; une ligne <code>B,</code> suivie de 64 caractères (<code>.</code> vide, <code>?</code> occupée, <code>w</code> et <code>b</code> si la polarité code le camp) part dès qu'une case change d'état publié.</li>
 <li>Console : <code>z</code> prend l'échiquier vide comme lignes de base, <code>r</code> sort les comptes bruts en CSV, <code>b</code> renvoie la ligne courante.</li>

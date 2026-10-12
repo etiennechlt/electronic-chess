@@ -23,9 +23,11 @@ from .nfc import (
     matching,
     metal_detune,
     neighbor_relay,
+    panel_supply,
     tag,
     tag_activation,
     tag_tuning,
+    vna_q,
 )
 from .power import autonomy_h, peak_current_a, peak_power_w, power_budget
 from .resonance import check_separation, frequency_plan
@@ -313,15 +315,24 @@ def hall_rfid_mockup_report(cfg: BoardConfig, pitch_mm: float) -> str:
         verdict = "holds" if not problems else "; ".join(problems)
         out.append(f"- check with a {keepout:g} mm keepout: {verdict}")
     out.append("")
-    rows = [
-        [c.name.replace("|", "\\|"), f"{c.width_mm:.1f}", f"{c.free_width_mm:.1f}",
-         f"{c.free_area_mm2:.0f}",
-         ", ".join(f"{r.square} {r.part.maker}{'' if r.fits else ' (no fit)'}"
-                   for r in lay.readers if r.corridor == c.name)]
-        for c in lay.corridors
+    area_min = mk.reader.area_mm2[0]
+    rows = []
+    for c in lay.corridors:
+        held = [r for r in lay.readers if r.corridor == c.name]
+        per = f"{c.free_area_mm2 / len(held):.0f}" if held else ""
+        if held and c.free_area_mm2 / len(held) < area_min:
+            per += " !"
+        rows.append([c.name.replace("|", "\\|"), f"{c.width_mm:.1f}", f"{c.free_width_mm:.1f}",
+                     f"{c.free_area_mm2:.0f}", per,
+                     ", ".join(f"{r.square} {r.part.maker}{'' if r.fits else ' (no fit)'}"
+                               for r in held)])
+    out += [
+        _table(["corridor", "width (mm)", "free (mm)", "free area (mm2)",
+                "per reader (mm2)", "readers"], rows),
+        f"(! under the {area_min:g} mm2 a reader and its parts need at least, "
+        "mockup.reader.area_mm2: lot 5 decides)",
+        "",
     ]
-    out += [_table(["corridor", "width (mm)", "free (mm)", "free area (mm2)", "readers"], rows),
-            ""]
 
     cov = cluster_coverage(cfg, pitch_mm)
     ch = hall_chain(cfg, pitch_mm)
@@ -342,7 +353,7 @@ def hall_rfid_mockup_report(cfg: BoardConfig, pitch_mm: float) -> str:
     ]
 
     loops = sorted(set(mk.loop_by_column.values()))
-    rows = []
+    rows, service_rows = [], []
     for name in loops:
         lp = loop_model(cfg, pitch_mm, name)
         mt = matching(cfg, pitch_mm, name)
@@ -359,7 +370,18 @@ def hall_rfid_mockup_report(cfg: BoardConfig, pitch_mm: float) -> str:
             f"{mt.i_tvdd_ma:.0f} / {mt.i_tvdd_worst_ma:.0f}",
             f"{mt.i_loop_ma:.0f}",
             f"{mt.v_rx_vpp:.2f} ({mt.r1_ohm:g} / {mt.r2_ohm:g})",
-            f"{mt.h_axis_a_per_m:.1f} x {mt.service_fraction:.2f}",
+            f"{mt.h_full_max_a_per_m:.1f} / {mt.h_service_max_a_per_m:.1f}",
+        ])
+        ps = panel_supply(cfg, pitch_mm, name)
+        vq = vna_q(cfg, pitch_mm, name)
+        service_rows.append([
+            name,
+            f"{mt.r_drv_service_ohm:.1f}",
+            f"{ps.i_tvdd_service_worst_ma:.0f}",
+            f"{ps.v_rx_service_max_vpp:.2f}",
+            f"{ps.i_tvdd_full_worst_ma:.0f}",
+            f"{ps.v_rx_full_max_vpp:.2f}",
+            f"{vq.q:.1f}",
         ])
     out += [
         f"Reader loops, network tuned on tag {mk.matching.tune_tag} at the nominal gap, "
@@ -368,7 +390,15 @@ def hall_rfid_mockup_report(cfg: BoardConfig, pitch_mm: float) -> str:
         _table(["loop", "L Mohan / filament (uH)", "R ac (ohm)", "Q0", "Rq (Q loaded)",
                 "C1 (pF)", "C2 (pF)", "Z tag / no tag (ohm)", "detune / half band (%)",
                 "ITVDD nom / worst (mA)", "I loop (mA)", "RX Vpp (R1 / R2)",
-                "H full (A/m) x service"], rows),
+                "H max full / service (A/m)"], rows),
+        "",
+        f"At the service conductance (driver resistance that keeps the highest field over "
+        f"the admissible offsets at {cfg.hall_rfid.nfc.h_max_a_per_m:g} A/m), over every tag "
+        f"of the panel; full conductance with them is outside the M13 procedure:",
+        "",
+        _table(["loop", "R drv service (ohm/pin)", "ITVDD service max (mA)",
+                "RX service max (Vpp)", "ITVDD full, worst tag (mA)", "RX full, worst tag (Vpp)",
+                "NanoVNA Q (50 ohm)"], service_rows),
         "",
     ]
 

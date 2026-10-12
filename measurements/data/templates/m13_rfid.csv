@@ -1,2 +1,2 @@
 test,square,loop,reader,tag_id,variant,tag_square,z_mm,x_mm,y_mm,neighbor_state,cwgsp,cwgsn,trials,successes,i_tvdd_ma,pickup_mv,t_read_ms_mean,t_read_ms_max
-m13a,A1,L60x3,NXP,P-07,P,A1,6.41,0,0,held,0x20,0x8,100,100,38.5,412,6.1,7.4
+m13a,A1,L60x3,NXP,P-07,P0,A1,6.41,0,0,held,0x20,0x8,100,100,38.5,412,6.1,7.4

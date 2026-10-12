@@ -133,9 +133,9 @@ Critère : aucun écart mesurable de sigma fa (< 100 Hz) ni du plancher
 
 ## Maquette Hall + RFID (note 25)
 
-Objectif : répondre aux questions Q1 à Q11 du paragraphe 1 de la
-[note 25](../docs/notes/25-maquette-hall-rfid.md) avec la carte
-`hallrfid` (quatre cases A1, B1, A2, B2 : boucles par colonne, lecteurs par rangée,
+Objectif : répondre aux questions Q1 à Q11 du paragraphe 1 de la [note
+25](../docs/notes/25-maquette-hall-rfid.md) avec la carte `hallrfid`
+(quatre cases A1, B1, A2, B2 : boucles par colonne, lecteurs par rangée,
 un capteur Hall par case et l'amas de la case
 `hall_rfid.mockup.hall.cluster_square`). La maquette ne tranche pas pour
 la RFID : elle produit les mesures qui permettront de trancher (ADR 0001
@@ -241,6 +241,11 @@ lus par `load_touchstone`, nommés `m13_boucle_<boucle>_<carte>`,
   voie de référence corrige le zéro et la pente ratiométriques des
   capteurs de la rangée 1 : M12a à M12c se font donc sur des capteurs de
   la rangée 1.
+- **Variantes d'étiquette** (`variant`) : la lettre de la taille suivie
+  de l'accord ajouté en pF, pour chaque accord de `mockup.tags.trims_pF`
+  (`tag_variants` : P0 pour l'étiquette P nue) ; `MURATA` pour
+  l'étiquette à antenne intégrée, `REF` pour une carte NTAG213 du
+  commerce.
 - **Lectures RFID.** Un essai est une séquence ISO 14443A complète
   (REQA, anticollision, SELECT) ; il réussit si l'UID lu est celui de
   l'étiquette posée. Un émetteur à la fois ; sauf en M13b, les lecteurs
@@ -289,22 +294,24 @@ valeur de `VersionReg` de chaque lecteur.
    points de test (`mockup.esp32.pins`, `UART0_TX` et `UART0_RX`). Si le
    module ne démarre pas : barrette d'échappement, cavalier sur EN et
    ESP32-S3-DevKitC.
-4. Rangées Hall une à une (`ROW_EN1`, puis `ROW_EN2`). Critère : le
-   courant croît du nombre de capteurs de la rangée (un par case, plus
-   l'amas sur la rangée de `mockup.hall.cluster_square`) fois
-   `i_supply_ma` du capteur monté (`hall_rfid.sensors`), au plus fois
-   `i_supply_max_ma` ; zéros relevés ; un aimant passé à la main sur
-   chaque capteur, pôle sud face au boîtier, fait monter sa lecture, sur
-   sa voie de mux et, pour un capteur central, sur son entrée directe.
+4. Limite de l'alimentation portée au second courant de
+   `criteria.bringup_supply_limit_ma` : l'ESP32 et tous les capteurs à
+   leur courant maximal dépassent le premier. Rangées Hall une à une
+   (`ROW_EN1`, puis `ROW_EN2`). Critère : le courant croît du nombre de
+   capteurs de la rangée (un par case, plus l'amas sur la rangée de
+   `mockup.hall.cluster_square`) fois `i_supply_ma` du capteur monté
+   (`hall_rfid.sensors`), au plus fois `i_supply_max_ma` ; zéros
+   relevés ; un aimant passé à la main sur chaque capteur, pôle sud face
+   au boîtier, fait monter sa lecture, sur sa voie de mux et, pour un
+   capteur central, sur son entrée directe.
 5. Lecteurs réveillés un à un (`NRSTPD` haut), émission coupée.
    Critère : `mockup.reader.i_idle_ma` de plus chacun, au plus
    `i_idle_max_ma` ; `VersionReg` lu (l'une des valeurs
    `criteria.nxp_version_reg` pour la puce NXP, valeur du clone notée
-   dans `m13b_etats_tx.csv`). Limite de l'alimentation portée au second
-   courant de `criteria.bringup_supply_limit_ma`.
+   dans `m13b_etats_tx.csv`).
 6. Première émission d'un seul lecteur à conductance minimale, carte sur
    ses entretoises : courant TVDD relevé ; lecture d'une carte NTAG213
-   du commerce, puis d'une étiquette P déjà lue au téléphone. Critère :
+   du commerce, puis d'une étiquette P0 déjà lue au téléphone. Critère :
    courant TVDD sous `mockup.reader.i_tvdd_accept_ma` à chaque pas de
    conductance, sinon arrêt et accord d'abord.
 7. Accord au NanoVNA (ci-dessous), puis seulement pleine conductance,
@@ -319,10 +326,14 @@ pastilles d'alimentation de chaque géométrie de boucle : S11 enregistré
 porteuse (`hall_rfid.nfc.f_hz`), fréquence propre. C'est la vérification
 directe du modèle d'inductance (`nfc.antenna` corrigée et modèle par
 filaments, point 10 du paragraphe 2 de la note 25). Critère : inductance
-mesurée comparée au modèle ; l'écart se reporte sur l'accord avant toute
-émission : au-delà de `criteria.loop_l_tol_pct`, le courant d'émission
-sortirait de `mockup.reader.i_tvdd_max_ma` sans retouche (paragraphe 4.4
-de la note 25).
+mesurée comparée au modèle, l'écart reporté sur l'accord avant toute
+émission ; au-delà de `criteria.loop_l_tol_pct`, réseau recalculé avec
+l'inductance mesurée. En deçà non plus, le courant TVDD n'est pas
+garanti : avec C1 et C2 à `mockup.matching.cap_tol_pct` et l'inductance
+à `criteria.loop_l_tol_pct` du modèle, il peut dépasser
+`mockup.reader.i_tvdd_max_ma` (`nfc.tx_supply_spread`). La première
+émission à conductance réduite, courant TVDD lu, reste donc obligatoire
+dans tous les cas (mise en route, étape 6).
 
 **Réseau d'adaptation.** Lecteur isolé : retirer les deux 0 Ω entre TX1,
 TX2 et les selfs L0, monter les deux U.FL à l'entrée de chaque
@@ -354,15 +365,36 @@ méthodes la donnent :
 
 Critère d'accord : à la porteuse, impédance différentielle proche de
 `mockup.matching.z_target_ohm`, meilleure adaptation à la porteuse
-(`match_frequency_hz`) ; Q chargé mesuré par `resonance_q` sur |S21| du
-réseau vers la sonde de champ proche posée au poste de l'étiquette,
-comparé à `mockup.matching.q_loaded`. Retouche par les empreintes non
-montées en parallèle de C1 et C2 et l'assortiment de C0G ; valeurs
-retouchées notées au journal. Puis remonter les 0 Ω, émettre à
-conductance réduite et lire le courant TVDD (mise en route, étapes 6 et
-7). La variante P au plus fort accord de `mockup.tags.trims_pF` se lit
-aussi sur une case réaccordée avec elle (point 8 du paragraphe 2 de la
-note 25), réaccord noté au journal.
+(`match_frequency_hz`) ; Q mesuré par `resonance_q` sur |S21| du réseau
+vers la sonde de champ proche posée au poste de l'étiquette, comparé au
+Q que le modèle donne pour cette source (`nfc.vna_q`), et non à
+`mockup.matching.q_loaded` : la source de 50 Ω du NanoVNA, adaptée au
+réseau, en double la résistance et en divise le Q par deux environ,
+alors que `q_loaded` est le Q sous la résistance d'émission du lecteur.
+Retouche par les empreintes non montées en parallèle de C1 et C2 et
+l'assortiment de C0G ; valeurs retouchées notées au journal. Puis
+remonter les 0 Ω, émettre à conductance réduite et lire le courant TVDD
+(mise en route, étapes 6 et 7). La variante P au plus fort accord de
+`mockup.tags.trims_pF` se lit aussi sur une case réaccordée avec elle
+(point 8 du paragraphe 2 de la note 25), réaccord noté au journal.
+
+**À pleine conductance**, une fois le courant TVDD sous
+`mockup.reader.i_tvdd_accept_ma` : courant TVDD relevé émission coupée
+puis en émission ; `r_drive_from_tvdd` en déduit la résistance
+d'émission par broche à partir de ce courant, de l'impédance
+différentielle mesurée à la porteuse et de la tension TVDD
+(`mockup.power.regulator.v_out`), par le modèle de source de `nfc` :
+c'est la mesure de `mockup.reader.r_drive_ohm`, reportée au yaml.
+Diviseur de réception : lecteur de nouveau isolé, S21 de l'entrée du
+réseau vers le point de test RX, puis vers le nœud C0, par la même sonde
+résistive (résistance série grande devant `mockup.reader.rx_r2_ohm`
+devant le port 2, pour ne pas charger le nœud RX) ; `rx_amplitude_vpp`
+applique le rapport des deux à la tension du nœud C0 du modèle
+(`nfc.matching`), mise à l'échelle par le courant TVDD mesuré. Critère :
+amplitude à RX dans `mockup.reader.rx_target_vpp` au régime pour
+lequel le diviseur est calculé (décision D15 de la note 25 : pleine
+conductance ou champ de service), et sous `mockup.reader.rx_max_vpp` à
+pleine conductance ; sinon R1 est retouchée.
 
 **Vignette de champ.** Collée sous la carte, centrée sous la boucle de
 la case mesurée, à la distance du cuivre où se tient l'étiquette
@@ -381,9 +413,10 @@ en volts par A/m, à comparer à sa géométrie ; puis la loi du détecteur
 (tension `PICKUP` contre tension crête induite), diode montée, sur
 table, avec une source à la porteuse d'amplitude connue (générateur, ou
 NanoVNA en onde continue pour le bas de la courbe). `field_from_pickup`
-interpole la table et refuse d'extrapoler. Sans table, la vignette reste
-un indicateur relatif : la marge de M13a se prend alors par la méthode
-de l'entrefer.
+interpole la table et refuse d'extrapoler ; une série dont la vignette
+sort de la table est refusée par l'analyse : étendre la table d'abord.
+Sans table, la vignette reste un indicateur relatif : la marge de M13a
+se prend alors par la méthode de l'entrefer.
 
 ### Planéité de la plaque (avant M12)
 
@@ -408,8 +441,8 @@ juste ?
 diamètre, escalier de soulèvement, cales.
 
 **Préparation** : capteur central de `mockup.hall.cluster_square`
-(rangée 1), chemin direct ; zéro relevé case vide ; pièce centrée
-(x = y = 0) ; aimant nu centré sur les cales.
+(rangée 1), chemin direct ; zéro relevé case vide ; pièce centrée (x = y
+= 0) ; aimant nu centré sur les cales.
 
 **Acquisition** : pour chaque pièce, l'escalier de 0 à
 `mockup.prints.lift_max_mm` par pas de `lift_step_mm`, chaque z relevé
@@ -417,11 +450,12 @@ au pied à coulisse ; pour chaque aimant nu, les cales seules et
 combinées sur la même plage ; `criteria.hall_samples` lectures par
 point. Lignes `m12a` de `m12_hall.csv`.
 
-**Analyse** : `m12a_fit_rows` (un facteur par aimant, moindres carrés de
-la mesure convertie en mT contre `hall.disc_bz_mT` aux cotes mesurées de
-l'aimant et à `piece_magnet.br_T`, sur les marches jusqu'à
-`layout.lift_detect_mm`). Le facteur porte la sensibilité réelle du
-capteur et la rémanence réelle de la ferrite : des aimants de même
+**Analyse** : `m12a_fit_rows` (un facteur par aimant, moyenne des
+rapports de la mesure convertie en mT au champ de `hall.disc_bz_mT` aux
+cotes mesurées de l'aimant et à `piece_magnet.br_T`, sur les marches
+jusqu'à `layout.lift_detect_mm` : chaque point pèse le même poids
+relatif, comme dans le critère). Le facteur porte la sensibilité réelle
+du capteur et la rémanence réelle de la ferrite : des aimants de même
 nuance doivent donner des facteurs voisins, un écart signale une erreur
 de z ou d'aimantation.
 
@@ -558,8 +592,10 @@ l'entrefer maximal, cales et escalier, gabarit de décalage, vignette
 **Acquisition**, pour chaque case et chaque variante :
 
 1. à la conductance de service, entrefer maximal : une série à chaque
-   décalage du gabarit sur +x, +y et la diagonale jusqu'à
-   `layout.admissible_offset_mm` ;
+   décalage du gabarit sur +x et +y jusqu'à
+   `layout.admissible_offset_mm`, et sur la diagonale jusqu'au coin
+   (`layout.admissible_offset_mm`, `layout.admissible_offset_mm`), le
+   décalage admissible valant sur chaque axe ;
 2. méthode du champ : au centre et au décalage le plus défavorable,
    conductance descendue pas à pas depuis celle de service jusqu'aux
    échecs ; à chaque pas, vignette, courant TVDD et une série ;
@@ -585,12 +621,12 @@ donne les taux et leurs bornes.
 **Critère** (Q5) : séries passées à l'entrefer maximal, sur les
 décalages jusqu'à `layout.admissible_offset_mm` ; marge en champ à
 l'entrefer maximal (champ de service sur champ d'activation) d'au moins
-`mockup.tags.activation_margin_min`, le champ de service restant
-sous `hall_rfid.nfc.h_max_a_per_m` ; série de confirmation passée pour
-la configuration retenue. (Q7) : boucle L60x3 contre L70x2 et lecteur
-NXP contre clone comparés sur la même étiquette (seuil, marge, courant
-TVDD au service) ; choix argumenté pour le plateau, avec la place qu'il
-faut au lecteur entre deux boucles (paragraphe 4.2 de la note 25).
+`mockup.tags.activation_margin_min`, le champ de service restant sous
+`hall_rfid.nfc.h_max_a_per_m` ; série de confirmation passée pour la
+configuration retenue. (Q7) : boucle L60x3 contre L70x2 et lecteur NXP
+contre clone comparés sur la même étiquette (seuil, marge, courant TVDD
+au service) ; choix argumenté pour le plateau, avec la place qu'il faut
+au lecteur entre deux boucles (paragraphe 4.2 de la note 25).
 
 #### M13b. Sélectivité et états des voisins (Q6, Q7)
 
@@ -609,9 +645,10 @@ autres dans l'état essayé.
 1. broches TX, sur les deux puces (rangées 1 et 2) et pour chaque état
    (`held`, `txoff`, `softpd`, `hardpd`, et `hiz` si la console
    l'expose) : tension continue sur les points de test TX1 et TX2, puis
-   la même avec la résistance de tirage vers le 3,3 V : une broche tenue
-   à 0 reste à quelques dizaines de millivolts, une broche flottante
-   monte vers le rail ; `VersionReg` noté. `m13b_etats_tx.csv` ;
+   la même avec la résistance de tirage vers le rail 3,3 V
+   (`mockup.power.regulator.v_out`) : une broche tenue à 0 reste à
+   quelques dizaines de millivolts, une broche flottante monte vers le
+   rail ; `VersionReg` noté. `m13b_etats_tx.csv` ;
 2. lectures voisines : étiquette sur une case latérale de même boucle
    (A1 active, étiquette sur A2), sur une case latérale d'autre boucle
    (sur B1) et sur la case diagonale (B2), centrée et à l'entrefer
@@ -648,7 +685,7 @@ conductance.
 l'accord), puis émission depuis la conductance minimale, montée pas à
 pas tant que le courant TVDD reste sous
 `criteria.mux_emulation_i_tvdd_max_ma` ; à chaque pas, courant TVDD,
-vignette et une série, étiquette P centrée à l'entrefer nominal. Lignes
+vignette et une série, étiquette P0 centrée à l'entrefer nominal. Lignes
 `m13c` de `m13_rfid.csv` (`loop` à `L70x2_mux`). Réseau d'origine remis
 et accord revérifié ensuite.
 
@@ -739,7 +776,7 @@ perturbateur (`disturber` à `none`) :
   `m14b_<perturbateur>_<distance>.s2p`) ;
 - courant TVDD à la conductance de service, vignette (informative : la
   plaque est plus près d'elle que de l'étiquette) et une série,
-  étiquette P centrée à l'entrefer maximal ;
+  étiquette P0 centrée à l'entrefer maximal ;
 - capteurs Hall de la case et de ses voisines, case vide puis pion à
   l'entrefer maximal, `criteria.hall_samples` lectures.
 

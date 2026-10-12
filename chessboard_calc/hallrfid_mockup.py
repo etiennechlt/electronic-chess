@@ -588,13 +588,16 @@ def _settle_us(tau_us: float, step_mv: float, criterion_mv: float) -> float:
     return tau_us * math.log(step_mv / criterion_mv) if step_mv > criterion_mv else 0.0
 
 
-def hall_chain(cfg: BoardConfig, pitch_mm: float | None = None) -> HallChain:
-    """Filter, mux settling and row power-on of the mockup Hall chain."""
+def hall_chain(
+    cfg: BoardConfig, pitch_mm: float | None = None, part: str | None = None
+) -> HallChain:
+    """Filter, mux settling and row power-on of the mockup Hall chain, with
+    the mockup sensor or the named one (its alternate, on order day)."""
     if pitch_mm is None:
         pitch_mm = cfg.pitch.mockup_mm
     hr = cfg.hall_rfid
     mh = hr.mockup.hall
-    budget = hall_budget(cfg, pitch_mm, sensor_index(cfg, mh.sensor))
+    budget = hall_budget(cfg, pitch_mm, sensor_index(cfg, part or mh.sensor))
     sensor = budget.sensor
     r, c_f, c_on = mh.filter_r_ohm, mh.filter_c_nF * 1e-9, hr.mux.c_on_pF * 1e-12
     corner = 1.0 / (2.0 * math.pi * r * c_f)
@@ -639,12 +642,14 @@ class MockupPower:
     dissipation_w: float          # at the highest input
     t_junction_c: float           # at the highest input, ambient of the yaml
     p_max_w: float                # dissipation that brings the junction to its limit
+    headroom_v: float             # lowest input minus output, against the dropout
     current_ok: bool
     thermal_ok: bool
+    headroom_ok: bool
 
     @property
     def ok(self) -> bool:
-        return self.current_ok and self.thermal_ok
+        return self.current_ok and self.thermal_ok and self.headroom_ok
 
 
 def power(cfg: BoardConfig) -> MockupPower:
@@ -665,9 +670,11 @@ def power(cfg: BoardConfig) -> MockupPower:
     }
     total = sum(loads.values())
     v_nom, v_max = pw.v_in
-    v_out = pw.regulator.v_out
-    p_nom = (v_nom - v_out) * total * 1e-3
-    p_max_in = (v_max - v_out) * total * 1e-3
+    reg = pw.regulator
+    v_out = reg.v_out
+    # the load drops v_in - v_out; the regulator's own ground current, v_in
+    p_nom = ((v_nom - v_out) * total + v_nom * reg.i_ground_ma) * 1e-3
+    p_max_in = ((v_max - v_out) * total + v_max * reg.i_ground_ma) * 1e-3
     tj = pw.t_ambient_c + pw.theta_ja_c_per_w * p_max_in
     return MockupPower(
         loads_ma=loads,
@@ -677,8 +684,10 @@ def power(cfg: BoardConfig) -> MockupPower:
         dissipation_w=p_max_in,
         t_junction_c=tj,
         p_max_w=(pw.t_junction_max_c - pw.t_ambient_c) / pw.theta_ja_c_per_w,
-        current_ok=total * 1e-3 <= pw.regulator.i_max_a,
+        headroom_v=pw.v_in_min - v_out,
+        current_ok=total * 1e-3 <= reg.i_max_a,
         thermal_ok=tj <= pw.t_junction_max_c,
+        headroom_ok=pw.v_in_min - v_out >= reg.dropout_v,
     )
 
 
@@ -690,14 +699,17 @@ def _pin_problems(cfg: BoardConfig) -> list[str]:
     gpios = list(pins.values())
     for g in sorted({g for g in gpios if gpios.count(g) > 1}):
         problems.append(f"GPIO{g} carries two signals")
+    for sig, g in pins.items():
+        if g not in esp.module_gpios:
+            problems.append(f"{sig} on GPIO{g}, not a pin of the {esp.module}")
     for sig in esp.analog_signals:
         if sig not in pins:
             problems.append(f"analog signal {sig} has no pin")
         elif pins[sig] not in esp.adc1_gpios:
             problems.append(f"{sig} on GPIO{pins[sig]}, not an ADC1 input")
-    for sig in esp.usb_signals:
-        if pins.get(sig) not in esp.usb_gpios:
-            problems.append(f"{sig} off the USB pins")
+    for sig, g in zip(esp.usb_signals, esp.usb_gpios, strict=True):
+        if pins.get(sig) != g:
+            problems.append(f"{sig} off its USB pin GPIO{g}")
     for sig, g in pins.items():
         if g in esp.strapping_gpios:
             problems.append(f"{sig} drives the strapping pin GPIO{g}")
@@ -708,6 +720,8 @@ def _pin_problems(cfg: BoardConfig) -> list[str]:
     bits = math.ceil(math.log2(cfg.hall_rfid.mux.channels))
     required = [f"MUX_S{i}" for i in range(bits)]
     required += [f"ROW_EN{row}" for row in mk.rows]
+    required += [*esp.analog_signals, *esp.usb_signals]
+    required += ["SPI_MOSI", "SPI_SCK", "SPI_MISO", "RFID_IRQ", "LED"]
     for sq in mk.squares():
         required += [f"HALL_{sq}", f"NSS_{sq}", f"NRSTPD_{sq}"]
         if f"HALL_{sq}" not in esp.analog_signals:
@@ -789,16 +803,14 @@ def check(
     if len(lay.fiducials) < mk.board.fiducials:
         problems.append("more fiducials than board corners")
 
+    land = mk.hall.land_mm
+    for s in lay.hall_sites:
+        half = lay.loop(s.square).opening_mm / 2.0
+        if max(abs(s.offset_mm[0]), abs(s.offset_mm[1])) + land / 2.0 > half:
+            problems.append(f"Hall sensor at {_xy(s.offset_mm)} leaves the opening of {s.square}")
     if mk.hall.cluster_square in mk.squares():
         lp = lay.loop(mk.hall.cluster_square)
-        half = lp.opening_mm / 2.0
-        land = mk.hall.land_mm
         sites = [s for s in lay.hall_sites if s.square == lp.square]
-        for s in sites:
-            if max(abs(s.offset_mm[0]), abs(s.offset_mm[1])) + land / 2.0 > half:
-                problems.append(
-                    f"Hall sensor at {_xy(s.offset_mm)} leaves the opening of {lp.square}"
-                )
         for a, b in combinations(sites, 2):
             dx = abs(a.offset_mm[0] - b.offset_mm[0])
             dy = abs(a.offset_mm[1] - b.offset_mm[1])
@@ -827,8 +839,21 @@ def check(
     for part in (mk.hall.sensor, mk.hall.alternate):
         if cfg.hall_rfid.sensor(part).supply_v != rail:
             problems.append(f"{part} is specified at another supply than the {rail:g} V rail")
-    if mk.reader.tvdd_v != rail:
-        problems.append(f"the readers' TVDD differs from the {rail:g} V rail")
+    if not pw.headroom_ok:
+        problems.append(
+            f"{mk.power.regulator.part} input of {mk.power.v_in_min:g} V leaves "
+            f"{pw.headroom_v:.2f} V, under its {mk.power.regulator.dropout_v:g} V dropout"
+        )
+    full_scale_v = cfg.hall_rfid.esp32.adc_full_scale_mv * 1e-3
+    for part in (mk.hall.sensor, mk.hall.alternate):
+        ch = hall_chain(cfg, lay.pitch_mm, part)
+        if not ch.in_linear_range:
+            problems.append(f"{part}: the pressed king leaves the sensor's linear range")
+        if ch.king_pressed_v > full_scale_v:
+            problems.append(
+                f"{part}: the pressed king reads {ch.king_pressed_v:.2f} V, over the ADC "
+                f"full scale of {full_scale_v:.2f} V"
+            )
     # the RFID chain: matching, tags in their bases, activation (nfc.py)
     problems += nfc_mockup_check(cfg, lay.pitch_mm)
     return problems

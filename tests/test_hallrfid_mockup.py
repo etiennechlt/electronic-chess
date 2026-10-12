@@ -40,9 +40,16 @@ def test_p40_needs_the_reduced_keepout_for_its_readers(cfg):
         "reader of B1 does not fit corridor A1|B1 outside the 4 mm ground keepout",
         "reader of B2 does not fit corridor A2|B2 outside the 4 mm ground keepout",
     ]
-    # with the reduced keepout everything holds, the Hall cluster included:
-    # +-8.03 mm against the +-8 mm of D14
-    assert check(cfg, 40.0, _mk(cfg).ground_keepout_min_mm) == []
+    # with the reduced keepout the readers and the Hall cluster hold (+-8.03 mm
+    # against the +-8 mm of D14); what remains is the RFID verdict of the
+    # model: at the service field no trim brings the L60x3 tags to the Q5
+    # margin at p = 40 (nfc.mockup_check), the finding note 25 reports
+    assert check(cfg, 40.0, _mk(cfg).ground_keepout_min_mm) == [
+        "loop L60x3 at p = 40: tag P activation margin below the minimum at the service "
+        "field, whatever its trim",
+        "loop L60x3 at p = 40: tag G activation margin below the minimum at the service "
+        "field, whatever its trim",
+    ]
 
 
 def test_squares_loops_and_board_outline(cfg):
@@ -234,10 +241,12 @@ def test_power_budget_and_regulator(cfg):
     assert pw.loads_ma == {"esp32": 100.0, "reader_tx": 100.0, "readers_awake": 76.0,
                            "hall_sensors": 80.0}
     assert pw.total_ma == pytest.approx(356.0)          # note 25: under 0.36 A
-    assert pw.dissipation_nominal_w == pytest.approx(0.605, abs=0.002)   # 0.6 W
-    assert pw.dissipation_w == pytest.approx(0.694, abs=0.002)           # at 5.25 V
-    assert pw.t_junction_c == pytest.approx(102.5, abs=0.5)
+    # the load drop plus the regulator's own ground current at its maximum
+    assert pw.dissipation_nominal_w == pytest.approx(0.655, abs=0.002)
+    assert pw.dissipation_w == pytest.approx(0.747, abs=0.002)           # at 5.25 V
+    assert pw.t_junction_c == pytest.approx(107.2, abs=0.5)
     assert pw.dissipation_w < pw.p_max_w
+    assert pw.headroom_v == pytest.approx(1.45)         # USB minimum minus 3.3 V
     assert pw.ok
 
 
@@ -248,7 +257,14 @@ def test_pin_map_follows_the_esp32_rules(cfg):
     assert all(pins[s] in esp.adc1_gpios for s in esp.analog_signals)
     assert not set(pins.values()) & set(esp.strapping_gpios)
     assert not set(pins.values()) & set(esp.psram_gpios)
-    assert {pins[s] for s in esp.usb_signals} == set(esp.usb_gpios)
+    assert [pins[s] for s in esp.usb_signals] == list(esp.usb_gpios)
+    assert set(pins.values()) <= set(esp.module_gpios)
+    # the ESP32-S3 facts the rules rest on, pinned so a yaml slip shows
+    assert list(esp.adc1_gpios) == list(range(1, 11))
+    assert set(esp.strapping_gpios) == {0, 3, 45, 46}
+    assert list(esp.usb_gpios) == [19, 20]
+    assert set(esp.psram_gpios) == {35, 36, 37}
+    assert set(esp.module_gpios) == set(range(0, 22)) | set(range(35, 49))
 
 
 def _with(raw_config_dict, edit):
@@ -304,10 +320,38 @@ def test_guards_fire(raw_config_dict):
     hungry = problems(lambda m, _: m["power"].update(esp32_ma=800.0))
     assert "3.3 V load of 1056 mA over the AMS1117-3.3 rating" in hungry
     hot = problems(lambda m, _: m["power"].update(theta_ja_c_per_w=300.0))
-    assert hot == ["AMS1117-3.3 junction at 248 C"]
-    assert problems(lambda m, _: m["reader"].update(tvdd_v=5.0)) == [
-        "the readers' TVDD differs from the 3.3 V rail"
+    assert hot == ["AMS1117-3.3 junction at 264 C"]
+
+    def low_input(m, _):
+        m["power"]["v_in_min"] = 4.5
+
+    assert problems(low_input) == [
+        "AMS1117-3.3 input of 4.5 V leaves 1.20 V, under its 1.3 V dropout"
     ]
+    pins = problems(lambda m, _: m["esp32"]["pins"].update(USB_DM=20, USB_DP=19, LED=26))
+    assert {"USB_DM off its USB pin GPIO19", "USB_DP off its USB pin GPIO20",
+            "LED on GPIO26, not a pin of the ESP32-S3-WROOM-1-N8"} <= set(pins)
+    assert problems(lambda m, _: m["esp32"]["pins"].pop("SPI_MISO")) == [
+        "the pin map lacks SPI_MISO"
+    ]
+
+    def sensitive(_, raw):
+        # the 60 mV/mT option of the same part, same package and pins
+        next(s for s in raw["hall_rfid"]["sensors"] if s["part"] == "DRV5055A3")[
+            "sensitivity_mv_per_mt"] = 60.0
+
+    hot_king = problems(sensitive)
+    assert "DRV5055A3: the pressed king leaves the sensor's linear range" in hot_king
+    assert any(p.startswith("DRV5055A3: the pressed king reads") for p in hot_king)
+
+    def crowded_l70(m, _):
+        m["loops"]["L70x2"].update(turns=11)
+
+    assert "Hall sensor at (0.00, 0.00) leaves the opening of B1" in problems(crowded_l70)
+    for edit in (lambda m, _: m.update(ground_keepout_min_mm=6.0),
+                 lambda m, _: m["reader"].update(i_idle_max_ma=1.0)):
+        with pytest.raises(ValueError):
+            _with(raw_config_dict, edit)
 
     def stricter(_, raw):
         raw["hall_rfid"]["layout"]["admissible_offset_mm"] = 9.5

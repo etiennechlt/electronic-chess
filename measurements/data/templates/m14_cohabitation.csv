@@ -1,2 +1,2 @@
 test,square,sensor,rf_square,piece,tag_id,variant,magnet_in,disturber,distance_mm,cwgsp,cwgsn,f_tag_mhz,f_net_mhz,i_tvdd_ma,pickup_mv,trials,successes,n_samples,mean_counts,std_counts
-m14a_hall,A1,A1,A1,pawn1,P-07,P,1,none,,0x20,0x8,,,38.5,412,,,256,2672.4,3.1
+m14a_hall,A1,A1,A1,pawn1,P-07,P0,1,none,,0x20,0x8,,,38.5,412,,,256,2672.4,3.1

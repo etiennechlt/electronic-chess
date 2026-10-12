@@ -27,7 +27,10 @@ a real board, all at the carrier and all parametric on the pitch:
   The TX pins are antiphase
   square waves between ground and TVDD; the supply current is the rectified
   mean of the sinusoidal TX current, without the cosine of its phase (an
-  upper bound).
+  upper bound). The service conductance (CWGsP) is a higher output
+  resistance per TX pin, solved so that the highest field over the centre
+  and the admissible offsets, the tuning tag there, is h_max; every other
+  tag state is then driven through that same resistance.
 - the tag: round two-layer coil in series (top spiral outward, bottom
   inward, both ends at the centre), concentric circular filaments for the
   inductance, voltage-weighted plate overlap between the layers for the
@@ -73,7 +76,7 @@ from .config import (
 )
 from .coupling import mutual_coaxial_loops_nH
 from .inductance import mohan_L_uH, piece_coil_design
-from .physics import EPS0_F_PER_M, EPS_R_FR4, MU0_H_PER_M, RHO_CU_OHM_M
+from .physics import EPS0_F_PER_M, MU0_H_PER_M, RHO_CU_OHM_M
 
 # IEC 60063 preferred numbers, one decade
 _E_SERIES = {
@@ -313,10 +316,16 @@ def _loop_flux_h(key: tuple, centre: tuple[float, float], z_mm: float,
     return float(np.sum(fl.flux_through_circles_h(f, centre, z_mm, np.array(radii_mm))))
 
 
-@lru_cache(maxsize=256)
-def _loop_h_axis_per_a(key: tuple, z_mm: float) -> float:
+@lru_cache(maxsize=512)
+def _loop_h_per_a(key: tuple, x_mm: float, y_mm: float, z_mm: float) -> float:
+    """Vertical field (A/m per A) of the loop at a point above it."""
     f = _loop_filaments(key, _FIELD_NSUB)
-    return float(fl.bz_t_per_a(f, np.array([[0.0, 0.0, z_mm * 1e-3]]))[0]) / MU0_H_PER_M
+    pt = np.array([[x_mm * 1e-3, y_mm * 1e-3, z_mm * 1e-3]])
+    return abs(float(fl.bz_t_per_a(f, pt)[0])) / MU0_H_PER_M
+
+
+def _loop_h_axis_per_a(key: tuple, z_mm: float) -> float:
+    return _loop_h_per_a(key, 0.0, 0.0, z_mm)
 
 
 @lru_cache(maxsize=64)
@@ -335,10 +344,10 @@ def _loop_resistance(key: tuple, copper_mm: float, lead_mm: float,
     return r_dc, r_ac
 
 
-def _coplanar_strips_f_per_m(track_mm: float, gap_mm: float) -> float:
+def _coplanar_strips_f_per_m(track_mm: float, gap_mm: float, eps_r: float) -> float:
     """Two coplanar strips on the board surface, conformal mapping."""
     k = gap_mm / (gap_mm + 2.0 * track_mm)
-    eps_eff = (EPS_R_FR4 + 1.0) / 2.0
+    eps_eff = (eps_r + 1.0) / 2.0
     return EPS0_F_PER_M * eps_eff * float(ellipk(1.0 - k * k) / ellipk(k * k))
 
 
@@ -367,7 +376,7 @@ def loop_model(
     r_dc, r_ac = _loop_resistance(key, copper, mk.matching.loop_lead_mm, f)
     sides = [geo.side_mm - geo.track_mm - 2.0 * i * (geo.track_mm + geo.gap_mm)
              for i in range(geo.turns)]
-    c_pair = _coplanar_strips_f_per_m(geo.track_mm, geo.gap_mm)
+    c_pair = _coplanar_strips_f_per_m(geo.track_mm, geo.gap_mm, mk.board.eps_r)
     c_self = sum(c_pair * 4.0 * s * 1e-3 for s in sides[1:]) / geo.turns**2
     return NfcLoop(
         name=loop if isinstance(loop, str) else "loop",
@@ -419,10 +428,12 @@ def _tag_radii(copper_d: float, turns: int, track: float) -> tuple[float, ...]:
     return tuple(copper_d / 2.0 - track / 2.0 - i * 2.0 * track for i in range(turns))
 
 
-def _tag_l_and_c(radii: tuple[float, ...], track: float, board: float,
-                 copper: float) -> tuple[float, float, float]:
+def _tag_l_and_c(radii: tuple[float, ...], track: float, board: float, copper: float,
+                 eps_r: float) -> tuple[float, float, float]:
     """Inductance of both layers in series, of one layer, and the self
-    capacitance (F) of the overlap, top spiral outward, bottom inward."""
+    capacitance (F) of the overlap, top spiral outward, bottom inward,
+    across the dielectric between the two copper layers."""
+    dielectric = board - 2.0 * copper
     l_both = fl.circular_coil_h(radii, (0.0, board), track, copper)
     l_one = fl.circular_coil_h(radii, (0.0,), track, copper)
     lengths = [2.0 * math.pi * r * 1e-3 for r in reversed(radii)]  # inner first
@@ -431,7 +442,7 @@ def _tag_l_and_c(radii: tuple[float, ...], track: float, board: float,
     for ln in lengths:
         v_top = (run + ln / 2.0) / total
         run += ln
-        c_plate = EPS0_F_PER_M * EPS_R_FR4 * ln * track * 1e-3 / (board * 1e-3)
+        c_plate = EPS0_F_PER_M * eps_r * ln * track * 1e-3 / (dielectric * 1e-3)
         c_self += c_plate * (1.0 - 2.0 * v_top) ** 2
     return l_both, l_one, c_self
 
@@ -449,7 +460,10 @@ def tag_geometry(cfg: BoardConfig, pitch_mm: float, size: str) -> TagGeometry:
     disc = base - 2.0 * (tg.wall_mm + tg.fit_mm)
     copper_d = disc - 2.0 * tg.edge_mm
     copper = cfg.hall_rfid.mockup.board.copper_um * 1e-3
+    eps_r = cfg.hall_rfid.mockup.board.eps_r
     c_chip = tg.chip.c_in_pF * 1e-12
+    if copper_d <= 0.0:
+        raise ValueError(f"tag {size}: the disc does not fit its base ({base:.1f} mm)")
     opening_min = max(tg.opening_min_ratio * copper_d, 0.0)
     lo, hi = tg.f_self_mhz
     centre = math.sqrt(lo * hi)
@@ -459,7 +473,7 @@ def tag_geometry(cfg: BoardConfig, pitch_mm: float, size: str) -> TagGeometry:
         turns = 1
         while copper_d - 2.0 * (2 * turns - 1) * track > opening_min:
             radii = _tag_radii(copper_d, turns, track)
-            l_both, _, c_self = _tag_l_and_c(radii, track, tg.board_mm, copper)
+            l_both, _, c_self = _tag_l_and_c(radii, track, tg.board_mm, copper, eps_r)
             f = 1.0 / (2.0 * math.pi * math.sqrt(l_both * (c_chip + c_self))) * 1e-6
             miss = max(lo - f, f - hi, 0.0)
             cand = (miss, abs(math.log(f / centre)), -track, turns)
@@ -472,18 +486,18 @@ def tag_geometry(cfg: BoardConfig, pitch_mm: float, size: str) -> TagGeometry:
             best = min(hits)
             break
     if best is None:
-        raise ValueError(f"tag {size}: no turn fits a {disc:.1f} mm disc")
+        raise ValueError(f"tag {size}: no turn fits a {disc:.1f} mm disc around its opening")
     miss, _, neg_track, turns = best
     track = -neg_track
     radii = _tag_radii(copper_d, turns, track)
-    l_both, l_one, c_self = _tag_l_and_c(radii, track, tg.board_mm, copper)
+    l_both, l_one, c_self = _tag_l_and_c(radii, track, tg.board_mm, copper, eps_r)
     layer_z = (0.0, tg.board_mm)
+    # the two layers mirror each other about the board's mid-plane
     rp = fl.strip_resistance_per_m(
-        radii * 2, (0.0,) * turns + (tg.board_mm,) * turns, track, copper,
-        cfg.hall_rfid.nfc.f_hz,
+        radii, (0.0,) * turns, track, copper, cfg.hall_rfid.nfc.f_hz, tg.board_mm / 2.0
     )
     lengths_m = [2.0 * math.pi * r * 1e-3 for r in radii * 2]
-    r_ac = sum(r * ln for r, ln in zip(rp, lengths_m, strict=True))
+    r_ac = 2.0 * sum(r * 2.0 * math.pi * rad * 1e-3 for r, rad in zip(rp, radii, strict=True))
     r_dc = RHO_CU_OHM_M / (track * copper * 1e-6) * sum(lengths_m)
     m12 = (l_both - 2.0 * l_one) / 2.0
     return TagGeometry(
@@ -666,7 +680,8 @@ def _base_network(cfg: BoardConfig, lp: NfcLoop, rq: float, c1: float = 1.0,
         l_loop=lp.L_uH * 1e-6,
         r_loop=lp.r_ac_ohm,
         c_self=lp.c_self_pF * 1e-12,
-        v_src=4.0 * r.tvdd_v / (math.pi * math.sqrt(2.0)),
+        # TVDD is the 3.3 V rail of the board
+        v_src=4.0 * cfg.hall_rfid.mockup.power.regulator.v_out / (math.pi * math.sqrt(2.0)),
     )
 
 
@@ -698,23 +713,29 @@ class NfcMatching:
     c1_pF: tuple[float, float]   # main and trim, in parallel
     c2_pF: tuple[float, float]
     z_exact_ohm: complex    # exact values, in the tuning state
+    gamma: float            # reflection of the normalized values against the target, tuning state
     z_ohm: complex          # normalized values, tag at the nominal gap
     z_no_tag_ohm: complex
     z_max_gap_ohm: complex
-    z_off_centre_ohm: complex    # tag at the admissible offset
+    z_off_centre_ohm: complex    # tag at the admissible offset, on one axis
     detune_pct: float       # where the normalized network shows the target, tuning state
     i_tx_ma: float          # rms, differential, tag at the nominal gap
     i_tx_no_tag_ma: float
     i_tvdd_ma: float
-    i_tvdd_worst_ma: float  # C0, C1, C2 tolerance corners, with and without tag
+    i_tvdd_worst_ma: float  # full conductance, C0, C1, C2 corners, with and without the tag
     i_loop_ma: float        # rms, full conductance
     v_c0_vpp: float
     r1_ohm: float
     r2_ohm: float
     v_rx_vpp: float         # tag at the nominal gap
-    v_rx_max_vpp: float     # over the tag states
+    v_rx_max_vpp: float     # over the tag states, full conductance
     h_axis_a_per_m: float   # on axis at the tag, nominal gap, full conductance
-    service_fraction: float  # of the full loop current, keeps the field under h_max
+    h_full_max_a_per_m: float    # highest over the centre and the admissible offsets
+    r_drv_service_ohm: float     # per TX pin: that highest field brought to h_max
+    h_service_max_a_per_m: float  # the highest field again, at the service conductance
+    service_fraction: float  # loop current at the service conductance over the full one
+    i_tvdd_service_ma: float
+    v_rx_service_vpp: float
 
     @property
     def c1_built_pF(self) -> float:
@@ -779,6 +800,7 @@ def matching(
         "nominal": _loop_tag_mutual_h(key, tg, (0.0, 0.0), z0),
         "max_gap": _loop_tag_mutual_h(key, tg, (0.0, 0.0), z0 + dz),
         "off_centre": _loop_tag_mutual_h(key, tg, (offset, 0.0), z0),
+        "corner": _loop_tag_mutual_h(key, tg, (offset, offset), z0),
     }
     z_refl = {s: (omega * mm) ** 2 / z_tag for s, mm in mutual.items()}
     z_refl["no_tag"] = 0.0
@@ -827,7 +849,27 @@ def matching(
     r1_ideal = max(r2 * (v_c0_vpp["nominal"] / target - 1.0), r2 * 1e-3)
     r1 = float(min(_preferred(m.rq_series, r1_ideal), key=lambda r: abs(v_rx(r) - target)))
 
-    h_axis = abs(nominal.i_loop) * _loop_h_axis_per_a(key, z0)
+    # service conductance: the driver's output resistance that brings the
+    # highest field over the centre and the admissible offsets to h_max
+    spots = {"nominal": (0.0, 0.0), "off_centre": (offset, 0.0), "corner": (offset, offset)}
+    h_per_a = {st: _loop_h_per_a(key, x, y, z0) for st, (x, y) in spots.items()}
+
+    def h_highest(r_drv: float) -> float:
+        n = replace(built, r_drv=r_drv)
+        return max(abs(complex(_respond(n, omega, z_refl[st]).i_loop)) * h_per_a[st]
+                   for st in spots)
+
+    h_full = h_highest(built.r_drv)
+    r_service = built.r_drv
+    if h_full > nfc.h_max_a_per_m:
+        hi = 2.0 * built.r_drv
+        while h_highest(hi) > nfc.h_max_a_per_m:
+            hi *= 2.0
+        r_service = brentq(lambda r: h_highest(r) - nfc.h_max_a_per_m, built.r_drv, hi,
+                           rtol=1e-12)
+    service = _respond(replace(built, r_drv=r_service), omega, z_refl["nominal"])
+    z_built = complex(_respond(built, omega, z_refl[tuning]).z_tx)
+    h_axis = abs(nominal.i_loop) * h_per_a["nominal"]
     return NfcMatching(
         loop=loop,
         pitch_mm=pitch_mm,
@@ -850,6 +892,7 @@ def matching(
         c1_pF=c1_mt,
         c2_pF=c2_mt,
         z_exact_ohm=complex(_respond(exact, omega, z_refl[tuning]).z_tx),
+        gamma=abs(z_built - m.z_target_ohm) / abs(z_built + m.z_target_ohm),
         z_ohm=complex(nominal.z_tx),
         z_no_tag_ohm=complex(resp["no_tag"].z_tx),
         z_max_gap_ohm=complex(resp["max_gap"].z_tx),
@@ -866,7 +909,12 @@ def matching(
         v_rx_vpp=v_rx(r1),
         v_rx_max_vpp=max(v_rx(r1, s) for s in resp),
         h_axis_a_per_m=h_axis,
-        service_fraction=min(1.0, nfc.h_max_a_per_m / h_axis),
+        h_full_max_a_per_m=h_full,
+        r_drv_service_ohm=r_service,
+        h_service_max_a_per_m=h_highest(r_service),
+        service_fraction=abs(complex(service.i_loop)) / abs(complex(nominal.i_loop)),
+        i_tvdd_service_ma=float(_i_tvdd(service.i_tx)) * 1e3,
+        v_rx_service_vpp=v_rx(r1) * abs(complex(service.v_c0)) / abs(complex(nominal.v_c0)),
     )
 
 
@@ -883,7 +931,11 @@ class NfcActivation:
     k: float
     i_loop_ma: float        # full conductance, the network tuned with matching.tune_tag
     h_axis_a_per_m: float   # on axis at the tag's lower copper, full conductance
-    service_fraction: float  # of matching(): keeps the field under h_max at the nominal gap
+    h_axis_service_a_per_m: float    # the same at the service conductance of matching()
+    service_fraction: float  # loop current at the service conductance over the full one
+    i_tvdd_ma: float        # full conductance, this tag here
+    i_tvdd_service_ma: float
+    v_rx_vpp: float         # at RX through the divider, full conductance
     v_chip_v: float         # rms, full conductance
     v_ref_v: float          # reference sticker at h_min
     margin: float           # v_chip over v_ref at full conductance
@@ -899,8 +951,10 @@ def tag_activation(
     extra_gap_mm: float = 0.0,
     trim_pF: float = 0.0,
 ) -> NfcActivation:
-    """Voltage the chip of a centred tag gets from the mockup network, and its
-    margin over the reference sticker at the ISO minimum field."""
+    """Voltage the chip of a centred tag gets from the mockup network, at full
+    conductance and at the service conductance of matching() (the driver's
+    output resistance raised), and its margin over the reference sticker at
+    the ISO minimum field."""
     nfc = cfg.hall_rfid.nfc
     omega = 2.0 * math.pi * nfc.f_hz
     mt = matching(cfg, pitch_mm, loop)
@@ -911,10 +965,14 @@ def tag_activation(
     z = _tag_z_mm(cfg, extra_gap_mm)
     m_h = _loop_tag_mutual_h(key, tg, (0.0, 0.0), z)
     z_tag, z_chip = _tag_impedance(cfg, tg, trim_pF, omega)
-    resp = _respond(net, omega, (omega * m_h) ** 2 / z_tag)
+    z_refl = (omega * m_h) ** 2 / z_tag
+    resp = _respond(net, omega, z_refl)
+    serv = _respond(replace(net, r_drv=mt.r_drv_service_ohm), omega, z_refl)
     i_loop = complex(resp.i_loop)
+    i_serv = complex(serv.i_loop)
     v_chip = abs(1j * omega * m_h * i_loop * z_chip / z_tag)
     v_ref = reference_chip_voltage_v(cfg)
+    h_per_a = _loop_h_axis_per_a(key, z)
     m_ref = _loop_flux_h(key, (0.0, 0.0), z, _reference_radii_mm(cfg))
     return NfcActivation(
         loop=loop,
@@ -926,12 +984,16 @@ def tag_activation(
         m_nH=m_h * 1e9,
         k=m_h / math.sqrt(lp.L_uH * 1e-6 * tg.L_uH * 1e-6),
         i_loop_ma=abs(i_loop) * 1e3,
-        h_axis_a_per_m=abs(i_loop) * _loop_h_axis_per_a(key, z),
-        service_fraction=mt.service_fraction,
+        h_axis_a_per_m=abs(i_loop) * h_per_a,
+        h_axis_service_a_per_m=abs(i_serv) * h_per_a,
+        service_fraction=abs(i_serv) / abs(i_loop),
+        i_tvdd_ma=float(_i_tvdd(resp.i_tx)) * 1e3,
+        i_tvdd_service_ma=float(_i_tvdd(serv.i_tx)) * 1e3,
+        v_rx_vpp=mt.v_rx_vpp * abs(complex(resp.v_c0)) / (mt.v_c0_vpp / (2.0 * math.sqrt(2.0))),
         v_chip_v=v_chip,
         v_ref_v=v_ref,
         margin=v_chip / v_ref,
-        margin_service=v_chip * mt.service_fraction / v_ref,
+        margin_service=v_chip * abs(i_serv) / abs(i_loop) / v_ref,
         emf_vs_reference=m_h / m_ref,
     )
 
@@ -1311,7 +1373,7 @@ def mux_emulation(cfg: BoardConfig, pitch_mm: float, loop: str) -> MuxEmulation:
     """M13c (note 25, question Q8): the resistance and capacitance a
     multiplexer would hang on the loop, fitted on the built network
     (criteria.mux_emulation_*), the tuning tag centred at the nominal gap.
-    A lower conductance is taken as a lower source voltage."""
+    A lower conductance is a higher output resistance of the drivers."""
     crit = cfg.hall_rfid.mockup.criteria
     mt = matching(cfg, pitch_mm, loop)
     net = _network_of(cfg, mt)
@@ -1328,6 +1390,17 @@ def mux_emulation(cfg: BoardConfig, pitch_mm: float, loop: str) -> MuxEmulation:
     resp = _respond(emulated, omega, z_refl)
     cut = _respond(replace(emulated, rq=1e12), omega, 0.0)
     i_tvdd = float(_i_tvdd(resp.i_tx))
+    limit = crit.mux_emulation_i_tvdd_max_ma * 1e-3
+    r_limited = net.r_drv
+    if i_tvdd > limit:
+        def over(r: float) -> float:
+            return float(_i_tvdd(_respond(replace(emulated, r_drv=r), omega, z_refl).i_tx)) - limit
+
+        hi = 2.0 * net.r_drv
+        while over(hi) > 0.0:
+            hi *= 2.0
+        r_limited = brentq(over, net.r_drv, hi, rtol=1e-12)
+    limited = _respond(replace(emulated, r_drv=r_limited), omega, z_refl)
     h = abs(complex(resp.i_loop)) * _loop_h_axis_per_a(key, z0)
     return MuxEmulation(
         loop=loop,
@@ -1339,7 +1412,7 @@ def mux_emulation(cfg: BoardConfig, pitch_mm: float, loop: str) -> MuxEmulation:
         h_axis_a_per_m=h,
         i_tx_ma=abs(complex(resp.i_tx)) * 1e3,
         i_tvdd_ma=i_tvdd * 1e3,
-        h_at_tvdd_limit_a_per_m=h * min(1.0, crit.mux_emulation_i_tvdd_max_ma * 1e-3 / i_tvdd),
+        h_at_tvdd_limit_a_per_m=abs(complex(limited.i_loop)) * _loop_h_axis_per_a(key, z0),
         i_tx_cut_loop_ma=abs(complex(cut.i_tx)) * 1e3,
         i_tvdd_cut_loop_ma=float(_i_tvdd(cut.i_tx)) * 1e3,
     )
@@ -1373,10 +1446,106 @@ def field_pickup(cfg: BoardConfig, h_a_per_m: float) -> FieldPickup:
     )
 
 
+# ------------------------------------------------- the tags of the panel
+@dataclass(frozen=True)
+class PanelSupply:
+    loop: str
+    pitch_mm: float
+    states: tuple[NfcActivation, ...]   # every size and trim, nominal and maximum gap
+    i_tvdd_full_worst_ma: float     # full conductance: reported, outside the M13 procedure
+    i_tvdd_service_worst_ma: float
+    v_rx_full_max_vpp: float
+    v_rx_service_max_vpp: float
+
+
+def panel_supply(cfg: BoardConfig, pitch_mm: float, loop: str) -> PanelSupply:
+    """Every tag of the panel (size and trim) centred at the nominal and the
+    maximum gap on the network as built: TX supply and RX amplitude at full
+    and at service conductance."""
+    tg = cfg.hall_rfid.mockup.tags
+    dz = cfg.gap.max_total_mm - cfg.gap.nominal_total_mm
+    states = tuple(
+        tag_activation(cfg, pitch_mm, loop, size, gap, trim)
+        for size, trims in tg.trims_pF.items()
+        for trim in trims
+        for gap in (0.0, dz)
+    )
+    return PanelSupply(
+        loop=loop,
+        pitch_mm=pitch_mm,
+        states=states,
+        i_tvdd_full_worst_ma=max(a.i_tvdd_ma for a in states),
+        i_tvdd_service_worst_ma=max(a.i_tvdd_service_ma for a in states),
+        v_rx_full_max_vpp=max(a.v_rx_vpp for a in states),
+        v_rx_service_max_vpp=max(a.v_rx_vpp * a.service_fraction for a in states),
+    )
+
+
+# --------------------------------------------------------- NanoVNA reading
+@dataclass(frozen=True)
+class VnaQ:
+    loop: str
+    pitch_mm: float
+    r_source_ohm: float     # differential, in place of the drivers
+    with_tag: bool          # the tuning tag centred at the nominal gap, or no tag
+    f_peak_mhz: float
+    bandwidth_khz: float    # at -3 dB on |S21|
+    q: float
+
+
+def vna_q(
+    cfg: BoardConfig,
+    pitch_mm: float,
+    loop: str,
+    r_source_ohm: float = 50.0,
+    with_tag: bool = True,
+) -> VnaQ:
+    """The Q the NanoVNA reads on |S21|, from the network input to a near-
+    field probe over the loop (EMF of the probe, omega times the loop
+    current), with the source of r_source_ohm differential (half per side)
+    in place of the drivers, the tuning tag centred at the nominal gap or
+    no tag."""
+    mt = matching(cfg, pitch_mm, loop)
+    net = replace(_network_of(cfg, mt), r_drv=r_source_ohm / 2.0)
+    lp = loop_model(cfg, pitch_mm, loop)
+    tg = tag_geometry(cfg, pitch_mm, mt.tag)
+    m_h = _loop_tag_mutual_h(_loop_key(lp.geometry), tg, (0.0, 0.0), _tag_z_mm(cfg, 0.0))
+    f0 = cfg.hall_rfid.nfc.f_hz
+    f = f0 * (1.0 + np.linspace(-3.0 / mt.q_loaded, 3.0 / mt.q_loaded, 6001))
+    omega = 2.0 * math.pi * f
+    z_tag, _ = _tag_impedance(cfg, tg, mt.trim_pF, omega)
+    z_refl = (omega * m_h) ** 2 / z_tag if with_tag else 0.0 * omega
+    s21 = omega * np.abs(_respond(net, omega, z_refl).i_loop)
+    k = int(np.argmax(s21))
+    if not 0 < k < f.size - 1:
+        raise ValueError("no |S21| peak near the carrier")
+    level = s21[k] / math.sqrt(2.0)
+    lo = np.interp(level, s21[: k + 1], f[: k + 1])
+    hi = np.interp(-level, -s21[k:], f[k:])
+    if s21[0] > level or s21[-1] > level:
+        raise ValueError("the |S21| peak is wider than the sweep")
+    return VnaQ(
+        loop=loop,
+        pitch_mm=pitch_mm,
+        r_source_ohm=r_source_ohm,
+        with_tag=with_tag,
+        f_peak_mhz=f[k] * 1e-6,
+        bandwidth_khz=(hi - lo) * 1e-3,
+        q=f[k] / (hi - lo),
+    )
+
+
 # ------------------------------------------------------------------ guards
 def mockup_check(cfg: BoardConfig, pitch_mm: float | None = None) -> list[str]:
     """Guards of the mockup's NFC chain at one pitch, or at every candidate
-    pitch by default; an empty list holds."""
+    pitch by default; an empty list holds.
+
+    Full conductance is only the M13 procedure (tuning tag or no tag): the
+    TX supply there is checked over the capacitor tolerance and the RX
+    input over the tuning tag's states. Every tag of the panel is checked
+    at the service conductance: TX supply and RX input at the nominal and
+    the maximum gap, and the activation margin (Q5 of note 25: the best
+    trim of each size at the maximum gap)."""
     mk = cfg.hall_rfid.mockup
     pitches = cfg.pitch.candidates_mm if pitch_mm is None else (pitch_mm,)
     rd, tg = mk.reader, mk.tags
@@ -1387,8 +1556,8 @@ def mockup_check(cfg: BoardConfig, pitch_mm: float | None = None) -> list[str]:
         for size in tg.sizes:
             try:
                 geo = tag_geometry(cfg, p, size)
-            except ValueError:
-                problems.append(f"tag {size} at p = {p:g}: does not fit its base")
+            except ValueError as err:
+                problems.append(f"at p = {p:g}: {err}")
                 continue
             built.append(size)
             if not geo.tuned:
@@ -1402,8 +1571,8 @@ def mockup_check(cfg: BoardConfig, pitch_mm: float | None = None) -> list[str]:
                 continue
             if mt.rq_exact_ohm <= 0.0:
                 problems.append(f"{where}: the loop alone is below the loaded Q target")
-            if abs(mt.z_exact_ohm - mk.matching.z_target_ohm) > 0.01 * mk.matching.z_target_ohm:
-                problems.append(f"{where}: exact network misses the target impedance")
+            if mt.gamma > mk.matching.gamma_max:
+                problems.append(f"{where}: normalized network reflects more than gamma_max")
             if abs(mt.detune_pct) > mt.half_band_pct:
                 problems.append(f"{where}: normalized network detunes past half the bandwidth")
             if mt.i_tvdd_worst_ma > rd.i_tvdd_max_ma:
@@ -1411,15 +1580,20 @@ def mockup_check(cfg: BoardConfig, pitch_mm: float | None = None) -> list[str]:
             lo, hi = rd.rx_target_vpp
             if not lo <= mt.v_rx_vpp <= hi:
                 problems.append(f"{where}: RX amplitude outside its target")
-            if mt.v_rx_max_vpp > rd.rx_max_vpp:
+            if not built:
+                continue
+            states = [a for a in panel_supply(cfg, p, loop).states if a.tag in built]
+            if max(mt.v_rx_max_vpp, *(a.v_rx_vpp * a.service_fraction for a in states)) > (
+                rd.rx_max_vpp
+            ):
                 problems.append(f"{where}: RX over its input limit")
+            if max(a.i_tvdd_service_ma for a in states) > rd.i_tvdd_max_ma:
+                problems.append(f"{where}: TX supply over the reader limit at the service field")
             for size in built:
                 # Q5 of note 25: the margin counts at the service field, and the
                 # panel carries several trims of each size, one of which must hold
-                best = max(
-                    tag_activation(cfg, p, loop, size, dz, trim).margin_service
-                    for trim in tg.trims_pF[size]
-                )
+                best = max(a.margin_service for a in states
+                           if a.tag == size and a.extra_gap_mm == dz)
                 if best < tg.activation_margin_min:
                     problems.append(
                         f"{where}: tag {size} activation margin below the minimum at the "

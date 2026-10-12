@@ -87,6 +87,7 @@ from analysis import (  # noqa: E402
     load_touchstone,
     load_tx_state_csv,
     m12a_fit_rows,
+    m12a_scale_factor,
     m12b_cluster_coverage,
     m12b_detection_radius,
     m12c_presence,
@@ -97,13 +98,17 @@ from analysis import (  # noqa: E402
     min_safe_distance,
     mockup_criteria,
     pooled_std,
+    r_drive_from_tvdd,
     radii_by_direction,
     read_summary,
     resonance_q,
+    rx_amplitude_vpp,
     settling_time_us,
+    tag_variants,
 )
 from scipy.optimize import brentq  # noqa: E402
 
+from chessboard_calc import nfc  # noqa: E402
 from chessboard_calc.config import PieceType, resolve_geometry  # noqa: E402
 from chessboard_calc.hall import disc_bz_mT, hall_budget, piece_bz_mT  # noqa: E402
 
@@ -139,6 +144,18 @@ def test_each_mockup_template_parses_with_its_loader(name, loader, cls):
     assert header == [f.name for f in dataclasses.fields(cls)]
     rows = loader(path)
     assert len(rows) == 1 and isinstance(rows[0], cls)
+
+
+def test_tag_variants_follow_the_trims_and_name_the_template_examples(cfg):
+    trims = cfg.hall_rfid.mockup.tags.trims_pF
+    names = tag_variants(cfg)
+    assert len(names) == len(set(names)) == sum(len(v) for v in trims.values())
+    for size, values in trims.items():
+        if 0.0 in values:
+            assert f"{size}0" in names
+    known = set(names) | {"MURATA", "REF"}
+    assert load_rfid_csv(TEMPLATES / "m13_rfid.csv")[0].variant in known
+    assert load_cohab_csv(TEMPLATES / "m14_cohabitation.csv")[0].variant in known
 
 
 def test_loader_reads_hex_registers_and_empty_cells_and_refuses_missing_columns(tmp_path):
@@ -211,6 +228,16 @@ def test_m12a_recovers_the_scale_factor_on_the_lift_staircase(cfg):
         assert 0.0 < fits[mid].factor_sigma < 0.01
         assert fits[mid].max_residual < 0.03
         assert fits[mid].n == int(crit.lift_detect_mm / prints.lift_step_mm) + 1
+
+
+def test_m12a_scale_factor_weighs_every_point_alike():
+    # 20 % high on a weak point, exact on a strong one: the factor is the
+    # mean ratio, not the strong point's least-squares verdict
+    fit = m12a_scale_factor([10.0, 1.2], [10.0, 1.0])
+    assert fit.factor == pytest.approx(1.1)
+    assert fit.max_residual == pytest.approx(1.2 / 1.1 - 1.0)
+    # standard error of the mean ratio: sample deviation over the root of n
+    assert fit.factor_sigma == pytest.approx(np.std([1.0, 1.2], ddof=1) / math.sqrt(2.0))
 
 
 def _pawn_profile(cfg):
@@ -382,6 +409,19 @@ def test_activation_threshold_recovers_the_field_where_reads_become_certain():
     assert math.isnan(nothing.level) and nothing.failing_level == 1.0
 
 
+def test_activation_threshold_refuses_a_reading_outside_the_calibration():
+    lv, tr, sc = [math.nan, 3.5, 2.5, 1.5, 1.2], [100] * 5, [100, 100, 100, 100, 90]
+    with pytest.raises(ValueError, match="A1/P-07.*calibration table"):
+        m13a_activation_threshold(lv, tr, sc, 1.0, series="A1/P-07")
+    assert m13a_activation_threshold(lv[1:], tr[1:], sc[1:], 1.0).level == 1.5
+    # through the rows: a field tag reading beyond the table names its group
+    cal = [PickupRow(0.0, 0.0, "x"), PickupRow(500.0, 5.0, "x")]
+    rows = [RfidRow("m13a", "A1", "L60x3", "NXP", "P-07", "P0", "A1", 6.4, 0.0, 0.0, "held",
+                    0x20, 0x8, 100, 100, 40.0, mv, 6.0, 7.0) for mv in (600.0, 300.0)]
+    with pytest.raises(ValueError, match="P-07"):
+        m13a_thresholds(rows, 1.0, cal)
+
+
 def test_field_tag_calibration_and_margins():
     cal = [PickupRow(100.0, 1.0, "nanovna"), PickupRow(300.0, 4.0, "nanovna"),
            PickupRow(200.0, 2.0, "nanovna")]
@@ -401,7 +441,7 @@ def test_field_tag_calibration_and_margins():
 
 def test_m13a_rows_and_read_summary():
     def row(level_mv, succ, square="A1", test="m13a", tag_square="A1"):
-        return RfidRow(test, square, "L60x3", "NXP", "P-07", "P", tag_square, 6.4, 0.0, 0.0,
+        return RfidRow(test, square, "L60x3", "NXP", "P-07", "P0", tag_square, 6.4, 0.0, 0.0,
                        "held", 0x20, 0x8, 100, succ, 40.0, level_mv, 6.0, 7.0)
 
     cal = [PickupRow(0.0, 0.0, "x"), PickupRow(1000.0, 10.0, "x")]
@@ -473,6 +513,25 @@ def test_nanovna_methods_recover_the_differential_impedance(asym):
     # the match frequency moves with a detuned network
     f_match = match_frequency_hz(f, zdiff, abs(zdiff[k]))
     assert 12.5e6 < f_match < 14.5e6
+
+
+def test_drive_resistance_inverts_the_nfc_source_model(cfg):
+    v = cfg.hall_rfid.mockup.power.regulator.v_out
+    z, r = complex(48.0, 6.0), 2.5
+    i_ma = 8.0 * v / (math.pi**2 * abs(2.0 * r + z)) * 1e3
+    assert r_drive_from_tvdd(i_ma + 7.0, z, v, i_tvdd_off_ma=7.0) == pytest.approx(r)
+    assert math.isnan(r_drive_from_tvdd(10.0 * i_ma, z, v))
+    # the same relation as chessboard_calc.nfc: its matched network and TVDD
+    # current give back the drive resistance of the yaml
+    for loop in cfg.hall_rfid.mockup.loops:
+        mt = nfc.matching(cfg, cfg.pitch.mockup_mm, loop)
+        assert r_drive_from_tvdd(mt.i_tvdd_ma, mt.z_ohm, v) == pytest.approx(
+            cfg.hall_rfid.mockup.reader.r_drive_ohm, rel=1e-6)
+
+
+def test_rx_amplitude_scales_the_model_by_the_divider_and_the_current():
+    got = rx_amplitude_vpp(0.02 + 0.01j, 0.1 + 0.05j, 7.5, 45.0, 50.0)
+    assert got == pytest.approx(0.2 * 7.5 * 0.9)
 
 
 def test_resonance_q_of_a_lorentzian():

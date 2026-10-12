@@ -360,7 +360,10 @@ def hall_scan(cfg: BoardConfig, gated: bool, sensor_index: int = 0) -> HallScan:
     per_mux = hr.mux.channels
     if gated:
         groups = hr.power_gating.groups
-        board_us = groups * (hr.sensors[sensor_index].power_on_us + per_mux / groups * square_us)
+        sensor = hr.sensors[sensor_index]
+        # each group waits the slowest power-on of the part, not the typical one
+        on_us = sensor.power_on_max_us if sensor.power_on_max_us is not None else sensor.power_on_us
+        board_us = groups * (on_us + per_mux / groups * square_us)
     else:
         board_us = per_mux * square_us
     return HallScan(gated=gated, square_us=square_us, board_ms=board_us * 1e-3,

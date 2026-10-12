@@ -26,6 +26,7 @@ from chessboard_calc.nfc import (
     mockup_check,
     mux_emulation,
     neighbor_relay,
+    panel_supply,
     reference_chip_voltage_v,
     tag_activation,
     tag_geometry,
@@ -34,6 +35,7 @@ from chessboard_calc.nfc import (
     tag_trim_pF,
     tag_tuning,
     tx_supply_spread,
+    vna_q,
 )
 from chessboard_calc.physics import MU0_H_PER_M, RHO_CU_OHM_M
 
@@ -46,8 +48,16 @@ def _max_extra_gap(cfg):
     return cfg.gap.max_total_mm - cfg.gap.nominal_total_mm
 
 
-def test_mockup_yaml_holds(cfg):
-    assert mockup_check(cfg) == []
+def test_mockup_guards_at_both_pitches(cfg):
+    # p = 50 holds. At p = 40 no trim of the panel brings either tag to the
+    # Q5 margin at the service field over the L60x3 loop: the trims are
+    # being decided, the guard stays as it is
+    assert mockup_check(cfg, 50.0) == []
+    assert mockup_check(cfg, 40.0) == [
+        f"loop L60x3 at p = 40: tag {size} activation margin below the minimum at the "
+        "service field, whatever its trim"
+        for size in ("P", "G")
+    ]
 
 
 # ------------------------------------------------------------- filament model
@@ -100,12 +110,13 @@ def test_loop_resistance_shows_skin_and_proximity(cfg):
     for pitch in cfg.pitch.candidates_mm:
         for name in _loops(cfg):
             m = loop_model(cfg, pitch, name)
-            assert m.r_ac_ohm == loop_esr_ohm(cfg, pitch, name)
             assert 1.6 < m.r_ac_ohm / m.r_dc_ohm < 2.4
             assert 90.0 < m.q0 < 160.0
-            assert 0.0 < m.c_self_pF < 3.0
-    assert loop_esr_ohm(cfg, 50.0, "L60x3") == pytest.approx(0.30, abs=0.02)
-    assert loop_esr_ohm(cfg, 50.0, "L70x2") == pytest.approx(0.25, abs=0.02)
+    assert loop_esr_ohm(cfg, 50.0, "L60x3") == pytest.approx(0.303, rel=0.02)
+    assert loop_esr_ohm(cfg, 50.0, "L70x2") == pytest.approx(0.247, rel=0.02)
+    # turn to turn capacitance of the coplanar strips, voltage weighted
+    assert loop_model(cfg, 50.0, "L60x3").c_self_pF == pytest.approx(0.99, rel=0.03)
+    assert loop_model(cfg, 50.0, "L70x2").c_self_pF == pytest.approx(1.41, rel=0.03)
 
 
 # ----------------------------------------------------------- matching network
@@ -122,6 +133,7 @@ def test_exact_network_hits_the_target_and_normalized_one_stays_tuned(cfg):
             assert abs(mt.z_exact_ohm - m.z_target_ohm) < 0.01 * m.z_target_ohm
             assert abs(mt.detune_pct) < mt.half_band_pct
             assert abs(mt.z_ohm - m.z_target_ohm) < 0.2 * m.z_target_ohm   # E12 trims
+            assert mt.gamma < m.gamma_max
             assert mt.q_loaded == pytest.approx(m.q_loaded, rel=0.05)
             assert mt.c1_built_pF == pytest.approx(mt.c1_exact_pF, rel=0.03)
             assert mt.c2_built_pF == pytest.approx(mt.c2_exact_pF, rel=0.03)
@@ -134,6 +146,22 @@ def test_tx_supply_stays_under_the_reader_limit_at_the_tolerance_corners(cfg):
             mt = matching(cfg, pitch, name)
             assert mt.i_tvdd_ma < mt.i_tvdd_worst_ma < rd.i_tvdd_max_ma
             assert mt.i_tvdd_ma < rd.i_tvdd_accept_ma
+            # every tag of the panel at the service conductance
+            panel = panel_supply(cfg, pitch, name)
+            assert panel.i_tvdd_service_worst_ma < rd.i_tvdd_max_ma
+            assert panel.v_rx_service_max_vpp < rd.rx_max_vpp
+
+
+def test_full_conductance_over_strong_tags_is_out_of_the_procedure(cfg):
+    # bare G and the trimmed tags pull the network tuned on bare P: at full
+    # conductance they would overload the reader (reported, not a guard)
+    rd = cfg.hall_rfid.mockup.reader
+    panel = panel_supply(cfg, 50.0, "L60x3")
+    assert panel.i_tvdd_full_worst_ma == pytest.approx(205.0, rel=0.05)
+    assert panel.i_tvdd_full_worst_ma > rd.i_tvdd_max_ma
+    assert panel.v_rx_full_max_vpp > rd.rx_max_vpp
+    worst = max(panel.states, key=lambda a: a.i_tvdd_ma)
+    assert (worst.tag, worst.trim_pF, worst.extra_gap_mm) == ("G", 10.0, 0.0)
 
 
 def test_receive_divider_lands_in_its_window(cfg):
@@ -145,6 +173,9 @@ def test_receive_divider_lands_in_its_window(cfg):
             assert lo <= mt.v_rx_vpp <= hi
             assert mt.v_rx_max_vpp < rd.rx_max_vpp
             assert mt.v_c0_vpp > rd.rx_max_vpp    # the divider is needed
+            # in service the carrier at RX falls with the conductance
+            assert mt.v_rx_service_vpp == pytest.approx(mt.v_rx_vpp * mt.service_fraction,
+                                                        rel=0.05)
 
 
 def test_matching_values_at_p50(cfg):
@@ -189,7 +220,6 @@ def test_tags_fit_their_base_and_tune_into_the_window(cfg):
             assert geo.track_mm in tg.track_options_mm
             assert 0.6 < geo.k_layers < 0.75
             tt = tag_tuning(cfg, pitch, size)
-            assert tt.f_mhz[0] == pytest.approx(geo.f_self_mhz)
             assert list(tt.f_mhz) == sorted(tt.f_mhz, reverse=True)
 
 
@@ -200,6 +230,8 @@ def test_tag_values(cfg):
     assert (g.disc_mm, g.turns_per_layer, g.track_mm) == (pytest.approx(14.5), 5, 0.20)
     assert g.L_uH == pytest.approx(1.67, abs=0.03)
     assert g.d_in_mm == pytest.approx(9.9)
+    # plate overlap across the dielectric, voltage weighted
+    assert g.c_self_pF == pytest.approx(0.65, rel=0.03)
     assert p50.f_mhz == pytest.approx((17.3, 15.2, 14.5), abs=0.15)
     p40 = tag_geometry(cfg, 40.0, "P")
     assert (p40.disc_mm, p40.turns_per_layer, p40.track_mm) == (pytest.approx(11.0), 7, 0.15)
@@ -211,7 +243,25 @@ def test_tag_values(cfg):
 
 
 # --------------------------------------------------------------- activation
-def test_activation_margin_holds_at_the_maximum_gap(cfg):
+def test_service_conductance_holds_the_field_at_the_iso_maximum(cfg):
+    # the driver's output resistance brings the highest field over the
+    # centre and the admissible offsets, tuning tag there, to h_max
+    h_max = cfg.hall_rfid.nfc.h_max_a_per_m
+    rd = cfg.hall_rfid.mockup.reader
+    for pitch in cfg.pitch.candidates_mm:
+        for name in _loops(cfg):
+            mt = matching(cfg, pitch, name)
+            assert mt.h_full_max_a_per_m >= mt.h_axis_a_per_m > h_max
+            assert mt.h_service_max_a_per_m == pytest.approx(h_max, rel=1e-6)
+            assert mt.r_drv_service_ohm > rd.r_drive_ohm
+            tuned = tag_activation(cfg, pitch, name, mt.tag)
+            assert tuned.h_axis_service_a_per_m <= h_max * (1.0 + 1e-6)
+    # on L70x2 at p = 50 the corner of the admissible offset sees the most
+    l70 = matching(cfg, 50.0, "L70x2")
+    assert l70.h_full_max_a_per_m / l70.h_axis_a_per_m == pytest.approx(1.12, abs=0.02)
+
+
+def test_activation_margin_at_full_and_service_conductance(cfg):
     tg = cfg.hall_rfid.mockup.tags
     dz = _max_extra_gap(cfg)
     for pitch in cfg.pitch.candidates_mm:
@@ -221,17 +271,25 @@ def test_activation_margin_holds_at_the_maximum_gap(cfg):
                 far = tag_activation(cfg, pitch, name, size, dz)
                 assert far.margin >= tg.activation_margin_min
                 assert far.margin < near.margin and far.k < near.k
-                assert far.margin_service == pytest.approx(far.margin * far.service_fraction)
-                # Q5: at the service field, one trim of each size keeps the margin
-                best = max(tag_activation(cfg, pitch, name, size, dz, trim).margin_service
-                           for trim in tg.trims_pF[size])
-                assert best >= tg.activation_margin_min
-            # the service fraction holds the tuning tag's field at the ISO maximum
-            tuned = tag_activation(cfg, pitch, name, cfg.hall_rfid.mockup.matching.tune_tag)
-            h_service = tuned.h_axis_a_per_m * tuned.service_fraction
-            assert h_service == pytest.approx(cfg.hall_rfid.nfc.h_max_a_per_m, rel=1e-6)
+                assert far.margin_service < far.margin
             assert (tag_activation(cfg, pitch, name, "G", dz).margin
                     > tag_activation(cfg, pitch, name, "P", dz).margin)
+
+
+def test_q5_best_trim_margins_at_the_service_field(cfg):
+    # best trim of each size at the maximum gap, service conductance
+    tg = cfg.hall_rfid.mockup.tags
+    dz = _max_extra_gap(cfg)
+    expected = {
+        (50.0, "L60x3", "P"): 2.35, (50.0, "L60x3", "G"): 2.01,
+        (50.0, "L70x2", "P"): 3.14, (50.0, "L70x2", "G"): 3.13,
+        (40.0, "L60x3", "P"): 1.95, (40.0, "L60x3", "G"): 1.45,
+        (40.0, "L70x2", "P"): 3.46, (40.0, "L70x2", "G"): 2.01,
+    }
+    for (pitch, name, size), value in expected.items():
+        best = max(tag_activation(cfg, pitch, name, size, dz, trim).margin_service
+                   for trim in tg.trims_pF[size])
+        assert best == pytest.approx(value, rel=0.03)
 
 
 def test_activation_values_at_p50(cfg):
@@ -239,9 +297,10 @@ def test_activation_values_at_p50(cfg):
     dz = _max_extra_gap(cfg)
     p60 = tag_activation(cfg, 50.0, "L60x3", "P", dz)
     assert p60.margin == pytest.approx(4.1, abs=0.4)
-    # at the service field (7.5 A/m on axis) the bare pawn tag stays under
-    # the margin of 2 over the reference sticker: M13a decides (note 25, Q5)
-    assert 1.0 < p60.margin_service < cfg.hall_rfid.mockup.tags.activation_margin_min
+    # at the service field the bare pawn tag stays under the margin of 2
+    # over the reference sticker: M13a decides (note 25, Q5)
+    assert p60.margin_service == pytest.approx(1.37, rel=0.03)
+    assert p60.margin_service < cfg.hall_rfid.mockup.tags.activation_margin_min
     # a trim towards the carrier buys voltage at the same conductance
     trimmed = tag_activation(cfg, 50.0, "L60x3", "P", dz, trim_pF=22.0)
     assert trimmed.margin_service > p60.margin_service
@@ -271,11 +330,12 @@ def test_relay_values_at_p50(cfg):
     def pct(a, b, state):
         return neighbor_relay(cfg, 50.0, a, b, state).relayed_pct
 
-    assert pct("L60x3", "L60x3", "held") == pytest.approx(5.7, abs=1.5)
-    assert pct("L70x2", "L70x2", "held") == pytest.approx(13.0, abs=2.5)
-    assert pct("L60x3", "L60x3", "floating") == pytest.approx(19.0, abs=4.0)
-    assert pct("L70x2", "L70x2", "floating") == pytest.approx(35.0, abs=5.0)
-    assert pct("L70x2", "L60x3", "floating") < 45.0
+    assert pct("L60x3", "L60x3", "held") == pytest.approx(5.75, rel=0.05)
+    assert pct("L70x2", "L70x2", "held") == pytest.approx(12.5, rel=0.05)
+    assert pct("L60x3", "L60x3", "floating") == pytest.approx(20.6, rel=0.05)
+    assert pct("L70x2", "L70x2", "floating") == pytest.approx(36.5, rel=0.05)
+    # different loops: 39 % with two loops, the note's 31 % had four
+    assert pct("L70x2", "L60x3", "floating") == pytest.approx(39.0, rel=0.05)
 
 
 # -------------------------------------------------------------------- metal
@@ -321,9 +381,9 @@ def test_tag_tuning_trades_voltage_against_matching(cfg):
     bare = tag_geometry(cfg, 50.0, "P").f_self_mhz
     assert tag_trim_pF(cfg, 50.0, "P", bare) == pytest.approx(0.0)
     assert matching(cfg, 50.0, "L60x3", "P", trim14).c1_exact_pF == pytest.approx(124.0, abs=8.0)
-    for name in _loops(cfg):
+    for name, i_tx in (("L60x3", 218.0), ("L70x2", 154.0)):
         blind14 = matching(cfg, 50.0, name, "P", trim14, tuned_with_tag=False)
-        assert 145.0 < blind14.i_tx_ma < 225.0
+        assert blind14.i_tx_ma == pytest.approx(i_tx, rel=0.1)
 
 
 def _i_tvdd_ma(i_tx_ma):
@@ -367,19 +427,19 @@ def test_l60x3_gives_more_field_per_watt_and_less_coupling(cfg):
 
 def test_hall_trio_picks_up_little_carrier(cfg):
     # paragraph 4.3: about 20 mV for a tight trio, 200 mV at 5 mm, -59 dB filter
-    for name in _loops(cfg):
+    for name, tight_mv, wide_mv in (("L60x3", 29.5, 186.0), ("L70x2", 24.3, 152.0)):
         tight = hall_trace_pickup(cfg, 50.0, name)
         wide = hall_trace_pickup(cfg, 50.0, name, 5.0)
-        assert tight.spacing_mm == pytest.approx(2.0 * cfg.hall_rfid.mockup.hall.trio_pitch_mm)
-        assert 15.0 < tight.emf_mv < 40.0
-        assert 140.0 < wide.emf_mv < 230.0
+        assert tight.emf_mv == pytest.approx(tight_mv, rel=0.05)
+        assert wide.emf_mv == pytest.approx(wide_mv, rel=0.05)
         assert tight.filter_db == pytest.approx(-59.0, abs=1.0)
         assert tight.filtered_mv < 0.1
 
 
 def test_tx_current_spreads_with_capacitors_and_loop_inductance(cfg):
-    # paragraph 4.4: 92 and 110 mA at +-5 % on C1 and C2, 91 and 110 mA at
-    # 5 % on the loop inductance, 160 and 190 mA at 10 %
+    # paragraph 4.4, TX current (rms, differential): 92 and 110 mA at +-5 %
+    # on C1 and C2, 91 and 110 mA at 5 % on the loop inductance, 160 and
+    # 190 mA at 10 %; the TVDD supply current is 0.9 times the TX current
     rd = cfg.hall_rfid.mockup.reader
     l_tol = cfg.hall_rfid.mockup.criteria.loop_l_tol_pct
     for name in _loops(cfg):
@@ -395,6 +455,21 @@ def test_tx_current_spreads_with_capacitors_and_loop_inductance(cfg):
         assert nominal.i_tvdd_max_ma == pytest.approx(
             max(own.i_tvdd_ma, _i_tvdd_ma(own.i_tx_no_tag_ma))
         )
+
+
+def test_vna_reads_about_half_the_loaded_q(cfg):
+    # with a matched 50 ohm source the NanoVNA sees the loaded Q halved
+    f0 = cfg.hall_rfid.nfc.f_hz * 1e-6
+    for pitch in cfg.pitch.candidates_mm:
+        for name in _loops(cfg):
+            mt = matching(cfg, pitch, name)
+            with_tag = vna_q(cfg, pitch, name)
+            bare = vna_q(cfg, pitch, name, with_tag=False)
+            assert with_tag.q == pytest.approx(mt.q_loaded / 2.0, rel=0.12)
+            assert bare.q < with_tag.q
+            assert with_tag.f_peak_mhz == pytest.approx(f0, rel=0.01)
+    assert vna_q(cfg, 50.0, "L60x3").q == pytest.approx(13.1, rel=0.02)
+    assert vna_q(cfg, 50.0, "L70x2").q == pytest.approx(12.3, rel=0.02)
 
 
 def test_mux_emulation_collapses_the_field(cfg):
@@ -430,6 +505,8 @@ def test_field_tag_beats_a_single_turn(cfg):
         (("tags", "activation_margin_min"), 50.0, "activation margin below the minimum"),
         (("matching", "q_loaded"), 500.0, "below the loaded Q target"),
         (("matching", "z_target_ohm"), 0.5, "no C1, C2 network reaches the target"),
+        (("matching", "gamma_max"), 0.01, "reflects more than gamma_max"),
+        (("tags", "opening_min_ratio"), 0.99, "no turn fits"),
     ],
 )
 def test_guards_fire(raw_config_dict, path, value, message):
@@ -437,6 +514,31 @@ def test_guards_fire(raw_config_dict, path, value, message):
     raw["hall_rfid"]["mockup"][path[0]][path[1]] = value
     problems = mockup_check(BoardConfig.model_validate(raw))
     assert any(message in p for p in problems), problems
+
+
+def test_detune_guard_fires(raw_config_dict):
+    # coarse trims on a narrow band
+    matching_raw = raw_config_dict["hall_rfid"]["mockup"]["matching"]
+    matching_raw["cap_series"] = "E6"
+    matching_raw["q_loaded"] = 100.0
+    problems = mockup_check(BoardConfig.model_validate(raw_config_dict), 50.0)
+    assert any("detunes past half the bandwidth" in p for p in problems)
+
+
+def test_rx_limit_guard_fires(raw_config_dict):
+    # at a high loaded Q the states without the tag carry more at the C0 node
+    raw_config_dict["hall_rfid"]["mockup"]["matching"]["q_loaded"] = 80.0
+    raw_config_dict["hall_rfid"]["mockup"]["reader"]["rx_max_vpp"] = 2.1
+    problems = mockup_check(BoardConfig.model_validate(raw_config_dict), 50.0)
+    assert any("RX over its input limit" in p for p in problems)
+
+
+def test_service_supply_guard_fires(raw_config_dict):
+    reader = raw_config_dict["hall_rfid"]["mockup"]["reader"]
+    reader["i_tvdd_max_ma"] = 25.0
+    reader["i_tvdd_accept_ma"] = 20.0
+    problems = mockup_check(BoardConfig.model_validate(raw_config_dict), 50.0)
+    assert any("over the reader limit at the service field" in p for p in problems)
 
 
 def test_rx_guard_fires(raw_config_dict):

@@ -515,10 +515,20 @@ Voir [l'état](07-etat-et-reste-a-faire.md).
 - `nfc.antenna` est corrigée (une boucle de 0,34 µH et non 0,32), les
   valeurs du DRV5053OA aussi ; la note 24 porte un erratum et sa page
   est régénérée.
-- Le modèle change trois choses du plan : l'amas Hall de A1 passe de
-  0,12 p à 0,10 p (il couvre ±9,3 mm au lieu de ±8,8, et tient les
-  8 mm de D14 au pas de 40) ; au champ de service, l'étiquette P nue
-  n'a qu'une marge d'activation de 1,3 à 1,4, P + 15 pF en a 2,7 ; une
-  variante G + 10 pF s'ajoute pour le pas de 40. Il signale aussi que
-  les lecteurs de A1 et A2 partagent un couloir de 475 mm² libres, à
-  trancher au lot 5.
+- Le modèle change plusieurs choses du plan : l'amas Hall de A1 passe
+  de 0,12 p à 0,10 p (il couvre ±9,3 mm au lieu de ±8,8, et tient les
+  8 mm de D14 au pas de 40) ; au champ de service, obtenu en relevant
+  la résistance de sortie de l'émetteur, l'étiquette P nue n'a qu'une
+  marge d'activation de 1,3 à 1,4, P + 15 pF de 2,1 à 2,2, P + 22 pF de
+  2,4 à 3,2 ; une variante G + 10 pF s'ajoute ; à pleine conductance,
+  seule P nue garde le courant TVDD sous la limite. Il signale aussi
+  que les lecteurs de A1 et A2 partagent un couloir de 475 mm² libres,
+  à trancher au lot 5.
+- Une relecture contradictoire en trois volets (physique RF, carte et
+  chaîne Hall, documentation et protocole) a corrigé le modèle de
+  service, ajouté des gardes et fait attendre au micrologiciel la mise
+  sous tension maximale des capteurs (50 µs). Deux décisions s'ouvrent
+  (note 25, paragraphe 11) : D15, le diviseur de réception, que le
+  niveau à `RX` en service (0,5 à 1 V crête à crête) met en cause ;
+  D16, la variante p = 40, où la boucle L60x3 n'atteint la marge de Q5
+  avec aucune étiquette.

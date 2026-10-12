@@ -39,6 +39,10 @@ def main(cfg_path: str, out_path: str) -> None:
     cfg = load_config(cfg_path)
     hr = cfg.hall_rfid
     sensor = hr.sensors[0]
+    # wait the slowest sensor of the part, not the typical one
+    power_on_us = sensor.power_on_max_us
+    if power_on_us is None:
+        power_on_us = sensor.power_on_us
     q = cfg.plateau.quadrant.squares
     if hr.mux.channels != q * q:
         raise SystemExit("hall_rfid.mux.channels must equal the squares of a quadrant")
@@ -68,7 +72,7 @@ def main(cfg_path: str, out_path: str) -> None:
         f"#define HALL_GROUPS {hr.power_gating.groups}u",
         f"#define HALL_SAMPLES_PER_SQUARE {hr.esp32.samples_per_square}u",
         f"#define HALL_MUX_SETTLE_US {int(round(hr.mux.t_settle_us))}u",
-        f"#define HALL_POWER_ON_US {int(round(sensor.power_on_us))}u",
+        f"#define HALL_POWER_ON_US {int(round(power_on_us))}u",
         f"#define HALL_ADC_FULL_SCALE_MV {int(round(hr.esp32.adc_full_scale_mv))}u",
         "",
         f"/* {hr.esp32.module} GPIO numbers */",

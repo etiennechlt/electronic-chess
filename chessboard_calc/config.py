@@ -789,6 +789,7 @@ class MockupBoardOutlineCfg(_Model):
     fiducial_mask_d_mm: float
     hole_d_mm: float
     copper_um: float
+    eps_r: float
     standoff_mm: float
 
 
@@ -820,8 +821,7 @@ class MockupReaderCfg(_Model):
     package: str
     footprint_square_mm: float
     by_row: dict[int, ReaderPartCfg]
-    crystal_mhz: float
-    tvdd_v: float
+    area_mm2: tuple[float, float]
     r_drive_ohm: float
     i_tvdd_max_ma: float
     i_tvdd_accept_ma: float
@@ -836,6 +836,10 @@ class MockupReaderCfg(_Model):
     def _limits(self) -> MockupReaderCfg:
         if not self.i_tvdd_accept_ma < self.i_tvdd_max_ma:
             raise ValueError("acceptance current must sit below the datasheet limit")
+        if self.i_idle_max_ma < self.i_idle_ma:
+            raise ValueError("maximum idle current below the typical one")
+        if not 0.0 < self.area_mm2[0] <= self.area_mm2[1]:
+            raise ValueError("reader area must be positive, smallest first")
         lo, hi = self.rx_target_vpp
         if not 0.0 < lo < hi < self.rx_max_vpp:
             raise ValueError("RX target must sit inside the RX input limit")
@@ -855,6 +859,7 @@ class MockupMatchingCfg(_Model):
     rx_coupling_nF: float
     loop_lead_mm: float
     tune_tag: str
+    gamma_max: float
 
 
 class MockupHallCfg(_Model):
@@ -886,6 +891,7 @@ class MockupMuxChannelsCfg(_Model):
 class MockupEsp32Cfg(_Model):
     module: str
     lcsc: str
+    module_gpios: tuple[int, ...]
     adc1_gpios: tuple[int, ...]
     strapping_gpios: tuple[int, ...]
     usb_gpios: tuple[int, ...]
@@ -900,6 +906,8 @@ class MockupRegulatorCfg(_Model):
     lcsc: str
     v_out: float
     i_max_a: float
+    dropout_v: float
+    i_ground_ma: float
 
 
 class HallRfidPowerCfg(_Model):
@@ -907,6 +915,7 @@ class HallRfidPowerCfg(_Model):
     current and the linear regulator with its thermal path."""
 
     v_in: tuple[float, float]
+    v_in_min: float
     esp32_ma: float
     regulator: MockupRegulatorCfg
     theta_ja_c_per_w: float
@@ -916,8 +925,8 @@ class HallRfidPowerCfg(_Model):
     @model_validator(mode="after")
     def _headroom(self) -> HallRfidPowerCfg:
         lo, hi = self.v_in
-        if not self.regulator.v_out < lo <= hi:
-            raise ValueError("regulator input must sit above its output, nominal then maximum")
+        if not self.regulator.v_out < self.v_in_min <= lo <= hi:
+            raise ValueError("regulator input must sit above its output: minimum, nominal, maximum")
         if not self.t_ambient_c < self.t_junction_max_c:
             raise ValueError("ambient above the junction limit")
         return self
@@ -1090,6 +1099,8 @@ class HallRfidMockupCfg(_Model):
             raise ValueError("loop_by_column names a loop that is not defined")
         if set(self.reader.by_row) != set(self.rows):
             raise ValueError("every row needs a reader part")
+        if not 0.0 < self.ground_keepout_min_mm <= self.ground_keepout_mm:
+            raise ValueError("the reduced ground keepout must not exceed the nominal one")
         q = self.quantities
         if q.boards_assembled > q.boards or q.tag_panels_assembled > q.tag_panels:
             raise ValueError("more assembled than fabricated")

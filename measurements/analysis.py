@@ -269,6 +269,13 @@ def _target(target_rate: float | None) -> float:
     return _yaml_criteria().read_target_rate if target_rate is None else target_rate
 
 
+def tag_variants(cfg: BoardConfig) -> list[str]:
+    """Names of the tag variants of the panel: the size letter followed by
+    the trim in pF, from mockup.tags.trims_pF (P0 is the bare P tag)."""
+    trims = cfg.hall_rfid.mockup.tags.trims_pF
+    return [f"{size}{t:g}" for size, values in trims.items() for t in values]
+
+
 def cluster_sensor_offsets_mm(
     cfg: BoardConfig, pitch_mm: float | None = None
 ) -> dict[str, tuple[float, float]]:
@@ -350,7 +357,7 @@ class RfidRow:
     loop: str               # loop name of the yaml, L70x2_mux for the M13c emulation
     reader: str             # maker of the reader chip (by_row of the yaml)
     tag_id: str
-    variant: str            # P, P15, P22, G, MURATA or REF (commercial NTAG213)
+    variant: str            # tag_variants (P0, P15...), MURATA or REF (commercial NTAG213)
     tag_square: str         # square the tag sits on
     z_mm: float             # loop copper to the tag's lower copper, caliper
     x_mm: float             # tag centre from the centre of tag_square
@@ -400,7 +407,7 @@ class CohabRow:
     rf_square: str          # square whose reader transmits meanwhile, "none" if off
     piece: str
     tag_id: str
-    variant: str
+    variant: str            # as in RfidRow
     magnet_in: int          # 1 magnet in the base, 0 ejected (m14a_tag)
     disturber: str          # none, aluminium, steel or n42 (m14b)
     distance_mm: float      # board bottom face to the disturber
@@ -609,7 +616,7 @@ def model_bz_mT(
 
 @dataclass(frozen=True)
 class ScaleFit:
-    factor: float           # measured over model, least squares through the origin
+    factor: float           # mean of the measured over modelled ratios
     factor_sigma: float     # its standard error
     max_residual: float     # largest |measured / (factor x model) - 1|
     rms_residual: float
@@ -618,19 +625,21 @@ class ScaleFit:
 
 def m12a_scale_factor(measured_mT: Sequence[float], model_mT: Sequence[float]) -> ScaleFit:
     """One scale factor between measured and modelled fields (it carries
-    the real sensitivity and the real remanence), with its spread."""
+    the real sensitivity and the real remanence), with its spread. The
+    factor is the mean of the point ratios, so that every point weighs the
+    same in relative terms, as the criterion on the largest relative
+    residual does; a least-squares fit on absolute fields would let the
+    near points decide alone."""
     m = np.asarray(measured_mT, dtype=float)
     b = np.asarray(model_mT, dtype=float)
-    ok = np.isfinite(m) & np.isfinite(b)
-    m, b = m[ok], b[ok]
-    n = len(m)
+    ok = np.isfinite(m) & np.isfinite(b) & (b != 0.0)
+    ratio = m[ok] / b[ok]
+    n = len(ratio)
     if n == 0:
         raise ValueError("no finite point to fit")
-    sbb = float(np.sum(b * b))
-    k = float(np.sum(m * b)) / sbb
-    resid = m - k * b
-    sigma = math.sqrt(float(np.sum(resid * resid)) / (n - 1) / sbb) if n > 1 else math.nan
-    rel = m / (k * b) - 1.0
+    k = float(np.mean(ratio))
+    sigma = float(np.std(ratio, ddof=1)) / math.sqrt(n) if n > 1 else math.nan
+    rel = ratio / k - 1.0
     return ScaleFit(
         factor=k,
         factor_sigma=sigma,
@@ -963,6 +972,7 @@ def m13a_activation_threshold(
     target_rate: float | None = None,
     confidence: float | None = None,
     higher_is_easier: bool = True,
+    series: str = "",
 ) -> ActivationThreshold:
     """Activation threshold from series of reads at several levels: field
     or field proxy (higher is easier), or gap or offset (higher is harder).
@@ -970,9 +980,17 @@ def m13a_activation_threshold(
     read rate meets the target; a lucky series beyond the first miss does
     not count. Levels measured twice are pooled. target_rate and
     confidence default to criteria.read_target_rate and
-    criteria.confidence of the yaml."""
+    criteria.confidence of the yaml. A level that is not finite (a field
+    tag reading outside its calibration table) is refused: it would break
+    the ordering of the levels; `series` names the series in the error."""
     target_rate = _target(target_rate)
-    lv = np.round(np.asarray(level, dtype=float), 9)
+    raw = np.asarray(level, dtype=float)
+    if not np.all(np.isfinite(raw)):
+        bad = [float(v) for v in raw[~np.isfinite(raw)]]
+        raise ValueError(
+            f"series {series or '(unnamed)'}: non-finite level {bad}; a field tag "
+            "reading outside its calibration table, extend the table first")
+    lv = np.round(raw, 9)
     n = np.asarray(trials, dtype=int)
     k = np.asarray(successes, dtype=int)
     uniq = sorted(set(lv.tolist()), reverse=higher_is_easier)
@@ -1042,7 +1060,8 @@ def m13a_thresholds(
         if cal is not None:
             lv = [float(field_from_pickup(v, cal)) for v in lv]
         out[key] = m13a_activation_threshold(
-            lv, [r.trials for r in grp], [r.successes for r in grp], target_rate, confidence)
+            lv, [r.trials for r in grp], [r.successes for r in grp], target_rate, confidence,
+            series=str(key))
     return out
 
 
@@ -1135,6 +1154,45 @@ def match_frequency_hz(
     denom = y0 - 2.0 * y1 + y2
     shift = 0.5 * (y0 - y2) / denom if denom != 0.0 else 0.0
     return float(f[k] + shift * (f[k + 1] - f[k - 1]) / 2.0)
+
+
+def r_drive_from_tvdd(
+    i_tvdd_ma: float, z_diff_ohm: complex, tvdd_v: float, i_tvdd_off_ma: float = 0.0
+) -> float:
+    """Drive resistance per TX pin from the TVDD current measured at full
+    conductance and the differential impedance measured at the carrier,
+    by the source model of chessboard_calc.nfc: the two TX pins make a
+    differential square wave of tvdd_v whose fundamental, 4 tvdd_v / pi
+    peak, drives the network behind 2 r_drive, and TVDD carries the
+    rectified mean of that current, i = 8 tvdd_v / (pi^2 |2 r + Z|).
+    i_tvdd_off_ma is the TVDD current with the emission off. nan when the
+    current exceeds what Z alone allows."""
+    i_a = (i_tvdd_ma - i_tvdd_off_ma) * 1e-3
+    if i_a <= 0.0:
+        return math.nan
+    z = complex(z_diff_ohm)
+    k = 8.0 * tvdd_v / (math.pi**2 * i_a)
+    disc = k * k - z.imag * z.imag
+    if disc < 0.0:
+        return math.nan
+    r = (math.sqrt(disc) - z.real) / 2.0
+    return r if r >= 0.0 else math.nan
+
+
+def rx_amplitude_vpp(
+    s21_rx: complex,
+    s21_c0: complex,
+    v_c0_model_vpp: float,
+    i_tvdd_ma: float,
+    i_tvdd_model_ma: float,
+) -> float:
+    """RX amplitude at full conductance: the receive divider ratio measured
+    at the carrier (S21 from the network input to the RX test point over
+    S21 to the C0 node, through the same probe) times the C0 node voltage
+    of the model (nfc.matching), scaled by the measured over the modelled
+    TVDD current, every node voltage following the TX current."""
+    ratio = abs(complex(s21_rx) / complex(s21_c0))
+    return ratio * v_c0_model_vpp * i_tvdd_ma / i_tvdd_model_ma
 
 
 # --- M14: cohabitation and environment ---------------------------------------
