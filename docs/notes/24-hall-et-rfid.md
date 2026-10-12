@@ -25,9 +25,33 @@ Tous les chiffres viennent de la section `hall_rfid` de
 `chessboard_calc.nfc`, imprimés par `python -m chessboard_calc report`
 (section « Hall + RFID alternative » de chaque pas) et épinglés par
 `tests/test_hall.py` et `tests/test_nfc.py`. Les valeurs de fiche
-technique qui n'ont pas pu être relues (courant du DRV5053, résistance
-du CD74HC4067 à 3,3 V, délai de mise sous tension) sont marquées « to
-verify » dans le yaml.
+technique qui n'ont pas pu être relues (résistance du CD74HC4067 à
+3,3 V) sont marquées « to verify » dans le yaml.
+
+> **Erratum du 12/10/2026.** La préparation de la maquette
+> ([note 25](25-maquette-hall-rfid.md), paragraphe 2) a trouvé trois
+> erreurs, corrigées dans le dépôt au lot 2 de cette note ; les chiffres
+> ci-dessous sont recalculés. Le diamètre intérieur de la boucle NFC
+> comptait un écart de trop : l'inductance était sous-estimée de 7 %
+> (0,34 µH et non 0,32). Le courant du DRV5053OA lu dans la fiche était
+> sa limite de courant de sortie (2,3 mA) : il consomme 2,7 mA
+> typiques, 3,6 au plus, et sa sortie est valide 35 µs après la mise
+> sous tension, et non 100. Le CD74HC4067SM96 est en SSOP-24, non en
+> TSSOP-24. Trois conclusions changent de portée sans changer le
+> verdict :
+>
+> - un capteur central ne voit le pion le plus faible, à l'entrefer
+>   maximal, qu'à 6,6 mm du centre de sa case, alors qu'une pièce peut
+>   en être à 16,25 mm au pas de 50 (`hall.offset_coverage`) : la
+>   nappe 4 x 4 de la section 2 attend la mesure M12b de la maquette,
+>   qui dira s'il faut un capteur par case ou un amas ;
+> - une boucle adaptée à 50 ohm différentiels avec un Q chargé de 24
+>   porte 270 à 310 mA à pleine conductance, et non 100 mA
+>   (`nfc.matching`) ; la marge ISO de la section 3 reste un ordre de
+>   grandeur, car elle ignore la taille de l'étiquette : c'est la marge
+>   d'activation de `nfc.tag_activation` qui juge une étiquette ;
+> - l'étiquette de 25 mm ne tient dans aucune base : la maquette emploie
+>   des étiquettes gravées de 14,5 et 19,5 mm (note 25, paragraphe 5).
 
 ## 1. Ce qui diffère entre le brief et le projet
 
@@ -91,24 +115,26 @@ Ce qui en sort :
   du chariot (un N42 fixe repousserait un camp) : il impose
   l'électroaimant parmi `carriage.actuator_candidates`.
 - **Le courant est le point dur, et il se règle.** 64 capteurs sous
-  tension en permanence : 147 mA pour le DRV5053 (0,49 W), 384 mA pour
+  tension en permanence : 173 mA pour le DRV5053 (0,57 W), 384 mA pour
   la puce du SS49E (1,27 W, plus que tout le plateau au repos).
-  L'autonomie humain contre humain passerait de 51 h à 31 h, ou à 19 h.
+  L'autonomie humain contre humain passerait de 51 h à 29 h, ou à 19 h.
   En alimentant les capteurs par rangée de quadrant (quatre groupes,
-  un P-FET par groupe), la moyenne tombe à 37 mA et l'autonomie
-  revient à 44 h ; huit groupes la ramènent à 47 h.
+  un P-FET par groupe), la moyenne tombe à 43 mA et l'autonomie
+  revient à 43 h ; huit groupes la ramènent à 47 h.
 
 | Capteur | Alimentation | mA | W | Autonomie (h), 51 sans |
 |---|---|---|---|---|
-| DRV5053OA | continue | 147 | 0,49 | 31 |
-| DRV5053OA | 4 groupes | 37 | 0,12 | 44 |
+| DRV5053OA | continue | 173 | 0,57 | 29 |
+| DRV5053OA | 4 groupes | 43 | 0,14 | 43 |
 | SS39ET (SS49E en SOT-23) | continue | 384 | 1,27 | 19 |
 | SS39ET | 4 groupes | 96 | 0,32 | 36 |
+| DRV5055A3 (capteur de la maquette, note 25) | continue | 384 | 1,27 | 19 |
+| DRV5055A3 | 4 groupes | 96 | 0,32 | 36 |
 
 - **La cadence est celle que le brief demande.** 82 µs par case (2 µs
   de commutation, huit lectures de 10 µs), quatre mux lus en parallèle
-  sur quatre entrées ADC : 1,7 ms par plateau avec la commutation des
-  rangées, soit 580 Hz. La chaîne LC scrute à 5 Hz au repos
+  sur quatre entrées ADC : 1,5 ms par plateau avec la commutation des
+  rangées, soit 690 Hz. La chaîne LC scrute à 5 Hz au repos
   (`measurement.idle_scan_hz`) : la couche Hall voit la pièce quitter
   la case cent fois plus vite, et voit l'état « pièce en main » que le
   LC ne distingue pas d'une case vide.
@@ -140,7 +166,10 @@ carte deux couches de 200 x 200 mm par quadrant, 16 capteurs, un
 CD74HC4067, quatre P-FET, un connecteur, aucune chaîne analogique. Elle
 se branche sur l'ESP32-S3 du brief aujourd'hui, et sur le bus du
 cerveau demain (les lignes `MUX_A0..A2` et les deux enables de la nappe
-suffisent à adresser 16 voies, `AMP_OUT` ramène la sortie).
+suffisent à adresser 16 voies, `AMP_OUT` ramène la sortie). Elle
+attend toutefois la mesure M12b de la maquette (erratum en tête de
+note) : un capteur par case ne couvre qu'une partie du décalage
+possible d'une pièce posée à la main.
 
 ## 3. La couche RFID : ce que la physique donne
 
@@ -149,16 +178,16 @@ standard : étiquette NFC passive (NTAG213, ISO 14443A, 13,56 MHz) collée
 au fond de la base, et une boucle par case gravée sur la carte.
 
 - **Le bilan de liaison n'est pas le problème.** Boucle carrée de
-  35 mm à deux spires (0,32 µH, accordée par 433 pF), étiquette de
+  35 mm à deux spires (0,34 µH, accordée par 402 pF), étiquette de
   25 mm à sept spires (1,96 µH, résonance propre à 16,1 MHz avec les
-  50 pF de la puce), 5,5 mm entre le cuivre et l'étiquette : k = 0,22,
+  50 pF de la puce), 5,5 mm entre le cuivre et l'étiquette : k = 0,21,
   et 100 mA dans la boucle font 4,8 A/m à l'étiquette, 3,2 fois le
   minimum ISO 14443 ; 3,1 fois à l'entrefer maximal. Le couplage se
   calcule avec le même `mutual_coaxial_loops_nH` que le LC.
 - **La commutation est le problème, et l'ADR 0001 avait raison.** Une
-  boucle de Q 20 à 13,56 MHz veut 1,4 ohm de résistance série en tout.
-  Le CD74HC4067 en met 100 (Q = 0,27) et ses quinze voies fermées
-  accrochent 125 pF sur une boucle accordée par 433 pF : -12 % de
+  boucle de Q 20 à 13,56 MHz veut 1,5 ohm de résistance série en tout.
+  Le CD74HC4067 en met 100 (Q = 0,29) et ses quinze voies fermées
+  accrochent 125 pF sur une boucle accordée par 402 pF : -13 % de
   fréquence, pour une bande passante de 5 %. Même un commutateur RF de
   1,5 ohm dans la boucle divise le Q par deux. Un commutateur ne peut
   vivre que dans la section adaptée à 50 ohm, derrière un réseau
@@ -207,7 +236,7 @@ seulement sur demande. L'ADR 0001 reste debout.
 **Comme étape intermédiaire : oui, et c'est même la bonne.** La couche
 Hall ne demande ni chaîne analogique, ni bobinage, ni calibration ; les
 pièces ne changent pas (l'aimant y est déjà) ; la carte est en deux
-couches ; la lecture est faite en 1,7 ms. Elle permet de développer et
+couches ; la lecture est faite en 1,5 ms. Elle permet de développer et
 de jouer tout ce qui ne dépend pas de l'identité (lots 6 à 8 de la
 [note 07](07-etat-et-reste-a-faire.md) : arbitre depuis la position
 initiale, LED, horloge, application, parties humain contre humain)
@@ -253,8 +282,8 @@ Ce qui n'est pas fait : la carte KiCad de la nappe Hall (elle attend
 la décision de la section 7 ; `boardgen` sait la produire, c'est un
 circuit de 16 capteurs, un mux et quatre FET par quadrant), la
 compilation ESP-IDF (pas de chaîne en CI, comme pour le pont et
-l'horloge), et la relecture des trois valeurs de fiche marquées à
-vérifier.
+l'horloge), et la relecture de la résistance du multiplexeur, encore
+marquée à vérifier (les valeurs du DRV5053OA l'ont été pour la note 25).
 
 ## 6. Ce que changent les cases de 55 ou 60 mm du brief
 
@@ -262,10 +291,10 @@ Même modèle, même aimant (dont le diamètre suit la base, donc le pas) :
 
 | Pas (mm) | B pion nominal (mT) | B roi soulevé (mT) | Marge au soulèvement | Diaphonie de 8 voisins (dB) | Groupes avec aimants codés | k NFC | Marge ISO |
 |---|---|---|---|---|---|---|---|
-| 40 | 17,3 | 2,3 | 2,1 | -21,2 | 2 | 0,29 | 3,8 |
-| 50 | 25,3 | 3,8 | 1,9 | -24,7 | 3 | 0,22 | 3,2 |
-| 55 | 28,3 | 4,6 | 1,8 | -26,0 | 3 | 0,19 | 3,0 |
-| 60 | 30,6 | 5,4 | 1,7 | -27,1 | 3 | 0,16 | 2,8 |
+| 40 | 17,3 | 2,3 | 2,1 | -21,2 | 2 | 0,27 | 3,8 |
+| 50 | 25,3 | 3,8 | 1,9 | -24,7 | 3 | 0,21 | 3,2 |
+| 55 | 28,3 | 4,6 | 1,8 | -26,0 | 3 | 0,18 | 3,0 |
+| 60 | 30,6 | 5,4 | 1,7 | -27,1 | 3 | 0,16 | 2,7 |
 
 La diaphonie s'améliore avec le pas, la marge au soulèvement se
 resserre un peu (le roi porte un aimant plus gros qui se voit de plus

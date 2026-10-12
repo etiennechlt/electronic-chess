@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" class="docfig" viewBox="0 0 900 280" role="img" aria-label="Trois grandeurs de la boucle NFC, ce qu il faut contre ce que donne le multiplexeur analogique : resistance serie 1,4 contre 100 ohm, Q 20 contre 0,27, desaccord de 12 pour cent">
+<svg xmlns="http://www.w3.org/2000/svg" class="docfig" viewBox="0 0 900 280" role="img" aria-label="Trois grandeurs de la boucle NFC, ce qu il faut contre ce que donne le multiplexeur analogique : resistance serie 1,5 contre 100 ohm, Q 20 contre 0,29, desaccord de 13 pour cent">
 <style>
 svg.docfig{font-family:"IBM Plex Sans", "Segoe UI", "DejaVu Sans", Helvetica, Arial, sans-serif;color:#1a1e1d}
 .lbl{font-size:12.5px;fill:#1a1e1d}
@@ -52,19 +52,19 @@ svg.docfig{font-family:"IBM Plex Sans", "Segoe UI", "DejaVu Sans", Helvetica, Ar
 <text class="lbl q-high-t" x="300.0" y="30.0">ce qu'il faut</text>
 <text class="lbl q-low-t" x="500.0" y="30.0">ce que donne le CD74HC4067</text>
 <text class="lbl strong" x="20.0" y="70.0">résistance série dans la boucle</text>
-<rect class="seg-listen" x="300" y="56" width="7.0" height="16" rx="3"/>
-<text class="lbl small" x="315.0" y="69.0">1,4 Ω pour Q = 20</text>
+<rect class="seg-listen" x="300" y="56" width="7.6" height="16" rx="3"/>
+<text class="lbl small" x="315.6" y="69.0">1,5 Ω pour Q = 20</text>
 <rect class="seg-pulse" x="300" y="78" width="520.0" height="16" rx="3"/>
 <text class="lbl small" x="828.0" y="91.0">100 Ω de résistance passante</text>
 <text class="lbl strong" x="20.0" y="140.0">facteur Q de la boucle</text>
 <rect class="seg-listen" x="300" y="126" width="520.0" height="16" rx="3"/>
 <text class="lbl small" x="828.0" y="139.0">20 visé</text>
-<rect class="seg-pulse" x="300" y="148" width="6.9" height="16" rx="3"/>
-<text class="lbl small" x="314.9" y="161.0">0,27 avec le multiplexeur</text>
+<rect class="seg-pulse" x="300" y="148" width="7.5" height="16" rx="3"/>
+<text class="lbl small" x="315.5" y="161.0">0,29 avec le multiplexeur</text>
 <text class="lbl strong" x="20.0" y="210.0">capacité sur la boucle accordée</text>
 <rect class="seg-listen" x="300" y="196" width="520.0" height="16" rx="3"/>
-<text class="lbl small" x="828.0" y="209.0">433 pF d'accord</text>
-<rect class="seg-pulse" x="300" y="218" width="150.0" height="16" rx="3"/>
-<text class="lbl small" x="458.0" y="231.0">125 pF parasites : -12 % de fréquence</text>
+<text class="lbl small" x="828.0" y="209.0">402 pF d'accord</text>
+<rect class="seg-pulse" x="300" y="218" width="161.9" height="16" rx="3"/>
+<text class="lbl small" x="469.9" y="231.0">125 pF parasites : -13 % de fréquence</text>
 <text class="lbl muted" x="20.0" y="262.0">verdict du modèle : ok=non ; un commutateur ne peut vivre que dans la section adaptée à 50 Ω, jamais dans la boucle</text>
 </svg>

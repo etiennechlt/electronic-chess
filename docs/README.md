@@ -62,7 +62,8 @@ pas.
 - **Commander la maquette Hall + RFID** (2 x 2 cases, un lecteur NFC
   et un capteur Hall par case, étiquettes à la taille du pion, tout
   chez JLCPCB sauf les aimants) : la
-  [note 25](notes/25-maquette-hall-rfid.md), plan à valider, avec les
+  [note 25](notes/25-maquette-hall-rfid.md), plan validé et modèle
+  écrit (lot 2), avec les
   questions que la maquette tranche, les corrections apportées à la
   note 24, la carte, la nomenclature, la commande, le coût, les lots et
   les décisions.
@@ -176,7 +177,7 @@ pas.
 | [22](notes/22-erreurs-de-conception.md) | Erreurs de conception des cartes, et le contrôle qui empêche chacune de revenir |
 | [23](notes/23-commande-jlcpcb.md) | Commander chez JLCPCB : ce qui part, les options, ce qui manque pour l'assemblage |
 | [24](notes/24-hall-et-rfid.md) | Hall + RFID : évaluation comme alternative ou étape intermédiaire, scanner Hall prototypé |
-| [25](notes/25-maquette-hall-rfid.md) | Maquette Hall + RFID : le plan pour tout commander chez JLCPCB (à valider) |
+| [25](notes/25-maquette-hall-rfid.md) | Maquette Hall + RFID : le plan pour tout commander chez JLCPCB (validé, lot 2 fait) |
 
 Décisions formelles : [index des ADR](adr/README.md). Conventions de
 contribution : `CLAUDE.md` à la racine (langue, typographie, source

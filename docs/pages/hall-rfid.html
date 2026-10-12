@@ -252,10 +252,10 @@ pre code{background:none; padding:0; font-size:inherit;}
 <p class="eyebrow">Ce que ça donne</p>
 <h2>Quatre chiffres à retenir</h2>
 <div class="cards">
-<div class="card cool"><p class="big">584 <small>fois par seconde</small></p><p class="what">le plateau relit ses 64 cases ; la détection LC du projet ne balaie que 5 fois par seconde au repos</p></div>
+<div class="card cool"><p class="big">689 <small>fois par seconde</small></p><p class="what">le plateau relit ses 64 cases ; la détection LC du projet ne balaie que 5 fois par seconde au repos</p></div>
 <div class="card cool"><p class="big">1,9<small> x</small></p><p class="what">de marge entre « posée » et « soulevée de 15 mm », pour la pièce la plus difficile</p></div>
 <div class="card warm"><p class="big">1 <small>groupe</small></p><p class="what">c'est tout ce que l'amplitude du champ permet de distinguer avec les aimants du projet : présence, pas identité</p></div>
-<div class="card warm"><p class="big">44 h <small>au lieu de 51</small></p><p class="what">d'autonomie sur batterie, en n'alimentant les capteurs que par rangées ; 31 h si on les laisse tous allumés</p></div>
+<div class="card warm"><p class="big">43 h <small>au lieu de 51</small></p><p class="what">d'autonomie sur batterie, en n'alimentant les capteurs que par rangées ; 29 h si on les laisse tous allumés</p></div>
 </div>
 <div class="yesno">
 <div><h3>Ce que la couche Hall sait faire</h3><ul>
@@ -466,14 +466,16 @@ pre code{background:none; padding:0; font-size:inherit;}
 <table>
 <thead><tr><th>capteur</th><th>alimentation</th><th class="n">mA</th><th class="n">W</th><th class="n">autonomie humain contre humain (h), 51 sans</th></tr></thead>
 <tbody>
-<tr><td>DRV5053OA</td><td>continue</td><td class="n">147</td><td class="n">0,49</td><td class="n">31</td></tr>
-<tr><td>DRV5053OA</td><td>4 groupes</td><td class="n">37</td><td class="n">0,12</td><td class="n">44</td></tr>
+<tr><td>DRV5053OA</td><td>continue</td><td class="n">173</td><td class="n">0,57</td><td class="n">29</td></tr>
+<tr><td>DRV5053OA</td><td>4 groupes</td><td class="n">43</td><td class="n">0,14</td><td class="n">43</td></tr>
 <tr><td>SS39ET</td><td>continue</td><td class="n">384</td><td class="n">1,27</td><td class="n">19</td></tr>
 <tr><td>SS39ET</td><td>4 groupes</td><td class="n">96</td><td class="n">0,32</td><td class="n">36</td></tr>
+<tr><td>DRV5055A3</td><td>continue</td><td class="n">384</td><td class="n">1,27</td><td class="n">19</td></tr>
+<tr><td>DRV5055A3</td><td>4 groupes</td><td class="n">96</td><td class="n">0,32</td><td class="n">36</td></tr>
 </tbody>
 </table>
 </div>
-<p>Le courant de repos est le point dur : 147 mA pour 64 DRV5053OA en continu, 384 mA pour la puce du SS49E, plus que le plateau entier au repos. Un P-FET côté haut par rangée de quadrant (4 groupes) n'alimente que la rangée lue : la moyenne tombe à 37 mA et l'autonomie remonte à 44 h.</p>
+<p>Le courant de repos est le point dur : 173 mA pour 64 DRV5053OA en continu, 384 mA pour la puce du SS49E, plus que le plateau entier au repos. Un P-FET côté haut par rangée de quadrant (4 groupes) n'alimente que la rangée lue : la moyenne tombe à 43 mA et l'autonomie remonte à 43 h.</p>
 <figure>
 <div class="fig-scroll"><svg class="docfig" viewBox="0 0 960 430" role="img" aria-label="Schema bloc du scanner : quatre quadrants de seize capteurs Hall, un multiplexeur par quadrant, quatre entrees ADC de l ESP32-S3, quatre bits d adresse partages, quatre commutateurs d alimentation par rangee, la ligne B vers la console">
 <defs><marker id="sarr-t" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
@@ -540,9 +542,9 @@ pre code{background:none; padding:0; font-size:inherit;}
 <text class="lbl mono" x="850.0" y="222.0">B,........</text>
 <text class="lbl small muted" x="850.0" y="238.0">à chaque changement</text>
 <text class="lbl" x="600.0" y="318.0"></text>
-<text class="lbl strong" x="20.0" y="412.0">un scan : 82 µs par case, 1,7 ms par plateau, 584 fois par seconde</text>
+<text class="lbl strong" x="20.0" y="412.0">un scan : 82 µs par case, 1,5 ms par plateau, 689 fois par seconde</text>
 </svg></div>
-<figcaption><b>Le scanner.</b> Une case coûte 2 µs de commutation du CD74HC4067 plus 8 lectures de 10 µs, soit 82 µs ; les quatre multiplexeurs sont lus en parallèle sur quatre entrées ADC1 ; avec 100 µs de mise sous tension par rangée, le plateau est relu en 1,7 ms, 584 fois par seconde (762 sans commutation).</figcaption>
+<figcaption><b>Le scanner.</b> Une case coûte 2 µs de commutation du CD74HC4067 plus 8 lectures de 10 µs, soit 82 µs ; les quatre multiplexeurs sont lus en parallèle sur quatre entrées ADC1 ; avec 35 µs de mise sous tension par rangée, le plateau est relu en 1,5 ms, 689 fois par seconde (762 sans commutation).</figcaption>
 </figure>
 </section>
 
@@ -565,34 +567,34 @@ pre code{background:none; padding:0; font-size:inherit;}
 <section>
 <p class="eyebrow">RFID</p>
 <h2>Le bilan de liaison tient, la commutation non</h2>
-<p>Cas standard : étiquette NTAG213 (ISO 14443A, 13,56 MHz) de ø25 mm à 7 spires au fond de la base (1,96 µH, résonance propre à 16,1 MHz avec les 50 pF de la puce), boucle carrée de 35 mm à 2 spires gravée sous la case (0,32 µH, X<sub>L</sub> = 27 Ω, accord par 433 pF). À 5,5 mm : k = 0,22, et 100 mA dans la boucle font 4,8 A/m à l'étiquette, 3,2 fois le minimum ISO de 1,5 A/m (3,1 fois à l'entrefer maximal). Le couplage se calcule avec la même inductance mutuelle que le LC.</p>
+<p>Cas standard : étiquette NTAG213 (ISO 14443A, 13,56 MHz) de ø25 mm à 7 spires au fond de la base (1,96 µH, résonance propre à 16,1 MHz avec les 50 pF de la puce), boucle carrée de 35 mm à 2 spires gravée sous la case (0,34 µH, X<sub>L</sub> = 29 Ω, accord par 402 pF). À 5,5 mm : k = 0,21, et 100 mA dans la boucle font 4,8 A/m à l'étiquette, 3,2 fois le minimum ISO de 1,5 A/m (3,1 fois à l'entrefer maximal). Le couplage se calcule avec la même inductance mutuelle que le LC.</p>
 <div class="formulas">
-<div class="formula"><p class="f">Q = X<sub>L</sub> / R<sub>série</sub></p><p class="d">Q = 20 visé pour la sous-porteuse à 848 kHz, soit 1,4 Ω de résistance série en tout</p></div>
-<div class="formula"><p class="f">C = 1 / (ω² L)</p><p class="d">433 pF d'accord ; les voies fermées du mux en accrochent 125 de plus</p></div>
+<div class="formula"><p class="f">Q = X<sub>L</sub> / R<sub>série</sub></p><p class="d">Q = 20 visé pour la sous-porteuse à 848 kHz, soit 1,5 Ω de résistance série en tout</p></div>
+<div class="formula"><p class="f">C = 1 / (ω² L)</p><p class="d">402 pF d'accord ; les voies fermées du mux en accrochent 125 de plus</p></div>
 <div class="formula"><p class="f">H = N I R² / (2 (R²+z²)<sup>3/2</sup>)</p><p class="d">champ sur l'axe de la boucle, à comparer au minimum ISO 14443</p></div>
 </div>
 <figure>
-<div class="fig-scroll"><svg class="docfig" viewBox="0 0 900 280" role="img" aria-label="Trois grandeurs de la boucle NFC, ce qu il faut contre ce que donne le multiplexeur analogique : resistance serie 1,4 contre 100 ohm, Q 20 contre 0,27, desaccord de 12 pour cent">
+<div class="fig-scroll"><svg class="docfig" viewBox="0 0 900 280" role="img" aria-label="Trois grandeurs de la boucle NFC, ce qu il faut contre ce que donne le multiplexeur analogique : resistance serie 1,5 contre 100 ohm, Q 20 contre 0,29, desaccord de 13 pour cent">
 <text class="lbl q-high-t" x="300.0" y="30.0">ce qu'il faut</text>
 <text class="lbl q-low-t" x="500.0" y="30.0">ce que donne le CD74HC4067</text>
 <text class="lbl strong" x="20.0" y="70.0">résistance série dans la boucle</text>
-<rect class="seg-listen" x="300" y="56" width="7.0" height="16" rx="3"/>
-<text class="lbl small" x="315.0" y="69.0">1,4 Ω pour Q = 20</text>
+<rect class="seg-listen" x="300" y="56" width="7.6" height="16" rx="3"/>
+<text class="lbl small" x="315.6" y="69.0">1,5 Ω pour Q = 20</text>
 <rect class="seg-pulse" x="300" y="78" width="520.0" height="16" rx="3"/>
 <text class="lbl small" x="828.0" y="91.0">100 Ω de résistance passante</text>
 <text class="lbl strong" x="20.0" y="140.0">facteur Q de la boucle</text>
 <rect class="seg-listen" x="300" y="126" width="520.0" height="16" rx="3"/>
 <text class="lbl small" x="828.0" y="139.0">20 visé</text>
-<rect class="seg-pulse" x="300" y="148" width="6.9" height="16" rx="3"/>
-<text class="lbl small" x="314.9" y="161.0">0,27 avec le multiplexeur</text>
+<rect class="seg-pulse" x="300" y="148" width="7.5" height="16" rx="3"/>
+<text class="lbl small" x="315.5" y="161.0">0,29 avec le multiplexeur</text>
 <text class="lbl strong" x="20.0" y="210.0">capacité sur la boucle accordée</text>
 <rect class="seg-listen" x="300" y="196" width="520.0" height="16" rx="3"/>
-<text class="lbl small" x="828.0" y="209.0">433 pF d'accord</text>
-<rect class="seg-pulse" x="300" y="218" width="150.0" height="16" rx="3"/>
-<text class="lbl small" x="458.0" y="231.0">125 pF parasites : -12 % de fréquence</text>
+<text class="lbl small" x="828.0" y="209.0">402 pF d'accord</text>
+<rect class="seg-pulse" x="300" y="218" width="161.9" height="16" rx="3"/>
+<text class="lbl small" x="469.9" y="231.0">125 pF parasites : -13 % de fréquence</text>
 <text class="lbl muted" x="20.0" y="262.0">verdict du modèle : ok=non ; un commutateur ne peut vivre que dans la section adaptée à 50 Ω, jamais dans la boucle</text>
 </svg></div>
-<figcaption><b>Le CD74HC4067 dans la boucle.</b> 100 Ω de résistance passante pour 1,4 Ω admis : Q = 0,27. 125 pF parasites sur 433 pF d'accord : 12 % de fréquence, pour une bande passante de 5 %. L'ADR 0001 l'avait écrit à la main ; le modèle le chiffre.</figcaption>
+<figcaption><b>Le CD74HC4067 dans la boucle.</b> 100 Ω de résistance passante pour 1,5 Ω admis : Q = 0,29. 125 pF parasites sur 402 pF d'accord : 13 % de fréquence, pour une bande passante de 5 %. L'ADR 0001 l'avait écrit à la main ; le modèle le chiffre.</figcaption>
 </figure>
 <div class="tbl">
 <table>
@@ -621,10 +623,10 @@ pre code{background:none; padding:0; font-size:inherit;}
 <table>
 <thead><tr><th>pas (mm)</th><th class="n">B pion nominal (mT)</th><th class="n">B roi soulevé (mT)</th><th class="n">marge au soulèvement</th><th class="n">diaphonie de 8 voisins (dB)</th><th class="n">groupes, aimants codés</th><th class="n">k NFC</th><th class="n">marge ISO</th></tr></thead>
 <tbody>
-<tr><td>40</td><td class="n">17,3</td><td class="n">2,3</td><td class="n">2,1</td><td class="n">-21,2</td><td class="n">2</td><td class="n">0,29</td><td class="n">3,8</td></tr>
-<tr><td>50 (le projet)</td><td class="n">25,3</td><td class="n">3,8</td><td class="n">1,9</td><td class="n">-24,7</td><td class="n">3</td><td class="n">0,22</td><td class="n">3,2</td></tr>
-<tr><td>55</td><td class="n">28,3</td><td class="n">4,6</td><td class="n">1,8</td><td class="n">-26</td><td class="n">3</td><td class="n">0,19</td><td class="n">3</td></tr>
-<tr><td>60</td><td class="n">30,6</td><td class="n">5,4</td><td class="n">1,7</td><td class="n">-27,1</td><td class="n">3</td><td class="n">0,16</td><td class="n">2,8</td></tr>
+<tr><td>40</td><td class="n">17,3</td><td class="n">2,3</td><td class="n">2,1</td><td class="n">-21,2</td><td class="n">2</td><td class="n">0,27</td><td class="n">3,8</td></tr>
+<tr><td>50 (le projet)</td><td class="n">25,3</td><td class="n">3,8</td><td class="n">1,9</td><td class="n">-24,7</td><td class="n">3</td><td class="n">0,21</td><td class="n">3,2</td></tr>
+<tr><td>55</td><td class="n">28,3</td><td class="n">4,6</td><td class="n">1,8</td><td class="n">-26</td><td class="n">3</td><td class="n">0,18</td><td class="n">3</td></tr>
+<tr><td>60</td><td class="n">30,6</td><td class="n">5,4</td><td class="n">1,7</td><td class="n">-27,1</td><td class="n">3</td><td class="n">0,16</td><td class="n">2,7</td></tr>
 </tbody>
 </table>
 </div>
@@ -641,7 +643,7 @@ pre code{background:none; padding:0; font-size:inherit;}
 <table>
 <thead><tr><th>livrable</th><th>où</th><th>ce qu'il fait</th></tr></thead>
 <tbody>
-<tr><td>Source des nombres</td><td><code>config/board.yaml</code>, section <code>hall_rfid</code> ; modèles typés dans <code>chessboard_calc/config.py</code></td><td>capteurs candidats, géométrie, seuils, mux, groupes d'alimentation, ESP32-S3, antenne et étiquette NFC ; trois valeurs de fiche marquées « to verify »</td></tr>
+<tr><td>Source des nombres</td><td><code>config/board.yaml</code>, section <code>hall_rfid</code> ; modèles typés dans <code>chessboard_calc/config.py</code></td><td>capteurs candidats, géométrie, seuils, mux, groupes d'alimentation, ESP32-S3, antenne et étiquette NFC ; la résistance du multiplexeur marquée « to verify »</td></tr>
 <tr><td>Modèle Hall</td><td><code>chessboard_calc/hall.py</code></td><td><code>disc_bz_mT</code> (champ exact hors axe), <code>hall_budget</code> (champs, seuils, diaphonie, marges ADC), <code>amplitude_classes</code>, <code>hall_power</code>, <code>hall_scan</code>, <code>check</code></td></tr>
 <tr><td>Modèle NFC</td><td><code>chessboard_calc/nfc.py</code></td><td><code>antenna</code>, <code>tag</code>, <code>link</code>, <code>switch_verdict</code>, <code>analog_mux_verdict</code>, <code>check</code></td></tr>
 <tr><td>Rapport</td><td><code>python -m chessboard_calc report</code></td><td>section « Hall + RFID alternative » de chaque pas</td></tr>
@@ -656,7 +658,7 @@ pre code{background:none; padding:0; font-size:inherit;}
 
 <section>
 <p class="eyebrow">Le scanner</p>
-<h2>Firmware : 64 cases en 1,7 ms</h2>
+<h2>Firmware : 64 cases en 1,5 ms</h2>
 <figure>
 <div class="fig-scroll"><svg class="docfig" viewBox="0 0 960 430" role="img" aria-label="Schema bloc du scanner : quatre quadrants de seize capteurs Hall, un multiplexeur par quadrant, quatre entrees ADC de l ESP32-S3, quatre bits d adresse partages, quatre commutateurs d alimentation par rangee, la ligne B vers la console">
 <defs><marker id="sarr-i" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
@@ -723,7 +725,7 @@ pre code{background:none; padding:0; font-size:inherit;}
 <text class="lbl mono" x="850.0" y="222.0">B,........</text>
 <text class="lbl small muted" x="850.0" y="238.0">à chaque changement</text>
 <text class="lbl" x="600.0" y="318.0"></text>
-<text class="lbl strong" x="20.0" y="412.0">un scan : 82 µs par case, 1,7 ms par plateau, 584 fois par seconde</text>
+<text class="lbl strong" x="20.0" y="412.0">un scan : 82 µs par case, 1,5 ms par plateau, 689 fois par seconde</text>
 </svg></div>
 <figcaption><b>Architecture du prototype autonome du brief.</b> Quatre CD74HC4067 (16 vers 1), un par quadrant, adresses communes ; quatre entrées ADC1 ; 16 P-FET de rangée ; la ligne <code>B</code> d'occupation de la note 12 sur la console.</figcaption>
 </figure>
@@ -735,7 +737,7 @@ pre code{background:none; padding:0; font-size:inherit;}
   test/test_hallscan.c            test hôte, lancé par la CI</code></pre>
 <p>Les seuils de l'en-tête sont ceux du rapport, convertis en comptes ADC par la sensibilité du DRV5053OA et le pas de 0,757 mV : repos <code>HALL_BASELINE_COUNTS 1348</code>, présence <code>HALL_ON_COUNTS 150</code>, relâchement <code>HALL_OFF_COUNTS 105</code>, anti-rebond sur 3 scans. Un test du dépôt vérifie que l'en-tête commité est exactement ce que le générateur écrit.</p>
 <ol class="steps">
-<li>Rangée <code>g</code> alimentée (<code>ROW_EN&lt;g&gt;</code> bas), attente de 100 µs.</li>
+<li>Rangée <code>g</code> alimentée (<code>ROW_EN&lt;g&gt;</code> bas), attente de 35 µs.</li>
 <li>Pour chaque canal de la rangée : adresse sur <code>MUX_S0..S3</code>, 2 µs, puis sur chacun des quatre multiplexeurs la moyenne de 8 lectures.</li>
 <li><code>hallscan_update</code> : écart à la ligne de base, seuil ou relâchement, anti-rebond ; une ligne <code>B,</code> suivie de 64 caractères (<code>.</code> vide, <code>?</code> occupée, <code>w</code> et <code>b</code> si la polarité code le camp) part dès qu'une case change d'état publié.</li>
 <li>Console : <code>z</code> prend l'échiquier vide comme lignes de base, <code>r</code> sort les comptes bruts en CSV, <code>b</code> renvoie la ligne courante.</li>
@@ -786,7 +788,7 @@ python3 scripts/gen_config.py ../../../config/board.yaml main/hallscan_config.h
 <thead><tr><th>ligne</th><th class="n">exact</th><th class="n">à acheter</th><th class="n">unitaire (USD)</th><th>canal</th><th class="n">total (USD)</th><th>statut</th></tr></thead>
 <tbody>
 <tr><td><code>DRV5053OAQDBZR</code><br><span class="muted">capteur Hall DRV5053OA, SOT-23</span></td><td class="n">64</td><td class="n">71</td><td class="n">0,46</td><td>lcsc</td><td class="n">32,66</td><td><span title="LCSC C165150 0.4601 USD par 30 mais rupture (prix de reference); Farnell 0.524 EUR HT et DigiKey 0.52 EUR a l unite, convertis; releves web du 2026-10-07">estimated</span></td></tr>
-<tr><td><code>CD74HC4067SM96</code><br><span class="muted">multiplexeur CD74HC4067, 16 vers 1</span></td><td class="n">4</td><td class="n">5</td><td class="n">0,27</td><td>lcsc</td><td class="n">1,35</td><td><span title="TSSOP-24: LCSC C98457 0.2668 USD 6496 en stock (instantane non date); Mouser 1.17 USD a l unite; le SOIC M96 (C496123) est en rupture a 0.69; 2026-10-07">estimated</span></td></tr>
+<tr><td><code>CD74HC4067SM96</code><br><span class="muted">multiplexeur CD74HC4067, 16 vers 1</span></td><td class="n">4</td><td class="n">5</td><td class="n">0,27</td><td>lcsc</td><td class="n">1,35</td><td><span title="SSOP-24 (suffixe SM96): LCSC C98457 0.2668 USD 6496 en stock (instantane non date); Mouser 1.17 USD a l unite; le SOIC M96 (C496123) est en rupture a 0.69; 2026-10-07">estimated</span></td></tr>
 <tr><td><code>AO3401A</code><br><span class="muted">P-FET de rangée</span></td><td class="n">16</td><td class="n">18</td><td class="n">0,052</td><td>lcsc</td><td class="n">0,94</td><td><span title="meme famille que l'AO3400A">estimated</span></td></tr>
 <tr><td><code>10k@R_0603_1608Metric</code><br><span class="muted">résistance de grille 10 kΩ, 0603</span></td><td class="n">16</td><td class="n">18</td><td class="n">0,0015</td><td>lcsc</td><td class="n">0,03</td><td><span title="1 %, tarif de reel">estimated</span></td></tr>
 <tr><td><code>100n@C_0603_1608Metric</code><br><span class="muted">découplage 100 nF, 0603, par capteur et par mux</span></td><td class="n">68</td><td class="n">75</td><td class="n">0,0025</td><td>lcsc</td><td class="n">0,19</td><td><span title="X7R 50 V, tarif de reel">estimated</span></td></tr>

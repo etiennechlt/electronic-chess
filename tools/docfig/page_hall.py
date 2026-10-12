@@ -598,7 +598,7 @@ HALL_BODY = r"""<div class="wrap">
 <table>
 <thead><tr><th>livrable</th><th>où</th><th>ce qu'il fait</th></tr></thead>
 <tbody>
-<tr><td>Source des nombres</td><td><code>config/board.yaml</code>, section <code>hall_rfid</code> ; modèles typés dans <code>chessboard_calc/config.py</code></td><td>capteurs candidats, géométrie, seuils, mux, groupes d'alimentation, ESP32-S3, antenne et étiquette NFC ; trois valeurs de fiche marquées « to verify »</td></tr>
+<tr><td>Source des nombres</td><td><code>config/board.yaml</code>, section <code>hall_rfid</code> ; modèles typés dans <code>chessboard_calc/config.py</code></td><td>capteurs candidats, géométrie, seuils, mux, groupes d'alimentation, ESP32-S3, antenne et étiquette NFC ; la résistance du multiplexeur marquée « to verify »</td></tr>
 <tr><td>Modèle Hall</td><td><code>chessboard_calc/hall.py</code></td><td><code>disc_bz_mT</code> (champ exact hors axe), <code>hall_budget</code> (champs, seuils, diaphonie, marges ADC), <code>amplitude_classes</code>, <code>hall_power</code>, <code>hall_scan</code>, <code>check</code></td></tr>
 <tr><td>Modèle NFC</td><td><code>chessboard_calc/nfc.py</code></td><td><code>antenna</code>, <code>tag</code>, <code>link</code>, <code>switch_verdict</code>, <code>analog_mux_verdict</code>, <code>check</code></td></tr>
 <tr><td>Rapport</td><td><code>python -m chessboard_calc report</code></td><td>section « Hall + RFID alternative » de chaque pas</td></tr>

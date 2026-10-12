@@ -500,3 +500,25 @@ Voir [l'état](07-etat-et-reste-a-faire.md).
   qui aurait poussé les lecteurs au-delà de leur courant maximal.
 - Rien n'est généré ni commandé : quatorze décisions attendent
   (paragraphe 11 de la note 25), puis le lot 2 (modèle).
+
+## 12/10/2026, le modèle de la maquette Hall + RFID (lot 2)
+
+- Les quatorze décisions de la note 25 sont prises selon leur
+  recommandation. Le lot 2 porte la maquette dans le yaml
+  (`hall_rfid.mockup`) et dans `chessboard_calc` : disposition et
+  gardes de la carte (`hallrfid_mockup`), couverture Hall hors centre
+  (`hall.offset_coverage`), modèle par filaments (`filament.py`),
+  réseau d'adaptation, étiquettes, activation, relais par les boucles
+  voisines et effet du métal (`nfc.py`), section du rapport ; le
+  protocole de mesure gagne la mise en route et M12 à M14, avec leurs
+  gabarits, leurs critères dans le yaml et leurs fonctions d'analyse.
+- `nfc.antenna` est corrigée (une boucle de 0,34 µH et non 0,32), les
+  valeurs du DRV5053OA aussi ; la note 24 porte un erratum et sa page
+  est régénérée.
+- Le modèle change trois choses du plan : l'amas Hall de A1 passe de
+  0,12 p à 0,10 p (il couvre ±9,3 mm au lieu de ±8,8, et tient les
+  8 mm de D14 au pas de 40) ; au champ de service, l'étiquette P nue
+  n'a qu'une marge d'activation de 1,3 à 1,4, P + 15 pF en a 2,7 ; une
+  variante G + 10 pF s'ajoute pour le pas de 40. Il signale aussi que
+  les lecteurs de A1 et A2 partagent un couloir de 475 mm² libres, à
+  trancher au lot 5.
