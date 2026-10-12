@@ -76,3 +76,37 @@ def test_the_q_page_carries_the_model_numbers(cfg):
     assert f"Q = {cfg.resonator.q_nominal:.0f}" in page
     for line in plan.lines:  # the twelve notes of the plan, in its table
         assert f">{fr_num(line.f0_hz / 1e3, 1)}<" in page
+
+
+def test_the_hall_page_has_three_readings_and_the_model_numbers(cfg):
+    from chessboard_calc.hall import hall_budget
+    from chessboard_calc.nfc import analog_mux_verdict
+
+    page = PAGES["hall-rfid.html"](cfg)
+    for mode in ("simple", "technique", "implementation"):
+        assert f'id="{mode}"' in page and f'data-mode="{mode}"' in page
+    b = hall_budget(cfg, cfg.pitch.plateau_mm)
+    assert f"{fr_num(b.threshold_mT)} mT" in page
+    assert f"{fr_num(b.fields[PieceType.PAWN].b_nominal_mT)} mT" in page
+    assert f"{fr_num(b.lift_margin)}" in page
+    v = analog_mux_verdict(cfg, cfg.pitch.plateau_mm)
+    assert f"Q = {fr_num(v.q_with_switch, 2)}" in page
+    # the interactive curve travels twice (two readings) without duplicate ids
+    assert page.count('data-curve="1"') == 2
+    import re
+
+    ids = re.findall(r'\sid="([^"]+)"', page)
+    assert len(ids) == len(set(ids))
+
+
+def test_hall_figures_carry_the_sensor_and_the_threshold(cfg):
+    from chessboard_calc.hall import hall_budget
+
+    b = hall_budget(cfg, cfg.pitch.plateau_mm)
+    stack = FIGURES["hall-coupe.svg"](cfg)
+    assert b.sensor.part in stack
+    assert f"{fr_num(b.z_nominal_mm)} mm" in stack
+    curve = FIGURES["hall-champ.svg"](cfg)
+    assert f"seuil de présence : {fr_num(b.threshold_mT)} mT" in curve
+    classes = FIGURES["hall-classes.svg"](cfg)
+    assert "1 groupe(s)" in classes and "3 groupe(s)" in classes

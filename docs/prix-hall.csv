@@ -1,0 +1,11 @@
+Key,LCSC,LCSC_USD,Mouser,Mouser_USD,Status,Source
+DRV5053OAQDBZR,C165150,0.46,595-DRV5053OAQDBZR,0.57,estimated,"LCSC C165150 0.4601 USD par 30 mais rupture (prix de reference); Farnell 0.524 EUR HT et DigiKey 0.52 EUR a l unite, convertis; releves web du 2026-10-07"
+SS39ET,,,785-SS39ET,1.0,estimated,"alternative, meme puce que le SS49E en SOT-23: Mouser 1.32 USD a l unite et 0.814 par 1000 (agregateur), 1.0 retenu a la centaine; absent de LCSC; 2026-10-07"
+CD74HC4067SM96,C98457,0.27,595-CD74HC4067SM96,1.17,estimated,"TSSOP-24: LCSC C98457 0.2668 USD 6496 en stock (instantane non date); Mouser 1.17 USD a l unite; le SOIC M96 (C496123) est en rupture a 0.69; 2026-10-07"
+PinHeader_1x10_P2.54mm,,0.1,,0.3,estimated,"embase male 2.54 mm, tarif courant"
+PCB_200x200_2L_x5,,50.0,,,estimated,"JLCPCB 2 couches 200 x 200 mm, lot de 5 (minimum), hors port: aucun prix publie trouve, ordre de grandeur hors palier 100 x 100, devis a demander avant commande; 2026-10-07"
+ESP32-S3-DevKitC-1-N8R8,,,356-EP32S3DVKTC1N8R8,14.0,estimated,"DigiKey 12.85 EUR HT, Mouser 11.26 GBP, convertis a 14 USD; module seul a l unite si le cerveau le porte; 2026-10-07"
+MFRC522_QFN32,C2760772,1.3,,5.5,estimated,"variante RFID: clone JSMSEMI QFN-32 LCSC C2760772 1.3009 USD (instantane 2024); NXP MFRC52202HN1 4.19 GBP par 100 chez RS, converti; 2026-10-07"
+XTAL_27.12MHz,,0.15,,0.5,estimated,"variante RFID: quartz 27.12 MHz 3225, tarif courant"
+NFC_matching_set,,0.2,,0.8,estimated,"variante RFID: filtre EMC et adaptation d une antenne, une dizaine de passifs 0603"
+NTAG213_25mm,,,,0.27,estimated,"variante RFID: etiquette ronde 25 mm, GoToTags 0.25 a 0.45 USD par 100, eBay 0.28; 2026-10-07"

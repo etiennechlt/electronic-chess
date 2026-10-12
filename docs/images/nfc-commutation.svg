@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="docfig" viewBox="0 0 900 280" role="img" aria-label="Trois grandeurs de la boucle NFC, ce qu il faut contre ce que donne le multiplexeur analogique : resistance serie 1,4 contre 100 ohm, Q 20 contre 0,27, desaccord de 12 pour cent">
+<style>
+svg.docfig{font-family:"IBM Plex Sans", "Segoe UI", "DejaVu Sans", Helvetica, Arial, sans-serif;color:#1a1e1d}
+.lbl{font-size:12.5px;fill:#1a1e1d}
+.lbl.small{font-size:11px}
+.lbl.strong{font-weight:600}
+.muted{fill:#4f5754}
+.mono{font-family:"IBM Plex Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace}
+.glyph{font-size:20px;font-family:"Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2", "DejaVu Sans", sans-serif}
+.title{font-size:14px;font-weight:600;fill:#1a1e1d}
+.axis{stroke:currentColor;stroke-width:1.2;fill:none;opacity:.55}
+.tick{stroke:currentColor;stroke-width:1;opacity:.55}
+.grid{stroke:currentColor;stroke-width:1;opacity:.12}
+.dash{stroke:currentColor;stroke-width:1;stroke-dasharray:5 4;opacity:.5;fill:none}
+.brk{stroke:currentColor;stroke-width:1.2;opacity:.6;fill:none}
+.trace{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.trace.ghost{opacity:.35;stroke-dasharray:3 3}
+.env{fill:none;stroke-width:1.2;stroke-dasharray:4 4;opacity:.7}
+.q-high{stroke:#2a78d6}
+.q-low{stroke:#eb6834}
+.q-high-t{fill:#2a78d6;font-weight:600}
+.q-low-t{fill:#eb6834;font-weight:600}
+.mark{stroke-width:1.6}
+.dot{fill:#ffffff;stroke-width:2.5}
+.band{fill:rgba(42,120,214,.09)}
+.peak-black{fill:#2a78d6;stroke:#2a78d6;stroke-width:1.5;stroke-linejoin:round;opacity:.9}
+.peak-white{fill:#ffffff;stroke:#2a78d6;stroke-width:1.8;stroke-linejoin:round}
+.tipbox{fill:#ffffff;stroke:#d3d8d4}
+.lay-pcb{fill:#c4d9c0} .lay-air{fill:#f7f9f7} .lay-wood{fill:#e6d3b1} .lay-felt{fill:#c9ccc4}
+.copper{fill:#c8843a}
+.piece{fill:#efe6d6;stroke:currentColor;stroke-width:1.2;opacity:.95}
+.bundle{fill:url(#wire);stroke:currentColor;stroke-width:1}
+.cap{fill:#eb6834;stroke:none}
+.magnet{fill:#8b8f92;opacity:.75}
+.field{fill:none;stroke:#2a78d6;stroke-width:1.6;opacity:.8}
+.seg{fill:#e9eef4;stroke:#d3d8d4}
+.seg-pulse{fill:#eb6834;opacity:.35;stroke:#eb6834}
+.seg-listen{fill:rgba(42,120,214,.09);stroke:#2a78d6}
+.box{fill:#ffffff;stroke:#d3d8d4;stroke-width:1.2}
+.box-piece{stroke:#2a78d6;stroke-width:1.8}
+.box-mcu{fill:#e9eef4;stroke:#2a78d6;stroke-width:1.8}
+.box-soft{fill:#e9eef4;stroke:#d3d8d4;stroke-width:1.2}
+.box-warm{fill:#ffffff;stroke:#eb6834;stroke-width:1.6}
+.wire{stroke:currentColor;stroke-width:1.4;fill:none;opacity:.7}
+.wire-a{stroke:#2a78d6;stroke-width:2;fill:none}
+.wire-p{stroke:#eb6834;stroke-width:2;fill:none}
+.zone{fill:none;stroke:#d3d8d4;stroke-width:1.2;stroke-dasharray:6 4}
+.coil{fill:none;stroke:#c8843a;stroke-width:2}
+.puck{fill:#efe6d6;stroke:currentColor;stroke-width:1.2}
+</style>
+<rect width="900" height="280" fill="#ffffff"/>
+<text class="lbl q-high-t" x="300.0" y="30.0">ce qu'il faut</text>
+<text class="lbl q-low-t" x="500.0" y="30.0">ce que donne le CD74HC4067</text>
+<text class="lbl strong" x="20.0" y="70.0">résistance série dans la boucle</text>
+<rect class="seg-listen" x="300" y="56" width="7.0" height="16" rx="3"/>
+<text class="lbl small" x="315.0" y="69.0">1,4 Ω pour Q = 20</text>
+<rect class="seg-pulse" x="300" y="78" width="520.0" height="16" rx="3"/>
+<text class="lbl small" x="828.0" y="91.0">100 Ω de résistance passante</text>
+<text class="lbl strong" x="20.0" y="140.0">facteur Q de la boucle</text>
+<rect class="seg-listen" x="300" y="126" width="520.0" height="16" rx="3"/>
+<text class="lbl small" x="828.0" y="139.0">20 visé</text>
+<rect class="seg-pulse" x="300" y="148" width="6.9" height="16" rx="3"/>
+<text class="lbl small" x="314.9" y="161.0">0,27 avec le multiplexeur</text>
+<text class="lbl strong" x="20.0" y="210.0">capacité sur la boucle accordée</text>
+<rect class="seg-listen" x="300" y="196" width="520.0" height="16" rx="3"/>
+<text class="lbl small" x="828.0" y="209.0">433 pF d'accord</text>
+<rect class="seg-pulse" x="300" y="218" width="150.0" height="16" rx="3"/>
+<text class="lbl small" x="458.0" y="231.0">125 pF parasites : -12 % de fréquence</text>
+<text class="lbl muted" x="20.0" y="262.0">verdict du modèle : ok=non ; un commutateur ne peut vivre que dans la section adaptée à 50 Ω, jamais dans la boucle</text>
+</svg>

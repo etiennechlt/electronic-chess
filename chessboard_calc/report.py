@@ -10,7 +10,9 @@ from __future__ import annotations
 from .config import BoardConfig, Color, PieceType, resolve_geometry
 from .corridor import check_corridor
 from .coupling import ringdown_signal, signal_vs_pitch
+from .hall import amplitude_classes, hall_budget, hall_power, hall_scan
 from .inductance import coil_esr_ohm, estimate_q, pcb_sense_coil, piece_coil_design
+from .nfc import analog_mux_verdict, antenna, link, tag
 from .power import autonomy_h, peak_current_a, peak_power_w, power_budget
 from .resonance import check_separation, frequency_plan
 
@@ -175,6 +177,101 @@ def pitch_report(cfg: BoardConfig, pitch_mm: float) -> str:
         f"{est.emf_after_blanking_v * 1e3:.2f} mV, preamp out {est.preamp_out_v:.2f} V",
         f"- single-shot SNR {est.snr_db:.0f} dB, with x{cfg.measurement.coherent_avg} "
         f"averaging {est.snr_avg_db:.0f} dB (criterion >= {cfg.measurement.snr_min_db:g} dB)",
+        "",
+    ]
+    out.append(hall_rfid_report(cfg, pitch_mm))
+    return "\n".join(out)
+
+
+def hall_rfid_report(cfg: BoardConfig, pitch_mm: float) -> str:
+    """The Hall plus RFID alternative of note 24, numbers only."""
+    hr = cfg.hall_rfid
+    out = ["## Hall + RFID alternative (note 24)", ""]
+    budget = hall_budget(cfg, pitch_mm)
+    out += [
+        f"Hall sensor {budget.sensor.part} at the square center, magnet face to Hall plate "
+        f"{budget.z_nominal_mm:.1f} mm nominal, {budget.z_max_mm:.1f} mm at the maximum gap.",
+        "",
+    ]
+    rows = []
+    for piece in PieceType:
+        f = budget.fields[piece]
+        rows.append(
+            [
+                _PIECE_LABEL[piece],
+                f"{f.magnet_d_mm:.1f} x {f.magnet_t_mm:g}",
+                f"{f.b_nominal_mT:.1f}",
+                f"{f.b_max_gap_mT:.1f}",
+                f"{f.b_lifted_mT:.1f}",
+                f"{f.b_neighbor_mT:.2f}",
+                f"{f.out_nominal_mv:.0f} / {f.out_nominal_lsb:.0f}",
+            ]
+        )
+    out += [
+        _table(
+            ["piece", "magnet (mm)", "B nominal (mT)", "B max gap (mT)",
+             f"B lifted {hr.layout.lift_detect_mm:g} mm (mT)", "B next square (mT)",
+             "out (mV / LSB)"],
+            rows,
+        ),
+        "",
+        f"- presence threshold {budget.threshold_mT:.1f} mT, release {budget.release_mT:.1f} mT: "
+        f"lift margin {budget.lift_margin:.2f} (criterion >= {hr.presence.min_lift_margin:g}), "
+        f"{hr.layout.neighbors_worst_case} surrounding kings {budget.neighbors_sum_mT:.2f} mT "
+        f"({budget.crosstalk_db:.1f} dB of the weakest piece, criterion "
+        f"<= {cfg.measurement.crosstalk_max_db:g} dB)",
+        f"- weakest present swing {budget.weakest_present_lsb:.0f} LSB, "
+        f"{budget.noise_margin:.0f}x the ADC noise; linear range ok={budget.in_linear_range}",
+    ]
+    for coded in (False, True):
+        amp = amplitude_classes(cfg, pitch_mm, size_coded=coded)
+        label = "size-coded thicknesses" if coded else "uniform magnets"
+        spans = ", ".join(
+            f"{'/'.join(_PIECE_LABEL[p] for p in c.pieces)} {c.magnet_t_mm:g} mm "
+            f"[{c.b_low_mT:.0f}, {c.b_high_mT:.0f}] mT"
+            for c in amp.classes
+        )
+        out.append(
+            f"- amplitude classes, {label}: {amp.separable_groups} separable group(s) "
+            f"({spans}), linear range ok={amp.in_linear_range}"
+        )
+    out.append("")
+    rows = []
+    for i, sensor in enumerate(hr.sensors):
+        for gated in (False, True):
+            hp = hall_power(cfg, gated, i)
+            rows.append(
+                [
+                    sensor.part,
+                    f"{hr.power_gating.groups} groups" if gated else "continuous",
+                    f"{hp.current_ma:.0f}",
+                    f"{hp.power_w:.2f}",
+                    f"{hp.autonomy_h:.0f} (was {hp.autonomy_without_h:.0f})",
+                ]
+            )
+    out += [_table(["sensor", "supply", "mA", "W", "autonomy h vs h (h)"], rows), ""]
+    for gated in (False, True):
+        sc = hall_scan(cfg, gated)
+        out.append(
+            f"- scan {'gated' if gated else 'continuous'}: {sc.square_us:.0f} us per square, "
+            f"{sc.board_ms:.2f} ms per board, {sc.rate_hz:.0f} Hz"
+        )
+    ant = antenna(cfg, pitch_mm)
+    tg = tag(cfg)
+    near = link(cfg, pitch_mm)
+    far = link(cfg, pitch_mm, cfg.gap.max_total_mm - cfg.gap.nominal_total_mm)
+    mux = analog_mux_verdict(cfg, pitch_mm)
+    out += [
+        "",
+        f"NFC at {hr.nfc.f_hz / 1e6:g} MHz: square loop {ant.side_mm:.0f} mm, {ant.turns} turns, "
+        f"L = {ant.L_uH:.2f} uH, tuned by {ant.c_res_pF:.0f} pF, series R for "
+        f"Q {hr.nfc.antenna.q_target:g} = {ant.r_series_ohm:.1f} ohm; tag {tg.part} "
+        f"L = {tg.L_uH:.2f} uH, self-resonant at {tg.f_self_mhz:.1f} MHz.",
+        f"- link at {near.z_mm:.1f} mm: k = {near.k:.2f}, H = {near.h_axis_a_per_m:.1f} A/m "
+        f"({near.h_margin:.1f}x the ISO 14443 minimum); at the maximum gap k = {far.k:.2f}, "
+        f"{far.h_margin:.1f}x",
+        f"- {mux.switch} in the loop: Q {mux.q_with_switch:.2f}, parasitic "
+        f"{mux.c_parasitic_pF:.0f} pF detunes by {mux.detune_pct:.0f} %, ok={mux.ok}",
         "",
     ]
     return "\n".join(out)

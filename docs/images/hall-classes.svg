@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="docfig" viewBox="0 0 900 330" role="img" aria-label="Intervalles de champ de chaque classe d aimant quand l entrefer varie : avec des aimants uniformes les trois se recouvrent, 1 groupe ; avec des epaisseurs codees 3 groupes separes">
+<style>
+svg.docfig{font-family:"IBM Plex Sans", "Segoe UI", "DejaVu Sans", Helvetica, Arial, sans-serif;color:#1a1e1d}
+.lbl{font-size:12.5px;fill:#1a1e1d}
+.lbl.small{font-size:11px}
+.lbl.strong{font-weight:600}
+.muted{fill:#4f5754}
+.mono{font-family:"IBM Plex Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace}
+.glyph{font-size:20px;font-family:"Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2", "DejaVu Sans", sans-serif}
+.title{font-size:14px;font-weight:600;fill:#1a1e1d}
+.axis{stroke:currentColor;stroke-width:1.2;fill:none;opacity:.55}
+.tick{stroke:currentColor;stroke-width:1;opacity:.55}
+.grid{stroke:currentColor;stroke-width:1;opacity:.12}
+.dash{stroke:currentColor;stroke-width:1;stroke-dasharray:5 4;opacity:.5;fill:none}
+.brk{stroke:currentColor;stroke-width:1.2;opacity:.6;fill:none}
+.trace{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.trace.ghost{opacity:.35;stroke-dasharray:3 3}
+.env{fill:none;stroke-width:1.2;stroke-dasharray:4 4;opacity:.7}
+.q-high{stroke:#2a78d6}
+.q-low{stroke:#eb6834}
+.q-high-t{fill:#2a78d6;font-weight:600}
+.q-low-t{fill:#eb6834;font-weight:600}
+.mark{stroke-width:1.6}
+.dot{fill:#ffffff;stroke-width:2.5}
+.band{fill:rgba(42,120,214,.09)}
+.peak-black{fill:#2a78d6;stroke:#2a78d6;stroke-width:1.5;stroke-linejoin:round;opacity:.9}
+.peak-white{fill:#ffffff;stroke:#2a78d6;stroke-width:1.8;stroke-linejoin:round}
+.tipbox{fill:#ffffff;stroke:#d3d8d4}
+.lay-pcb{fill:#c4d9c0} .lay-air{fill:#f7f9f7} .lay-wood{fill:#e6d3b1} .lay-felt{fill:#c9ccc4}
+.copper{fill:#c8843a}
+.piece{fill:#efe6d6;stroke:currentColor;stroke-width:1.2;opacity:.95}
+.bundle{fill:url(#wire);stroke:currentColor;stroke-width:1}
+.cap{fill:#eb6834;stroke:none}
+.magnet{fill:#8b8f92;opacity:.75}
+.field{fill:none;stroke:#2a78d6;stroke-width:1.6;opacity:.8}
+.seg{fill:#e9eef4;stroke:#d3d8d4}
+.seg-pulse{fill:#eb6834;opacity:.35;stroke:#eb6834}
+.seg-listen{fill:rgba(42,120,214,.09);stroke:#2a78d6}
+.box{fill:#ffffff;stroke:#d3d8d4;stroke-width:1.2}
+.box-piece{stroke:#2a78d6;stroke-width:1.8}
+.box-mcu{fill:#e9eef4;stroke:#2a78d6;stroke-width:1.8}
+.box-soft{fill:#e9eef4;stroke:#d3d8d4;stroke-width:1.2}
+.box-warm{fill:#ffffff;stroke:#eb6834;stroke-width:1.6}
+.wire{stroke:currentColor;stroke-width:1.4;fill:none;opacity:.7}
+.wire-a{stroke:#2a78d6;stroke-width:2;fill:none}
+.wire-p{stroke:#eb6834;stroke-width:2;fill:none}
+.zone{fill:none;stroke:#d3d8d4;stroke-width:1.2;stroke-dasharray:6 4}
+.coil{fill:none;stroke:#c8843a;stroke-width:2}
+.puck{fill:#efe6d6;stroke:currentColor;stroke-width:1.2}
+</style>
+<rect width="900" height="330" fill="#ffffff"/>
+<line class="grid" x1="230.0" y1="40" x2="230.0" y2="290"/>
+<text class="lbl mono" x="230.0" y="306.0" text-anchor="middle">0</text>
+<line class="grid" x1="320.0" y1="40" x2="320.0" y2="290"/>
+<text class="lbl mono" x="320.0" y="306.0" text-anchor="middle">10</text>
+<line class="grid" x1="410.0" y1="40" x2="410.0" y2="290"/>
+<text class="lbl mono" x="410.0" y="306.0" text-anchor="middle">20</text>
+<line class="grid" x1="500.0" y1="40" x2="500.0" y2="290"/>
+<text class="lbl mono" x="500.0" y="306.0" text-anchor="middle">30</text>
+<line class="grid" x1="590.0" y1="40" x2="590.0" y2="290"/>
+<text class="lbl mono" x="590.0" y="306.0" text-anchor="middle">40</text>
+<line class="grid" x1="680.0" y1="40" x2="680.0" y2="290"/>
+<text class="lbl mono" x="680.0" y="306.0" text-anchor="middle">50</text>
+<line class="grid" x1="770.0" y1="40" x2="770.0" y2="290"/>
+<text class="lbl mono" x="770.0" y="306.0" text-anchor="middle">60</text>
+<line class="grid" x1="860.0" y1="40" x2="860.0" y2="290"/>
+<text class="lbl mono" x="860.0" y="306.0" text-anchor="middle">70</text>
+<text class="lbl muted" x="860.0" y="324.0" text-anchor="end">champ au capteur, en mT</text>
+<line class="dash" x1="323.0" y1="36" x2="323.0" y2="290"/>
+<text class="lbl muted" x="327.0" y="48.0">seuil 10,3 mT</text>
+<text class="lbl strong" x="20.0" y="56.0">aimants uniformes (le projet) : 1 groupe(s) séparable(s)</text>
+<rect class="seg-listen" x="396.8" y="70.0" width="88.2" height="18" rx="3"/>
+<text class="lbl" x="220.0" y="83.0" text-anchor="end">pion, 4 mm</text>
+<text class="lbl small muted" x="491.0" y="83.0">19 à 28</text>
+<rect class="seg-listen" x="431.3" y="96.0" width="90.2" height="18" rx="3"/>
+<text class="lbl" x="220.0" y="109.0" text-anchor="end">cavalier/fou, 4 mm</text>
+<text class="lbl small muted" x="527.5" y="109.0">22 à 32</text>
+<rect class="seg-listen" x="458.0" y="122.0" width="86.7" height="18" rx="3"/>
+<text class="lbl" x="220.0" y="135.0" text-anchor="end">tour/dame/roi, 4 mm</text>
+<text class="lbl small muted" x="550.7" y="135.0">25 à 35</text>
+<text class="lbl strong" x="20.0" y="170.0">épaisseurs codées (variante) : 3 groupe(s) séparable(s)</text>
+<rect class="seg-pulse" x="396.8" y="184.0" width="88.2" height="18" rx="3"/>
+<text class="lbl" x="220.0" y="197.0" text-anchor="end">pion, 4 mm</text>
+<text class="lbl small muted" x="491.0" y="197.0">19 à 28</text>
+<rect class="seg-pulse" x="510.7" y="210.0" width="121.6" height="18" rx="3"/>
+<text class="lbl" x="220.0" y="223.0" text-anchor="end">cavalier/fou, 7 mm</text>
+<text class="lbl small muted" x="638.3" y="223.0">31 à 45</text>
+<rect class="seg-pulse" x="644.1" y="236.0" width="148.7" height="18" rx="3"/>
+<text class="lbl" x="220.0" y="249.0" text-anchor="end">tour/dame/roi, 12 mm</text>
+<text class="lbl small muted" x="798.8" y="249.0">46 à 63</text>
+</svg>

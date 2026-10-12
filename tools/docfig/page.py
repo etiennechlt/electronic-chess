@@ -144,11 +144,11 @@ def esc(text: str) -> str:
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-def document(title: str, body: str, script: str = "") -> str:
+def document(title: str, body: str, script: str = "", extra_css: str = "") -> str:
     """A complete page: the fragment of a builder in its skeleton."""
     return (
         '<!doctype html>\n<html lang="fr">\n<head>\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
-        f"<title>{title}</title>\n" + FONTS + "\n<style>" + CSS + "</style>\n"
+        f"<title>{title}</title>\n" + FONTS + "\n<style>" + CSS + extra_css + "</style>\n"
         "</head>\n<body>\n" + body + script + "</body>\n</html>\n"
     )

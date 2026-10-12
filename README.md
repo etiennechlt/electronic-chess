@@ -173,7 +173,7 @@ décisions formelles sont dans [`docs/adr/`](docs/adr/README.md).
 | `hardware/mockup-2x2/` | projets KiCad (`.kicad_pro` à ouvrir), gerbers, BOM, guides | 1 |
 | `firmware/mockup/` | firmware Nucleo-G474RE (référence) | 1 |
 | `firmware/board/` | firmware du cerveau : bus des quadrants, quatre ADC, 128 LED | 2 |
-| `firmware/esp32/` | pont radio et horloge (ESP-IDF, NimBLE), protocole de la note 12 | 2 à 3 |
+| `firmware/esp32/` | pont radio, horloge (ESP-IDF, NimBLE), protocole de la note 12, et le scanner Hall de la note 24 | 2 à 3 |
 | `measurements/` | protocole, gabarits CSV, analyse | 1 |
 | `mechanical/` | modèles CadQuery (plateau, horloge, pucks), rendus, vue 3D | 1 à 3 |
 | `app/` | application, client Lichess sur le pont | 3 à 4 |
@@ -190,7 +190,10 @@ erreurs corrigées dans les générateurs, DRC KiCad par `tools/drc.py`).
 La suite est phasée : **phase 1, tout fonctionne sans chariot** (revue,
 simulation, commande, bring-up, mesures, firmware, horloge, appli) ;
 **phase 2, le chariot**. Feuille de route dans la
-[note 07](docs/notes/07-etat-et-reste-a-faire.md). Les
+[note 07](docs/notes/07-etat-et-reste-a-faire.md). L'alternative
+« Hall + RFID » (un capteur par case, une étiquette par pièce) a été
+évaluée et prototypée comme étape intermédiaire dans la
+[note 24](docs/notes/24-hall-et-rfid.md). Les
 décisions d'architecture et leurs justifications sont dans
 [`docs/adr/`](docs/adr/README.md) ; conventions dans
 [`CLAUDE.md`](CLAUDE.md) : code et commentaires en anglais,

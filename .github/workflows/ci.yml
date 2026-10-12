@@ -43,3 +43,8 @@ jobs:
             firmware/esp32/clock/test/test_chessclock.c firmware/esp32/clock/main/chessclock.c \
             -o /tmp/test_chessclock && /tmp/test_chessclock
           cc -Wall -Wextra -Werror -c firmware/esp32/common/proto.c -o /dev/null
+      - name: Host test of the Hall scanner
+        run: |
+          cc -Wall -Wextra -Werror -Ifirmware/esp32/hallscan/main \
+            firmware/esp32/hallscan/test/test_hallscan.c firmware/esp32/hallscan/main/hallscan.c \
+            -o /tmp/test_hallscan && /tmp/test_hallscan
