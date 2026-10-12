@@ -1,0 +1,2 @@
+test,square,sensor,path,channel,prev_channel,delay_us,n_samples,mean_counts,std_counts,i_row_ma
+mux_settle,A1,rail_half,mux,9,8,40,64,2172.5,2.6,

@@ -1,0 +1,2 @@
+square,reader,version_reg,state,tx1_mv,tx2_mv,tx1_pullup_mv,tx2_pullup_mv,i_tvdd_ma
+A1,NXP,0x92,held,2,3,15,14,1.2
