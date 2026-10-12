@@ -535,9 +535,11 @@ face arrière) avant le placement.
   courant des rails commutés. Budget sans radio
   (`hallrfid_mockup.power`) : ESP32 vers 100 mA, un lecteur en émission
   jusqu'à 100 mA, quatre lecteurs éveillés jusqu'à 76 mA, huit capteurs
-  jusqu'à 80 mA, soit 356 mA et 0,61 W dans le SOT-223 sous 5 V
-  (0,69 W sous 5,25 V, jonction vers 102 °C pour 125 admis, avec une
-  résistance thermique supposée de 90 °C/W, à relire au lot 3).
+  jusqu'à 80 mA, soit 356 mA ; avec le courant propre du régulateur
+  (10 mA au plus), 0,66 W dans le SOT-223 sous 5 V (0,75 W sous 5,25 V,
+  jonction vers 107 °C pour 125 admis, avec une résistance thermique
+  supposée de 90 °C/W, à relire au lot 3). Sous les 4,75 V d'un hôte
+  USB, il lui reste 1,45 V pour 1,3 V de chute au plus.
 - Une LED d'état, et une **barrette d'échappement** 2,54 mm non montée
   qui porte tous les signaux, avec un cavalier sur EN : si le module ne
   démarre pas, une ESP32-S3-DevKitC branchée là pilote la carte.
