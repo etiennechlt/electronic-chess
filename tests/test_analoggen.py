@@ -17,11 +17,19 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 from analoggen.bom import bom_csv, jlc_bom_csv  # noqa: E402
 from analoggen.circuit import JOINT_ORDER, build_circuit  # noqa: E402
 from analoggen.filters import round_e96  # noqa: E402
+from analoggen.fplib import FOOTPRINT_DIR  # noqa: E402
 from analoggen.schematic import emit_schematic  # noqa: E402
 from analoggen.spice import run_chain_ac  # noqa: E402
+from analoggen.symlib import SYMBOL_DIR  # noqa: E402
 from coilgen.board import PAD_PLAN  # noqa: E402
 
 from chessboard_calc.config import load_config  # noqa: E402
+
+# Tests that build the analog circuit read the official KiCad symbols and
+# footprints; without them (CI has no KiCad) they are skipped, not failed.
+needs_kicad_libs = pytest.mark.skipif(
+    not SYMBOL_DIR.exists() or not FOOTPRINT_DIR.exists(), reason="KiCad libraries not installed"
+)
 
 
 @pytest.fixture(scope="module")
@@ -30,6 +38,7 @@ def circuit(cfg):
     return ckt, chain
 
 
+@needs_kicad_libs
 def test_circuit_size_and_no_floating_nets(circuit):
     ckt, _ = circuit
     assert len(ckt.components) == 138
@@ -37,12 +46,14 @@ def test_circuit_size_and_no_floating_nets(circuit):
     assert solo == []
 
 
+@needs_kicad_libs
 def test_chain_gain_within_spec(cfg, circuit):
     _, chain = circuit
     lo, hi = cfg.measurement.preamp_gain
     assert lo <= chain.total_gain <= hi
 
 
+@needs_kicad_libs
 def test_joint_order_matches_coil_board(circuit):
     special = {"GND": "GND", "LED_DIN": "LED_DIN5", "LED_5V": "5V_BUCK"}
     plan_nets = [special.get(t[0], f"C{t[0][1]}_{t[1]}") for t in PAD_PLAN]
@@ -54,6 +65,7 @@ def test_e96_rounding():
     assert round_e96(523000) == pytest.approx(523000.0)
 
 
+@needs_kicad_libs
 def test_bom_exports(circuit):
     ckt, _ = circuit
     assert bom_csv(ckt).count("\n") > 20
@@ -61,6 +73,7 @@ def test_bom_exports(circuit):
     assert "Designator" in jlc and "DNP" not in jlc
 
 
+@needs_kicad_libs
 @pytest.mark.skipif(shutil.which("ngspice") is None, reason="ngspice not installed")
 def test_spice_chain_validates_the_analog_path(cfg, tmp_path):
     _, chain = build_circuit(cfg)
@@ -72,6 +85,7 @@ def test_spice_chain_validates_the_analog_path(cfg, tmp_path):
     assert rep.att_50k_db > 18.0
 
 
+@needs_kicad_libs
 @pytest.mark.skipif(shutil.which("kicad-cli") is None, reason="kicad-cli not installed")
 def test_schematic_is_parsed_by_kicad(circuit, tmp_path):
     ckt, _ = circuit
@@ -216,6 +230,7 @@ def test_the_maze_goes_around_a_wall_the_joints_cannot():
                 assert g.distance(o) >= CLEAR - 1e-9, layer
 
 
+@needs_kicad_libs
 def test_the_hand_seeds_of_the_analog_board_stay_legal():
     """Every seeded route is re-checked against the real pad geometry."""
     from analoggen.pcb import Router, _hand_seeds, _pad_instances, full_placements
@@ -230,6 +245,7 @@ def test_the_hand_seeds_of_the_analog_board_stay_legal():
         assert net in seeded, net
 
 
+@needs_kicad_libs
 def test_no_two_courtyards_of_the_analog_board_overlap():
     """What the KiCad DRC calls a courtyard overlap, checked at build time.
 

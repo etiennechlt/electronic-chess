@@ -3,6 +3,7 @@ brain's, and the shield wires every header pin as the yaml says."""
 
 import pytest
 from analoggen.fplib import FOOTPRINT_DIR
+from analoggen.symlib import SYMBOL_DIR
 
 
 def test_bench_bus_is_the_brains_except_damp(cfg):
@@ -97,6 +98,9 @@ def test_bench_board_is_closed(cfg):
     assert res.routed_nets == len({p.net for p in res.pads if p.net}) - 0  # every net closed
 
 
+@pytest.mark.skipif(
+    not SYMBOL_DIR.exists() or not FOOTPRINT_DIR.exists(), reason="KiCad libraries not installed"
+)
 def test_a_routing_snapshot_resumes_to_the_same_board(cfg, tmp_path, monkeypatch):
     """BOARDGEN_DUMP writes the routed board to a file; `resume` runs the
     finishing pass and the checks from it and lands on the same board as

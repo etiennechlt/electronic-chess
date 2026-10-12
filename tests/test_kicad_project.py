@@ -14,8 +14,10 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 
 from analoggen.circuit import build_circuit  # noqa: E402
+from analoggen.fplib import FOOTPRINT_DIR  # noqa: E402
 from analoggen.pcb import CLR, FAB_CLR, VIA_D, VIA_DRILL, W_FINE, design_rules  # noqa: E402
 from analoggen.schematic import emit_schematic  # noqa: E402
+from analoggen.symlib import SYMBOL_DIR  # noqa: E402
 from coilgen.project import DesignRules, project_json, schematic_root_uuid  # noqa: E402
 
 HARDWARE = Path(__file__).resolve().parents[1] / "hardware" / "mockup-2x2"
@@ -50,6 +52,9 @@ def test_committed_analog_project_is_the_generated_one():
     assert (directory / "analog-board.kicad_pro").read_text(encoding="utf-8") == expected
 
 
+@pytest.mark.skipif(
+    not SYMBOL_DIR.exists() or not FOOTPRINT_DIR.exists(), reason="KiCad libraries not installed"
+)
 def test_root_uuid_is_the_one_the_schematic_header_declares(cfg):
     circuit, _chain = build_circuit(cfg)
     text = emit_schematic(circuit, "test")
