@@ -482,3 +482,21 @@ Voir [l'état](07-etat-et-reste-a-faire.md).
   yaml, modules, rapport, tests, et le scanner `firmware/esp32/hallscan`
   (logique testée en CI, en-tête généré du yaml). Les décisions restent
   à prendre (section 7 de la note).
+
+## 11/10/2026, le plan de la maquette Hall + RFID
+
+- La note 24 est fusionnée dans `main`. Le plan de la maquette qui
+  vérifie ses calculs sur du cuivre est la
+  [note 25](25-maquette-hall-rfid.md) : une carte de 2 x 2 cases (une
+  boucle NFC, un lecteur MFRC522 et un capteur Hall par case, l'ESP32-S3
+  sur la carte), une planche d'étiquettes à la taille du pion, des
+  pièces et des gabarits imprimés, le tout commandé chez JLCPCB sauf
+  les aimants, pour 265 à 420 EUR TTC estimés.
+- La préparation corrige onze points de la note 24, dont trois qui
+  changent la suite : l'étiquette de 25 mm ne tient dans aucune base ;
+  un capteur Hall central ne voit un pion qu'à 6,6 mm du centre de sa
+  case, ce qui suspend la nappe 4 x 4 à la mesure M12b ;
+  `nfc.antenna` sous-estime l'inductance des boucles d'environ 7 %, ce
+  qui aurait poussé les lecteurs au-delà de leur courant maximal.
+- Rien n'est généré ni commandé : quatorze décisions attendent
+  (paragraphe 11 de la note 25), puis le lot 2 (modèle).
