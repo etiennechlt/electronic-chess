@@ -650,6 +650,7 @@ class SerieCfg(_Model):
 class HallSensorCfg(_Model):
     part: str
     mpn: str
+    lcsc: str | None = None
     package: str
     height_mm: float
     supply_v: float
@@ -657,7 +658,9 @@ class HallSensorCfg(_Model):
     quiescent_out_v: float
     out_range_v: tuple[float, float]
     i_supply_ma: float
+    i_supply_max_ma: float | None = None
     power_on_us: float
+    power_on_max_us: float | None = None
     note: str
 
     @model_validator(mode="after")
@@ -667,6 +670,10 @@ class HallSensorCfg(_Model):
             raise ValueError("quiescent output must sit inside the output range")
         if self.sensitivity_mv_per_mt <= 0.0:
             raise ValueError("sensitivity is the magnitude, positive")
+        if self.i_supply_max_ma is not None and self.i_supply_max_ma < self.i_supply_ma:
+            raise ValueError("maximum supply current below the typical one")
+        if self.power_on_max_us is not None and self.power_on_max_us < self.power_on_us:
+            raise ValueError("maximum power-on time below the typical one")
         return self
 
 
@@ -676,6 +683,7 @@ class HallLayoutCfg(_Model):
     lift_detect_mm: float
     tilt_budget_mm: float
     neighbors_worst_case: int
+    admissible_offset_mm: float
 
 
 class HallPresenceCfg(_Model):
@@ -705,6 +713,7 @@ class HallSizeCodingCfg(_Model):
 class HallMuxCfg(_Model):
     part: str
     mpn: str
+    lcsc: str | None = None
     channels: int
     ron_ohm: float
     c_off_pF: float
@@ -763,10 +772,227 @@ class NfcTagCfg(_Model):
 class NfcCfg(_Model):
     f_hz: float
     h_min_a_per_m: float
+    h_max_a_per_m: float
     antenna_current_ma_rms: float
     antenna: NfcAntennaCfg
     tag: NfcTagCfg
     reader_candidates: tuple[str, ...]
+
+
+class MockupBoardOutlineCfg(_Model):
+    strip_mm: float
+    rail_mm: float
+    edge_clearance_mm: float
+    fiducial_edge_mm: float
+    hole_d_mm: float
+    copper_um: float
+    standoff_mm: float
+
+
+class NfcLoopCfg(_Model):
+    """A square reader loop, concentric turns, side as a fraction of the pitch."""
+
+    side_ratio: float
+    turns: int
+    track_mm: float
+    gap_mm: float
+
+    @model_validator(mode="after")
+    def _sane(self) -> NfcLoopCfg:
+        if not 0.0 < self.side_ratio < 1.0:
+            raise ValueError("loop side_ratio must be within (0, 1)")
+        if self.turns < 1 or min(self.track_mm, self.gap_mm) <= 0.0:
+            raise ValueError("need at least one turn and positive track and gap")
+        return self
+
+
+class ReaderPartCfg(_Model):
+    maker: str
+    mpn: str
+    lcsc: str
+
+
+class MockupReaderCfg(_Model):
+    part: str
+    package: str
+    footprint_square_mm: float
+    by_row: dict[int, ReaderPartCfg]
+    crystal_mhz: float
+    tvdd_v: float
+    r_drive_ohm: float
+    i_tvdd_max_ma: float
+    i_tvdd_accept_ma: float
+    i_idle_ma: float
+    i_idle_max_ma: float
+    rx_max_vpp: float
+    rx_target_vpp: tuple[float, float]
+    r_sense_ohm: float
+
+    @model_validator(mode="after")
+    def _limits(self) -> MockupReaderCfg:
+        if not self.i_tvdd_accept_ma < self.i_tvdd_max_ma:
+            raise ValueError("acceptance current must sit below the datasheet limit")
+        lo, hi = self.rx_target_vpp
+        if not 0.0 < lo < hi < self.rx_max_vpp:
+            raise ValueError("RX target must sit inside the RX input limit")
+        return self
+
+
+class MockupMatchingCfg(_Model):
+    z_target_ohm: float
+    q_loaded: float
+    l0_nH: float
+    c0_pF: float
+    l0_q: float
+    cap_esr_ohm: float
+    cap_series: str
+    cap_tol_pct: float
+    rq_series: str
+    rx_coupling_nF: float
+
+
+class MockupHallCfg(_Model):
+    sensor: str
+    alternate: str
+    cluster_square: str
+    cluster_offset_ratio: float
+    filter_r_ohm: float
+    filter_c_nF: float
+    decoupling_nF: float
+
+
+class MockupMuxChannelsCfg(_Model):
+    centre: tuple[int, ...]
+    cluster: tuple[int, ...]
+    ground: int
+    rail_half: int
+    led_step: int
+    extension: tuple[int, ...]
+
+    def all_channels(self) -> list[int]:
+        fixed = [self.ground, self.rail_half, self.led_step]
+        return [*self.centre, *self.cluster, *fixed, *self.extension]
+
+
+class MockupEsp32Cfg(_Model):
+    module: str
+    lcsc: str
+    adc1_gpios: tuple[int, ...]
+    strapping_gpios: tuple[int, ...]
+    usb_gpios: tuple[int, ...]
+    psram_gpios: tuple[int, ...]
+    pins: dict[str, int]
+
+
+class TagChipCfg(_Model):
+    part: str
+    mpn: str
+    lcsc: str
+    c_in_pF: float
+
+
+class TagChipAlternateCfg(_Model):
+    mpn: str
+    lcsc: str
+
+
+class MockupTagsCfg(_Model):
+    sizes: dict[str, PieceType]
+    wall_mm: float
+    fit_mm: float
+    edge_mm: float
+    board_mm: float
+    layers: int
+    track_options_mm: tuple[float, ...]
+    f_self_mhz: tuple[float, float]
+    chip: TagChipCfg
+    chip_alternate: TagChipAlternateCfg
+    chip_r_ohm: float
+    chip_height_mm: float
+    tape_mm: float
+    trims_pF: dict[str, tuple[float, ...]]
+    activation_margin_min: float
+    per_panel: int
+    murata_per_panel: int
+
+    @model_validator(mode="after")
+    def _consistent(self) -> MockupTagsCfg:
+        if set(self.trims_pF) != set(self.sizes):
+            raise ValueError("every tag size needs its list of trims")
+        lo, hi = self.f_self_mhz
+        if not 0.0 < lo < hi:
+            raise ValueError("tag tuning window must be increasing")
+        if not self.track_options_mm or any(w <= 0.0 for w in self.track_options_mm):
+            raise ValueError("name at least one positive tag track width")
+        return self
+
+
+class MockupMagnetsCfg(_Model):
+    material: str
+    diameters_mm: tuple[float, ...]
+    thickness_mm: float
+
+
+class MockupPrintsCfg(_Model):
+    pieces: dict[PieceType, int]
+    spare_pieces: int
+    shims_mm: tuple[float, ...]
+    shim_side_mm: float
+    lift_max_mm: float
+    lift_step_mm: float
+    offset_max_mm: float
+    offset_step_mm: float
+    eject_hole_mm: float
+
+
+class MockupQuantitiesCfg(_Model):
+    boards: int
+    boards_assembled: int
+    tag_panels: int
+    tag_panels_assembled: int
+
+
+class HallRfidMockupCfg(_Model):
+    """The Hall plus RFID test board of note 25: 2 x 2 squares, loops by
+    column, readers by row."""
+
+    columns: tuple[str, ...]
+    rows: tuple[int, ...]
+    board: MockupBoardOutlineCfg
+    ground_keepout_mm: float
+    ground_keepout_min_mm: float
+    loops: dict[str, NfcLoopCfg]
+    loop_by_column: dict[str, str]
+    reader: MockupReaderCfg
+    matching: MockupMatchingCfg
+    hall: MockupHallCfg
+    mux_channels: MockupMuxChannelsCfg
+    esp32: MockupEsp32Cfg
+    play_area_heights_mm: dict[str, float]
+    tags: MockupTagsCfg
+    magnets: MockupMagnetsCfg
+    prints: MockupPrintsCfg
+    quantities: MockupQuantitiesCfg
+
+    @model_validator(mode="after")
+    def _references(self) -> HallRfidMockupCfg:
+        if set(self.loop_by_column) != set(self.columns):
+            raise ValueError("every column needs a loop")
+        if not set(self.loop_by_column.values()) <= set(self.loops):
+            raise ValueError("loop_by_column names a loop that is not defined")
+        if set(self.reader.by_row) != set(self.rows):
+            raise ValueError("every row needs a reader part")
+        q = self.quantities
+        if q.boards_assembled > q.boards or q.tag_panels_assembled > q.tag_panels:
+            raise ValueError("more assembled than fabricated")
+        return self
+
+    def squares(self) -> list[str]:
+        """Square names, row by row from row 1: A1, B1, A2, B2."""
+        return [f"{c}{r}" for r in self.rows for c in self.columns]
+
+    def loop_of(self, square: str) -> NfcLoopCfg:
+        return self.loops[self.loop_by_column[square[0]]]
 
 
 class HallRfidCfg(_Model):
@@ -781,12 +1007,23 @@ class HallRfidCfg(_Model):
     power_gating: HallGatingCfg
     esp32: HallEsp32Cfg
     nfc: NfcCfg
+    mockup: HallRfidMockupCfg
 
     @model_validator(mode="after")
     def _at_least_one_sensor(self) -> HallRfidCfg:
         if not self.sensors:
             raise ValueError("name at least one Hall sensor candidate")
+        parts = {s.part for s in self.sensors}
+        if not {self.mockup.hall.sensor, self.mockup.hall.alternate} <= parts:
+            raise ValueError("the mockup sensor and its alternate must be listed in sensors")
         return self
+
+    def sensor(self, part: str) -> HallSensorCfg:
+        """The sensor of that part name."""
+        for s in self.sensors:
+            if s.part == part:
+                return s
+        raise KeyError(part)
 
 
 class BoardConfig(_Model):

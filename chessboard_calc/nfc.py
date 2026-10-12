@@ -35,7 +35,9 @@ def antenna(cfg: BoardConfig, pitch_mm: float) -> NfcAntenna:
     nfc = cfg.hall_rfid.nfc
     a = nfc.antenna
     side = a.side_ratio * pitch_mm
-    d_in = side - 2.0 * a.turns * (a.track_mm + a.gap_mm)
+    # N tracks and N - 1 gaps between the outer and the inner edge (note 25,
+    # paragraph 2, point 10: one gap too many underestimated L by 7 %)
+    d_in = side - 2.0 * (a.turns * a.track_mm + (a.turns - 1) * a.gap_mm)
     l_uh = mohan_L_uH(a.turns, side, d_in, layout="square")
     omega = 2.0 * math.pi * nfc.f_hz
     x_l = omega * l_uh * 1e-6
