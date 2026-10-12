@@ -784,6 +784,9 @@ class MockupBoardOutlineCfg(_Model):
     rail_mm: float
     edge_clearance_mm: float
     fiducial_edge_mm: float
+    fiducials: int
+    fiducial_d_mm: float
+    fiducial_mask_d_mm: float
     hole_d_mm: float
     copper_um: float
     standoff_mm: float
@@ -826,6 +829,7 @@ class MockupReaderCfg(_Model):
     i_idle_max_ma: float
     rx_max_vpp: float
     rx_target_vpp: tuple[float, float]
+    rx_r2_ohm: float
     r_sense_ohm: float
 
     @model_validator(mode="after")
@@ -849,6 +853,8 @@ class MockupMatchingCfg(_Model):
     cap_tol_pct: float
     rq_series: str
     rx_coupling_nF: float
+    loop_lead_mm: float
+    tune_tag: str
 
 
 class MockupHallCfg(_Model):
@@ -859,6 +865,9 @@ class MockupHallCfg(_Model):
     filter_r_ohm: float
     filter_c_nF: float
     decoupling_nF: float
+    land_mm: float
+    settle_lsb: float
+    trio_pitch_mm: float
 
 
 class MockupMuxChannelsCfg(_Model):
@@ -881,7 +890,37 @@ class MockupEsp32Cfg(_Model):
     strapping_gpios: tuple[int, ...]
     usb_gpios: tuple[int, ...]
     psram_gpios: tuple[int, ...]
+    analog_signals: tuple[str, ...]
+    usb_signals: tuple[str, ...]
     pins: dict[str, int]
+
+
+class MockupRegulatorCfg(_Model):
+    part: str
+    lcsc: str
+    v_out: float
+    i_max_a: float
+
+
+class HallRfidPowerCfg(_Model):
+    """The 3.3 V rail of the Hall plus RFID board: its input, the module
+    current and the linear regulator with its thermal path."""
+
+    v_in: tuple[float, float]
+    esp32_ma: float
+    regulator: MockupRegulatorCfg
+    theta_ja_c_per_w: float
+    t_junction_max_c: float
+    t_ambient_c: float
+
+    @model_validator(mode="after")
+    def _headroom(self) -> HallRfidPowerCfg:
+        lo, hi = self.v_in
+        if not self.regulator.v_out < lo <= hi:
+            raise ValueError("regulator input must sit above its output, nominal then maximum")
+        if not self.t_ambient_c < self.t_junction_max_c:
+            raise ValueError("ambient above the junction limit")
+        return self
 
 
 class TagChipCfg(_Model):
@@ -904,10 +943,12 @@ class MockupTagsCfg(_Model):
     board_mm: float
     layers: int
     track_options_mm: tuple[float, ...]
+    opening_min_ratio: float
     f_self_mhz: tuple[float, float]
     chip: TagChipCfg
     chip_alternate: TagChipAlternateCfg
     chip_r_ohm: float
+    ferrite_chi: float
     chip_height_mm: float
     tape_mm: float
     trims_pF: dict[str, tuple[float, ...]]
@@ -924,6 +965,25 @@ class MockupTagsCfg(_Model):
             raise ValueError("tag tuning window must be increasing")
         if not self.track_options_mm or any(w <= 0.0 for w in self.track_options_mm):
             raise ValueError("name at least one positive tag track width")
+        if not 0.0 <= self.opening_min_ratio < 1.0:
+            raise ValueError("tag opening ratio must be within [0, 1)")
+        return self
+
+
+class MockupPickupCfg(_Model):
+    """The field tag of the tag panel: a small untuned coil and a detector."""
+
+    d_mm: float
+    turns: int
+    layers: int
+    track_mm: float
+
+    @model_validator(mode="after")
+    def _sane(self) -> MockupPickupCfg:
+        if self.layers < 1 or self.turns < self.layers or self.turns % self.layers:
+            raise ValueError("pickup turns must spread evenly over its layers")
+        if not 0.0 < 2.0 * (2 * self.turns // self.layers - 1) * self.track_mm < self.d_mm:
+            raise ValueError("pickup turns do not fit its diameter")
         return self
 
 
@@ -952,6 +1012,51 @@ class MockupQuantitiesCfg(_Model):
     tag_panels_assembled: int
 
 
+class MockupCriteriaCfg(_Model):
+    """Bench numbers and acceptance of M12 to M14 that no other key holds
+    (measurements/protocol.md); measurements/analysis.py reads them."""
+
+    bringup_supply_limit_ma: tuple[float, float]
+    nxp_version_reg: tuple[int, ...]
+    confidence: float
+    hall_samples: int
+    scale_factor_range: tuple[float, float]
+    residual_max_pct: float
+    radius_resolution_mm: float
+    neighbor_field_tol_mT: float
+    power_on_sweep_factor: float
+    path_settle_us: float
+    path_offset_max_lsb: float
+    loop_l_tol_pct: float
+    read_trials: int
+    read_trials_confirm: int
+    read_target_rate: float
+    tx_pullup_ohm: float
+    mux_emulation_rq_ohm: float
+    mux_emulation_c_pF: float
+    mux_emulation_i_tvdd_max_ma: float
+    read_time_max_ms: float
+    move_time_max_ms: float
+    tag_drift_max_pct: float
+    disturber_distances_mm: tuple[float, ...]
+
+    @model_validator(mode="after")
+    def _sane(self) -> MockupCriteriaCfg:
+        lo, hi = self.scale_factor_range
+        if not 0.0 < lo < 1.0 < hi:
+            raise ValueError("the scale factor window must bracket 1")
+        if not 0.0 < self.confidence < 1.0 or not 0.0 < self.read_target_rate <= 1.0:
+            raise ValueError("confidence and read target are fractions")
+        if not 0 < self.read_trials <= self.read_trials_confirm:
+            raise ValueError("a confirmation series is at least a plain one")
+        d = self.disturber_distances_mm
+        if not d or d[0] <= 0.0 or any(b <= a for a, b in zip(d, d[1:], strict=False)):
+            raise ValueError("disturber distances must be positive and increasing")
+        if self.read_time_max_ms > self.move_time_max_ms:
+            raise ValueError("a move includes at least one square read")
+        return self
+
+
 class HallRfidMockupCfg(_Model):
     """The Hall plus RFID test board of note 25: 2 x 2 squares, loops by
     column, readers by row."""
@@ -968,11 +1073,14 @@ class HallRfidMockupCfg(_Model):
     hall: MockupHallCfg
     mux_channels: MockupMuxChannelsCfg
     esp32: MockupEsp32Cfg
+    power: HallRfidPowerCfg
     play_area_heights_mm: dict[str, float]
     tags: MockupTagsCfg
+    pickup: MockupPickupCfg
     magnets: MockupMagnetsCfg
     prints: MockupPrintsCfg
     quantities: MockupQuantitiesCfg
+    criteria: MockupCriteriaCfg
 
     @model_validator(mode="after")
     def _references(self) -> HallRfidMockupCfg:

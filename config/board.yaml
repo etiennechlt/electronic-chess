@@ -572,6 +572,9 @@ hall_rfid:                     # alternative or intermediate layer, evaluated in
       rail_mm: 5.0             # assembly rails on the two long sides (Standard PCBA)
       edge_clearance_mm: 3.0   # parts to the edge of the useful board
       fiducial_edge_mm: 3.35   # fiducial centre to the board edge, at least
+      fiducials: 3             # on the rails, three corners (Standard PCBA)
+      fiducial_d_mm: 1.0       # copper dot
+      fiducial_mask_d_mm: 2.0  # solder mask opening around it
       hole_d_mm: 3.2           # M3 clearance, non plated, at the play-area corners
       copper_um: 35.0          # 1 oz outer layers
       standoff_mm: 30.0        # bench standoffs that keep the board away from metal (Q11)
@@ -597,6 +600,7 @@ hall_rfid:                     # alternative or intermediate layer, evaluated in
       i_idle_max_ma: 19.0
       rx_max_vpp: 4.0          # RX input limit
       rx_target_vpp: [1.5, 2.0]
+      rx_r2_ohm: 1000.0        # RX to VMID, sets the divider level; R1 follows from the target
       r_sense_ohm: 1.0         # in series with TVDD, read with a multimeter
     matching:                  # per side: TX, L0, C0 to ground, C1, C2 to ground, Rq, loop
       z_target_ohm: 50.0       # differential, seen from TX1 and TX2
@@ -607,16 +611,22 @@ hall_rfid:                     # alternative or intermediate layer, evaluated in
       cap_esr_ohm: 0.03        # C0G 0603 at the carrier
       cap_series: E12          # C1 and C2 are a main value plus a trim, both from it
       cap_tol_pct: 2.0         # C0G, 10 pF and above
-      rq_series: E12
+      rq_series: E12           # Rq and the receive divider R1
       rx_coupling_nF: 1.0      # series capacitor of the receive divider
+      loop_lead_mm: 10.0       # feed leads and back-side bridge of a loop, added to its copper
+      tune_tag: P              # tuned with this tag, bare, at the nominal gap (NanoVNA)
     hall:
       sensor: DRV5055A3        # part name in hall_rfid.sensors (D3)
       alternate: SS39ET
       cluster_square: A1       # four more sensors around its centre (D6)
-      cluster_offset_ratio: 0.12   # at (+-r p, +-r p), on the diagonals
+      cluster_offset_ratio: 0.10   # at (+-r p, +-r p), on the diagonals: near the best
+                               # coverage at both pitches (+-9.3 mm at 50, +-8.0 at 40)
       filter_r_ohm: 1000.0     # per sensor output, 1 k near the sensor
       filter_c_nF: 10.0        # and 10 nF at the ADC or mux input
       decoupling_nF: 100.0
+      land_mm: 3.6             # SOT-23 land pattern, its longer side, kept inside the opening
+      settle_lsb: 0.5          # a reading is valid within this many ADC counts of its final value
+      trio_pitch_mm: 0.4       # VCC, OUT, GND traces out of a loop: 0.2 mm track and gap
     mux_channels:              # the CD74HC4067 of the mockup
       centre: [0, 1, 2, 3]     # A1, B1, A2, B2
       cluster: [4, 5, 6, 7]
@@ -631,6 +641,8 @@ hall_rfid:                     # alternative or intermediate layer, evaluated in
       strapping_gpios: [0, 3, 45, 46]   # never driven
       usb_gpios: [19, 20]
       psram_gpios: [35, 36, 37]         # left free for an R8 module
+      analog_signals: [MUX_OUT, HALL_A1, HALL_B1, HALL_A2, HALL_B2, PICKUP]   # on ADC1
+      usb_signals: [USB_DM, USB_DP]     # the only signals allowed on usb_gpios
       pins:
         MUX_OUT: 1
         HALL_A1: 2
@@ -661,6 +673,13 @@ hall_rfid:                     # alternative or intermediate layer, evaluated in
         UART0_RX: 44
         NRSTPD_A2: 47
         NRSTPD_B2: 48
+    power:                     # the 3.3 V rail, radio off (note 25, paragraph 4.5)
+      v_in: [5.0, 5.25]        # USB nominal and upper limit, or the bench supply on the 5V pads
+      esp32_ma: 100.0          # WROOM-1 running, Wi-Fi and Bluetooth off
+      regulator: { part: AMS1117-3.3, lcsc: C6186, v_out: 3.3, i_max_a: 1.0 }
+      theta_ja_c_per_w: 90.0   # SOT-223 on its tab copper, datasheet figure checked at lot 3
+      t_junction_max_c: 125.0
+      t_ambient_c: 40.0        # a warm bench
     play_area_heights_mm:      # tallest parts between the loops, under the plywood
       reader_qfn: 1.0          # HVQFN-32 outline maximum
       crystal_3225: 0.8
@@ -674,16 +693,26 @@ hall_rfid:                     # alternative or intermediate layer, evaluated in
       board_mm: 0.8
       layers: 2                # two spirals in series, both ends at the centre
       track_options_mm: [0.20, 0.15]   # track and gap, the widest that tunes is used
+      opening_min_ratio: 0.5   # inner opening over the copper diameter, at least: inner
+                               # turns add resistance and little flux
       f_self_mhz: [16.0, 18.0] # tuned high: the reader matching barely sees the piece
       chip: { part: NT3H2111, mpn: NT3H2111W0FHKH, lcsc: C710403, c_in_pF: 50.0 }
       chip_alternate: { mpn: NT3H2211W0FHKH, lcsc: C2905792 }
       chip_r_ohm: 10000.0      # chip parallel resistance below its limiter: an assumption
+      ferrite_chi: 0.10        # piece magnet, mu_r - 1 at the carrier (hard ferrite recoil
+                               # 1.05 to 1.10, the upper end); an insulator, no eddy current
       chip_height_mm: 0.5
       tape_mm: 0.06            # polyimide tape that holds the tag in the base
-      trims_pF: { P: [0.0, 15.0, 22.0], G: [0.0] }
-      activation_margin_min: 2.0   # at the maximum gap, over the reference sticker
+      trims_pF: { P: [0.0, 15.0, 22.0], G: [0.0, 10.0] }   # G + 10 pF for p = 40
+      activation_margin_min: 2.0   # Q5: service field over the activation field at the
+                                   # maximum gap; at least one trim of each size reaches it
       per_panel: 17
       murata_per_panel: 2
+    pickup:                    # field tag of the tag panel, hand fitted, read on PICKUP
+      d_mm: 10.0               # outer edge of the outer turn
+      turns: 4                 # in all, spread over the layers, in series
+      layers: 2                # the tag panel, tags.board_mm apart
+      track_mm: 0.2            # track and gap
     magnets:                   # D13: bought for the mockup, measured before lot 8
       material: "hard ferrite, one grade, axial"
       diameters_mm: [12.0, 15.0, 18.0]
@@ -703,3 +732,29 @@ hall_rfid:                     # alternative or intermediate layer, evaluated in
       boards_assembled: 2
       tag_panels: 5
       tag_panels_assembled: 2
+    criteria:                  # M12 to M14 (measurements/protocol.md): the numbers of the
+                               # bench and its acceptance that no other key holds
+      bringup_supply_limit_ma: [150.0, 400.0]   # lab supply on the 5V pads: first power,
+                                                # then once the readers are awake
+      nxp_version_reg: [0x91, 0x92]   # VersionReg values of the NXP chip (datasheet)
+      confidence: 0.95         # one-sided Clopper-Pearson bounds on read rates
+      hall_samples: 256        # Hall readings per point (M12a to M12c, M14)
+      scale_factor_range: [0.85, 1.15]   # M12a: measured over modelled field, per magnet
+      residual_max_pct: 5.0    # M12a: fit residual, staircase up to layout.lift_detect_mm
+      radius_resolution_mm: 0.5          # M12b: detection radius of one sensor
+      neighbor_field_tol_mT: 0.05        # M12c: neighbour field against the model
+      power_on_sweep_factor: 3.0         # M12d: ROW_EN delay swept to this times power_on_max_us
+      path_settle_us: 50.0     # M12d: mux selected this long before comparing the paths
+      path_offset_max_lsb: 1.0 # M12d: direct path against mux path
+      loop_l_tol_pct: 5.0      # bare loop inductance against the model, beyond: retune first
+      read_trials: 100         # reads per series (M13, M14)
+      read_trials_confirm: 300 # retained configuration (M13a), neighbours (M13b), M14a
+      read_target_rate: 1.0    # every read of a series must succeed
+      tx_pullup_ohm: 10000.0   # M13b: test pull-up from TX1 and TX2 to the 3.3 V rail
+      mux_emulation_rq_ohm: 51.0       # M13c: fitted at both Rq places of an L70x2 loop
+      mux_emulation_c_pF: 120.0        # M13c: across the loop
+      mux_emulation_i_tvdd_max_ma: 60.0   # M13c: conductance raised while TVDD stays below
+      read_time_max_ms: 10.0   # M13d: one square, complete ISO 14443A sequence
+      move_time_max_ms: 20.0   # M13d: from the Hall event to the UID
+      tag_drift_max_pct: 1.0   # M14a: tag resonance with and without its magnet
+      disturber_distances_mm: [5.0, 10.0, 20.0, 30.0]   # M14b: below the board bottom face

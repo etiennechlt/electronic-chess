@@ -4,6 +4,7 @@ separate, power and scan rate. Pinned from the yaml like the LC chain."""
 
 import math
 
+import numpy as np
 import pytest
 
 from chessboard_calc.config import BoardConfig, PieceType
@@ -11,13 +12,19 @@ from chessboard_calc.hall import (
     adc_lsb_mv,
     amplitude_classes,
     check,
+    covered_half_side_mm,
+    detection_radius_mm,
     disc_bz_axis_mT,
     disc_bz_mT,
+    farthest_offset_gap_mm,
     hall_budget,
     hall_power,
     hall_scan,
+    offset_coverage,
     piece_bz_mT,
+    possible_offset_mm,
     sensor_gap_mm,
+    sensor_index,
 )
 from chessboard_calc.physics import MU0_H_PER_M
 
@@ -166,3 +173,90 @@ def test_guards_fire(raw_config_dict):
     raw["hall_rfid"]["presence"]["hysteresis_fraction"] = 0.6
     with pytest.raises(ValueError):
         BoardConfig.model_validate(raw)
+
+
+def test_sensor_index_by_position_or_part(cfg):
+    assert sensor_index(cfg, 0) == 0
+    assert cfg.hall_rfid.sensors[sensor_index(cfg, "DRV5055A3")].part == "DRV5055A3"
+    with pytest.raises(KeyError):
+        sensor_index(cfg, "SS49E")
+    with pytest.raises(IndexError):
+        sensor_index(cfg, len(cfg.hall_rfid.sensors))
+
+
+def test_detection_radius_is_where_the_pawn_crosses_the_threshold(cfg):
+    # note 25, 2.4: the pawn at the maximum gap falls under the threshold
+    # 6.6 mm from the centre at p = 50, 5.7 mm at p = 40
+    for pitch, expected in ((50.0, 6.61), (40.0, 5.70)):
+        cov = offset_coverage(cfg, pitch)
+        assert cov.weakest == PieceType.PAWN
+        assert cov.detection_radius_mm == pytest.approx(expected, abs=0.02)
+        b = piece_bz_mT(cfg, PieceType.PAWN, pitch, cov.z_mm, cov.detection_radius_mm)
+        assert b == pytest.approx(cov.threshold_mT, rel=1e-6)
+        # one sensor covers the square inscribed in its disc
+        assert cov.covered_mm == pytest.approx(cov.detection_radius_mm / math.sqrt(2), rel=1e-9)
+    z_max = hall_budget(cfg, 50.0).z_max_mm
+    assert detection_radius_mm(cfg, PieceType.PAWN, 50.0, z_max, 1e3) == 0.0
+
+
+def test_presence_radius_does_not_depend_on_the_sensor(cfg):
+    # the threshold is set in mT, so every candidate sees the same offsets
+    radii = [offset_coverage(cfg, 50.0, i).detection_radius_mm
+             for i in range(len(cfg.hall_rfid.sensors))]
+    assert max(radii) - min(radii) < 1e-9
+
+
+def test_possible_offset_comes_from_the_smallest_base(cfg):
+    # a 17.5 mm pawn base in a 50 mm square (note 25: 16.25 mm), 13 mm at p = 40
+    assert possible_offset_mm(cfg, 50.0) == pytest.approx(16.25)
+    assert possible_offset_mm(cfg, 40.0) == pytest.approx(13.0)
+
+
+def test_cluster_coverage_closed_forms():
+    r = 6.6
+    for d in (3.0, 4.0, 6.0):
+        diagonals = ((0.0, 0.0), (d, d), (-d, d), (-d, -d), (d, -d))
+        expected = d + min(math.sqrt(r * r - d * d), r / math.sqrt(2))
+        assert covered_half_side_mm(diagonals, r) == pytest.approx(expected, abs=1e-9)
+        axes = ((0.0, 0.0), (d, 0.0), (-d, 0.0), (0.0, d), (0.0, -d))
+        expected = d / 2 + math.sqrt(r * r / 2 - d * d / 4)
+        assert covered_half_side_mm(axes, r) == pytest.approx(expected, abs=1e-9)
+    # the best diagonal offset is r / sqrt 2, where the corner and the axis
+    # midpoint bind together: sqrt 2 r, the centre sensor then redundant
+    d = r / math.sqrt(2)
+    best = ((d, d), (-d, d), (-d, -d), (d, -d))
+    assert covered_half_side_mm(best, r) == pytest.approx(math.sqrt(2) * r, abs=1e-9)
+    assert covered_half_side_mm(((10.0, 10.0),), 5.0) == 0.0
+    with pytest.raises(ValueError):
+        farthest_offset_gap_mm((), 1.0)
+
+
+def test_farthest_gap_matches_a_dense_grid():
+    positions = ((0.0, 0.0), (5.0, 1.0), (-3.0, 4.0), (2.0, -6.0), (-4.5, -2.5))
+    h = 7.0
+    axis = np.linspace(-h, h, 701)
+    gx, gy = np.meshgrid(axis, axis)
+    dist = np.min([np.hypot(gx - x, gy - y) for x, y in positions], axis=0)
+    exact = farthest_offset_gap_mm(positions, h)
+    assert exact >= dist.max() - 1e-9
+    assert exact - dist.max() < 2.0 * h / 700.0
+
+
+def test_the_mockup_cluster_on_the_whole_plateau(cfg):
+    # note 25, D6: five sensors per square would make 320 sensors and 20
+    # multiplexers; continuous scan in four groups (note 24 model): 216 mA
+    # and 26 h with the DRV5053OA, 480 mA and 16.5 h with the DRV5055A3,
+    # against 51 h without the Hall layer
+    expected = {"DRV5053OA": (216.0, 26.3), "DRV5055A3": (480.0, 16.5)}
+    for part, (current, hours) in expected.items():
+        hp = hall_power(cfg, True, sensor_index(cfg, part), sensors_per_square=5)
+        assert (hp.sensors, hp.muxes) == (320, 20)
+        assert hp.current_ma == pytest.approx(current)
+        assert hp.autonomy_h == pytest.approx(hours, abs=0.1)
+        assert hp.autonomy_without_h == pytest.approx(51.2, abs=0.1)
+    # one sensor per square stays the note 24 board: 64 sensors, 4 muxes
+    one = hall_power(cfg, True)
+    assert (one.sensors_per_square, one.sensors, one.muxes) == (1, 64, 4)
+    assert one.current_ma == pytest.approx(hall_power(cfg, True, 0, 1).current_ma)
+    with pytest.raises(ValueError):
+        hall_power(cfg, True, sensors_per_square=0)

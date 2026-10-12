@@ -14,6 +14,16 @@ magnet to the Hall plate. The nominal value derives from the stack
 (gap.air_gap_mm: air clearance, plywood and felt), the piece coil under
 the magnet when layout.magnet_above_coil is set, and the plate height
 inside the SOT-23 package.
+
+Off-centre pieces (note 25, paragraph 2, point 4): a sensor sees a piece
+while the off-axis field of its magnet stays above the presence
+threshold, so a sensor covers a disc of offsets around it, of the
+detection radius of the weakest piece at the maximum gap. A set of
+sensors covers the union of those discs; offset_coverage gives the
+half-side of the largest square of offsets, centred on the square,
+inside that union, computed exactly from the nearest-sensor distance
+(its maximum over a square sits at a corner, where a bisector of two
+sensors crosses an edge, or at a circumcentre of three).
 """
 
 from __future__ import annotations
@@ -22,6 +32,7 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
+from scipy.optimize import brentq
 from scipy.special import ellipe, ellipk
 
 from .config import BoardConfig, HallSensorCfg, PieceType, resolve_geometry
@@ -102,6 +113,19 @@ def piece_bz_mT(
 def adc_lsb_mv(cfg: BoardConfig) -> float:
     esp = cfg.hall_rfid.esp32
     return esp.adc_full_scale_mv / float(2**esp.adc_bits)
+
+
+def sensor_index(cfg: BoardConfig, sensor: int | str) -> int:
+    """Index in hall_rfid.sensors of a sensor given by index or part name."""
+    sensors = cfg.hall_rfid.sensors
+    if isinstance(sensor, int):
+        if not 0 <= sensor < len(sensors):
+            raise IndexError(sensor)
+        return sensor
+    parts = [s.part for s in sensors]
+    if sensor not in parts:
+        raise KeyError(sensor)
+    return parts.index(sensor)
 
 
 @dataclass(frozen=True)
@@ -284,13 +308,23 @@ class HallPower:
     power_w: float           # at the sensor rail, before regulation loss
     autonomy_h: float        # human vs human, the Hall layer added to the idle budget
     autonomy_without_h: float
+    sensors_per_square: int = 1
+    sensors: int = 0         # on the whole board
+    muxes: int = 0           # hall_rfid.mux parts that read them
 
 
-def hall_power(cfg: BoardConfig, gated: bool, sensor_index: int = 0) -> HallPower:
+def hall_power(
+    cfg: BoardConfig, gated: bool, sensor_index: int = 0, sensors_per_square: int = 1
+) -> HallPower:
+    """Sensor supply over the plateau; sensors_per_square above one is the
+    mockup cluster generalized (decision D6 of note 25)."""
+    if sensors_per_square < 1:
+        raise ValueError("at least one sensor per square")
     hr = cfg.hall_rfid
     sensor = hr.sensors[sensor_index]
     squares = cfg.plateau.grid**2
-    current = squares * sensor.i_supply_ma
+    sensors = squares * sensors_per_square
+    current = sensors * sensor.i_supply_ma
     if gated:
         current /= hr.power_gating.groups
     power = current * 1e-3 * sensor.supply_v
@@ -298,6 +332,9 @@ def hall_power(cfg: BoardConfig, gated: bool, sensor_index: int = 0) -> HallPowe
     idle = power_budget(cfg, engine_on=False).total_w
     with_hall = idle + power * (1.0 + cfg.power.regulation_loss_pct / 100.0)
     return HallPower(
+        sensors_per_square=sensors_per_square,
+        sensors=sensors,
+        muxes=math.ceil(sensors / hr.mux.channels),
         sensor=sensor,
         gated=gated,
         squares=squares,
@@ -328,6 +365,146 @@ def hall_scan(cfg: BoardConfig, gated: bool, sensor_index: int = 0) -> HallScan:
         board_us = per_mux * square_us
     return HallScan(gated=gated, square_us=square_us, board_ms=board_us * 1e-3,
                     rate_hz=1e6 / board_us)
+
+
+Point = tuple[float, float]
+
+
+def detection_radius_mm(
+    cfg: BoardConfig, piece: PieceType, pitch_mm: float, z_mm: float, threshold_mT: float
+) -> float:
+    """Largest offset at which one sensor still reads the piece above the
+    threshold; zero when even the centred piece stays below it."""
+
+    def excess(rho_mm: float) -> float:
+        return piece_bz_mT(cfg, piece, pitch_mm, z_mm, rho_mm) - threshold_mT
+
+    if excess(0.0) <= 0.0:
+        return 0.0
+    if excess(pitch_mm) >= 0.0:
+        raise ValueError("the threshold is not crossed within one pitch")
+    return float(brentq(excess, 0.0, pitch_mm, xtol=1e-9))
+
+
+def _bisector_crossings(a: Point, b: Point, h: float) -> list[Point]:
+    """Where the perpendicular bisector of a and b crosses the four edges
+    of the square [-h, h]^2 (the line n . q = c, n = 2 (b - a))."""
+    nx, ny = 2.0 * (b[0] - a[0]), 2.0 * (b[1] - a[1])
+    c = b[0] ** 2 + b[1] ** 2 - a[0] ** 2 - a[1] ** 2
+    out = []
+    for edge in (-h, h):
+        if ny != 0.0:
+            out.append((edge, (c - nx * edge) / ny))
+        if nx != 0.0:
+            out.append(((c - ny * edge) / nx, edge))
+    return out
+
+
+def _circumcentre(a: Point, b: Point, c: Point) -> Point | None:
+    det = 2.0 * ((b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1]))
+    if det == 0.0:
+        return None
+    sa, sb, sc = (p[0] ** 2 + p[1] ** 2 for p in (a, b, c))
+    ux = ((sb - sa) * (c[1] - a[1]) - (sc - sa) * (b[1] - a[1])) / det
+    uy = ((sc - sa) * (b[0] - a[0]) - (sb - sa) * (c[0] - a[0])) / det
+    return ux, uy
+
+
+def farthest_offset_gap_mm(positions: tuple[Point, ...], half_side_mm: float) -> float:
+    """Largest distance from a point of the square [-h, h]^2 to its nearest
+    sensor. Inside each nearest-sensor cell the distance is convex, so
+    the maximum sits at a vertex of a cell clipped by the square: a
+    corner, a bisector crossing an edge, or a circumcentre of three
+    sensors. Evaluating the true nearest distance at a superset of those
+    points inside the square gives the maximum exactly."""
+    h = half_side_mm
+    pts = tuple(dict.fromkeys(positions))
+    if not pts:
+        raise ValueError("need at least one sensor position")
+    candidates: list[Point] = [(sx * h, sy * h) for sx in (-1.0, 1.0) for sy in (-1.0, 1.0)]
+    for i, a in enumerate(pts):
+        for j in range(i + 1, len(pts)):
+            candidates.extend(_bisector_crossings(a, pts[j], h))
+            for k in range(j + 1, len(pts)):
+                centre = _circumcentre(a, pts[j], pts[k])
+                if centre is not None:
+                    candidates.append(centre)
+    tol = 1e-9 * max(1.0, h)
+    inside = [q for q in candidates if abs(q[0]) <= h + tol and abs(q[1]) <= h + tol]
+    return max(min(math.dist(q, s) for s in pts) for q in inside)
+
+
+def covered_half_side_mm(positions: tuple[Point, ...], radius_mm: float) -> float:
+    """Half-side of the largest square of offsets, centred on the square,
+    whose every point lies within radius_mm of at least one sensor."""
+    if radius_mm <= 0.0 or farthest_offset_gap_mm(positions, 0.0) > radius_mm:
+        return 0.0
+    lo, hi = 0.0, max(max(abs(x), abs(y)) for x, y in positions) + radius_mm
+    for _ in range(60):
+        mid = 0.5 * (lo + hi)
+        if farthest_offset_gap_mm(positions, mid) <= radius_mm:
+            lo = mid
+        else:
+            hi = mid
+    return lo
+
+
+def possible_offset_mm(cfg: BoardConfig, pitch_mm: float) -> float:
+    """Largest offset, on either axis, of the smallest base kept on its square."""
+    geo = resolve_geometry(cfg, pitch_mm)
+    smallest = min(c.base_mm for c in geo.classes.values())
+    return (pitch_mm - smallest) / 2.0
+
+
+@dataclass(frozen=True)
+class OffsetCoverage:
+    pitch_mm: float
+    sensor: HallSensorCfg
+    z_mm: float                          # maximum stack, where presence is weakest
+    threshold_mT: float
+    radius_mm: dict[PieceType, float]    # detection radius of one sensor, per piece
+    weakest: PieceType                   # the piece seen over the smallest radius
+    detection_radius_mm: float           # that radius, the one the coverage uses
+    positions_mm: tuple[Point, ...]      # sensors, from the square centre
+    covered_mm: float                    # half-side of the square of offsets covered
+    possible_mm: float                   # largest offset of the smallest base on its square
+    admissible_mm: float                 # layout.admissible_offset_mm (D14)
+
+    @property
+    def ok(self) -> bool:
+        return self.covered_mm >= self.admissible_mm
+
+
+def offset_coverage(
+    cfg: BoardConfig,
+    pitch_mm: float,
+    sensor: int | str = 0,
+    positions: tuple[Point, ...] | None = None,
+) -> OffsetCoverage:
+    """Detection radius of one sensor and the square of piece offsets a set
+    of sensors covers (default: one sensor at the centre), compared with
+    the admissible offset of a piece set down by hand."""
+    idx = sensor_index(cfg, sensor)
+    budget = hall_budget(cfg, pitch_mm, idx)
+    pos = ((0.0, 0.0),) if positions is None else tuple(positions)
+    radii = {
+        piece: detection_radius_mm(cfg, piece, pitch_mm, budget.z_max_mm, budget.threshold_mT)
+        for piece in PieceType
+    }
+    weakest = min(radii, key=radii.__getitem__)
+    return OffsetCoverage(
+        pitch_mm=pitch_mm,
+        sensor=budget.sensor,
+        z_mm=budget.z_max_mm,
+        threshold_mT=budget.threshold_mT,
+        radius_mm=radii,
+        weakest=weakest,
+        detection_radius_mm=radii[weakest],
+        positions_mm=pos,
+        covered_mm=covered_half_side_mm(pos, radii[weakest]),
+        possible_mm=possible_offset_mm(cfg, pitch_mm),
+        admissible_mm=cfg.hall_rfid.layout.admissible_offset_mm,
+    )
 
 
 def check(cfg: BoardConfig, pitch_mm: float | None = None) -> list[str]:
