@@ -32,6 +32,7 @@ from quadgen.connect import (
     ground_drops,
     net_pieces,
     pad_copper,
+    pour_pieces,
     stub_copper,
     track_cells,
     trim_corridors,
@@ -49,8 +50,8 @@ from quadgen.escape import (
 )
 from quadgen.router import MultiRouter
 from quadgen.strip import courtyard, courtyard_box, placed_box
-from shapely.geometry import LineString, Point
-from shapely.ops import nearest_points
+from shapely.geometry import LineString, Point, box
+from shapely.ops import nearest_points, unary_union
 from shapely.strtree import STRtree
 
 LAYERS4 = ["F.Cu", "In1.Cu", "In2.Cu", "B.Cu"]
@@ -101,6 +102,10 @@ class Spec:
     gnd_layer: str = "B.Cu"  # ground pour
     power_nets: tuple[str, ...] = ()
     outer_cost: float = 1.2
+    # (x0, y0, x1, y1) of the ground pour when it must not cover the board
+    # (a board whose play area carries NFC loops: no ground copper near
+    # them); None pours the whole board inside the edge clearance
+    pour_region: tuple[float, float, float, float] | None = None
 
 
 @dataclass
@@ -205,6 +210,12 @@ class GenericBoard:
         self.exit_layer = "In2.Cu" if "In2.Cu" in self.layers else self.layers[-1]
         self.keepouts: list[tuple[float, float, float]] = []  # x, y, radius, all layers
         self.keepout_rects: list[tuple[float, float, float, float, str]] = []  # x0 y0 x1 y1 name
+        # rectangles the router may not enter, on every layer, without a
+        # rule area on the board: copper drawn by hand lives there (the
+        # turns of an NFC loop and the sensors inside them)
+        self.router_blocks: list[tuple[float, float, float, float, str]] = []
+        # net ties: reference -> the nets its touching pads may short
+        self.ties: dict[str, frozenset[str]] = {}
 
     # ------------------------------------------------------------ emitters
     def track(self, net: str, layer: str, pts, width: float) -> Track:
@@ -251,6 +262,15 @@ class GenericBoard:
         self.board.npth_hole(x, y, d, ref=ref)
         self.res.holes.append((x, y, d))
 
+    def fiducial(self, x: float, y: float, lib_id: str, ref: str) -> None:
+        """A fiducial mark from the library, outside the circuit: copper the
+        router keeps clear of, nothing to source or place."""
+        fp = load_footprint(lib_id)
+        self.board.body.append(place_footprint(fp, ref, "Fiducial", x, y, 0.0, {}))
+        for pad in fp.pads:
+            px, py = pad_abs_pos(x, y, 0.0, pad)
+            self.keepouts.append((px, py, max(pad.size) / 2.0 + self.spec.clearance + 0.1))
+
     def footprint(self, comp) -> Footprint:
         """The component's footprint, its courtyard replaced when overridden."""
         fp = load_footprint(comp.part.footprint)
@@ -272,6 +292,8 @@ class GenericBoard:
         for comp in self.circuit.components:
             x, y, rot = self.placements[comp.ref]
             fp = self.footprint(comp)
+            if "net_tie_pad_groups" in fp.raw:
+                self.ties[comp.ref] = frozenset(comp.pins.values())
             nets = {num: (self.board.net(n), n) for num, n in comp.pins.items()}
             self.board.body.append(place_footprint(fp, comp.ref, comp.value, x, y, rot, nets))
             for pad in fp.pads:
@@ -382,7 +404,7 @@ class GenericBoard:
             mr.keepout(hx, hy, hd / 2.0 + 0.3 + sp.clearance + 0.1)
         for x, y, r in self.keepouts:
             mr.keepout(x, y, r)
-        for x0, y0, x1, y1, _name in self.keepout_rects:
+        for x0, y0, x1, y1, _name in self.keepout_rects + self.router_blocks:
             # owned by a net nobody routes: blocked for every real net
             mr.rect("__keepout__", self.layers, (x0 + x1) / 2, (y0 + y1) / 2, x1 - x0, y1 - y0)
         claim_stubs(mr, self.stubs, exit_layer=self.exit_layer)
@@ -392,6 +414,31 @@ class GenericBoard:
         """Copper-free rule area on every layer (antenna of a radio module)."""
         self.keepout_rects.append((x0, y0, x1, y1, name))
         self.board.keepout_zone(self.layers, [(x0, y0), (x1, y0), (x1, y1), (x0, y1)], name)
+
+    def router_block(self, x0: float, y0: float, x1: float, y1: float, name: str) -> None:
+        """A rectangle the router never enters, on every layer; the copper
+        drawn by hand inside it (seeds) keeps its own cells. No rule area
+        is written: the board carries copper there."""
+        self.router_blocks.append((x0, y0, x1, y1, name))
+
+    def pour_rect(self) -> tuple[float, float, float, float]:
+        """The rectangle of the ground pour: the spec's region, else the
+        board inside its edge clearance."""
+        if self.spec.pour_region is not None:
+            return self.spec.pour_region
+        e, sp = self.spec.edge_clearance, self.spec
+        return (e, e, sp.width - e, sp.height - e)
+
+    def pour_islands(self, gnd: str):
+        """The polygons the ground pour fills, as KiCad fills them: the pour
+        rectangle less the copper of the other nets on its layer, the rule
+        areas and the holes, with their clearance; the necks under the
+        filler's minimum width pinched off (quadgen.connect.pour_pieces)."""
+        sp = self.spec
+        region = box(*self.pour_rect())
+        foreign = [g for net, la, g in self._copper_items() if la == sp.gnd_layer and net != gnd]
+        foreign += [box(x0, y0, x1, y1) for x0, y0, x1, y1, _n in self.keepout_rects]
+        return unary_union(pour_pieces(region, foreign, sp.clearance + 0.1))
 
     def route_all(
         self,
@@ -610,7 +657,35 @@ class GenericBoard:
                 int(round(POUR_REACH_MM / sp.grid)),
                 functools.partial(attempt, gnd, drop=True),
                 self.res.open_nets,
+                within=sp.pour_region,
             )
+            if sp.pour_region is not None:
+                # a bounded pour: the ground pieces away from it (sensors
+                # inside an NFC loop) are routed to a piece that reaches it,
+                # like any signal, instead of waiting for a drop they cannot get
+                x0, y0, x1, y1 = sp.pour_region
+
+                def on_pour(pc):
+                    # a piece inside the pour's rectangle, on any layer: its
+                    # drop reaches the pour, or the pour's own copper does
+                    return any(
+                        x0 <= ref.x0 + i * ref.grid <= x1 and y0 <= ref.y0 + j * ref.grid <= y1
+                        for cs in pc.cells.values()
+                        for i, j in cs
+                    )
+
+                gnd_pieces = pieces_of.get(gnd, [])
+                anchored = [pc for pc in gnd_pieces if on_pour(pc)]
+                goals: dict[str, set] = {}
+                for pc in anchored:
+                    for la, cs in pc.cells.items():
+                        goals.setdefault(la, set()).update(cs)
+                for pc in gnd_pieces:
+                    if on_pour(pc) or not anchored:
+                        continue
+                    out = attempt(gnd, {la: set(cs) for la, cs in pc.cells.items()}, goals)
+                    if isinstance(out, str):
+                        self.res.open_nets.append(f"{gnd}: {pc.label} off the pour: {out}")
             self.res.routed_nets += 1
         for net in order:
             pieces = pieces_of[net]
@@ -625,7 +700,11 @@ class GenericBoard:
     def _nets_in_pieces(self, gnd: str) -> set[str]:
         """The nets the exact connectivity check finds in pieces now."""
         sp = self.spec
-        pours = {gnd: sp.gnd_layer} if sp.gnd_layer in self.layers else None
+        pours = None
+        if sp.gnd_layer in self.layers:
+            pours = {gnd: sp.gnd_layer}
+            if sp.pour_region is not None:
+                pours = {gnd: (sp.gnd_layer, self.pour_islands(gnd))}
         lines = connectivity_check(
             self.res.tracks, self.res.vias, self.res.pads, self.layers, pours=pours
         )
@@ -748,12 +827,12 @@ class GenericBoard:
 
     def _gnd_pour(self, gnd: str) -> None:
         sp = self.spec
-        e = sp.edge_clearance
+        x0, y0, x1, y1 = self.pour_rect()
         self.board.zone(
             self.board.net(gnd),
             gnd,
             sp.gnd_layer,
-            [(e, e), (sp.width - e, e), (sp.width - e, sp.height - e), (e, sp.height - e)],
+            [(x0, y0), (x1, y0), (x1, y1), (x0, y1)],
             clearance_mm=sp.clearance + 0.1,
         )
 
@@ -818,20 +897,25 @@ class GenericBoard:
         for v in self.res.vias:
             for layer in self.layers:
                 items.append((v.net, layer, Point(v.x, v.y).buffer(v.pad / 2.0)))
+        tied: dict[int, str] = {}  # item index -> reference of its net tie footprint
         for p in self.res.pads:
             layers = self.layers if p.layer == "*.Cu" else [p.layer]
             g = pad_copper(p)
             for layer in layers:
+                if p.ref in self.ties:
+                    tied[len(items)] = p.ref
                 items.append((p.net or f"__nc_{p.ref}_{p.number}", layer, g))
         for hx, hy, hd in self.res.holes:
             for layer in self.layers:
                 items.append(("__hole__", layer, Point(hx, hy).buffer(hd / 2.0 + 0.3)))
         errors = []
         by_layer: dict[str, list] = {}
-        for it in items:
-            by_layer.setdefault(it[1], []).append(it)
+        for k, it in enumerate(items):
+            by_layer.setdefault(it[1], []).append((k, it))
         clr = sp.clearance - CHECK_SLOP_MM
-        for layer, its in by_layer.items():
+        for layer, keyed in by_layer.items():
+            its = [it for _k, it in keyed]
+            keys = [k for k, _it in keyed]
             geoms = [g for _n, _l, g in its]
             tree = STRtree(geoms)
             for i, (net, _l, g) in enumerate(its):
@@ -841,6 +925,9 @@ class GenericBoard:
                         continue
                     if net.startswith("__") and its[j][0].startswith("__"):
                         continue  # a footprint's own unconnected pads around its holes
+                    ref = tied.get(keys[i])
+                    if ref is not None and ref == tied.get(keys[j]):
+                        continue  # the touching pads of a net tie (KiCad: net_tie_pad_groups)
                     d = g.distance(geoms[j])
                     if d < clr:
                         c = nearest_points(g, geoms[j])[0]
@@ -873,7 +960,10 @@ class GenericBoard:
             small_via=(FANOUT_VIA_PAD_MM, FANOUT_VIA_DRILL_MM),
         )
         keepouts = [(x0, y0, x1, y1) for x0, y0, x1, y1, _name in self.keepout_rects]
-        pour = (sp.gnd_layer, None) if sp.gnd_layer in self.layers else None
+        pour = None
+        if sp.gnd_layer in self.layers:
+            islands = None if sp.pour_region is None else self.pour_islands(gnd)
+            pour = (sp.gnd_layer, islands)
         log: list[str] = []
         for nets in (None, [gnd]):
             tracks = [(t.net, t.layer, t.width, t.pts) for t in self.res.tracks]
@@ -931,7 +1021,11 @@ class GenericBoard:
         gnd = getattr(self, "_gnd", "GND")
         self.finish_routes(gnd)
         self.res.clearance_errors = self.clearance_check()
-        pours = {gnd: sp.gnd_layer} if sp.gnd_layer in self.layers else None
+        pours = None
+        if sp.gnd_layer in self.layers:
+            pours = {gnd: sp.gnd_layer}
+            if sp.pour_region is not None:
+                pours = {gnd: (sp.gnd_layer, self.pour_islands(gnd))}
         self.res.unconnected = connectivity_check(
             self.res.tracks, self.res.vias, self.res.pads, self.layers, pours=pours
         )

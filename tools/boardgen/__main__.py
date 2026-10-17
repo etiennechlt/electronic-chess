@@ -31,6 +31,9 @@ def _register():
         BOARDS["bench"] = (bench.build_bench, bench.SPEC, bench.schematic_groups)
     except ImportError:
         pass
+    from . import hallrfid
+
+    BOARDS["hallrfid-demo"] = (hallrfid.build_hallrfid, hallrfid.SPEC, hallrfid.schematic_groups)
 
 
 def write_outputs(result: Result, groups, out: Path, render: str | None) -> None:
@@ -82,7 +85,7 @@ def main(argv: list[str] | None = None) -> int:
         result = GenericBoard.resume(args.resume)
     else:
         result = fn(cfg)
-    out = Path(args.out) if args.out else Path("hardware") / args.board
+    out = Path(args.out) if args.out else Path("hardware") / result.spec.name
     write_outputs(result, groups_fn(), out, args.render)
     return 1 if (result.open_nets or result.clearance_errors) else 0
 
