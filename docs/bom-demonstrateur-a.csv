@@ -1,0 +1,37 @@
+Family,Value,Footprint,MPN,LCSC,bobines,analogique,Total,Buy,LCSC_USD,Mouser,Mouser_USD,Cheapest,Line_USD,Status,LCSC_link,Mouser_link
+resistor,100k,R_0603_1608Metric,,,0,13,13,15,0.0050,,0.1000,lcsc,0.0750,estimated,,https://www.mouser.fr/c/?q=100k%200603
+resistor,10k,R_0603_1608Metric,,,0,10,10,12,0.0050,,0.1000,lcsc,0.0600,estimated,,https://www.mouser.fr/c/?q=10k%200603
+diode,BAV99,SOT-23,BAV99,C2500,0,9,9,10,0.0200,771-BAV99-T/R,0.1500,lcsc,0.2000,estimated,https://www.lcsc.com/product-detail/C2500.html,https://www.mouser.fr/ProductDetail/771-BAV99-T%2FR
+resistor,330R,R_0603_1608Metric,,,0,8,8,9,0.0050,,0.1000,lcsc,0.0450,estimated,,https://www.mouser.fr/c/?q=330R%200603
+capacitor,100n,C_0603_1608Metric,,,0,7,7,8,0.0100,,0.1200,lcsc,0.0800,estimated,,https://www.mouser.fr/c/?q=100n%200603
+transistor,AO3400A,SOT-23,AO3400A,C20917,0,5,5,6,0.0400,785-AO3400A,0.3000,lcsc,0.2400,estimated,https://www.lcsc.com/product-detail/C20917.html,https://www.mouser.fr/ProductDetail/785-AO3400A
+transistor,AO3401A,SOT-23,AO3401A,C15127,0,5,5,6,0.0520,785-AO3401A,0.3000,lcsc,0.3120,estimated,https://www.lcsc.com/product-detail/C15127.html,https://www.mouser.fr/ProductDetail/785-AO3401A
+diode,SS34,D_SMA,SS34,C8678,0,5,5,6,0.0400,833-SS34,0.3000,lcsc,0.2400,estimated,https://www.lcsc.com/product-detail/C8678.html,https://www.mouser.fr/ProductDetail/833-SS34
+resistor,680R,R_0805_2012Metric,,,0,4,4,5,0.0100,,0.1000,lcsc,0.0500,estimated,,https://www.mouser.fr/c/?q=680R%200805
+diode,B5819W,D_SOD-123,B5819W,C8598,0,4,4,5,0.0300,,0.2500,lcsc,0.1500,estimated,https://www.lcsc.com/product-detail/C8598.html,https://www.mouser.fr/c/?q=B5819W
+resistor,1k,R_0603_1608Metric,,,0,3,3,4,0.0050,,0.1000,lcsc,0.0200,estimated,,https://www.mouser.fr/c/?q=1k%200603
+capacitor,1n,C_0603_1608Metric,,,0,3,3,4,0.0100,,0.1200,lcsc,0.0400,estimated,,https://www.mouser.fr/c/?q=1n%200603
+capacitor,1u,C_0603_1608Metric,,,0,3,3,4,0.0100,,0.1200,lcsc,0.0400,estimated,,https://www.mouser.fr/c/?q=1u%200603
+capacitor,330p,C_0603_1608Metric,,,0,2,2,3,0.0100,,0.1200,lcsc,0.0300,estimated,,https://www.mouser.fr/c/?q=330p%200603
+resistor,590R,R_0603_1608Metric,,,0,2,2,3,0.0050,,0.1000,lcsc,0.0150,estimated,,https://www.mouser.fr/c/?q=590R%200603
+resistor,750R,R_0603_1608Metric,,,0,2,2,3,0.0050,,0.1000,lcsc,0.0150,estimated,,https://www.mouser.fr/c/?q=750R%200603
+resistor,787R,R_0603_1608Metric,,,0,2,2,3,0.0050,,0.1000,lcsc,0.0150,estimated,,https://www.mouser.fr/c/?q=787R%200603
+ic,OPA2810,SOIC-8_3.9x4.9mm_P1.27mm,OPA2810IDR,C2059830,0,2,2,3,,595-OPA2810IDR,5.4800,mouser,16.4400,estimated,https://www.lcsc.com/product-detail/C2059830.html,https://www.mouser.fr/ProductDetail/595-OPA2810IDR
+resistor,10R,R_2512_6332Metric,,,0,1,1,2,0.0500,,0.3000,lcsc,0.1000,estimated,,https://www.mouser.fr/c/?q=10R%202512
+capacitor,10n,C_0603_1608Metric,,,0,1,1,2,0.0100,,0.1200,lcsc,0.0200,estimated,,https://www.mouser.fr/c/?q=10n%200603
+capacitor,10u/10V,C_1206_3216Metric,,,0,1,1,2,0.0300,,0.2500,lcsc,0.0600,estimated,,https://www.mouser.fr/c/?q=10u%2F10V%201206
+capacitor,10u/25V,C_1206_3216Metric,,,0,1,1,2,0.0300,,0.2500,lcsc,0.0600,estimated,,https://www.mouser.fr/c/?q=10u%2F25V%201206
+resistor,20k5,R_0603_1608Metric,,,0,1,1,2,0.0050,,0.1000,lcsc,0.0100,estimated,,https://www.mouser.fr/c/?q=20k5%200603
+capacitor,2u2,C_0603_1608Metric,,,0,1,1,2,0.0100,,0.1200,lcsc,0.0200,estimated,,https://www.mouser.fr/c/?q=2u2%200603
+resistor,3.57k,R_0603_1608Metric,,,0,1,1,2,0.0050,,0.1000,lcsc,0.0100,estimated,,https://www.mouser.fr/c/?q=3.57k%200603
+capacitor,47u/25V,CP_Elec_6.3x7.7,,,0,1,1,2,0.1000,,0.4000,lcsc,0.2000,estimated,,https://www.mouser.fr/c/?q=47u%2F25V%20Elec
+resistor,49R9,R_0603_1608Metric,,,0,1,1,2,0.0050,,0.1000,lcsc,0.0100,estimated,,https://www.mouser.fr/c/?q=49R9%200603
+resistor,523R,R_0603_1608Metric,,,0,1,1,2,0.0050,,0.1000,lcsc,0.0100,estimated,,https://www.mouser.fr/c/?q=523R%200603
+jumper,5VA: 1 buck / 3 LDO,PinHeader_1x03_P2.54mm_Vertical,,,0,1,1,2,0.1000,,0.3000,lcsc,0.2000,estimated,,https://www.mouser.fr/c/?q=5VA%3A%201%20buck%20%2F%203%20LDO%201x03
+ic,74HC4052,TSSOP-16_4.4x5mm_P0.65mm,74HCT4052PW,C57078,0,1,1,2,0.1510,771-74HCT4052PW118,0.6000,lcsc,0.3020,estimated,https://www.lcsc.com/product-detail/C57078.html,https://www.mouser.fr/ProductDetail/771-74HCT4052PW118
+ic,AD8421,SOIC-8_3.9x4.9mm_P1.27mm,AD8421ARZ,C392903,0,1,1,2,3.6908,584-AD8421ARZ,8.9100,lcsc,7.3816,verified,https://www.lcsc.com/product-detail/C392903.html,https://www.mouser.fr/ProductDetail/584-AD8421ARZ
+connector,COIL JOINT,PinHeader_1x12_P2.54mm_Vertical,,,0,1,1,2,0.1000,,0.3000,lcsc,0.2000,estimated,,https://www.mouser.fr/c/?q=COIL%20JOINT%201x12
+connector,12V,BarrelJack_Horizontal,DC-005-5.5x2.1,C381118,0,1,1,2,0.2000,,0.8000,lcsc,0.4000,estimated,https://www.lcsc.com/product-detail/C381118.html,https://www.mouser.fr/c/?q=DC-005-5.5x2.1
+ic,LP2985-5.0,SOT-23-5,LP2985AIM5-5.0,C129541,0,1,1,2,0.1650,926-LP2985AIM5-5.0NOPB,0.6000,lcsc,0.3300,estimated,https://www.lcsc.com/product-detail/C129541.html,https://www.mouser.fr/ProductDetail/926-LP2985AIM5-5.0NOPB
+connector,MCU,PinHeader_2x10_P2.54mm_Vertical,,,0,1,1,2,0.1000,,0.3000,lcsc,0.2000,estimated,,https://www.mouser.fr/c/?q=MCU%202x10
+diode,SMBJ15A,D_SMB,SMBJ15A,C113962,0,1,1,2,0.1000,576-SMBJ15A,0.4000,lcsc,0.2000,estimated,https://www.lcsc.com/product-detail/C113962.html,https://www.mouser.fr/ProductDetail/576-SMBJ15A
