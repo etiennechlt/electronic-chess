@@ -456,7 +456,7 @@ def demo_spec(cfg: BoardConfig) -> Spec:
         via_pad=0.8,
         via_drill=0.4,
         gnd_layer="In1.Cu" if dm.board.layers == 4 else "B.Cu",
-        power_nets=("VBUS", "3V3", "HALL_VCC"),
+        power_nets=("3V3", "HALL_VCC"),  # VBUS: a short run under 0.5 A, thin like a signal
         pour_region=lay.pour,
     )
 
@@ -512,7 +512,7 @@ def _stack_right(out, refs, ckt, x0, x1, y0):
     return bottom
 
 
-ROW_GAP_MM = 0.4  # between two stacked groups of parts
+ROW_GAP_MM = 0.8  # between two stacked groups of parts: a track and its clearance pass
 ROW_PITCH_MM = 2.2  # the matching capacitors: 1.2 mm between two 0603 pads, a via fits
 NEAR_SHELF_MM = 15.5  # the decoupling shelf east of a reader chip reaches this far from it
 
@@ -559,8 +559,9 @@ def hallrfid_placements(
         cx = (x0 + x1) / 2.0
         y_f = lp.outline[3]  # outer copper edge, south side
         rq_y = y_f + 2.6
-        out[f"R{n}22"] = (cx - 1.2, rq_y, 270.0)  # west branch: loop end 1
-        out[f"R{n}12"] = (cx + 1.2, rq_y, 270.0)  # east branch: loop end 2
+        # pad 2 (the loop end) on top, where the loop's feed arrives
+        out[f"R{n}22"] = (cx - 1.2, rq_y, 90.0)  # west branch: loop end 1
+        out[f"R{n}12"] = (cx + 1.2, rq_y, 90.0)  # east branch: loop end 2
         # one row per branch, inner to outer: C1 main, trim, spare, C2 main,
         # trim, spare, C0; upright 0603 at a pitch that leaves a via and its
         # clearance between two neighbours (the nets of the row alternate
@@ -609,21 +610,21 @@ def hallrfid_placements(
     _stack(out, ["C21", "C22", "C23", "C24", "C25", "C26"], ckt, 8.0, 25.5, 75.5)
     b = _stack(out, ["R31", "C31", "R32", "R33", "R34", "R35", "C32"], ckt, 24.5, 36.0, 67.0)
     _stack(out, ["Q1", "R41", "JP1", "C41", "C42", "TP4"], ckt, 24.5, 36.0, b + ROW_GAP_MM)
-    out["J4"] = (3.6, 70.0, 0.0)  # 2 x 10, pins run south
+    out["J4"] = (3.6, 69.5, 0.0)  # 2 x 10, pins run south, clear of the corner hole
     _stack(out, ["TP1", "TP2", "TP3", "TP7"], ckt, 8.0, 16.0, 79.0)
     out["J3"] = (12.0, 96.5, 90.0)  # 1 x 6 along the south edge, pin 1 west
     # ---- strip, centre: buffer, regulator, USB-C on the south edge with its protection west
-    b = _stack(out, ["U7", "C71", "R71"], ckt, 37.0, 48.5, 67.0)
-    _stack(out, ["U6", "C61", "C62", "C63"], ckt, 40.0, 60.0, b + ROW_GAP_MM)
+    _stack(out, ["U7", "C71", "R71"], ckt, 37.0, 48.5, 67.0)
+    _stack(out, ["U6", "C61", "C62", "C63"], ckt, 49.0, 58.5, 67.0)
     _stack(out, ["R61", "U5", "R62"], ckt, 36.5, 44.5, 88.5)
     out["J1"] = (47.0, 90.85, 0.0)
     out["J2"] = (30.0, 95.0, 90.0)
     # ---- strip, east: the module, its antenna on the east edge
-    ux, uy = 87.0, 79.0
+    ux, uy = 87.0, 80.0
     out["U4"] = (ux, uy, 270.0)
     b = _stack(out, ["C51", "C52", "R51", "C53", "R52"], ckt, 59.0, 73.5, 71.0)
     _stack(out, ["D1", "R53", "C54", "TP5", "TP6"], ckt, 59.0, 73.5, b + ROW_GAP_MM)
-    _stack(out, ["SW1", "SW2"], ckt, 74.0, 98.0, 90.0, upright=False)
+    _stack(out, ["SW1", "SW2"], ckt, 69.5, 93.0, 91.0, upright=False)  # clear of the corner hole
     out["J5"] = (62.0, 96.5, 90.0)
     return out
 
@@ -652,8 +653,12 @@ def hand_routes(gb: GenericBoard, cfg: BoardConfig, lay: DemoLayout) -> None:
     pads = {(p.ref, p.number): p for p in gb.res.pads}
     for n, sq in enumerate(cfg.hall_rfid.demo.squares(), start=1):
         d = draw[sq]
-        west = pads[(f"R{n}22", "1")]
-        east = pads[(f"R{n}12", "1")]
+        west = pads[(f"R{n}22", "2")]
+        east = pads[(f"R{n}12", "2")]
+        if {west.net, east.net} != {f"LOOP_{sq}_1", f"LOOP_{sq}_2"}:
+            raise ValueError(f"the loop of {sq} expects pad 2 of its damping resistors")
+        if west.y > pads[(f"R{n}22", "1")].y or east.y > pads[(f"R{n}12", "1")].y:
+            raise ValueError(f"the loop ends of {sq} must be the upper pads of Rq")
         seed_loop(gb, d, f"LOOP_{sq}_1", f"LOOP_{sq}_2", (west.x, west.y), (east.x, east.y))
 
 

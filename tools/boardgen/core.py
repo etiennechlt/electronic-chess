@@ -593,11 +593,17 @@ class GenericBoard:
             mr = routers["power"] if power else routers["signal"]
             width = sp.power_track if power else sp.track
             budget = 120_000 if drop else max_nodes
+            starts0, goals0 = starts, goals
             starts, goals = legal(mr, net, starts), legal(mr, net, goals)
-            found = mr.route(net, starts, goals, max_nodes=budget)
+            found = None
+            if any(starts.values()) and any(goals.values()):
+                found = mr.route(net, starts, goals, max_nodes=budget)
             if found is None and power:
-                # a wide track cannot reach a fine-pitch pad: finish thin
+                # a wide track cannot reach a fine-pitch pad (the wide
+                # lattice may leave it no legal cell at all): finish thin,
+                # the cells legal on the thin lattice
                 mr, width = routers["signal"], sp.track
+                starts, goals = legal(mr, net, starts0), legal(mr, net, goals0)
                 found = mr.route(net, starts, goals, max_nodes=max_nodes)
             if found is None:
                 return (
