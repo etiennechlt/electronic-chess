@@ -48,3 +48,9 @@ jobs:
           cc -Wall -Wextra -Werror -Ifirmware/esp32/hallscan/main \
             firmware/esp32/hallscan/test/test_hallscan.c firmware/esp32/hallscan/main/hallscan.c \
             -o /tmp/test_hallscan && /tmp/test_hallscan
+      - name: Host test of the Hall plus RFID demonstrator firmware
+        run: |
+          cc -Wall -Wextra -Werror -Ifirmware/esp32/hallrfid-demo/main \
+            firmware/esp32/hallrfid-demo/test/test_hallrfid_demo.c \
+            firmware/esp32/hallrfid-demo/main/mfrc522.c firmware/esp32/hallrfid-demo/main/hall.c \
+            -o /tmp/test_hallrfid_demo && /tmp/test_hallrfid_demo
