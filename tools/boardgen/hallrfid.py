@@ -458,6 +458,7 @@ def demo_spec(cfg: BoardConfig) -> Spec:
         gnd_layer="In1.Cu" if dm.board.layers == 4 else "B.Cu",
         power_nets=("3V3", "HALL_VCC"),  # VBUS: a short run under 0.5 A, thin like a signal
         pour_region=lay.pour,
+        h_weight=2.5,  # long routes from the loops to the far side of the strip: greedy search
     )
 
 

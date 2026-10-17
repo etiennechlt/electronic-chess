@@ -418,6 +418,16 @@ def ground_drops(
     for pc in pieces:
         if layer in pc.cells:
             continue
+        if within is not None:
+            # a piece away from the pour owes no drop: it is routed to a
+            # piece that reaches the pour, like a signal
+            x0, y0, x1, y1 = within
+            if not any(
+                x0 <= mr.x0 + i * mr.grid <= x1 and y0 <= mr.y0 + j * mr.grid <= y1
+                for cs in pc.cells.values()
+                for i, j in cs
+            ):
+                continue
         free = (mr.own[layer] == mr.FREE) | (mr.own[layer] == n)
         free &= (mr.own_via[layer] == mr.FREE) | (mr.own_via[layer] == n)
         free = erode(free, reach)

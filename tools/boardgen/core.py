@@ -106,6 +106,10 @@ class Spec:
     # (a board whose play area carries NFC loops: no ground copper near
     # them); None pours the whole board inside the edge clearance
     pour_region: tuple[float, float, float, float] | None = None
+    # weight of the router's heuristic: above 1 the search is greedier,
+    # faster and its routes a little longer; a board whose long routes
+    # cross a maze of vias and blocks spends its budget at 1.3
+    h_weight: float = 1.3
 
 
 @dataclass
@@ -375,7 +379,7 @@ class GenericBoard:
             track_half=track_half,
             outer_cost=sp.outer_cost,
             plane_layers=(sp.gnd_layer,) if len(self.layers) > 2 else (),
-            h_weight=1.3,
+            h_weight=sp.h_weight,
         )
         m = int(sp.edge_clearance / sp.grid) + 3
         for la in self.layers:
