@@ -9,18 +9,21 @@ of the turn centrelines (outer first):
 - the top-side polyline starts on the south side, feed_offset west of
   the centre, runs west, north, east and south around turn 0, steps in
   to the south level of turn 1 on the east side, and so on, and ends on
-  the inner south side just past pad 1 of the net tie footprint
-  (hallrfid:NetTie_NFC_Loop), which sits bridge_offset east of the
-  centre; this copper is the net of the loop's first end;
-- a via on pad 2 of the tie, a bridge on the back layer straight south
-  under the turns, and a via back up past the outer turn carry the net
-  of the second end to its series resistor;
+  the inner south side on pad 1 of the net tie footprint
+  (hallrfid:NetTie_NFC_Loop), whose origin sits one tie step east of
+  the bridge line; this copper is the net of the loop's first end;
+- a via on pad 2 of the tie (bridge_offset east of the centre), a bridge
+  on the back layer straight south under the turns, and a via back up
+  past the outer turn carry the net of the second end to its series
+  resistor;
 - the first end reaches its own resistor by a short top-side track
   south from the start point.
 
-The two pads of the tie touch: KiCad's net_tie_pad_groups makes that
-legal, and the generator's checks know the tie (GenericBoard.ties).
-Everything here is geometry; boardgen.hallrfid seeds it into the board.
+The two pads of the tie are a clearance apart and joined by the
+footprint's own copper: KiCad's net_tie_pad_groups makes that legal,
+the turn's end cap stays clear of pad 2, and the generator's checks
+know the tie (GenericBoard.ties). Everything here is geometry;
+boardgen.hallrfid seeds it into the board.
 """
 
 from __future__ import annotations
@@ -31,11 +34,8 @@ from chessboard_calc.hallrfid_demo import BRIDGE_OFFSET_MM, FEED_OFFSET_MM, FEED
 
 XY = tuple[float, float]
 
-TIE_STEP_MM = 1.0  # pad 1 of hallrfid:NetTie_NFC_Loop, from pad 2 along +x
+TIE_STEP_MM = 1.5  # pad 1 of hallrfid:NetTie_NFC_Loop (its origin), from pad 2 along +x
 TIE_PAD_MM = 1.0
-TIE_OVERRUN_MM = 0.3  # the inner end stops this far past pad 1's centre: on pad 1,
-# 0.3 mm clear of pad 2 with a 1 mm track
-BRIDGE_VIA_BACK_MM = 0.6  # the bridge via west of pad 2's centre: on pad 2, clear of pad 1
 BRIDGE_PAST_MM = 1.3  # the bridge comes back up this far past the outer turn centreline
 BRIDGE_TRACK_MM = 0.5
 
@@ -47,7 +47,7 @@ class LoopDrawing:
     track_mm: float
     turns: tuple[XY, ...]  # the top-side polyline, electrical order
     start: XY  # its first point, on the south side (feed of end 1)
-    tie_at: XY  # origin of the tie footprint (pad 2), rotation 0
+    tie_at: XY  # origin of the tie footprint (pad 1), rotation 0
     bridge_via: XY  # on pad 2, down to the back layer
     bridge_end: XY  # past the outer turn, back up (feed of end 2)
     outline: tuple[float, float, float, float]  # outer copper edge
@@ -68,9 +68,9 @@ def square_loop(
             pts.append((cx + hk, cy + h[k + 1]))
         else:
             pts.append((cx + hk, cy + hk))
-            pts.append((cx + BRIDGE_OFFSET_MM + TIE_STEP_MM + TIE_OVERRUN_MM, cy + hk))
-    tie_at = (cx + BRIDGE_OFFSET_MM, cy + h[-1])
-    bridge_via = (cx + BRIDGE_OFFSET_MM - BRIDGE_VIA_BACK_MM, cy + h[-1])
+            pts.append((cx + BRIDGE_OFFSET_MM + TIE_STEP_MM, cy + hk))  # pad 1's centre
+    tie_at = (cx + BRIDGE_OFFSET_MM + TIE_STEP_MM, cy + h[-1])
+    bridge_via = (cx + BRIDGE_OFFSET_MM, cy + h[-1])  # pad 2's centre, over the feed line
     bridge_end = (bridge_via[0], cy + h[0] + BRIDGE_PAST_MM)
     outline = (cx - side_mm / 2.0, cy - side_mm / 2.0, cx + side_mm / 2.0, cy + side_mm / 2.0)
     opening = side_mm - 2.0 * (turns * track_mm + (turns - 1) * gap_mm)

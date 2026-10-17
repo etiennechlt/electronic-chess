@@ -272,8 +272,34 @@ def close_net(net: str, pieces: list[Piece], attempt, open_nets: list[str]) -> b
         labels = ", ".join(pc.label for pc in pending)
         out = attempt(starts, cells_of(pending))
         if isinstance(out, str):
-            open_nets.append(f"{net}: {len(pending)} piece(s) left open ({labels}): {out}")
-            return False
+            # one pending piece may be walled in while the others are not:
+            # the search toward all of them aims at the nearest first and
+            # spends its budget there, so try them one by one and keep
+            # every piece that joins; the net stays open only when none does
+            reason = out
+            for k, pc in enumerate(list(pending)):
+                out_k = attempt(starts, cells_of([pc]))
+                if isinstance(out_k, str):
+                    continue
+                tracks, vias, mr = out_k
+                if not tracks and not vias:
+                    continue
+                if not reached([pc], tracks, vias, mr):
+                    continue
+                cells: dict[str, list[Cell]] = {}
+                for la, pts in tracks:
+                    cells.setdefault(la, []).extend(track_cells(mr, pts))
+                for x, y in vias:
+                    c = mr.cell(x, y)
+                    for la in mr.layers:
+                        cells.setdefault(la, []).append(c)
+                connected.append(Piece(cells, "route"))
+                connected.append(pending.pop(k))
+                break
+            else:
+                open_nets.append(f"{net}: {len(pending)} piece(s) left open ({labels}): {reason}")
+                return False
+            continue
         tracks, vias, mr = out
         if not tracks and not vias:
             open_nets.append(
