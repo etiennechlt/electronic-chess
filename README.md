@@ -173,7 +173,8 @@ décisions formelles sont dans [`docs/adr/`](docs/adr/README.md).
 | `hardware/mockup-2x2/` | projets KiCad (`.kicad_pro` à ouvrir), gerbers, BOM, guides | 1 |
 | `firmware/mockup/` | firmware Nucleo-G474RE (référence) | 1 |
 | `firmware/board/` | firmware du cerveau : bus des quadrants, quatre ADC, 128 LED | 2 |
-| `firmware/esp32/` | pont radio, horloge (ESP-IDF, NimBLE), protocole de la note 12, et le scanner Hall de la note 24 | 2 à 3 |
+| `firmware/esp32/` | pont radio, horloge (ESP-IDF, NimBLE), protocole de la note 12, le scanner Hall de la note 24 et la console du démonstrateur Hall + RFID (note 27) | 2 à 3 |
+| `tools/taggen`, `hardware/hallrfid-demo/`, `hardware/tag-demo/` | le démonstrateur Hall + RFID : carte à deux cases (par `tools/boardgen`) et planche d'étiquettes NFC, gerbers et BOM | démonstrateur |
 | `measurements/` | protocole, gabarits CSV, analyse | 1 |
 | `mechanical/` | modèles CadQuery (plateau, horloge, pucks), rendus, vue 3D | 1 à 3 |
 | `app/` | application, client Lichess sur le pont | 3 à 4 |
@@ -193,7 +194,11 @@ simulation, commande, bring-up, mesures, firmware, horloge, appli) ;
 [note 07](docs/notes/07-etat-et-reste-a-faire.md). L'alternative
 « Hall + RFID » (un capteur par case, une étiquette par pièce) a été
 évaluée et prototypée comme étape intermédiaire dans la
-[note 24](docs/notes/24-hall-et-rfid.md). Les
+[note 24](docs/notes/24-hall-et-rfid.md). Deux démonstrateurs de table,
+un par technologie, cartes de 100 x 100 mm prêtes pour JLCPCB,
+nomenclatures chiffrées et tutoriels complets, sont décrits dans les
+notes [26](docs/notes/26-demonstrateur-lc.md) (oscillations LC) et
+[27](docs/notes/27-demonstrateur-hall-rfid.md) (Hall et RFID). Les
 décisions d'architecture et leurs justifications sont dans
 [`docs/adr/`](docs/adr/README.md) ; conventions dans
 [`CLAUDE.md`](CLAUDE.md) : code et commentaires en anglais,

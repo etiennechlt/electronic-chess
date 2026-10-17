@@ -361,6 +361,32 @@ base est remplacée et la carte moteurs branchée sur la nappe prévue.
 | M10 (bois contre acrylique) | valide la surface contreplaqué (attendu : neutre) |
 | M11 (bruit LED) | valide le fenêtrage structurel |
 
+## Les démonstrateurs de technologie (17/10/2026)
+
+Avant d'engager la phase 1 sur le plateau entier, deux montages de
+table montrent chaque technologie séparément, dans le palier
+100 x 100 mm de JLCPCB et avec des composants achetables au détail :
+
+- **Démonstrateur A, oscillations LC** ([note 26](26-demonstrateur-lc.md)) :
+  la carte bobines et la carte analogique du pilote (fermées, DRC à
+  zéro, archives commitées), une NUCLEO-G474RE, quatre pucks, le
+  micrologiciel `firmware/mockup`. Il fait M1 à M6, et d'abord M2, le Q
+  avec l'aimant ferrite.
+- **Démonstrateur B, effet Hall et RFID** ([note 27](27-demonstrateur-hall-rfid.md)) :
+  la carte `hallrfid-demo` (une rangée de deux cases, une boucle de
+  chaque géométrie, deux MFRC522, six DRV5055A3, un ESP32-S3) et la
+  planche d'étiquettes `tag-demo`, générées par `tools/boardgen` et
+  `tools/taggen` depuis `hall_rfid.demo` du yaml ; le micrologiciel
+  `firmware/esp32/hallrfid-demo` donne la console de mise en route. Il
+  fait la mise en route de la note 25 et M13a, M13b, M14a sur une rangée ;
+  M12 (l'amas Hall de A1) avec six capteurs au lieu de huit.
+
+Ce que les démonstrateurs mesurent nourrit les mêmes décisions que le
+banc et la maquette : M2 pour l'ADR 0002, M13 et M14 pour la section 7
+de la note 24. Les nomenclatures chiffrées sont
+[`bom-demonstrateur-a.md`](../bom-demonstrateur-a.md) et
+[`bom-demonstrateur-b.md`](../bom-demonstrateur-b.md).
+
 ## La maquette 2 x 2 (référence, non construite)
 
 Ses fichiers restent dans `hardware/mockup-2x2/` et `firmware/mockup/`

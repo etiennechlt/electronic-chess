@@ -67,6 +67,22 @@ pas.
   questions que la maquette tranche, les corrections apportées à la
   note 24, la carte, la nomenclature, la commande, le coût, les lots et
   les décisions.
+- **Monter un démonstrateur de chaque technologie** (17/10/2026,
+  branche `demonstrateur`) : deux montages de table dans le palier
+  100 x 100 mm de JLCPCB, composants achetables chez LCSC ou Mouser,
+  cartes prêtes à téléverser. La [note 26](notes/26-demonstrateur-lc.md)
+  est le tutoriel du démonstrateur A (détection par oscillations LC :
+  carte bobines et carte analogique du pilote, une Nucleo, quatre
+  pucks) ; la [note 27](notes/27-demonstrateur-hall-rfid.md) celui du
+  démonstrateur B (effet Hall et RFID : la carte `hallrfid-demo` à deux
+  cases, la planche d'étiquettes `tag-demo`, le micrologiciel
+  [`firmware/esp32/hallrfid-demo`](../firmware/esp32/hallrfid-demo/README.md)).
+  Chacun explique la nature et le rôle des composants, leurs
+  interactions, la commande, l'assemblage et les tests, échelon par
+  échelon. Les nomenclatures chiffrées avec liens et prix,
+  [modèle A](bom-demonstrateur-a.md) et [modèle B](bom-demonstrateur-b.md),
+  se regénèrent par `tools/demobom.py` depuis
+  [`prix-demonstrateur.csv`](prix-demonstrateur.csv).
 - **Baisser le coût des cartes** : la [note 16](notes/16-cout-des-cartes.md),
   état de la réflexion sur le quadrant et le format 100 x 100, avec
   les décisions à prendre avant tout devis.
@@ -138,6 +154,8 @@ pas.
 | `hardware/quadrant-2x2/` | quadrant réduit 2 x 2 de mise au point, même circuit et même bus, schéma dessiné par feuilles |
 | `hardware/bench/` | carte de banc, shield Nucleo-64 qui alimente et relie le quadrant 2 x 2 (note 19) |
 | `hardware/mockup-2x2/` | artefacts générés : KiCad, gerbers, BOM JLC, guides |
+| `hardware/hallrfid-demo/`, `hardware/tag-demo/` | le démonstrateur Hall + RFID (notes 27) : carte à deux cases et planche d'étiquettes, générées par `tools/boardgen` et `tools/taggen` |
+| `hardware/lib/` | symboles et empreintes propres au projet (MFRC522, NT3H2111, net tie des boucles) |
 | `firmware/board/` | firmware du cerveau (STM32G474, quatre quadrants, 128 LED) en CMSIS nu |
 | `firmware/esp32/` | pont radio du cerveau, horloge (ESP-IDF, NimBLE) et scanner Hall de la note 24 ; logique d'horloge et scanner testés sur PC |
 | `firmware/mockup/` | firmware de la maquette Nucleo, référence |

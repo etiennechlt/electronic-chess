@@ -532,3 +532,44 @@ Voir [l'état](07-etat-et-reste-a-faire.md).
   niveau à `RX` en service (0,5 à 1 V crête à crête) met en cause ;
   D16, la variante p = 40, où la boucle L60x3 n'atteint la marge de Q5
   avec aucune étiquette.
+
+## 17/10/2026, deux démonstrateurs de technologie (branche `demonstrateur`)
+
+- Objectif : montrer la faisabilité de chaque détection sur une table,
+  dans le palier 100 x 100 mm de JLCPCB, avec des composants achetables
+  chez LCSC ou Mouser, cartes prêtes à téléverser, nomenclatures
+  chiffrées avec liens et prix, et un tutoriel complet par montage.
+- **Démonstrateur A** (oscillations LC, [note 26](26-demonstrateur-lc.md)) :
+  aucune carte nouvelle. Les deux cartes du pilote (bobines 100 x 100
+  4 couches, analogique 100 x 62) sont réutilisées telles quelles,
+  empreintes des archives et DRC revérifiés, avec la liste de montage
+  « option A » (ni buck, ni liaison isolée, ni tampon de LED) et la
+  Nucleo du banc. La [nomenclature](../bom-demonstrateur-a.md) chiffre
+  l'ensemble, port compris.
+- **Démonstrateur B** (effet Hall et RFID, [note 27](27-demonstrateur-hall-rfid.md)) :
+  le banc de la note 25 réduit à une rangée de deux cases (A1 L60x3, B1
+  L70x2), chaque lecteur MFRC522 dans la bande sous sa boucle, six
+  DRV5055A3 (le centre de chaque case, l'amas de A1), un ESP32-S3 à USB
+  natif, tous les aménagements de mesure de la note 25 (1 Ω dans TVDD,
+  U.FL et 0 Ω pour le NanoVNA, tampon MISO contournable, rail commuté,
+  barrette d'échappement). Nouveautés du dépôt : la section
+  `hall_rfid.demo` du yaml et `chessboard_calc.hallrfid_demo` (plan,
+  gardes, bilan), `tools/boardgen/hallrfid.py` et `nfcloop.py` (boucles
+  dessinées dans le cuivre par un net tie, couloirs des trios, blocs de
+  routage), les extensions de `boardgen.core` (pour de masse borné,
+  blocs réservés au routeur, mires), les bibliothèques
+  `hardware/lib/` (MFRC522, NT3H2111, net tie), le générateur de la
+  planche d'étiquettes `tools/taggen` (15 disques à deux couches, trous
+  de souris, vignette de champ), le micrologiciel
+  `firmware/esp32/hallrfid-demo` (pilote MFRC522 et séquence ISO 14443A
+  testés sur PC contre une puce simulée, console de mise en route), et
+  `tools/demobom.py` avec `docs/prix-demonstrateur.csv` pour les
+  nomenclatures chiffrées des deux modèles.
+- Outillage : KiCad 7.0.11 installé dans l'environnement ; le serveur
+  KiCad MCP (mixelpixx) est installé par `tools/mcp/install-kicad-mcp.sh`
+  et déclaré dans `.mcp.json` (note 15).
+- Limites connues : les prix sont des relevés web du jour, à confirmer
+  au panier (les sites des distributeurs ne sont pas joignables depuis
+  l'environnement) ; le code LCSC de la NT3H2111 en TSSOP8 et ceux des
+  0402 C0G d'accord sont à relever au panier ; le micrologiciel ESP-IDF
+  n'est pas compilé par la CI (seul le test hôte l'est).
