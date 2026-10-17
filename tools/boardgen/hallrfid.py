@@ -514,6 +514,7 @@ def _stack_right(out, refs, ckt, x0, x1, y0):
 
 
 ROW_GAP_MM = 0.8  # between two stacked groups of parts: a track and its clearance pass
+FANOUT_RING_MM = 5.2  # no part nearer a fine-pitch chip's centre: its escape vias sit at 3.6 and 4.3
 ROW_PITCH_MM = 2.2  # the matching capacitors: 1.2 mm between two 0603 pads, a via fits
 NEAR_SHELF_MM = 15.5  # the decoupling shelf east of a reader chip reaches this far from it
 
@@ -589,7 +590,7 @@ def hallrfid_placements(
         out[f"U{n}"] = (cx, y_u, READER_ROT)
         # the shelves beside the chip use the room past the loop's width:
         # the board edge side and the corridor between the two zones
-        zx0, zx1 = (5.0, 52.0) if n == 1 else (53.0, 95.0)
+        zx0, zx1 = (5.0, 51.0) if n == 1 else (51.0, 97.0)
         # against the chip: the crystal and its two capacitors west, the
         # supply decoupling east; the receive parts and the TVDD sense
         # under them, out to the zone's edge
@@ -598,13 +599,14 @@ def hallrfid_placements(
         near_e = [f"C{n}03", f"C{n}04", f"C{n}05", f"C{n}09"]
         far_e = [f"R{n}01", f"C{n}07", f"C{n}08", f"TP{n}04"]
         top = y_u - 3.1
-        b_w = _stack_right(out, near_w, ckt, zx0, cx - 3.6, top)
-        _stack(out, far_w, ckt, zx0, cx - 3.6, b_w + ROW_GAP_MM)
-        b_e = _stack(out, near_e, ckt, cx + 3.6, cx + NEAR_SHELF_MM, top)
-        b_e = _stack(out, far_e, ckt, cx + 3.6, zx1, b_e + ROW_GAP_MM)
+        ring = FANOUT_RING_MM
+        b_w = _stack_right(out, near_w, ckt, zx0, cx - ring, top)
+        _stack(out, far_w, ckt, zx0, cx - ring, b_w + ROW_GAP_MM)
+        b_e = _stack(out, near_e, ckt, cx + ring, cx + ring + NEAR_SHELF_MM - 3.6, top)
+        b_e = _stack(out, far_e, ckt, cx + ring, zx1, b_e + ROW_GAP_MM)
         # the digital pulls and the RX and ground test points, under the east shelf
         south = [f"R{n}41", f"R{n}42", f"R{n}43", f"TP{n}03", f"TP{n}05"]
-        _stack(out, south, ckt, cx + 3.6, zx1, max(b_e, y_u + 3.1) + ROW_GAP_MM)
+        _stack(out, south, ckt, cx + ring, zx1, max(b_e, y_u + ring) + ROW_GAP_MM)
 
     # ---- strip, west: multiplexer, filters, references, switched rail
     out["U3"] = (16.0, 70.5, 0.0)
@@ -615,7 +617,8 @@ def hallrfid_placements(
     _stack(out, ["TP1", "TP2", "TP3", "TP7"], ckt, 8.0, 16.0, 79.0)
     out["J3"] = (12.0, 96.5, 90.0)  # 1 x 6 along the south edge, pin 1 west
     # ---- strip, centre: buffer, regulator, USB-C on the south edge with its protection west
-    _stack(out, ["U7", "C71", "R71"], ckt, 37.0, 48.5, 67.0)
+    b = _stack(out, ["U7"], ckt, 37.0, 48.5, 67.0)
+    _stack(out, ["C71", "R71"], ckt, 37.0, 48.5, b + ROW_GAP_MM)
     _stack(out, ["U6", "C61", "C62", "C63"], ckt, 49.0, 58.5, 67.0)
     _stack(out, ["R61", "U5", "R62"], ckt, 36.5, 44.5, 88.5)
     out["J1"] = (47.0, 90.85, 0.0)
@@ -623,8 +626,8 @@ def hallrfid_placements(
     # ---- strip, east: the module, its antenna on the east edge
     ux, uy = 87.0, 80.0
     out["U4"] = (ux, uy, 270.0)
-    b = _stack(out, ["C51", "C52", "R51", "C53", "R52"], ckt, 59.0, 73.5, 71.0)
-    _stack(out, ["D1", "R53", "C54", "TP5", "TP6"], ckt, 59.0, 73.5, b + ROW_GAP_MM)
+    b = _stack(out, ["C51", "C52", "R51", "C53", "R52"], ckt, 59.0, 72.0, 71.0)
+    _stack(out, ["D1", "R53", "C54", "TP5", "TP6"], ckt, 59.0, 72.0, b + ROW_GAP_MM)
     _stack(out, ["SW1", "SW2"], ckt, 69.5, 93.0, 91.0, upright=False)  # clear of the corner hole
     out["J5"] = (62.0, 96.5, 90.0)
     return out

@@ -204,8 +204,8 @@ def layout(cfg: BoardConfig, pitch_mm: float | None = None) -> DemoLayout:
     fe = bd.edge_clearance_mm + 1.0
     fid_xy = (
         (0.575 * width, height - fe),
-        (width - fe, 0.62 * height),
-        (0.1 * width, max(pour_top, top) + fe),
+        (width - fe, 0.52 * height),
+        (0.06 * width, max(pour_top, top) + fe),
     )
     fiducials = tuple(
         Fiducial(centre_mm=c, d_mm=FIDUCIAL_D_MM, mask_d_mm=FIDUCIAL_MASK_D_MM, on_rail=True)
