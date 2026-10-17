@@ -882,10 +882,11 @@ class MockupMuxChannelsCfg(_Model):
     rail_half: int
     led_step: int
     extension: tuple[int, ...]
+    grounded: tuple[int, ...] = ()   # unused inputs tied to ground
 
     def all_channels(self) -> list[int]:
         fixed = [self.ground, self.rail_half, self.led_step]
-        return [*self.centre, *self.cluster, *fixed, *self.extension]
+        return [*self.centre, *self.cluster, *fixed, *self.extension, *self.grounded]
 
 
 class MockupEsp32Cfg(_Model):
@@ -1114,6 +1115,86 @@ class HallRfidMockupCfg(_Model):
         return self.loops[self.loop_by_column[square[0]]]
 
 
+class DemoBoardCfg(_Model):
+    size_mm: tuple[float, float]
+    strip_mm: float
+    edge_clearance_mm: float
+    hole_d_mm: float
+    fiducials: int
+    layers: int
+    pour_margin_mm: float
+
+    @model_validator(mode="after")
+    def _sane(self) -> DemoBoardCfg:
+        if min(self.size_mm) <= 0.0 or self.strip_mm <= 0.0:
+            raise ValueError("demo board needs positive sizes")
+        if self.layers not in (2, 4):
+            raise ValueError("demo board has two or four copper layers")
+        if not 0.0 <= self.pour_margin_mm < self.edge_clearance_mm:
+            raise ValueError("the pour margin lies inside the edge clearance")
+        return self
+
+
+class DemoEsp32Cfg(_Model):
+    pins: dict[str, int]
+
+
+class DemoTagChipCfg(_Model):
+    part: str
+    mpn: str
+    lcsc: str
+    package: str
+    height_mm: float
+
+
+class DemoTagsCfg(_Model):
+    chip: DemoTagChipCfg
+    per_variant: int
+    panel_mm: tuple[float, float]
+
+    @model_validator(mode="after")
+    def _sane(self) -> DemoTagsCfg:
+        if self.per_variant < 1 or min(self.panel_mm) <= 0.0:
+            raise ValueError("the tag panel needs at least one disc per variant")
+        return self
+
+
+class HallRfidDemoCfg(_Model):
+    """The 100 x 100 mm technology demonstrator of note 27: one row of two
+    squares, the electronics strip past it, both readers in the strip."""
+
+    columns: tuple[str, ...]
+    rows: tuple[int, ...]
+    board: DemoBoardCfg
+    loop_by_column: dict[str, str]
+    reader: ReaderPartCfg
+    reader_zone_mm: float
+    ground_keepout_mm: float
+    trio_exit_mm: tuple[float, float]
+    mux_channels: MockupMuxChannelsCfg
+    esp32: DemoEsp32Cfg
+    escape_header: tuple[str, ...]
+    tags: DemoTagsCfg
+    quantities: MockupQuantitiesCfg
+
+    @model_validator(mode="after")
+    def _references(self) -> HallRfidDemoCfg:
+        if set(self.loop_by_column) != set(self.columns):
+            raise ValueError("every demo column needs a loop")
+        if len(self.rows) != 1:
+            raise ValueError("the demonstrator has one row of squares")
+        if not self.trio_exit_mm[0] < self.trio_exit_mm[1]:
+            raise ValueError("the trio exit corridor must be ordered")
+        if self.reader_zone_mm <= 0.0 or self.ground_keepout_mm <= 0.0:
+            raise ValueError("reader zone and ground keepout must be positive")
+        if len(self.escape_header) % 2:
+            raise ValueError("the escape header is a two-row header: an even pin count")
+        return self
+
+    def squares(self) -> list[str]:
+        return [f"{c}{r}" for r in self.rows for c in self.columns]
+
+
 class HallRfidCfg(_Model):
     """The Hall plus RFID alternative of note 24: numbers only, no verdict."""
 
@@ -1127,6 +1208,7 @@ class HallRfidCfg(_Model):
     esp32: HallEsp32Cfg
     nfc: NfcCfg
     mockup: HallRfidMockupCfg
+    demo: HallRfidDemoCfg
 
     @model_validator(mode="after")
     def _at_least_one_sensor(self) -> HallRfidCfg:
@@ -1135,6 +1217,8 @@ class HallRfidCfg(_Model):
         parts = {s.part for s in self.sensors}
         if not {self.mockup.hall.sensor, self.mockup.hall.alternate} <= parts:
             raise ValueError("the mockup sensor and its alternate must be listed in sensors")
+        if not set(self.demo.loop_by_column.values()) <= set(self.mockup.loops):
+            raise ValueError("the demonstrator names a loop the mockup does not define")
         return self
 
     def sensor(self, part: str) -> HallSensorCfg:

@@ -652,15 +652,22 @@ class MockupPower:
         return self.current_ok and self.thermal_ok and self.headroom_ok
 
 
-def power(cfg: BoardConfig) -> MockupPower:
+def power(
+    cfg: BoardConfig, n_readers: int | None = None, n_sensors: int | None = None
+) -> MockupPower:
     """Worst 3.3 V load, radio off: the module, one reader transmitting at
     its TVDD limit, every reader awake at its maximum, every Hall sensor
-    at its maximum, all through the linear regulator."""
+    at its maximum, all through the linear regulator. The counts default
+    to the mockup's (four readers, eight sensors); the demonstrator
+    passes its own (hallrfid_demo.power)."""
     mk = cfg.hall_rfid.mockup
     pw = mk.power
     sensor = cfg.hall_rfid.sensor(mk.hall.sensor)
-    n_squares = len(mk.squares())
-    n_sensors = n_squares + (len(_CLUSTER_SIGNS) if mk.hall.cluster_square in mk.squares() else 0)
+    n_squares = len(mk.squares()) if n_readers is None else n_readers
+    if n_sensors is None:
+        n_sensors = n_squares + (
+            len(_CLUSTER_SIGNS) if mk.hall.cluster_square in mk.squares() else 0
+        )
     i_sensor = sensor.i_supply_max_ma if sensor.i_supply_max_ma is not None else sensor.i_supply_ma
     loads = {
         "esp32": pw.esp32_ma,

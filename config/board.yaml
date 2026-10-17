@@ -765,3 +765,67 @@ hall_rfid:                     # alternative or intermediate layer, evaluated in
       move_time_max_ms: 20.0   # M13d: from the Hall event to the UID
       tag_drift_max_pct: 1.0   # M14a: tag resonance with and without its magnet
       disturber_distances_mm: [5.0, 10.0, 20.0, 30.0]   # M14b: below the board bottom face
+  demo:                        # the 100 x 100 mm technology demonstrator (note 27): the
+                               # bench of note 25 cut down to one row of two squares, the
+                               # electronics strip past the row, each reader in the strip
+                               # under its own loop. What the mockup section already fixes
+                               # (sensor, loops, matching, tags, chain, criteria) is read
+                               # there and never repeated here.
+    columns: [A, B]
+    rows: [1]
+    board:
+      size_mm: [100.0, 100.0]  # the JLCPCB 100 x 100 price tier: 2 p by (p + strip)
+      strip_mm: 50.0           # electronics strip past the row of squares
+      edge_clearance_mm: 2.0   # parts to the board edge: hand assembly or Economic PCBA
+      hole_d_mm: 3.2           # M3 clearance, non plated, play-area corners and strip corners
+      fiducials: 3             # copper dots in the strip, three corners of its free area
+      layers: 4                # F.Cu and B.Cu signals, In1 the strip ground pour, In2 free:
+                               # the two outer layers alone left a third of the nets open
+      pour_margin_mm: 0.5      # the strip ground pour stops this far from the board edge
+    loop_by_column: { A: L60x3, B: L70x2 }   # D5 kept: both geometries, one of each
+    reader: { maker: NXP, mpn: "MFRC52202HN1,151", lcsc: C11322 }   # the reference part on both
+    reader_zone_mm: 18.0       # band of the strip past the keepout: a reader and its network
+    ground_keepout_mm: 4.0     # D12: no ground copper nearer a loop than this
+    trio_exit_mm: [-8.0, -2.0] # x range, from the loop centre, of the back-side corridor where
+                               # the sensor trios leave the loop opening toward the strip
+    mux_channels:              # the CD74HC4067 of the demonstrator
+      centre: [0, 1]           # A1, B1
+      cluster: [4, 5, 6, 7]    # the four sensors around the centre of A1
+      ground: 8                # zero of the path
+      rail_half: 9             # switched sensor rail divided by two
+      led_step: 10             # LED pin through a divider by two and a known RC
+      extension: [11, 12, 13, 14, 15]   # header: outside probes
+      grounded: [2, 3]         # unused inputs, tied to ground, never floating
+    esp32:                     # module, GPIO lists and rules in mockup.esp32
+      pins:
+        MUX_OUT: 1
+        HALL_A1: 2
+        HALL_B1: 4
+        PICKUP: 5
+        LED: 8
+        RFID_IRQ: 9
+        ROW_EN1: 10            # one switched rail for the six sensors
+        SPI_MOSI: 11
+        SPI_SCK: 12
+        SPI_MISO: 13
+        NSS_A1: 14
+        MUX_S0: 15
+        MUX_S1: 16
+        MUX_S2: 17
+        MUX_S3: 18
+        USB_DM: 19
+        USB_DP: 20
+        NRSTPD_A1: 21
+        NSS_B1: 38
+        UART0_TX: 43           # test points, the spare console
+        UART0_RX: 44
+        NRSTPD_B1: 47
+    escape_header:             # 2 x 10 header, not fitted: a DevKitC drives the board if the module fails
+      [3V3, GND, SPI_MOSI, SPI_SCK, SPI_MISO, NSS_A1, NSS_B1, NRSTPD_A1, NRSTPD_B1, RFID_IRQ,
+       MUX_OUT, MUX_S0, MUX_S1, MUX_S2, MUX_S3, ROW_EN1, HALL_A1, HALL_B1, PICKUP, LED]
+    tags:                      # the tag panel of the demonstrator: every trim of
+                               # mockup.tags.trims_pF, per_variant discs each
+      chip: { part: NT3H2111, mpn: NT3H2111W0FTTJ, lcsc: "", package: TSSOP-8, height_mm: 1.1 }
+      per_variant: 3
+      panel_mm: [100.0, 100.0] # the panel fits the same price tier
+    quantities: { boards: 5, boards_assembled: 2, tag_panels: 5, tag_panels_assembled: 0 }
