@@ -24,6 +24,9 @@ from pathlib import Path
 from .sexp import atom, find_all, find_one, parse
 
 FOOTPRINT_DIR = Path("/usr/share/kicad/footprints")
+# footprints of the project's own (the net tie of an NFC loop drawn on the
+# board), <lib>.pretty directories under hardware/lib
+PROJECT_FOOTPRINT_DIR = Path(__file__).resolve().parents[2] / "hardware" / "lib"
 
 
 @dataclass(frozen=True)
@@ -56,7 +59,14 @@ class Footprint:
 @functools.cache
 def load_footprint(lib_id: str) -> Footprint:
     lib, name = lib_id.split(":", 1)
-    path = FOOTPRINT_DIR / f"{lib}.pretty" / f"{name}.kicad_mod"
+    for base in (FOOTPRINT_DIR, PROJECT_FOOTPRINT_DIR):
+        path = base / f"{lib}.pretty" / f"{name}.kicad_mod"
+        if path.exists():
+            break
+    else:
+        raise FileNotFoundError(
+            f"footprint {lib_id}: not in {FOOTPRINT_DIR} nor {PROJECT_FOOTPRINT_DIR}"
+        )
     raw = path.read_text(encoding="utf-8")
     tree = parse(raw)
     pads = []

@@ -17,6 +17,9 @@ from pathlib import Path
 from .sexp import atom, find_all, find_one, parse
 
 SYMBOL_DIR = Path("/usr/share/kicad/symbols")
+# symbols the official libraries lack (the MFRC522 reader, the NTAG I2C
+# plus tag chip), kept in the repository in the same file format
+PROJECT_SYMBOL_DIR = Path(__file__).resolve().parents[2] / "hardware" / "lib"
 
 
 @dataclass(frozen=True)
@@ -60,7 +63,13 @@ def _extract_block(text: str, symbol_name: str) -> str:
 
 @functools.cache
 def _lib_text(lib: str) -> str:
-    return (SYMBOL_DIR / f"{lib}.kicad_sym").read_text(encoding="utf-8")
+    """The text of a symbol library: the installed official one, else the
+    project's own under hardware/lib."""
+    for base in (SYMBOL_DIR, PROJECT_SYMBOL_DIR):
+        path = base / f"{lib}.kicad_sym"
+        if path.exists():
+            return path.read_text(encoding="utf-8")
+    raise FileNotFoundError(f"symbol library {lib}: not in {SYMBOL_DIR} nor {PROJECT_SYMBOL_DIR}")
 
 
 def _pins_from_block(block_text: str, base_name: str) -> tuple[tuple[Pin, ...], tuple[int, ...]]:
