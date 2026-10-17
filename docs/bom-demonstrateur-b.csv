@@ -1,6 +1,6 @@
 Family,Value,Footprint,MPN,LCSC,carte,étiquettes,Total,Buy,LCSC_USD,Mouser,Mouser_USD,Cheapest,Line_USD,Status,LCSC_link,Mouser_link
 capacitor,100n,C_0603_1608Metric,,C14663,21,0,21,24,0.0100,,0.1200,lcsc,0.2400,estimated,https://www.lcsc.com/product-detail/C14663.html,https://www.mouser.fr/c/?q=100n%200603
-ic,G,TSSOP-8_3x3mm_P0.65mm,NT3H2111W0FTTJ,,0,15,15,17,0.5000,771-NT3H2111W0FTTJ,1.2000,lcsc,8.5000,estimated,https://www.lcsc.com/search?q=NT3H2111W0FTTJ,https://www.mouser.fr/ProductDetail/771-NT3H2111W0FTTJ
+ic,NT3H2111 G,TSSOP-8_3x3mm_P0.65mm,NT3H2111W0FTTJ,,0,15,15,17,0.5000,771-NT3H2111W0FTTJ,1.2000,lcsc,8.5000,estimated,https://www.lcsc.com/search?q=NT3H2111W0FTTJ,https://www.mouser.fr/ProductDetail/771-NT3H2111W0FTTJ
 resistor,10k,R_0603_1608Metric,,C25804,12,0,12,14,0.0050,,0.1000,lcsc,0.0700,estimated,https://www.lcsc.com/product-detail/C25804.html,https://www.mouser.fr/c/?q=10k%200603
 resistor,1k,R_0603_1608Metric,,C21190,9,0,9,10,0.0050,,0.1000,lcsc,0.0500,estimated,https://www.lcsc.com/product-detail/C21190.html,https://www.mouser.fr/c/?q=1k%200603
 capacitor,10n,C_0603_1608Metric,,C57112,8,0,8,9,0.0100,,0.1200,lcsc,0.0900,estimated,https://www.lcsc.com/product-detail/C57112.html,https://www.mouser.fr/c/?q=10n%200603

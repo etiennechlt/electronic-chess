@@ -14,7 +14,7 @@ recherche du distributeur, à relire le jour de la commande. Conversion
 | Repères | Valeur | Empreinte | MPN | carte | étiquettes | Achat | LCSC (USD) | Mouser (USD) | Moins cher |
 |---|---|---|---|---|---|---|---|---|---|
 | capacitor | 100n | C_0603_1608Metric |  | 21 | 0 | 24 | [C14663](https://www.lcsc.com/product-detail/C14663.html) 0.010 | [chercher](https://www.mouser.fr/c/?q=100n%200603) 0.12 | 0.24 (lcsc) |
-| ic | G | TSSOP-8_3x3mm_P0.65mm | NT3H2111W0FTTJ | 0 | 15 | 17 | [chercher](https://www.lcsc.com/search?q=NT3H2111W0FTTJ) 0.500 | [771-NT3H2111W0FTTJ](https://www.mouser.fr/ProductDetail/771-NT3H2111W0FTTJ) 1.20 | 8.50 (lcsc) |
+| ic | NT3H2111 G | TSSOP-8_3x3mm_P0.65mm | NT3H2111W0FTTJ | 0 | 15 | 17 | [chercher](https://www.lcsc.com/search?q=NT3H2111W0FTTJ) 0.500 | [771-NT3H2111W0FTTJ](https://www.mouser.fr/ProductDetail/771-NT3H2111W0FTTJ) 1.20 | 8.50 (lcsc) |
 | resistor | 10k | R_0603_1608Metric |  | 12 | 0 | 14 | [C25804](https://www.lcsc.com/product-detail/C25804.html) 0.005 | [chercher](https://www.mouser.fr/c/?q=10k%200603) 0.10 | 0.07 (lcsc) |
 | resistor | 1k | R_0603_1608Metric |  | 9 | 0 | 10 | [C21190](https://www.lcsc.com/product-detail/C21190.html) 0.005 | [chercher](https://www.mouser.fr/c/?q=1k%200603) 0.10 | 0.05 (lcsc) |
 | capacitor | 10n | C_0603_1608Metric |  | 8 | 0 | 9 | [C57112](https://www.lcsc.com/product-detail/C57112.html) 0.010 | [chercher](https://www.mouser.fr/c/?q=10n%200603) 0.12 | 0.09 (lcsc) |

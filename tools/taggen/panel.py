@@ -94,6 +94,7 @@ class PanelResult:
     pickup_at: tuple[float, float, float, float] | None = None
     chip_mpn: str = ""
     chip_lcsc: str = ""
+    chip_part: str = ""
 
 
 def fmt_c(pf: float) -> str:
@@ -188,6 +189,7 @@ def build_tag_panel(cfg: BoardConfig, pitch_mm: float | None = None) -> PanelRes
         parts={},
         chip_mpn=chip.mpn,
         chip_lcsc=chip.lcsc,
+        chip_part=chip.part,
     )
 
     # ---- outline: frame, tabs and discs
@@ -293,7 +295,8 @@ def _draw_tag(res: PanelResult, t: TagSpec, chip_fp, trim_fp) -> None:
     # the chip at the centre, LA (1) and LB (8) on its north side
     res.placements[t.ref] = (cx, cy, 0.0)
     nets = {"1": (net, net_name), "8": (net, net_name)}
-    board.body.append(place_footprint(chip_fp, t.ref, t.variant, cx, cy, 0.0, nets))
+    chip_value = f"{res.chip_part} {t.variant}"  # the part, and the disc it sits on
+    board.body.append(place_footprint(chip_fp, t.ref, chip_value, cx, cy, 0.0, nets))
     la = pad_abs_pos(cx, cy, 0.0, chip_fp.pad("1"))
     lb = pad_abs_pos(cx, cy, 0.0, chip_fp.pad("8"))
     inner = (cx, cy - r_in)  # both inner ends, north of the chip
@@ -314,7 +317,7 @@ def _draw_tag(res: PanelResult, t: TagSpec, chip_fp, trim_fp) -> None:
     p2 = pad_abs_pos(cap_at[0], cap_at[1], 0.0, trim_fp.pad("2"))
     board.polyline([inner, p1], LEAD_MM, "F.Cu", net)
     board.polyline([via2, p2, lb], LEAD_MM, "F.Cu", net)
-    res.parts[t.ref] = (t.variant, CHIP_FP, res.chip_mpn, res.chip_lcsc, False)
+    res.parts[t.ref] = (chip_value, CHIP_FP, res.chip_mpn, res.chip_lcsc, False)
     res.parts[cap_ref] = (value, TRIM_FP, "", TRIM_CODES.get(value, ""), not t.trim_pF)
     board.gr_text(t.variant, cx, cy + r_in / 2.0 + 0.6, "F.SilkS", 0.8)
 
