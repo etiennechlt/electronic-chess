@@ -119,7 +119,7 @@ MODELS = {
         fixed=[
             ("PCB_100x100_4L_x5", 1),
             ("PCB_100x87_2L_0.8_x5", 1),
-            ("PCBA_economic_setup", 1),
+            ("PCBA_standard_2_boards", 1),
             ("Shipping_JLCPCB", 1),
             ("Shipping_Mouser", 1),
             ("Magnets_ferrite_12_15_18x4", 1),

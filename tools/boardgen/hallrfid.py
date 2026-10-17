@@ -151,11 +151,7 @@ def fmt_r(ohm: float) -> str:
     """Resistor value the way the other boards write it: 0R68, 1R, 3k9, 10k."""
     if ohm >= 1e3:
         v = ohm / 1e3
-        return (
-            (f"{v:.1f}".replace(".", "k").rstrip("0").rstrip("k") + "k")
-            if v != int(v)
-            else f"{int(v)}k"
-        )
+        return f"{int(v)}k" if v == int(v) else f"{v:.1f}".replace(".", "k")
     if ohm >= 1.0:
         return f"{ohm:g}R" if ohm == int(ohm) else f"{ohm:.2f}".replace(".", "R").rstrip("0")
     return f"0R{ohm:.2f}".replace("0R0.", "0R").replace("0R.", "0R")[:5].rstrip("0")
@@ -514,7 +510,7 @@ def _stack_right(out, refs, ckt, x0, x1, y0):
 
 
 ROW_GAP_MM = 0.8  # between two stacked groups of parts: a track and its clearance pass
-FANOUT_RING_MM = 5.2  # no part nearer a fine-pitch chip's centre: its escape vias sit at 3.6 and 4.3
+FANOUT_RING_MM = 5.2  # no part nearer a fine-pitch chip's centre: escape vias at 3.6 and 4.3
 ROW_PITCH_MM = 2.2  # the matching capacitors: 1.2 mm between two 0603 pads, a via fits
 NEAR_SHELF_MM = 15.5  # the decoupling shelf east of a reader chip reaches this far from it
 

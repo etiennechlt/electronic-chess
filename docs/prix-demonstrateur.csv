@@ -49,3 +49,4 @@ Resistor@R_0805_2012Metric,,0.01,,0.1,estimated,"resistance 0805 au detail (amor
 Resistor@R_2512_6332Metric,,0.05,,0.3,estimated,"resistance de puissance 2512 (10 ohms du rail d impulsion)"
 Capacitor@CP_Elec,,0.1,,0.4,estimated,"electrolytique 47 uF 25 V, boitier 6.3 x 7.7"
 SolderJumper,,0.0,,0.0,verified,"pont a souder : du cuivre, rien a acheter"
+PCBA_standard_2_boards,,60.0,,,estimated,"assemblage Standard JLCPCB face avant, 2 cartes : preparation 25 USD, pochoir, 3 USD par reference etendue (module, lecteurs, mux, tampon, regulateur, USB-C, quartz, selfs), joints : 50 a 70 USD (note 25, 8.2 et 8.4)"

@@ -1,0 +1,49 @@
+Family,Value,Footprint,MPN,LCSC,carte,étiquettes,Total,Buy,LCSC_USD,Mouser,Mouser_USD,Cheapest,Line_USD,Status,LCSC_link,Mouser_link
+capacitor,100n,C_0603_1608Metric,,C14663,21,0,21,24,0.0100,,0.1200,lcsc,0.2400,estimated,https://www.lcsc.com/product-detail/C14663.html,https://www.mouser.fr/c/?q=100n%200603
+ic,G,TSSOP-8_3x3mm_P0.65mm,NT3H2111W0FTTJ,,0,15,15,17,0.5000,771-NT3H2111W0FTTJ,1.2000,lcsc,8.5000,estimated,https://www.lcsc.com/search?q=NT3H2111W0FTTJ,https://www.mouser.fr/ProductDetail/771-NT3H2111W0FTTJ
+resistor,10k,R_0603_1608Metric,,C25804,12,0,12,14,0.0050,,0.1000,lcsc,0.0700,estimated,https://www.lcsc.com/product-detail/C25804.html,https://www.mouser.fr/c/?q=10k%200603
+resistor,1k,R_0603_1608Metric,,C21190,9,0,9,10,0.0050,,0.1000,lcsc,0.0500,estimated,https://www.lcsc.com/product-detail/C21190.html,https://www.mouser.fr/c/?q=1k%200603
+capacitor,10n,C_0603_1608Metric,,C57112,8,0,8,9,0.0100,,0.1200,lcsc,0.0900,estimated,https://www.lcsc.com/product-detail/C57112.html,https://www.mouser.fr/c/?q=10n%200603
+ic,DRV5055A3,SOT-23,DRV5055A3QDBZR,C266128,6,0,6,7,0.4400,595-DRV5055A3QDBZR,0.6000,lcsc,3.0800,estimated,https://www.lcsc.com/product-detail/C266128.html,https://www.mouser.fr/ProductDetail/595-DRV5055A3QDBZR
+resistor,0R,R_0603_1608Metric,,C21189,5,0,5,6,0.0050,,0.1000,lcsc,0.0300,estimated,https://www.lcsc.com/product-detail/C21189.html,https://www.mouser.fr/c/?q=0R%200603
+capacitor,10u/25V,C_1206_3216Metric,,C13585,4,0,4,5,0.0300,,0.2500,lcsc,0.1500,estimated,https://www.lcsc.com/product-detail/C13585.html,https://www.mouser.fr/c/?q=10u%2F25V%201206
+capacitor,15p,C_0603_1608Metric,,C1644,4,0,4,5,0.0100,,0.1200,lcsc,0.0500,estimated,https://www.lcsc.com/product-detail/C1644.html,https://www.mouser.fr/c/?q=15p%200603
+capacitor,1u,C_0603_1608Metric,,C15849,4,0,4,5,0.0100,,0.1200,lcsc,0.0500,estimated,https://www.lcsc.com/product-detail/C15849.html,https://www.mouser.fr/c/?q=1u%200603
+capacitor,220p,C_0603_1608Metric,,C1653,4,0,4,5,0.0100,,0.1200,lcsc,0.0500,estimated,https://www.lcsc.com/product-detail/C1653.html,https://www.mouser.fr/c/?q=220p%200603
+capacitor,56p,C_0603_1608Metric,,,4,0,4,5,0.0100,,0.1200,lcsc,0.0500,estimated,,https://www.mouser.fr/c/?q=56p%200603
+inductor,560n,L_0805_2012Metric,FHW0805UCR56JGT,C139264,4,0,4,5,0.0320,,0.3000,lcsc,0.1600,estimated,https://www.lcsc.com/product-detail/C139264.html,https://www.mouser.fr/c/?q=FHW0805UCR56JGT
+capacitor,10p,C_0402_1005Metric,,,0,3,3,4,0.0050,,0.1000,lcsc,0.0200,estimated,,https://www.mouser.fr/c/?q=10p%200402
+capacitor,15p,C_0402_1005Metric,,,0,3,3,4,0.0050,,0.1000,lcsc,0.0200,estimated,,https://www.mouser.fr/c/?q=15p%200402
+capacitor,1n,C_0603_1608Metric,,C1588,2,1,3,4,0.0100,,0.1200,lcsc,0.0400,estimated,https://www.lcsc.com/product-detail/C1588.html,https://www.mouser.fr/c/?q=1n%200603
+capacitor,22p,C_0402_1005Metric,,,0,3,3,4,0.0050,,0.1000,lcsc,0.0200,estimated,,https://www.mouser.fr/c/?q=22p%200402
+resistor,0R47,R_0603_1608Metric,,,2,0,2,3,0.0050,,0.1000,lcsc,0.0150,estimated,,https://www.mouser.fr/c/?q=0R47%200603
+resistor,0R68,R_0603_1608Metric,,,2,0,2,3,0.0050,,0.1000,lcsc,0.0150,estimated,,https://www.mouser.fr/c/?q=0R68%200603
+resistor,1R,R_0603_1608Metric,,,2,0,2,3,0.0050,,0.1000,lcsc,0.0150,estimated,,https://www.mouser.fr/c/?q=1R%200603
+capacitor,33p,C_0603_1608Metric,,,2,0,2,3,0.0100,,0.1200,lcsc,0.0300,estimated,,https://www.mouser.fr/c/?q=33p%200603
+capacitor,3p3,C_0603_1608Metric,,,2,0,2,3,0.0100,,0.1200,lcsc,0.0300,estimated,,https://www.mouser.fr/c/?q=3p3%200603
+capacitor,470p,C_0603_1608Metric,,,2,0,2,3,0.0100,,0.1200,lcsc,0.0300,estimated,,https://www.mouser.fr/c/?q=470p%200603
+resistor,5k1,R_0603_1608Metric,,C23186,2,0,2,3,0.0050,,0.1000,lcsc,0.0150,estimated,https://www.lcsc.com/product-detail/C23186.html,https://www.mouser.fr/c/?q=5k1%200603
+capacitor,5p6,C_0603_1608Metric,,,2,0,2,3,0.0100,,0.1200,lcsc,0.0300,estimated,,https://www.mouser.fr/c/?q=5p6%200603
+capacitor,680p,C_0603_1608Metric,,,2,0,2,3,0.0100,,0.1200,lcsc,0.0300,estimated,,https://www.mouser.fr/c/?q=680p%200603
+capacitor,82p,C_0603_1608Metric,,,2,0,2,3,0.0100,,0.1200,lcsc,0.0300,estimated,,https://www.mouser.fr/c/?q=82p%200603
+ic,"MFRC52202HN1,151",HVQFN-32-1EP_5x5mm_P0.5mm_EP3.1x3.1mm,"MFRC52202HN1,151",C11322,2,0,2,3,2.5700,771-MFRC52202HN1151,6.8400,lcsc,7.7100,estimated,https://www.lcsc.com/product-detail/C11322.html,https://www.mouser.fr/ProductDetail/771-MFRC52202HN1151
+switch,BOOT,SW_SPST_PTS645,PTS645SM43SMTR92,C221929,2,0,2,3,0.1000,611-PTS645SM43SMTR92LFS,0.2000,lcsc,0.3000,estimated,https://www.lcsc.com/product-detail/C221929.html,https://www.mouser.fr/ProductDetail/611-PTS645SM43SMTR92LFS
+jumper,R1b bypass,SolderJumper-2_P1.3mm_Bridged_Pad1.0x1.5mm,,,2,0,2,3,0.0000,,0.0000,lcsc,0.0000,verified,,https://www.mouser.fr/c/?q=R1b%20bypass%20P1.3mm
+other,27.12MHz,Crystal_SMD_3225-4Pin_3.2x2.5mm,X32252712MMB4SI,C29975,2,0,2,3,0.0640,,0.5000,lcsc,0.1920,estimated,https://www.lcsc.com/product-detail/C29975.html,https://www.mouser.fr/c/?q=X32252712MMB4SI
+resistor,100k,R_0603_1608Metric,,C25803,0,1,1,2,0.0050,,0.1000,lcsc,0.0100,estimated,https://www.lcsc.com/product-detail/C25803.html,https://www.mouser.fr/c/?q=100k%200603
+diode,LED,LED_0603_1608Metric,19-217/GHC-YR1S2/3T,C72043,1,0,1,2,0.0200,,0.1500,lcsc,0.0400,estimated,https://www.lcsc.com/product-detail/C72043.html,https://www.mouser.fr/c/?q=19-217%2FGHC-YR1S2%2F3T
+resistor,3k3,R_0603_1608Metric,,,1,0,1,2,0.0050,,0.1000,lcsc,0.0100,estimated,,https://www.mouser.fr/c/?q=3k3%200603
+resistor,3k9,R_0603_1608Metric,,,1,0,1,2,0.0050,,0.1000,lcsc,0.0100,estimated,,https://www.mouser.fr/c/?q=3k9%200603
+connector,5V BENCH,PinHeader_1x02_P2.54mm_Vertical,,,1,0,1,2,0.1000,,0.3000,lcsc,0.2000,estimated,,https://www.mouser.fr/c/?q=5V%20BENCH%201x02
+ic,74LVC125,TSSOP-14_4.4x5mm_P0.65mm,"74LVC125APW,118",C6059,1,0,1,2,0.2000,771-74LVC125APW118,0.4500,lcsc,0.4000,estimated,https://www.lcsc.com/product-detail/C6059.html,https://www.mouser.fr/ProductDetail/771-74LVC125APW118
+ic,AMS1117-3.3,SOT-223-3_TabPin2,AMS1117-3.3,C6186,1,0,1,2,0.0550,511-LD1117S33TR,0.4000,lcsc,0.1100,estimated,https://www.lcsc.com/product-detail/C6186.html,https://www.mouser.fr/ProductDetail/511-LD1117S33TR
+transistor,AO3401A,SOT-23,AO3401A,C15127,1,0,1,2,0.0520,785-AO3401A,0.3000,lcsc,0.1040,estimated,https://www.lcsc.com/product-detail/C15127.html,https://www.mouser.fr/ProductDetail/785-AO3401A
+diode,BAT15-03W,D_SOD-323,BAT15-03W,,0,1,1,2,0.3000,726-BAT15-03W,0.4500,lcsc,0.6000,estimated,https://www.lcsc.com/search?q=BAT15-03W,https://www.mouser.fr/ProductDetail/726-BAT15-03W
+ic,CD74HC4067,SSOP-24_5.3x8.2mm_P0.65mm,CD74HC4067SM96,C98457,1,0,1,2,0.2668,595-CD74HC4067SM96,1.1700,lcsc,0.5336,estimated,https://www.lcsc.com/product-detail/C98457.html,https://www.mouser.fr/ProductDetail/595-CD74HC4067SM96
+ic,ESP32-S3-WROOM-1-N8,ESP32-S3-WROOM-1,ESP32-S3-WROOM-1-N8,C2913198,1,0,1,2,3.3000,356-ESP32S3WRM1N8,4.5000,lcsc,6.6000,estimated,https://www.lcsc.com/product-detail/C2913198.html,https://www.mouser.fr/ProductDetail/356-ESP32S3WRM1N8
+jumper,HALL_VCC bypass,SolderJumper-2_P1.3mm_Open_Pad1.0x1.5mm,,,1,0,1,2,0.0000,,0.0000,lcsc,0.0000,verified,,https://www.mouser.fr/c/?q=HALL_VCC%20bypass%20P1.3mm
+connector,MUX EXT,PinHeader_1x06_P2.54mm_Vertical,,,1,0,1,2,0.1000,,0.3000,lcsc,0.2000,estimated,,https://www.mouser.fr/c/?q=MUX%20EXT%201x06
+connector,PICKUP,PinHeader_1x03_P2.54mm_Vertical,,,1,0,1,2,0.1000,,0.3000,lcsc,0.2000,estimated,,https://www.mouser.fr/c/?q=PICKUP%201x03
+capacitor,22u/10V tantale,CP_EIA-3528-21_Kemet-B,TAJB226K010RNJ,,1,0,1,2,0.3000,581-TAJB226K010RNJ,0.4000,lcsc,0.6000,estimated,https://www.lcsc.com/search?q=TAJB226K010RNJ,https://www.mouser.fr/ProductDetail/581-TAJB226K010RNJ
+connector,USB-C,USB_C_Receptacle_GCT_USB4085,USB4085-GF-A,C2988369,1,0,1,2,0.6000,640-USB4085-GF-A,0.7000,lcsc,1.2000,estimated,https://www.lcsc.com/product-detail/C2988369.html,https://www.mouser.fr/ProductDetail/640-USB4085-GF-A
+ic,USBLC6-2,SOT-23-6,USBLC6-2SC6,C7519,1,0,1,2,0.0900,511-USBLC6-2SC6,0.4500,lcsc,0.1800,estimated,https://www.lcsc.com/product-detail/C7519.html,https://www.mouser.fr/ProductDetail/511-USBLC6-2SC6
