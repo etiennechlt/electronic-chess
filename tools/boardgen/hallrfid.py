@@ -513,6 +513,7 @@ def _stack_right(out, refs, ckt, x0, x1, y0):
 
 
 ROW_GAP_MM = 0.4  # between two stacked groups of parts
+ROW_PITCH_MM = 2.2  # the matching capacitors: 1.2 mm between two 0603 pads, a via fits
 NEAR_SHELF_MM = 15.5  # the decoupling shelf east of a reader chip reaches this far from it
 
 
@@ -561,15 +562,19 @@ def hallrfid_placements(
         out[f"R{n}22"] = (cx - 1.2, rq_y, 270.0)  # west branch: loop end 1
         out[f"R{n}12"] = (cx + 1.2, rq_y, 270.0)  # east branch: loop end 2
         # one row per branch, inner to outer: C1 main, trim, spare, C2 main,
-        # trim, spare, C0; pitch 1.7 mm, upright 0603
+        # trim, spare, C0; upright 0603 at a pitch that leaves a via and its
+        # clearance between two neighbours (the nets of the row alternate
+        # between the top and the bottom pads)
         y_row = y_f + 5.9
         west = [f"C{n}22", f"C{n}23", f"C{n}24", f"C{n}25", f"C{n}26", f"C{n}27", f"C{n}21"]
         east = [f"C{n}12", f"C{n}13", f"C{n}14", f"C{n}15", f"C{n}16", f"C{n}17", f"C{n}11"]
         for k, ref in enumerate(west):
-            out[ref] = (cx - 2.6 - 1.7 * k, y_row, 90.0)
+            out[ref] = (cx - 2.6 - ROW_PITCH_MM * k, y_row, 90.0)
         for k, ref in enumerate(east):
-            out[ref] = (cx + 2.6 + 1.7 * k, y_row, 90.0)
-        y_l0 = y_row + 4.1  # EMC filter, isolators, TX test points and U.FL taps in one row
+            out[ref] = (cx + 2.6 + ROW_PITCH_MM * k, y_row, 90.0)
+        # EMC filter, isolators, TX test points and U.FL taps in one row, a
+        # via row's worth under the capacitors
+        y_l0 = y_row + 5.0
         out[f"L{n}21"] = (cx - 3.6, y_l0, 90.0)
         out[f"L{n}11"] = (cx + 3.6, y_l0, 90.0)
         out[f"R{n}21"] = (cx - 1.3, y_l0, 90.0)
@@ -602,13 +607,13 @@ def hallrfid_placements(
     # ---- strip, west: multiplexer, filters, references, switched rail
     out["U3"] = (16.0, 70.5, 0.0)
     _stack(out, ["C21", "C22", "C23", "C24", "C25", "C26"], ckt, 8.0, 25.5, 75.5)
-    b = _stack(out, ["R31", "C31", "R32", "R33", "R34", "R35", "C32"], ckt, 24.5, 36.0, 65.5)
+    b = _stack(out, ["R31", "C31", "R32", "R33", "R34", "R35", "C32"], ckt, 24.5, 36.0, 67.0)
     _stack(out, ["Q1", "R41", "JP1", "C41", "C42", "TP4"], ckt, 24.5, 36.0, b + ROW_GAP_MM)
-    out["J4"] = (3.6, 68.5, 0.0)  # 2 x 10, pins run south
+    out["J4"] = (3.6, 70.0, 0.0)  # 2 x 10, pins run south
     _stack(out, ["TP1", "TP2", "TP3", "TP7"], ckt, 8.0, 16.0, 79.0)
     out["J3"] = (12.0, 96.5, 90.0)  # 1 x 6 along the south edge, pin 1 west
     # ---- strip, centre: buffer, regulator, USB-C on the south edge with its protection west
-    b = _stack(out, ["U7", "C71", "R71"], ckt, 37.0, 48.5, 65.5)
+    b = _stack(out, ["U7", "C71", "R71"], ckt, 37.0, 48.5, 67.0)
     _stack(out, ["U6", "C61", "C62", "C63"], ckt, 40.0, 60.0, b + ROW_GAP_MM)
     _stack(out, ["R61", "U5", "R62"], ckt, 36.5, 44.5, 88.5)
     out["J1"] = (47.0, 90.85, 0.0)
