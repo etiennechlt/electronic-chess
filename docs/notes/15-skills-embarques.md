@@ -85,6 +85,22 @@ Prérequis hors dépôt : Node 22 ou plus, FFmpeg, la CLI
 environnement distant, `PRODUCER_HEADLESS_SHELL_PATH` pointe sur le
 Chromium déjà installé plutôt que d'en télécharger un.
 
+## Le serveur KiCad MCP (installé, non embarqué)
+
+Depuis le 17/10/2026, le dépôt déclare dans `.mcp.json` le serveur
+[KiCAD-MCP-Server](https://github.com/mixelpixx/KiCAD-MCP-Server) de
+mixelpixx (MIT, version 2.8.2) : 244 outils qui ouvrent une carte ou un
+schéma, lisent et modifient composants, pistes et zones, lancent le DRC
+et les exports, cherchent dans les bibliothèques, interrogent le
+catalogue JLCPCB. Il n'est pas copié dans le dépôt : trop lourd une fois
+construit. `tools/mcp/install-kicad-mcp.sh` le clone dans `.mcp/`
+(ignoré par git), le construit et vérifie que le `pcbnew` de KiCad est
+joignable ; `tools/mcp/kicad-mcp.sh` le lance pour la session. Mode
+d'emploi et limites (API IPC absente de KiCad 7, catalogue JLCPCB qui
+demande le réseau) dans [`tools/mcp/README.md`](../../tools/mcp/README.md).
+Il sert à relire et retoucher une carte générée en interactif ; la
+source des cartes reste les générateurs et le yaml.
+
 ## Limites à connaître
 
 - Les skills d'approvisionnement et de fiches techniques ont besoin du

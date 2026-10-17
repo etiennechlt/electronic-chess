@@ -64,3 +64,6 @@ media/**/renders/
 media/**/snapshots/
 media/**/.hyperframes/
 media/**/node_modules/
+
+# KiCad MCP server, installed by tools/mcp/install-kicad-mcp.sh
+.mcp/
