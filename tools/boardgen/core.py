@@ -583,16 +583,16 @@ class GenericBoard:
                 for la, cs in cells.items()
             }
 
-        def attempt(net, starts, goals, drop=False):
+        def attempt(net, starts, goals, drop=False, budget=None):
             """One route of `net` between two sets of cells, drawn and
             painted when legal: wide on the power lattice for a power net,
             thin again when the wide track finds no way or brushes a pad
             or a stub of the fine-pitch package it leaves. A ground drop
-            is thin and short."""
+            is thin and short; `budget` overrides the node budget."""
             power = net in sp.power_nets and not drop
             mr = routers["power"] if power else routers["signal"]
             width = sp.power_track if power else sp.track
-            budget = 120_000 if drop else max_nodes
+            budget = budget or (120_000 if drop else max_nodes)
             starts0, goals0 = starts, goals
             starts, goals = legal(mr, net, starts), legal(mr, net, goals)
             found = None
@@ -686,12 +686,44 @@ class GenericBoard:
                 for pc in anchored:
                     for la, cs in pc.cells.items():
                         goals.setdefault(la, set()).update(cs)
-                for pc in gnd_pieces:
-                    if on_pour(pc) or not anchored:
-                        continue
-                    out = attempt(gnd, {la: set(cs) for la, cs in pc.cells.items()}, goals)
+
+                def to_pour(pc):
+                    # distance of the piece to the pour's rectangle
+                    best = float("inf")
+                    for cs in pc.cells.values():
+                        for i, j in cs:
+                            x, y = ref.x0 + i * ref.grid, ref.y0 + j * ref.grid
+                            dx = max(x0 - x, 0.0, x - x1)
+                            dy = max(y0 - y, 0.0, y - y1)
+                            best = min(best, dx * dx + dy * dy)
+                    return best
+
+                # the nearest piece first (a seed in a corridor, then the
+                # sensors behind it): every piece joined anchors the next,
+                # and a route that has to leave a loop opening by its
+                # corridor gets a wider search than a route in the open
+                stranded = sorted((pc for pc in gnd_pieces if not on_pour(pc)), key=to_pour)
+                for pc in stranded:
+                    if not anchored:
+                        break
+                    out = attempt(
+                        gnd,
+                        {la: set(cs) for la, cs in pc.cells.items()},
+                        goals,
+                        budget=3 * max_nodes,
+                    )
                     if isinstance(out, str):
                         self.res.open_nets.append(f"{gnd}: {pc.label} off the pour: {out}")
+                        continue
+                    tracks, vias, mr = out
+                    for la, cs in pc.cells.items():
+                        goals.setdefault(la, set()).update(cs)
+                    for la, pts in tracks:
+                        goals.setdefault(la, set()).update(track_cells(mr, pts))
+                    for x, y in vias:
+                        c = mr.cell(x, y)
+                        for la in self.layers:
+                            goals.setdefault(la, set()).add(c)
             self.res.routed_nets += 1
         for net in order:
             pieces = pieces_of[net]

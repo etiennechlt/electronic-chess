@@ -646,11 +646,37 @@ def play_area_blocks(
     return blocks
 
 
+CORRIDOR_PITCH_MM = 0.75  # between the seed stubs of a corridor: 0.3 mm tracks, 0.45 mm apart
+
+
+def corridor_nets(lay: DemoLayout, square: str) -> list[str]:
+    """The nets that leave the opening of `square` by its corridor: the
+    sensor rail and ground, then the output of every sensor inside."""
+    outs = [s.direct_signal or f"HC{s.mux_channel}" for s in lay.hall_sites if s.square == square]
+    return ["HALL_VCC", "GND", *outs]
+
+
 def hand_routes(gb: GenericBoard, cfg: BoardConfig, lay: DemoLayout) -> None:
     """The copper drawn before the router runs: the two loops (turns, net
-    tie, bridge, feeds to their series resistors)."""
+    tie, bridge, feeds to their series resistors), and in each corridor
+    one short stub per net that leaves the opening, on the back layer: a
+    stepping stone the router reaches from inside the opening in a short
+    search and leaves toward the strip in another, instead of one long
+    search that spends its budget inside the opening."""
     draw = loop_drawings(cfg, lay)
     pads = {(p.ref, p.number): p for p in gb.res.pads}
+    back = gb.layers[-1]
+    for sq, (x0, _y0, x1, y1) in lay.trio_corridors.items():
+        nets = corridor_nets(lay, sq)
+        span = CORRIDOR_PITCH_MM * (len(nets) - 1)
+        if span > (x1 - x0) - 2.0 * gb.spec.track:
+            raise ValueError(f"the corridor of {sq} is too narrow for {len(nets)} stubs")
+        xs = (x0 + x1) / 2.0 - span / 2.0
+        top = lay.loop(sq).outline[3] - 1.0  # under the outer turn
+        bottom = y1 - 0.5
+        for k, net in enumerate(nets):
+            x = round(xs + CORRIDOR_PITCH_MM * k, 3)
+            gb.seed(net, back, [(x, round(top, 3)), (x, round(bottom, 3))], gb.spec.track)
     for n, sq in enumerate(cfg.hall_rfid.demo.squares(), start=1):
         d = draw[sq]
         west = pads[(f"R{n}22", "2")]
