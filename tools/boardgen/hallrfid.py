@@ -572,8 +572,9 @@ def hallrfid_placements(
         for k, ref in enumerate(east):
             out[ref] = (cx + 2.6 + ROW_PITCH_MM * k, y_row, 90.0)
         # EMC filter, isolators, TX test points and U.FL taps in one row, a
-        # via row's worth under the capacitors
-        y_l0 = y_row + 5.0
+        # via row's worth under the capacitors and clear of the reader's
+        # north escape vias (3.6 and 4.3 mm from its centre)
+        y_l0 = y_row + 5.9
         out[f"L{n}21"] = (cx - 3.6, y_l0, 90.0)
         out[f"L{n}11"] = (cx + 3.6, y_l0, 90.0)
         out[f"R{n}21"] = (cx - 1.3, y_l0, 90.0)
@@ -594,37 +595,41 @@ def hallrfid_placements(
         far_w = [f"R{n}31", f"R{n}32", f"JP{n}01", f"C{n}31", f"C{n}06", f"R{n}33"]
         near_e = [f"C{n}03", f"C{n}04", f"C{n}05", f"C{n}09"]
         far_e = [f"R{n}01", f"C{n}07", f"C{n}08", f"TP{n}04"]
+        south = [f"R{n}41", f"R{n}42", f"R{n}43", f"TP{n}03", f"TP{n}05"]
+        if cx - FANOUT_RING_MM - zx0 < 6 * 2.9:
+            # a west zone too narrow for one row of six: the jumper moves south
+            far_w.remove(f"JP{n}01")
+            south.append(f"JP{n}01")
         top = y_u - 3.1
         ring = FANOUT_RING_MM
         b_w = _stack_right(out, near_w, ckt, zx0, cx - ring, top)
-        _stack(out, far_w, ckt, zx0, cx - ring, b_w + ROW_GAP_MM)
+        b_w = _stack(out, far_w, ckt, zx0, cx - ring, b_w + ROW_GAP_MM)
         b_e = _stack(out, near_e, ckt, cx + ring, cx + ring + NEAR_SHELF_MM - 3.6, top)
         b_e = _stack(out, far_e, ckt, cx + ring, zx1, b_e + ROW_GAP_MM)
         # the digital pulls and the RX and ground test points, under the east shelf
-        south = [f"R{n}41", f"R{n}42", f"R{n}43", f"TP{n}03", f"TP{n}05"]
         _stack(out, south, ckt, cx + ring, zx1, max(b_e, y_u + ring) + ROW_GAP_MM)
 
     # ---- strip, west: multiplexer, filters, references, switched rail
-    out["U3"] = (16.0, 70.5, 0.0)
+    out["U3"] = (18.5, 70.5, 0.0)
     _stack(out, ["C21", "C22", "C23", "C24", "C25", "C26"], ckt, 8.0, 25.5, 75.5)
-    b = _stack(out, ["R31", "C31", "R32", "R33", "R34", "R35", "C32"], ckt, 24.5, 36.0, 67.0)
+    b = _stack(out, ["R31", "C31", "R32", "R33", "R34", "R35", "C32"], ckt, 24.5, 36.0, 69.0)
     _stack(out, ["Q1", "R41", "JP1", "C41", "C42", "TP4"], ckt, 24.5, 36.0, b + ROW_GAP_MM)
     out["J4"] = (3.6, 69.5, 0.0)  # 2 x 10, pins run south, clear of the corner hole
     _stack(out, ["TP1", "TP2", "TP3", "TP7"], ckt, 8.0, 16.0, 79.0)
     out["J3"] = (12.0, 96.5, 90.0)  # 1 x 6 along the south edge, pin 1 west
     # ---- strip, centre: buffer, regulator, USB-C on the south edge with its protection west
-    b = _stack(out, ["U7"], ckt, 37.0, 48.5, 67.0)
-    _stack(out, ["C71", "R71"], ckt, 37.0, 48.5, b + ROW_GAP_MM)
-    _stack(out, ["U6", "C61", "C62", "C63"], ckt, 49.0, 58.5, 67.0)
+    b = _stack(out, ["U7"], ckt, 37.0, 48.5, 69.0)
+    _stack(out, ["C71", "R71"], ckt, 37.0, 48.5, b + 2.2)  # past the buffer's escape vias
+    _stack(out, ["U6", "C63", "C61", "C62"], ckt, 49.0, 60.5, 70.0)
     _stack(out, ["R61", "U5", "R62"], ckt, 36.5, 44.5, 88.5)
     out["J1"] = (47.0, 90.85, 0.0)
     out["J2"] = (30.0, 95.0, 90.0)
     # ---- strip, east: the module, its antenna on the east edge
-    ux, uy = 87.0, 80.0
+    ux, uy = 87.0, 81.5
     out["U4"] = (ux, uy, 270.0)
-    b = _stack(out, ["C51", "C52", "R51", "C53", "R52"], ckt, 59.0, 72.0, 71.0)
-    _stack(out, ["D1", "R53", "C54", "TP5", "TP6"], ckt, 59.0, 72.0, b + ROW_GAP_MM)
-    _stack(out, ["SW1", "SW2"], ckt, 69.5, 93.0, 91.0, upright=False)  # clear of the corner hole
+    b = _stack(out, ["C51", "C52", "R51", "C53", "R52"], ckt, 61.0, 72.0, 71.0)
+    _stack(out, ["D1", "R53", "C54", "TP5", "TP6"], ckt, 61.0, 72.0, b + ROW_GAP_MM)
+    _stack(out, ["SW1", "SW2"], ckt, 69.5, 93.0, 92.5, upright=False)  # clear of the corner hole
     out["J5"] = (62.0, 96.5, 90.0)
     return out
 

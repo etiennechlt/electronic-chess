@@ -8,10 +8,13 @@ of the turn centrelines (outer first):
 
 - the top-side polyline starts on the south side, feed_offset west of
   the centre, runs west, north, east and south around turn 0, steps in
-  to the south level of turn 1 on the east side, and so on, and ends on
-  the inner south side on pad 1 of the net tie footprint
-  (hallrfid:NetTie_NFC_Loop), whose origin sits one tie step east of
-  the bridge line; this copper is the net of the loop's first end;
+  to the south level of turn 1 on the east side, and so on; after the
+  last turn's east side it steps in once more, one pitch inside that
+  turn's south side (a tail that keeps the last turn whole: ending on
+  the south side itself would short it), and runs west to pad 1 of the
+  net tie footprint (hallrfid:NetTie_NFC_Loop), whose origin sits one
+  tie step east of the bridge line; this copper is the net of the
+  loop's first end;
 - a via on pad 2 of the tie (bridge_offset east of the centre), a bridge
   on the back layer straight south under the turns, and a via back up
   past the outer turn carry the net of the second end to its series
@@ -61,16 +64,17 @@ def square_loop(
     outer copper edge is side_mm wide."""
     pitch = track_mm + gap_mm
     h = tuple(side_mm / 2.0 - track_mm / 2.0 - k * pitch for k in range(turns))
+    tail_y = cy + h[-1] - pitch  # the inner tail, one pitch inside the last south side
     pts: list[XY] = [(cx - FEED_OFFSET_MM, cy + h[0])]
     for k, hk in enumerate(h):
         pts += [(cx - hk, cy + hk), (cx - hk, cy - hk), (cx + hk, cy - hk)]
         if k + 1 < turns:
             pts.append((cx + hk, cy + h[k + 1]))
         else:
-            pts.append((cx + hk, cy + hk))
-            pts.append((cx + BRIDGE_OFFSET_MM + TIE_STEP_MM, cy + hk))  # pad 1's centre
-    tie_at = (cx + BRIDGE_OFFSET_MM + TIE_STEP_MM, cy + h[-1])
-    bridge_via = (cx + BRIDGE_OFFSET_MM, cy + h[-1])  # pad 2's centre, over the feed line
+            pts.append((cx + hk, tail_y))
+            pts.append((cx + BRIDGE_OFFSET_MM + TIE_STEP_MM, tail_y))  # pad 1's centre
+    tie_at = (cx + BRIDGE_OFFSET_MM + TIE_STEP_MM, tail_y)
+    bridge_via = (cx + BRIDGE_OFFSET_MM, tail_y)  # pad 2's centre, over the feed line
     bridge_end = (bridge_via[0], cy + h[0] + BRIDGE_PAST_MM)
     outline = (cx - side_mm / 2.0, cy - side_mm / 2.0, cx + side_mm / 2.0, cy + side_mm / 2.0)
     opening = side_mm - 2.0 * (turns * track_mm + (turns - 1) * gap_mm)
