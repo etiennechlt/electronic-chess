@@ -601,3 +601,6 @@ Voir [l'état](07-etat-et-reste-a-faire.md).
 - Les prises U.FL non montées des réseaux d'adaptation sont retirées :
   le pigtail du NanoVNA se soude sur les points de test TX, isolateurs
   dessoudés.
+- Fiche de coûts : second scénario « soudure maison, gros matériel déjà
+  acheté » (cartes nues, pas d'assemblage ni d'outillage, pochoir en
+  option) : A 173 USD, B 144 USD, les deux 277 USD au minimum.

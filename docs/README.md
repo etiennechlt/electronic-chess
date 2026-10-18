@@ -83,7 +83,8 @@ pas.
   [modèle A](bom-demonstrateur-a.md) et [modèle B](bom-demonstrateur-b.md),
   et la [fiche de coûts](couts-demonstrateurs.md) par catégorie (cartes
   nues, assemblage, cartes de développement, matériaux, outillage, port
-  et douane, minimum et complet pour chaque modèle et pour les deux) se
+  et douane, minimum et complet pour chaque modèle et pour les deux,
+  puis le scénario « soudure maison, gros matériel déjà acheté ») se
   regénèrent par `tools/demobom.py` depuis
   [`prix-demonstrateur.csv`](prix-demonstrateur.csv).
 - **Baisser le coût des cartes** : la [note 16](notes/16-cout-des-cartes.md),

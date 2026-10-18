@@ -33,7 +33,8 @@ contrôles de la section 4 ne sont pas verts.
   ajoute les cartes nues, la Nucleo, les matériaux des pucks et du bois,
   l'outillage et le port, par catégorie, avec un minimum (environ
   320 USD outillage compris, dont 175 d'instruments qu'on n'achète
-  qu'une fois) et un complet options comprises.
+  qu'une fois) et un complet options comprises ; en soudant soi-même
+  avec l'établi déjà équipé, environ 175 USD.
 - On monte par échelons, un test par échelon. La mesure qui compte est
   la **note d'un puck posé sur sa case**, puis le **Q avec l'aimant
   ferrite** (M2) : c'est elle qui dit si la technologie tient.

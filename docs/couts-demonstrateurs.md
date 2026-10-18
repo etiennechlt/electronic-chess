@@ -9,6 +9,9 @@ et [`bom-demonstrateur-b.md`](bom-demonstrateur-b.md). Conversion
 1 USD = 0.92 EUR, TVA 20% dans la colonne EUR TTC. Une ligne
 « optionnelle » n'entre pas dans le minimum : elle est comptée dans le
 total complet. L'outillage s'achète une fois pour les deux démonstrateurs.
+Deux scénarios : tout acheter, cartes assemblées par JLCPCB et établi à
+équiper ; puis souder soi-même avec le gros matériel déjà acheté
+(section « soudure maison » en fin de fiche).
 
 ## Démonstrateur A, détection LC par oscillations
 
@@ -159,6 +162,71 @@ quatre cartes, ce qui économise encore un port (non compté ici).
 |---|---|---|
 | Minimum des deux | 552 | 610 |
 | Complet des deux | 732 | 809 |
+
+## Scénario : soudure maison, gros matériel déjà acheté
+
+Les cartes se commandent nues et se soudent au fer ; le HVQFN du
+MFRC522 et le module ESP32 passent à l'air chaud ou à la plaque, avec
+le pochoir. Fer, air chaud, alimentation de laboratoire, multimètre,
+oscilloscope et NanoVNA sont déjà sur l'établi, pâte, flux et tresse
+aussi. Restent les composants, les cartes nues, les cartes de
+développement (la NUCLEO reste comptée : elle porte le démonstrateur A ;
+à retirer si elle est déjà dans le tiroir), les matériaux et le port.
+Les codes LCSC manquants des condensateurs
+d'adaptation n'ont plus d'importance : on les achète par valeur, chez
+Mouser ou LCSC, dans la même commande.
+
+### Démonstrateur A, détection LC par oscillations
+
+| Poste | USD | EUR TTC | Statut | Remarque |
+|---|---|---|---|---|
+| Composants des cartes (107 pièces, rechange comprise) | 28 | 31 | relevés web | le moins cher de LCSC ou Mouser ligne à ligne |
+| PCB 100x100 4L x5 | 30 | 33 | estimé | cartes nues (jlcpcb) |
+| PCB inner copper 1oz | 18 | 20 | optionnel, estimé | cartes nues (jlcpcb) |
+| PCB 100x62 2L x5 | 4 | 4 | estimé | cartes nues (jlcpcb) |
+| PCB stencil 100x100 | 8 | 9 | optionnel, estimé | conseillé pour poser la pâte sous les QFN et le module |
+| JLC3DP pucks and jigs | 15 | 17 | optionnel, estimé | ou imprimés chez soi |
+| NUCLEO-G474RE | 20 | 22 | estimé | cartes de développement |
+| Magnets ferrite 12 15 18x4 | 12 | 13 | estimé | composants hors cartes et matériaux |
+| Enamelled wire 025 0315 | 8 | 9 | estimé | composants hors cartes et matériaux |
+| Puck C0G capacitors | 1 | 1 | estimé | composants hors cartes et matériaux |
+| Plywood 3mm felt | 6 | 7 | estimé | composants hors cartes et matériaux |
+| Nylon M3 kit | 6 | 7 | estimé | composants hors cartes et matériaux |
+| Supply 12V 2A jack | 12 | 13 | estimé | composants hors cartes et matériaux |
+| Dupont and USB cables | 2 | 2 | estimé | composants hors cartes et matériaux |
+| Shipping JLCPCB | 25 | 28 | estimé | port et douane |
+| Shipping Mouser | 20 | 22 | estimé | port et douane |
+| Customs import FR | 0 | 0 | estimé | port et douane |
+| **Minimum** | **173** | **191** | | |
+| **Avec les options** (pochoir, impression 3D, carte de secours) | **214** | **237** | | |
+
+### Démonstrateur B, effet Hall et RFID
+
+| Poste | USD | EUR TTC | Statut | Remarque |
+|---|---|---|---|---|
+| Composants des cartes (157 pièces, rechange comprise) | 32 | 35 | relevés web | le moins cher de LCSC ou Mouser ligne à ligne |
+| PCB 100x100 4L x5 | 30 | 33 | estimé | cartes nues (jlcpcb) |
+| PCB 100x87 2L 0.8 x5 | 8 | 9 | estimé | cartes nues (jlcpcb) |
+| PCB stencil 100x100 | 8 | 9 | optionnel, estimé | conseillé pour poser la pâte sous les QFN et le module |
+| JLC3DP pieces and plate | 20 | 22 | optionnel, estimé | ou imprimés chez soi |
+| ESP32-S3-DevKitC-1 | 8 | 9 | optionnel, estimé | cartes de développement |
+| Magnets ferrite 12 15 18x4 | 12 | 13 | estimé | composants hors cartes et matériaux |
+| NTAG213 cards | 3 | 3 | estimé | composants hors cartes et matériaux |
+| Polyimide tape | 4 | 4 | estimé | composants hors cartes et matériaux |
+| Nylon M3 kit | 6 | 7 | estimé | composants hors cartes et matériaux |
+| UFL SMA pigtails | 2 | 2 | estimé | composants hors cartes et matériaux |
+| Dupont and USB cables | 2 | 2 | estimé | composants hors cartes et matériaux |
+| Aluminium steel plates | 8 | 9 | optionnel, estimé | composants hors cartes et matériaux |
+| Shipping JLCPCB | 25 | 28 | estimé | port et douane |
+| Shipping Mouser | 20 | 22 | estimé | port et douane |
+| Customs import FR | 0 | 0 | estimé | port et douane |
+| **Minimum** | **144** | **159** | | |
+| **Avec les options** (pochoir, impression 3D, carte de secours) | **188** | **208** | | |
+
+| Les deux démonstrateurs, soudure maison | USD | EUR TTC |
+|---|---|---|
+| Minimum (visserie, nappes, aimants et port Mouser comptés une fois) | 277 | 306 |
+| Avec les options | 362 | 400 |
 
 ## Ce que les prix ne couvrent pas
 

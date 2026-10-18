@@ -347,6 +347,93 @@ def unit_price(p: Price) -> float:
     return unit or 0.0
 
 
+HOME_EXCLUDED = ("Assemblage (JLCPCB)", "Outillage et instruments")
+HOME_KEPT = {
+    "PCB_stencil_100x100": "conseillé pour poser la pâte sous les QFN et le module",
+    "JLC3DP_pucks_and_jigs": "ou imprimés chez soi",
+    "JLC3DP_pieces_and_plate": "ou imprimés chez soi",
+}
+HOME_SHARED = (
+    "Nylon_M3_kit",
+    "Dupont_and_USB_cables",
+    "Magnets_ferrite_12_15_18x4",
+    "Shipping_Mouser",
+)
+
+
+def scenario_home(prices: dict[str, Price], components: dict[str, dict[str, float]]) -> list[str]:
+    """The sheet's second scenario: every board soldered at home, the
+    bench already equipped. Assembly and tools drop out, the stencil
+    stays as the useful option, consumables are assumed in stock."""
+    out = [
+        "## Scénario : soudure maison, gros matériel déjà acheté",
+        "",
+        "Les cartes se commandent nues et se soudent au fer ; le HVQFN du",
+        "MFRC522 et le module ESP32 passent à l'air chaud ou à la plaque, avec",
+        "le pochoir. Fer, air chaud, alimentation de laboratoire, multimètre,",
+        "oscilloscope et NanoVNA sont déjà sur l'établi, pâte, flux et tresse",
+        "aussi. Restent les composants, les cartes nues, les cartes de",
+        "développement (la NUCLEO reste comptée : elle porte le démonstrateur A ;",
+        "à retirer si elle est déjà dans le tiroir), les matériaux et le port.",
+        "Les codes LCSC manquants des condensateurs",
+        "d'adaptation n'ont plus d'importance : on les achète par valeur, chez",
+        "Mouser ou LCSC, dans la même commande.",
+        "",
+    ]
+    totals: dict[str, dict[str, float]] = {}
+    for key, title in (("a", MODELS["a"].title), ("b", MODELS["b"].title)):
+        comp = components[key]
+        minimum = complete = comp["cheapest"]
+        out += [
+            f"### {title}",
+            "",
+            "| Poste | USD | EUR TTC | Statut | Remarque |",
+            "|---|---|---|---|---|",
+            f"| Composants des cartes ({comp['parts']:.0f} pièces, rechange comprise) | "
+            f"{comp['cheapest']:.0f} | {usd_to_eur_ttc(comp['cheapest']):.0f} | relevés web | "
+            "le moins cher de LCSC ou Mouser ligne à ligne |",
+        ]
+        for cat, pkey, qty, optional in COSTS[key]:
+            if cat in HOME_EXCLUDED and pkey not in HOME_KEPT:
+                continue
+            p = prices.get(pkey)
+            if p is None:
+                continue
+            usd = unit_price(p) * qty
+            status = ("optionnel, " if optional else "") + (
+                "vérifié" if p.status == "verified" else "estimé"
+            )
+            note = HOME_KEPT.get(pkey, cat.lower())
+            eur = usd_to_eur_ttc(usd)
+            out.append(f"| {pkey.replace('_', ' ')} | {usd:.0f} | {eur:.0f} | {status} | {note} |")
+            complete += usd
+            if not optional:
+                minimum += usd
+        out += [
+            f"| **Minimum** | **{minimum:.0f}** | **{usd_to_eur_ttc(minimum):.0f}** | | |",
+            f"| **Avec les options** (pochoir, impression 3D, carte de secours) "
+            f"| **{complete:.0f}** | **{usd_to_eur_ttc(complete):.0f}** | | |",
+            "",
+        ]
+        totals[key] = {"minimum": minimum, "complete": complete}
+    once = sum(
+        unit_price(prices[k]) * q
+        for _c, k, q, _o in COSTS["b"]
+        if k in HOME_SHARED and prices.get(k)
+    )
+    pair_min = totals["a"]["minimum"] + totals["b"]["minimum"] - once
+    pair_full = totals["a"]["complete"] + totals["b"]["complete"] - once
+    out += [
+        "| Les deux démonstrateurs, soudure maison | USD | EUR TTC |",
+        "|---|---|---|",
+        f"| Minimum (visserie, nappes, aimants et port Mouser comptés une fois) | {pair_min:.0f} "
+        f"| {usd_to_eur_ttc(pair_min):.0f} |",
+        f"| Avec les options | {pair_full:.0f} | {usd_to_eur_ttc(pair_full):.0f} |",
+        "",
+    ]
+    return out
+
+
 def cost_sheet(prices: dict[str, Price], components: dict[str, dict[str, float]], date: str) -> str:
     """docs/couts-demonstrateurs.md: every expense of each demonstrator by
     category, components included, with a minimum total (the lines that
@@ -363,6 +450,9 @@ def cost_sheet(prices: dict[str, Price], components: dict[str, dict[str, float]]
         f"1 USD = {USD_TO_EUR} EUR, TVA {VAT:.0%} dans la colonne EUR TTC. Une ligne",
         "« optionnelle » n'entre pas dans le minimum : elle est comptée dans le",
         "total complet. L'outillage s'achète une fois pour les deux démonstrateurs.",
+        "Deux scénarios : tout acheter, cartes assemblées par JLCPCB et établi à",
+        "équiper ; puis souder soi-même avec le gros matériel déjà acheté",
+        "(section « soudure maison » en fin de fiche).",
         "",
     ]
     grand: dict[str, dict[str, float]] = {}
@@ -460,6 +550,7 @@ def cost_sheet(prices: dict[str, Price], components: dict[str, dict[str, float]]
         f"| Minimum des deux | {pair_min:.0f} | {usd_to_eur_ttc(pair_min):.0f} |",
         f"| Complet des deux | {pair_full:.0f} | {usd_to_eur_ttc(pair_full):.0f} |",
         "",
+        *scenario_home(prices, components),
         "## Ce que les prix ne couvrent pas",
         "",
         "- Les frais de dossier du transporteur à l'importation (10 à 20 EUR par",

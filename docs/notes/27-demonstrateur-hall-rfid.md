@@ -33,7 +33,9 @@ les contrôles de la section 4 ne sont pas verts.
   les composants ligne à ligne ; la [fiche de coûts](../couts-demonstrateurs.md)
   ajoute les cartes nues, l'assemblage Standard, les aimants, le
   NanoVNA, l'outillage et le port, par catégorie, avec un minimum
-  (environ 360 USD outillage compris) et un complet options comprises.
+  (environ 360 USD outillage compris) et un complet options comprises ;
+  en soudant soi-même, cartes nues et établi déjà équipé, environ
+  145 USD.
   Les prix sont des relevés web, à confirmer au panier.
 - Le micrologiciel `firmware/esp32/hallrfid-demo` (ESP-IDF) donne une
   console de mise en route : lecture des capteurs, réveil d'un lecteur,
