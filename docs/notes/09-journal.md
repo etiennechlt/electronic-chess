@@ -573,3 +573,31 @@ Voir [l'état](07-etat-et-reste-a-faire.md).
   l'environnement) ; le code LCSC de la NT3H2111 en TSSOP8 et ceux des
   0402 C0G d'accord sont à relever au panier ; le micrologiciel ESP-IDF
   n'est pas compilé par la CI (seul le test hôte l'est).
+
+## 18/10/2026, la carte du démonstrateur B fermée
+
+- `hallrfid-demo` se ferme au dix-neuvième build : 87 liaisons routées,
+  zéro ouverte, DRC KiCad à zéro erreur, archive de fabrication et
+  empreinte commitées, `fabcheck` « bare boards ready » (les
+  condensateurs C0G d'adaptation attendent leurs codes LCSC).
+- Ce que la fermeture a imposé, et qui vaut pour les prochaines cartes
+  denses : quatre couches plutôt que deux (un tiers des liaisons
+  restait ouvert en deux couches) ; la zone de jeu fermée au routeur
+  hors des boucles, qui en faisait une autoroute ; une amorce par
+  liaison dans chaque couloir de capteurs (la recherche épuisait son
+  budget dans l'ouverture d'une boucle) ; des rangées d'adaptation au
+  pas de 2,5 mm à nœuds alignés et des pastilles de masse vers le pour ;
+  un anneau libre de 5,2 mm autour des puces à pas fin ; une dorsale
+  3,3 V large le long des bords sur la couche interne ; les règles de la
+  capacité quatre couches de JLCPCB ; et, dans le routeur, un poids
+  d'heuristique par carte (2,5 ici), des jonctions essayées morceau par
+  morceau quand la recherche vers l'ensemble échoue, et des amorces
+  simples pour les pastilles larges du module.
+- Deux défauts du dessin corrigés en chemin : la dernière spire de
+  chaque boucle était court-circuitée par son propre côté sud, et le
+  net tie des boucles touchait ses deux pastilles ; les spires finissent
+  désormais par une amorce intérieure sur un net tie à pont de cuivre,
+  comme ceux de la bibliothèque KiCad.
+- Les prises U.FL non montées des réseaux d'adaptation sont retirées :
+  le pigtail du NanoVNA se soude sur les points de test TX, isolateurs
+  dessoudés.

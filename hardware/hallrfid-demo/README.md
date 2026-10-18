@@ -8,8 +8,9 @@ Carte générée par `tools/boardgen` (module `hallrfid`) depuis
 critères) et le modèle `chessboard_calc.hallrfid_demo`. 100 x 100 mm,
 4 couches : F.Cu composants et signaux, In1 plan de masse borné à la
 bande (aucun cuivre de masse à moins de 4 mm d'une boucle, D12), In2
-alimentations et liaisons longues, B.Cu signaux et le pont de chaque
-boucle. Ne pas éditer les fichiers KiCad à la main : modifier le yaml ou
+alimentations et liaisons longues avec la dorsale 3,3 V le long des
+bords ouest et sud, B.Cu signaux, le pont de chaque boucle et les
+amorces des couloirs de capteurs. Ne pas éditer les fichiers KiCad à la main : modifier le yaml ou
 le générateur, puis regénérer. Le rôle de chaque composant, l'assemblage
 et les tests sont dans la [note 27](../../docs/notes/27-demonstrateur-hall-rfid.md).
 
@@ -82,8 +83,25 @@ autres cartes du dépôt (note 04).
 
 ## État
 
-Carte en cours de routage : l'état (liaisons ouvertes, DRC, archive de
-fabrication) est écrit ici à la fermeture du build.
+Fermée le 18/10/2026, au dix-neuvième build, par `boardgen build
+hallrfid-demo` sur le yaml commité :
+
+| Contrôle | Résultat |
+|---|---|
+| Build | 162 composants, 87 liaisons routées, 0 ouverte, 0 défaut de garde du générateur ; 1624 segments, 413 vias, 14 jonctions de la passe de finition |
+| DRC KiCad 7.0.11 | 0 erreur, 0 élément non connecté ; 529 avertissements ignorés : recouvrements de sérigraphie (références sur les pastilles des 0603 serrés), chemins de bibliothèque, et les amorces d'échappement et vias de sortie non prolongés que le routeur laisse derrière lui |
+| Archive | `hallrfid-demo-gerbers.zip`, 10 couches, 13 fichiers ; `hallrfid-demo-gerbers.sha256` lie l'archive au `.kicad_pcb` commité |
+| `fabcheck` | « bare boards ready » : 99 des 143 composants montés ont un code LCSC ; les 22 lignes sans code sont les condensateurs C0G des réseaux d'adaptation (56, 5,6, 470, 33, 82, 3,3, 680 pF et les emplacements de retouche), le tantale et la puce du net tie, à relever au panier avant un ordre d'assemblage (note 23, paragraphe 5) |
+
+Ce qu'il a fallu pour fermer la carte, et que le générateur garde :
+quatre couches ; la zone de jeu fermée au routeur hors des boucles ;
+une amorce par liaison dans chaque couloir de capteurs ; les rangées
+d'adaptation au pas de 2,5 mm avec leurs nœuds alignés ; un anneau
+libre de 5,2 mm autour des puces à pas fin pour leurs vias
+d'échappement ; une dorsale 3,3 V large sur la couche interne le long
+des bords ouest et sud ; les règles de la capacité quatre couches de
+JLCPCB (0,25 mm, garde 0,127 mm, vias 0,6/0,3 mm) ; et une recherche
+A* plus gourmande (poids 2,5) pour les liaisons longues.
 
 ## Nomenclatures
 

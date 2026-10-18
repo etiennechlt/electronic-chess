@@ -273,10 +273,14 @@ cd hardware/tag-demo && sha256sum -c tag-demo-gerbers.sha256 && cd -
 ```
 
 Le build doit finir sur `open 0, clearance errors 0`, le DRC sur
-`0 failing` et `unconnected items: 0` pour les deux cartes, `fabcheck`
-sur `assembly ready` pour la carte principale, et les deux empreintes
-doivent répondre `OK`. L'état au jour de la rédaction est au
-[README de la carte](../../hardware/hallrfid-demo/README.md).
+`0 failing` et `unconnected items: 0` pour les deux cartes, et les deux
+empreintes doivent répondre `OK`. `fabcheck` dit « bare boards ready »
+pour la carte principale tant que les condensateurs C0G des réseaux
+d'adaptation n'ont pas leur code LCSC : les relever au panier le jour
+de la commande fait passer le verdict à « assembly ready ». L'état
+vérifié le 18/10/2026 est au
+[README de la carte](../../hardware/hallrfid-demo/README.md) : 87
+liaisons fermées, DRC à zéro, archive et empreinte commitées.
 
 ### 4.2 Les deux circuits imprimés chez JLCPCB
 
