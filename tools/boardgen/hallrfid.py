@@ -591,7 +591,9 @@ def hallrfid_placements(
         out[f"C{n}11"] = (cx + 5.9, y_l0, 270.0)
         out[f"TP{n}02"] = (cx - 8.0, y_l0, 0.0)  # TX2
         out[f"TP{n}01"] = (cx + 8.0, y_l0, 0.0)  # TX1
-        out[f"J{n}02"] = (cx - 12.0, y_l0, 0.0)  # U.FL west (not fitted)
+        # the U.FL taps (not fitted): their centre contact faces the filter
+        # node, so the west one is turned round
+        out[f"J{n}02"] = (cx - 12.5, y_l0, 180.0)
         out[f"J{n}01"] = (cx + 12.0, y_l0, 0.0)
         # the chip a fanout ring under the filter row: its north escape vias
         # (3.6 and 4.3 mm from the centre, with their clearance) stay clear
@@ -609,10 +611,6 @@ def hallrfid_placements(
         near_e = [f"C{n}03", f"C{n}04", f"C{n}05", f"C{n}09"]
         far_e = [f"R{n}01", f"C{n}07", f"C{n}08", f"TP{n}04"]
         south = [f"R{n}41", f"R{n}42", f"R{n}43", f"TP{n}03", f"TP{n}05"]
-        if cx - FANOUT_RING_MM - zx0 < 6 * 2.9:
-            # a west zone too narrow for one row of six: the jumper moves south
-            far_w.remove(f"JP{n}01")
-            south.append(f"JP{n}01")
         top = y_u - 3.1
         ring = FANOUT_RING_MM
         b_w = _stack_right(out, near_w, ckt, zx0, cx - ring, top)
