@@ -81,7 +81,10 @@ pas.
   interactions, la commande, l'assemblage et les tests, échelon par
   échelon. Les nomenclatures chiffrées avec liens et prix,
   [modèle A](bom-demonstrateur-a.md) et [modèle B](bom-demonstrateur-b.md),
-  se regénèrent par `tools/demobom.py` depuis
+  et la [fiche de coûts](couts-demonstrateurs.md) par catégorie (cartes
+  nues, assemblage, cartes de développement, matériaux, outillage, port
+  et douane, minimum et complet pour chaque modèle et pour les deux) se
+  regénèrent par `tools/demobom.py` depuis
   [`prix-demonstrateur.csv`](prix-demonstrateur.csv).
 - **Baisser le coût des cartes** : la [note 16](notes/16-cout-des-cartes.md),
   état de la réflexion sur le quadrant et le format 100 x 100, avec

@@ -28,10 +28,12 @@ contrôles de la section 4 ne sont pas verts.
 - Les deux cartes existent déjà, fermées et vérifiées : routage sans
   liaison ouverte, DRC KiCad à zéro erreur, archives de fabrication
   commitées avec leur empreinte. On les commande telles quelles.
-- Coût : voir la [nomenclature chiffrée](../bom-demonstrateur-a.md),
-  regénérée par `tools/demobom.py` : de l'ordre de 125 USD, soit 140 EUR
-  TTC, cartes, composants, Nucleo et ports compris, hors pucks,
-  bois et outillage.
+- Coût : la [nomenclature chiffrée](../bom-demonstrateur-a.md) donne
+  les composants ligne à ligne ; la [fiche de coûts](../couts-demonstrateurs.md)
+  ajoute les cartes nues, la Nucleo, les matériaux des pucks et du bois,
+  l'outillage et le port, par catégorie, avec un minimum (environ
+  320 USD outillage compris, dont 175 d'instruments qu'on n'achète
+  qu'une fois) et un complet options comprises.
 - On monte par échelons, un test par échelon. La mesure qui compte est
   la **note d'un puck posé sur sa case**, puis le **Q avec l'aimant
   ferrite** (M2) : c'est elle qui dit si la technologie tient.

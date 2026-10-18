@@ -1,6 +1,6 @@
 # Nomenclature du démonstrateur A, détection LC par oscillations
 
-Générée par `python3 tools/demobom.py --model a` le 17/10/2026 depuis les
+Générée par `python3 tools/demobom.py --model a` le 18/10/2026 depuis les
 `bom.csv` des cartes et `docs/prix-demonstrateur.csv`. Les quantités
 sont celles des cartes ; la colonne « achat » ajoute la rechange de
 10 % par ligne (au moins une pièce, deux au-delà de dix). Les prix

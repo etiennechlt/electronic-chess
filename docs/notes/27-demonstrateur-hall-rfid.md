@@ -29,9 +29,12 @@ les contrôles de la section 4 ne sont pas verts.
 - La carte principale se commande **assemblée** (JLCPCB, face avant),
   ou nue pour qui soude le QFN et le module au fer. La planche se
   commande nue : les puces d'étiquette se soudent au fer.
-- Coût : voir la [nomenclature chiffrée](../bom-demonstrateur-b.md),
-  regénérée par `tools/demobom.py --model b` ; les prix sont des relevés
-  web, à confirmer au panier.
+- Coût : la [nomenclature chiffrée](../bom-demonstrateur-b.md) donne
+  les composants ligne à ligne ; la [fiche de coûts](../couts-demonstrateurs.md)
+  ajoute les cartes nues, l'assemblage Standard, les aimants, le
+  NanoVNA, l'outillage et le port, par catégorie, avec un minimum
+  (environ 360 USD outillage compris) et un complet options comprises.
+  Les prix sont des relevés web, à confirmer au panier.
 - Le micrologiciel `firmware/esp32/hallrfid-demo` (ESP-IDF) donne une
   console de mise en route : lecture des capteurs, réveil d'un lecteur,
   `VersionReg`, émission à conductance réglée, lecture d'UID.

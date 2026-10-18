@@ -128,6 +128,71 @@ MODELS = {
     ),
 }
 
+# The cost sheet (docs/couts-demonstrateurs.md): every expense of a
+# demonstrator beyond the component lines, by category. (category, price
+# key, quantity, optional): an optional line is not counted in the
+# minimum total. The components' total comes from the BOM lines.
+Cost = tuple[str, str, int, bool]
+CATEGORIES = (
+    "Cartes nues (JLCPCB)",
+    "Assemblage (JLCPCB)",
+    "Cartes de développement",
+    "Composants hors cartes et matériaux",
+    "Outillage et instruments",
+    "Port et douane",
+)
+COSTS: dict[str, list[Cost]] = {
+    "a": [
+        ("Cartes nues (JLCPCB)", "PCB_100x100_4L_x5", 1, False),
+        ("Cartes nues (JLCPCB)", "PCB_inner_copper_1oz", 1, True),
+        ("Cartes nues (JLCPCB)", "PCB_100x62_2L_x5", 1, False),
+        ("Cartes nues (JLCPCB)", "PCB_stencil_100x100", 1, True),
+        ("Assemblage (JLCPCB)", "PCBA_economic_setup", 1, True),
+        ("Assemblage (JLCPCB)", "JLC3DP_pucks_and_jigs", 1, True),
+        ("Cartes de développement", "NUCLEO-G474RE", 1, False),
+        ("Composants hors cartes et matériaux", "Magnets_ferrite_12_15_18x4", 1, False),
+        ("Composants hors cartes et matériaux", "Enamelled_wire_025_0315", 1, False),
+        ("Composants hors cartes et matériaux", "Puck_C0G_capacitors", 1, False),
+        ("Composants hors cartes et matériaux", "Plywood_3mm_felt", 1, False),
+        ("Composants hors cartes et matériaux", "Nylon_M3_kit", 1, False),
+        ("Composants hors cartes et matériaux", "Supply_12V_2A_jack", 1, False),
+        ("Composants hors cartes et matériaux", "Dupont_and_USB_cables", 1, False),
+        ("Outillage et instruments", "Tool_soldering_iron_kit", 1, False),
+        ("Outillage et instruments", "Tool_multimeter", 1, False),
+        ("Outillage et instruments", "Tool_bench_supply", 1, False),
+        ("Outillage et instruments", "Tool_pocket_oscilloscope", 1, False),
+        ("Outillage et instruments", "Tool_LCR_meter", 1, True),
+        ("Port et douane", "Shipping_JLCPCB", 1, False),
+        ("Port et douane", "Shipping_Mouser", 1, False),
+        ("Port et douane", "Customs_import_FR", 1, False),
+    ],
+    "b": [
+        ("Cartes nues (JLCPCB)", "PCB_100x100_4L_x5", 1, False),
+        ("Cartes nues (JLCPCB)", "PCB_100x87_2L_0.8_x5", 1, False),
+        ("Cartes nues (JLCPCB)", "PCB_stencil_100x100", 1, True),
+        ("Assemblage (JLCPCB)", "PCBA_standard_2_boards", 1, False),
+        ("Assemblage (JLCPCB)", "JLC3DP_pieces_and_plate", 1, True),
+        ("Cartes de développement", "ESP32-S3-DevKitC-1", 1, True),
+        ("Composants hors cartes et matériaux", "Magnets_ferrite_12_15_18x4", 1, False),
+        ("Composants hors cartes et matériaux", "NTAG213_cards", 1, False),
+        ("Composants hors cartes et matériaux", "Polyimide_tape", 1, False),
+        ("Composants hors cartes et matériaux", "Nylon_M3_kit", 1, False),
+        ("Composants hors cartes et matériaux", "UFL_SMA_pigtails", 1, False),
+        ("Composants hors cartes et matériaux", "Dupont_and_USB_cables", 1, False),
+        ("Composants hors cartes et matériaux", "Aluminium_steel_plates", 1, True),
+        ("Outillage et instruments", "Tool_soldering_iron_kit", 1, False),
+        ("Outillage et instruments", "Tool_multimeter", 1, False),
+        ("Outillage et instruments", "Tool_bench_supply", 1, False),
+        ("Outillage et instruments", "NanoVNA-H", 1, False),
+        ("Outillage et instruments", "Tool_NFC_phone", 1, False),
+        ("Outillage et instruments", "Tool_pocket_oscilloscope", 1, True),
+        ("Outillage et instruments", "Tool_hot_air_station", 1, True),
+        ("Port et douane", "Shipping_JLCPCB", 1, False),
+        ("Port et douane", "Shipping_Mouser", 1, False),
+        ("Port et douane", "Customs_import_FR", 1, False),
+    ],
+}
+
 # footprint prefix -> key of the generic price line (parts bought by value)
 GENERIC_KEYS = {
     "R_0603_1608Metric": "Resistor@R_0603_1608Metric",
@@ -274,6 +339,138 @@ def fixed_total(
 
 def usd_to_eur_ttc(usd: float) -> float:
     return usd * USD_TO_EUR * (1.0 + VAT)
+
+
+def unit_price(p: Price) -> float:
+    """The price kept for a cost line: the cheaper channel, else the only one."""
+    _channel, unit = p.cheapest()
+    return unit or 0.0
+
+
+def cost_sheet(prices: dict[str, Price], components: dict[str, dict[str, float]], date: str) -> str:
+    """docs/couts-demonstrateurs.md: every expense of each demonstrator by
+    category, components included, with a minimum total (the lines that
+    cannot be skipped) and a complete total (options included)."""
+    out = [
+        "# Coûts des démonstrateurs",
+        "",
+        f"Généré par `python3 tools/demobom.py` le {date} depuis",
+        "`docs/prix-demonstrateur.csv` (prix et sources, datés, « vérifié » ou",
+        "« estimé ») et les nomenclatures des cartes. Les composants sont",
+        "comptés au canal le moins cher ligne à ligne, rechange comprise ; le",
+        "détail par repère est dans [`bom-demonstrateur-a.md`](bom-demonstrateur-a.md)",
+        "et [`bom-demonstrateur-b.md`](bom-demonstrateur-b.md). Conversion",
+        f"1 USD = {USD_TO_EUR} EUR, TVA {VAT:.0%} dans la colonne EUR TTC. Une ligne",
+        "« optionnelle » n'entre pas dans le minimum : elle est comptée dans le",
+        "total complet. L'outillage s'achète une fois pour les deux démonstrateurs.",
+        "",
+    ]
+    grand: dict[str, dict[str, float]] = {}
+    for key, title in (("a", MODELS["a"].title), ("b", MODELS["b"].title)):
+        comp = components[key]
+        minimum = comp["cheapest"]
+        complete = comp["cheapest"]
+        out += [f"## {title}", ""]
+        out += [
+            "| Poste | USD | EUR TTC | Statut | Source et remarque |",
+            "|---|---|---|---|---|",
+            f"| **Composants des cartes** ({comp['lines']:.0f} lignes, {comp['parts']:.0f} pièces, "
+            f"rechange comprise) | {comp['cheapest']:.0f} | "
+            f"{usd_to_eur_ttc(comp['cheapest']):.0f} | "
+            f"relevés web | le moins cher de LCSC ou Mouser ligne à ligne ; tout chez LCSC "
+            f"{comp['lcsc']:.0f} USD, tout chez Mouser {comp['mouser']:.0f} USD |",
+            "",
+        ]
+        for cat in CATEGORIES:
+            rows = [c for c in COSTS[key] if c[0] == cat]
+            if not rows:
+                continue
+            out += [
+                f"### {cat}",
+                "",
+                "| Poste | USD | EUR TTC | Statut | Source et remarque |",
+                "|---|---|---|---|---|",
+            ]
+            sub = 0.0
+            for _cat, pkey, qty, optional in rows:
+                p = prices.get(pkey)
+                if p is None:
+                    out.append(f"| {pkey} | ? | ? | prix manquant | |")
+                    continue
+                usd = unit_price(p) * qty
+                status = ("optionnel, " if optional else "") + (
+                    "vérifié" if p.status == "verified" else "estimé"
+                )
+                label = pkey.replace("_", " ")
+                out.append(
+                    f"| {label} | {usd:.0f} | {usd_to_eur_ttc(usd):.0f} | {status} | {p.source} |"
+                )
+                complete += usd
+                sub += usd
+                if not optional:
+                    minimum += usd
+            out += [
+                f"| *Sous-total {cat.lower()}* | *{sub:.0f}* | *{usd_to_eur_ttc(sub):.0f}* | | |",
+                "",
+            ]
+        out += [
+            "| Total | USD | EUR TTC |",
+            "|---|---|---|",
+            f"| **Minimum** (composants, cartes, port, matériaux et outillage indispensables) "
+            f"| **{minimum:.0f}** | **{usd_to_eur_ttc(minimum):.0f}** |",
+            f"| **Complet** (options comprises) | **{complete:.0f}** "
+            f"| **{usd_to_eur_ttc(complete):.0f}** |",
+            "",
+        ]
+        grand[key] = {"minimum": minimum, "complete": complete}
+    # the pair: tools and the shared lines bought once
+    shared = {
+        "Tool_soldering_iron_kit",
+        "Tool_multimeter",
+        "Tool_bench_supply",
+        "Tool_pocket_oscilloscope",
+        "Nylon_M3_kit",
+        "Dupont_and_USB_cables",
+        "Magnets_ferrite_12_15_18x4",
+        "Shipping_Mouser",
+    }
+    saved = 0.0
+    for _cat, pkey, qty, _optional in COSTS["b"]:
+        if pkey in shared and prices.get(pkey) is not None:
+            saved += unit_price(prices[pkey]) * qty
+    pair_min = (
+        grand["a"]["minimum"]
+        + grand["b"]["minimum"]
+        - sum(
+            unit_price(prices[k])
+            for _c, k, _q, o in COSTS["b"]
+            if k in shared and not o and prices.get(k)
+        )
+    )
+    pair_full = grand["a"]["complete"] + grand["b"]["complete"] - saved
+    out += [
+        "## Les deux démonstrateurs ensemble",
+        "",
+        "L'outillage, la visserie, les nappes, les aimants et un port Mouser",
+        "ne s'achètent qu'une fois ; une seule commande JLCPCB peut porter les",
+        "quatre cartes, ce qui économise encore un port (non compté ici).",
+        "",
+        "| Total | USD | EUR TTC |",
+        "|---|---|---|",
+        f"| Minimum des deux | {pair_min:.0f} | {usd_to_eur_ttc(pair_min):.0f} |",
+        f"| Complet des deux | {pair_full:.0f} | {usd_to_eur_ttc(pair_full):.0f} |",
+        "",
+        "## Ce que les prix ne couvrent pas",
+        "",
+        "- Les frais de dossier du transporteur à l'importation (10 à 20 EUR par",
+        "  envoi hors UE), variables ; la TVA est comptée.",
+        "- Le temps de montage et de mesure, et le contreplaqué ou le filament",
+        "  déjà en stock chez qui bricole.",
+        "- Les codes LCSC des condensateurs C0G d'adaptation, à relever le jour",
+        "  de la commande : sans eux, l'assemblage les saute et ils se soudent au fer.",
+        "",
+    ]
+    return "\n".join(out)
 
 
 def markdown(
@@ -462,18 +659,26 @@ def main(argv: list[str] | None = None) -> int:
 
     date = args.date or dt.date.today().strftime("%d/%m/%Y")
     prices = read_prices(args.prices)
-    for key in args.model or sorted(MODELS):
+    components: dict[str, dict[str, float]] = {}
+    for key in sorted(MODELS):
         model = MODELS[key]
         lines, skipped = aggregate(model)
+        t = totals(lines, prices)
+        components[key] = dict(t, lines=len(lines), parts=sum(ln.total for ln in lines))
+        if args.model and key not in args.model:
+            continue
         md = markdown(model, lines, skipped, prices, date)
         (args.out / f"bom-demonstrateur-{key}.md").write_text(md, encoding="utf-8")
         write_csv(args.out / f"bom-demonstrateur-{key}.csv", model, lines, prices)
         carts(args.out, model, lines, prices)
-        t = totals(lines, prices)
         print(
             f"model {key}: {len(lines)} lines, {sum(ln.total for ln in lines)} parts, "
             f"cheapest {t['cheapest']:.0f} USD, {t['unpriced']} unpriced"
         )
+    (args.out / "couts-demonstrateurs.md").write_text(
+        cost_sheet(prices, components, date), encoding="utf-8"
+    )
+    print(f"wrote {args.out / 'couts-demonstrateurs.md'}")
     return 0
 
 
