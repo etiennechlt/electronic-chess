@@ -203,7 +203,7 @@ def layout(cfg: BoardConfig, pitch_mm: float | None = None) -> DemoLayout:
     # south edge and the module's antenna on the east edge
     fe = bd.edge_clearance_mm + 1.0
     fid_xy = (
-        (0.575 * width, height - fe),
+        (0.30 * width, height - fe),
         (width - fe, 0.52 * height),
         (0.06 * width, max(pour_top, top) + fe),
     )

@@ -624,29 +624,37 @@ def hallrfid_placements(
             out[ref] = (x, y, 270.0)
         b_e = _stack(out, near_e, ckt, cx + ring, cx + ring + NEAR_SHELF_MM - 3.6, top)
         b_e = _stack(out, far_e, ckt, cx + ring, zx1, b_e + ROW_GAP_MM)
-        # the digital pulls and the RX and ground test points, under the east shelf
-        _stack(out, south, ckt, cx + ring, zx1, max(b_e, y_u + ring) + ROW_GAP_MM)
+        # the digital pulls and the RX and ground test points: under the
+        # east shelf for the first reader, under the west one for the
+        # second, so that the band over the module's pads stays free
+        if n == 1:
+            _stack(out, south, ckt, cx + ring, zx1, max(b_e, y_u + ring) + ROW_GAP_MM)
+        else:
+            _stack(out, south, ckt, zx0, cx - ring, max(b_w, y_u + ring) + ROW_GAP_MM)
 
     # ---- strip, west: multiplexer, filters, references, switched rail
     out["U3"] = (18.5, 70.5, 0.0)
-    _stack(out, ["C21", "C22", "C23", "C24", "C25", "C26"], ckt, 8.0, 25.5, 75.5)
-    # a lane east of the mux's fanout vias, for the sensor rail coming down
-    # from the corridors to its switch
-    b = _stack(out, ["R31", "C31", "R32", "R33", "R34", "R35", "C32"], ckt, 26.0, 37.5, 69.0)
-    _stack(out, ["Q1", "R41", "JP1", "C41", "C42", "TP4"], ckt, 26.0, 37.5, b + ROW_GAP_MM)
+    # the sensor rail switch under the A1 corridor, where the trunk of the
+    # sensor rail comes down, against the 3.3 V spine of the west edge
+    _stack(out, ["Q1", "R41", "JP1", "C41", "C42", "TP4"], ckt, 5.0, 13.5, 70.5)
+    _stack(out, ["C21", "C22", "C23", "C24", "C25", "C26"], ckt, 13.8, 25.5, 75.5)
+    # the references east of the mux's fanout vias
+    _stack(out, ["R31", "C31", "R32", "R33", "R34", "R35", "C32"], ckt, 26.0, 37.5, 69.0)
     # the escape header lies along the south-west edge, pins along x: its
     # north row is fed from the strip, its south row from the lane along
     # the connectors of the edge, and the west edge keeps a routing lane
     out["J4"] = (9.1, 92.35, 90.0)  # courtyard x 7.3 to 33.7, y 88.0 to 94.1
-    _stack(out, ["TP3", "TP7"], ckt, 8.0, 16.0, 79.0)
+    out["TP7"] = (9.8, 86.0, 0.0)  # a ground test point near the escape header
     out["J3"] = (3.0, 57.0, 0.0)  # 1 x 6 along the west edge, pin 1 north, over the spine
     # ---- strip, centre: buffer, regulator, USB-C on the south edge with its protection west
     b = _stack(out, ["U7"], ckt, 37.0, 48.5, 70.5)  # its north escape vias under the row above
     _stack(out, ["C71", "R71"], ckt, 37.0, 48.5, b + 2.2)  # past the buffer's escape vias
-    _stack(out, ["U6", "C63", "C61", "C62", "TP1", "TP2"], ckt, 49.0, 60.5, 70.0)
-    _stack(out, ["R61", "U5", "R62"], ckt, 34.5, 44.5, 88.5)
+    _stack(out, ["U6", "C63", "C61", "C62"], ckt, 49.0, 60.5, 72.0)  # under B1's pulls
+    out["TP3"] = (57.7, 89.5, 0.0)  # VBUS, over the bench pads
+    # the ESD array and the CC pull-downs, with the 3V3 and ground test points
+    _stack(out, ["R61", "U5", "R62", "TP1", "TP2"], ckt, 34.0, 44.5, 88.5)
     out["J1"] = (47.0, 90.85, 0.0)
-    out["J2"] = (20.0, 83.0, 0.0)  # the bench supply pads, between the test points and the header
+    out["J2"] = (57.7, 95.5, 0.0)  # the bench supply pads, between the USB-C and the pickup header
     # ---- strip, east: the module, its antenna on the east edge
     ux, uy = 87.0, 82.5
     out["U4"] = (ux, uy, 270.0)
