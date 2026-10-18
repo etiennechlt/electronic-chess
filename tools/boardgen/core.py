@@ -151,6 +151,7 @@ class PadItem:
 HOLE_TO_HOLE_MM = 0.25  # fabrication: drill edge to drill edge
 PAD_GUARD_MM = 0.1  # free ring the lattice keeps around an SMD pad, beyond the clearance
 POUR_REACH_MM = 0.9  # free lattice around a ground drop so the pour reaches it
+FIDUCIAL_GUARD_MM = 0.9  # past a fiducial pad's edge: its 0.5 mm clearance and mask margin, a via's radius
 # rip-up and reroute (GenericBoard.reroute_walled): how many rounds, the
 # budget of a route in them, and how far around the pieces of a net still
 # open the routes of its neighbours count as its walls
@@ -273,7 +274,9 @@ class GenericBoard:
         self.board.body.append(place_footprint(fp, ref, "Fiducial", x, y, 0.0, {}))
         for pad in fp.pads:
             px, py = pad_abs_pos(x, y, 0.0, pad)
-            self.keepouts.append((px, py, max(pad.size) / 2.0 + self.spec.clearance + 0.1))
+            # the library marks carry their own 0.5 mm clearance and mask
+            # margin: a via must keep its mask aperture off the mark's
+            self.keepouts.append((px, py, max(pad.size) / 2.0 + FIDUCIAL_GUARD_MM))
 
     def footprint(self, comp) -> Footprint:
         """The component's footprint, its courtyard replaced when overridden."""
