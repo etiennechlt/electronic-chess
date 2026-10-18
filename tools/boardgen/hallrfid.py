@@ -512,6 +512,7 @@ def _stack_right(out, refs, ckt, x0, x1, y0):
 ROW_GAP_MM = 0.8  # between two stacked groups of parts: a track and its clearance pass
 FANOUT_RING_MM = 5.2  # no part nearer a fine-pitch chip's centre: escape vias at 3.6 and 4.3
 ROW_PITCH_MM = 2.2  # the matching capacitors: 1.2 mm between two 0603 pads, a via fits
+MATCH_ROW_MM = 5.9  # the matching capacitors' row centre, past the loop's outer copper edge
 NEAR_SHELF_MM = 15.5  # the decoupling shelf east of a reader chip reaches this far from it
 
 
@@ -564,7 +565,7 @@ def hallrfid_placements(
         # trim, spare, C0; upright 0603 at a pitch that leaves a via and its
         # clearance between two neighbours (the nets of the row alternate
         # between the top and the bottom pads)
-        y_row = y_f + 5.9
+        y_row = y_f + MATCH_ROW_MM
         west = [f"C{n}22", f"C{n}23", f"C{n}24", f"C{n}25", f"C{n}26", f"C{n}27", f"C{n}21"]
         east = [f"C{n}12", f"C{n}13", f"C{n}14", f"C{n}15", f"C{n}16", f"C{n}17", f"C{n}11"]
         for k, ref in enumerate(west):
@@ -677,8 +678,11 @@ def hand_routes(gb: GenericBoard, cfg: BoardConfig, lay: DemoLayout) -> None:
         if span > (x1 - x0) - 2.0 * gb.spec.track:
             raise ValueError(f"the corridor of {sq} is too narrow for {len(nets)} stubs")
         xs = (x0 + x1) / 2.0 - span / 2.0
-        top = lay.loop(sq).outline[3] - 1.0  # under the outer turn
-        bottom = y1 - 0.5
+        outer = lay.loop(sq).outline[3]
+        top = outer - 1.0  # under the outer turn
+        # the stubs stop above the matching capacitors' row (its top is
+        # 1.5 mm over the row's centre, MATCH_ROW_MM past the outer turn)
+        bottom = min(y1 - 0.5, outer + MATCH_ROW_MM - 1.5 - 0.9)
         for k, net in enumerate(nets):
             x = round(xs + CORRIDOR_PITCH_MM * k, 3)
             gb.seed(net, back, [(x, round(top, 3)), (x, round(bottom, 3))], gb.spec.track)
