@@ -786,7 +786,7 @@ hall_rfid:                     # alternative or intermediate layer, evaluated in
     reader: { maker: NXP, mpn: "MFRC52202HN1,151", lcsc: C11322 }   # the reference part on both
     reader_zone_mm: 18.0       # band of the strip past the keepout: a reader and its network
     ground_keepout_mm: 4.0     # D12: no ground copper nearer a loop than this
-    trio_exit_mm: [-8.0, -2.0] # x range, from the loop centre, of the back-side corridor where
+    trio_exit_mm: [-13.0, -7.0]  # x range, from the loop centre, of the back-side corridor where
                                # the sensor trios leave the loop opening toward the strip
     mux_channels:              # the CD74HC4067 of the demonstrator
       centre: [0, 1]           # A1, B1

@@ -1,6 +1,6 @@
 # Nomenclature du démonstrateur B, effet Hall et RFID
 
-Générée par `python3 tools/demobom.py --model b` le 17/10/2026 depuis les
+Générée par `python3 tools/demobom.py --model b` le 18/10/2026 depuis les
 `bom.csv` des cartes et `docs/prix-demonstrateur.csv`. Les quantités
 sont celles des cartes ; la colonne « achat » ajoute la rechange de
 10 % par ligne (au moins une pièce, deux au-delà de dix). Les prix
@@ -80,5 +80,5 @@ recherche du distributeur, à relire le jour de la commande. Conversion
 
 ## Non monté sur le démonstrateur
 
-- carte carte : C114, C117, C124, C127, C214, C217, C224, C227, J101, J102, J201, J202, J4, R132, R143, R232, R243
+- carte carte : C114, C117, C124, C127, C214, C217, C224, C227, J4, R132, R143, R232, R243
 - carte étiquettes : C1, C2, C3, C7, C8, C9

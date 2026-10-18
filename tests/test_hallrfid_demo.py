@@ -42,8 +42,8 @@ def test_reader_zones_sit_under_their_loop(cfg):
 
 def test_trio_corridors_leave_the_openings_west_of_the_feed(cfg):
     lay = demo.layout(cfg)
-    assert lay.trio_corridors["A1"] == (17.0, 36.0, 23.0, 46.5)
-    assert lay.trio_corridors["B1"] == (67.0, 40.0, 73.0, 46.5)
+    assert lay.trio_corridors["A1"] == (12.0, 36.0, 18.0, 46.5)
+    assert lay.trio_corridors["B1"] == (62.0, 40.0, 68.0, 46.5)
     for name, c in lay.trio_corridors.items():
         cx = lay.square(name).centre_mm[0]
         assert c[2] < cx - demo.FEED_OFFSET_MM

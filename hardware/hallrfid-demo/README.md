@@ -27,9 +27,9 @@ et les tests sont dans la [note 27](../../docs/notes/27-demonstrateur-hall-rfid.
 - **Deux lecteurs MFRC522** (HVQFN-32) dans la bande, chacun sous sa
   boucle : quartz 27,12 MHz, réseau d'adaptation symétrique par côté
   (0 Ω isolateur, L0 560 nH, C0 220 pF, C1 et C2 en valeur principale
-  plus complément E12, emplacements de retouche non montés, Rq), prise
-  U.FL non montée par demi-réseau, 1 Ω dans TVDD avec ses points de
-  test, diviseur de réception à seconde R1 non montée et cavalier à
+  plus complément E12, emplacements de retouche non montés, Rq), points
+  de test TX1 et TX2 où un pigtail de NanoVNA se soude, 1 Ω dans TVDD
+  avec ses points de test, diviseur de réception à seconde R1 non montée et cavalier à
   souder (D15), points de test TX1, TX2, RX, masse. Valeurs de
   `nfc.matching` : sur A1 Rq 0,68 Ω, C1 56 + 5,6 pF, C2 470 + 33 pF, R1
   3,9 kΩ ; sur B1 Rq 0,47 Ω, C1 82 + 3,3 pF, C2 680 + 56 pF, R1 3,3 kΩ.
@@ -91,8 +91,8 @@ fabrication) est écrit ici à la fermeture du build.
 `jlc-cpl.csv` ne portent que les lignes à code LCSC des composants
 montés, pour l'assemblage Standard face avant (le module et le MFRC522
 sont des pièces étendues). Les codes des passifs sont des basiques
-JLCPCB, à vérifier à l'aperçu de la commande ; les non montés (U.FL,
-emplacements de retouche, seconde R1, 0 Ω de contournement, barrette
+JLCPCB, à vérifier à l'aperçu de la commande ; les non montés
+(emplacements de retouche, seconde R1, 0 Ω de contournement, barrette
 d'échappement) sont exclus. La nomenclature chiffrée avec liens et
 prix, planche d'étiquettes comprise, est
 [`docs/bom-demonstrateur-b.md`](../../docs/bom-demonstrateur-b.md).

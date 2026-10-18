@@ -23,7 +23,7 @@ les contrôles de la section 4 ne sont pas verts.
 À retenir :
 
 - Deux cartes générées par le dépôt : **`hallrfid-demo`** (100 x 100,
-  4 couches, 166 composants, dont deux lecteurs et six capteurs) et la
+  4 couches, 162 composants, dont deux lecteurs et six capteurs) et la
   planche **`tag-demo`** (100 x 86,5, 2 couches, 0,8 mm, 15 étiquettes et
   une vignette de champ). Les deux se régénèrent d'une commande.
 - La carte principale se commande **assemblée** (JLCPCB, face avant),
@@ -113,7 +113,7 @@ le lecteur n :
 | Cn03 à Cn05, Cn09 | 100 nF x 3, 1 µF | découplage des alimentations numérique, analogique et de l'oscillateur |
 | Rn01, Cn07, Cn08, TPn04 | 1 Ω, 10 µF, 100 nF, point de test | l'alimentation de l'émetteur TVDD : la résistance de 1 Ω est l'ampèremètre intégré, 50 mV lus au multimètre pour 50 mA, sans rien dessouder |
 | Rn11, Rn21 | 0 Ω | isolateurs : dessoudés, ils séparent l'émetteur du réseau pour mesurer celui-ci au NanoVNA depuis son entrée |
-| Jn01, Jn02 | U.FL, non montés | les prises du NanoVNA, une par demi-réseau |
+| TPn01, TPn02 | points de test TX1 et TX2 | les prises du NanoVNA : un pigtail U.FL vers SMA s'y soude le temps de l'accord, les isolateurs dessoudés (la carte à deux cases n'a pas la place d'une embase par demi-réseau) |
 | Ln11, Ln21 ; Cn11, Cn21 | 560 nH ; 220 pF | le filtre CEM de chaque côté : un passe-bas à 14,34 MHz qui laisse la porteuse et coupe ses harmoniques |
 | Cn12, Cn13 ; Cn22, Cn23 | C1 : 56 + 5,6 pF sur A1, 82 + 3,3 pF sur B1 | la capacité série du réseau d'adaptation, valeur E12 principale et complément en parallèle |
 | Cn15, Cn16 ; Cn25, Cn26 | C2 : 470 + 33 pF sur A1, 680 + 56 pF sur B1 | la capacité parallèle du réseau, idem |
@@ -295,7 +295,7 @@ de la note 25 :
 | Via | tented | tented |
 | Panneau | non | « Panel by Customer », 4 conceptions déclarées (P, G, vignette, cadre) |
 | Numéro de commande | emplacement imposé dans la bande, jamais dans la zone de jeu | retiré |
-| Assemblage | **Standard, face avant**, 2 cartes, `jlc-bom.csv` et `jlc-cpl.csv` : le module ESP32 et le MFRC522 sont des pièces étendues, le Standard les pose sans supplément de classe ; vérifier à l'aperçu que chaque ligne a trouvé son code et que les non montés (U.FL, retouches, R43, R32, J4) sont bien exclus | aucun : les puces TSSOP-8 se soudent au fer ; sinon, l'option en XQFN8 (C710403) est documentée dans le README de la planche |
+| Assemblage | **Standard, face avant**, 2 cartes, `jlc-bom.csv` et `jlc-cpl.csv` : le module ESP32 et le MFRC522 sont des pièces étendues, le Standard les pose sans supplément de classe ; vérifier à l'aperçu que chaque ligne a trouvé son code et que les non montés (retouches, R43, R32, J4) sont bien exclus | aucun : les puces TSSOP-8 se soudent au fer ; sinon, l'option en XQFN8 (C710403) est documentée dans le README de la planche |
 | Pochoir | non si assemblée ; oui pour souder soi-même à la pâte | non |
 
 Les codes LCSC des passifs sont des « basiques » JLCPCB, vérifiés à
@@ -315,7 +315,8 @@ sites. Si la carte est assemblée par JLCPCB, il ne reste à acheter que :
   plus deux de rechange), les 0402 C0G d'accord (10, 15, 22 pF), la
   BAT15-03W et le 1 nF, 100 kΩ de la vignette, les deux barrettes, un
   cavalier ; et, en rechange, un MFRC522 et un DRV5055A3.
-- **Ailleurs** : les aimants ferrite, le NanoVNA et ses câbles U.FL,
+- **Ailleurs** : les aimants ferrite, le NanoVNA et deux pigtails U.FL
+  vers SMA (à souder sur les points de test TX pendant l'accord),
   une carte NTAG213, la visserie nylon M3 et les entretoises de 30 mm,
   le ruban polyimide qui tient les disques dans les bases.
 
@@ -427,10 +428,13 @@ idf.py -p /dev/ttyACM0 flash monitor      # la console est sur l'USB natif
    du commerce posée sur la boucle, puis une étiquette P0 déjà lue au
    téléphone. L'UID affiché doit être celui que le téléphone a lu.
    `o 1` ramène l'émetteur à l'état tenu.
-7. **L'accord au NanoVNA.** Dessouder R111 et R121, monter J101 et
-   J102, mesurer S11 et S21 à travers le réseau avec l'étiquette P nue
-   posée à l'entrefer nominal (méthode au protocole, « Accord au
-   NanoVNA ») ; retoucher par C114, C117, C124, C127. Ressouder les 0 Ω.
+7. **L'accord au NanoVNA.** Dessouder R111 et R121 (les 0 Ω qui
+   isolent l'émetteur), souder un pigtail sur TP101 et un sur TP102
+   (âme sur le point de test, tresse sur la pastille de masse voisine),
+   mesurer S11 et S21 à travers le réseau avec l'étiquette P nue posée à
+   l'entrefer nominal (méthode au protocole, « Accord au NanoVNA ») ;
+   retoucher par C114, C117, C124, C127. Dessouder les pigtails,
+   ressouder les 0 Ω.
    Seulement alors `t 1 63` et le courant TVDD mesuré : attendu 49 mA
    sur A1 et 44 mA sur B1, 65 et 59 au pire. Même chose pour B1.
 8. **La vignette.** `p` lit l'entrée PICKUP ; vignette à plat sur la

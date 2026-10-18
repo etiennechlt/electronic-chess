@@ -5,7 +5,7 @@ strip under the loop, analog Hall sensors inside the loop openings (one
 at the centre of each square, four more around the centre of A1), a
 CD74HC4067 multiplexer, an ESP32-S3-WROOM-1 module with native USB, a
 3.3 V linear regulator, and the measurement fittings of note 25: TVDD
-sense resistors, test points, U.FL footprints and 0 ohm isolators for
+sense resistors, test points and 0 ohm isolators for
 the NanoVNA, a MISO buffer with its bypass, a switched sensor rail with
 its bypass jumper, an escape header for a DevKitC.
 
@@ -86,12 +86,6 @@ XTAL = Part(
     lcsc="C29975",
 )
 L0805 = Part("Device", "L", "Inductor_SMD:L_0805_2012Metric", mpn="FHW0805UCR56JGT", lcsc="C139264")
-UFL = Part(
-    "Connector",
-    "Conn_Coaxial",
-    "Connector_Coaxial:U.FL_Hirose_U.FL-R-SMT-1_Vertical",
-    mpn="U.FL-R-SMT-1(10)",
-)
 JP_BRIDGED = Part(
     "Jumper", "SolderJumper_2_Bridged", "Jumper:SolderJumper-2_P1.3mm_Bridged_Pad1.0x1.5mm"
 )
@@ -399,7 +393,6 @@ def build_hallrfid_circuit(cfg: BoardConfig) -> Circuit:
         for side, tx, loop_end, base in (("E", tx1, loop_2, 10), ("W", tx2, loop_1, 20)):
             nf, na, nb = (f"N{side}{s}_{sq}" for s in ("F", "A", "B"))
             r(f"R{n}{base + 1}", "0R", tx, nf)
-            ckt.add(f"J{n}0{1 if side == 'E' else 2}", UFL, "U.FL", {"1": nf, "2": GND}, dnp=True)
             ckt.add(f"L{n}{base + 1}", L0805, v.l0, {"1": nf, "2": na})
             c(f"C{n}{base + 1}", v.c0, na, GND)
             c(f"C{n}{base + 2}", v.c1_main, na, nb)
@@ -585,10 +578,10 @@ def hallrfid_placements(
             out[ref] = (cx + 2.6 + ROW_PITCH_MM * k, y_row, 90.0 if k < 3 else 270.0)
         # the filter row: isolators against the chip's TX pins, inductors
         # (NA pad north, toward the C1 trio), the C0 capacitors beside them
-        # (NA north, ground south into the pour), then the TX test points
-        # and the U.FL taps; a via row's worth under the capacitors and
-        # clear of the reader's north escape vias (3.6 and 4.3 mm from its
-        # centre)
+        # (NA north, ground south into the pour), then the TX test points,
+        # where a NanoVNA pigtail solders; a via row's worth under the
+        # capacitors and clear of the reader's north escape vias (3.6 and
+        # 4.3 mm from its centre)
         y_l0 = y_row + 5.9
         out[f"R{n}21"] = (cx - 1.3, y_l0, 90.0)
         out[f"R{n}11"] = (cx + 1.3, y_l0, 90.0)
@@ -598,10 +591,6 @@ def hallrfid_placements(
         out[f"C{n}11"] = (cx + 5.9, y_l0, 270.0)
         out[f"TP{n}02"] = (cx - 8.0, y_l0, 0.0)  # TX2
         out[f"TP{n}01"] = (cx + 8.0, y_l0, 0.0)  # TX1
-        # the U.FL taps (not fitted): their centre contact faces the filter
-        # node, so the west one is turned round
-        out[f"J{n}02"] = (cx - 12.5, y_l0, 180.0)
-        out[f"J{n}01"] = (cx + 12.0, y_l0, 0.0)
         # the chip a fanout ring under the filter row: its north escape vias
         # (3.6 and 4.3 mm from the centre, with their clearance) stay clear
         # of the isolators' pads
@@ -637,7 +626,7 @@ def hallrfid_placements(
     # the connectors of the edge, and the west edge keeps a routing lane
     out["J4"] = (9.1, 92.35, 90.0)  # courtyard x 7.3 to 33.7, y 88.0 to 94.1
     _stack(out, ["TP3", "TP7"], ckt, 8.0, 16.0, 79.0)
-    out["J3"] = (12.0, 96.5, 90.0)  # 1 x 6 along the south edge, pin 1 west
+    out["J3"] = (3.0, 57.0, 0.0)  # 1 x 6 along the west edge, pin 1 north, over the spine
     # ---- strip, centre: buffer, regulator, USB-C on the south edge with its protection west
     b = _stack(out, ["U7"], ckt, 37.0, 48.5, 70.5)  # its north escape vias under the row above
     _stack(out, ["C71", "R71"], ckt, 37.0, 48.5, b + 2.2)  # past the buffer's escape vias
@@ -778,7 +767,7 @@ def schematic_groups() -> list[tuple[str, float, list[str]]]:
     for n in (1, 2):
         refs = [f"U{n}", f"L{n}", f"Y{n}"]
         refs += [f"C{n}0{k}" for k in range(1, 10)]
-        refs += [f"R{n}01", f"R{n}11", f"R{n}12", f"R{n}21", f"R{n}22", f"J{n}01", f"J{n}02"]
+        refs += [f"R{n}01", f"R{n}11", f"R{n}12", f"R{n}21", f"R{n}22"]
         refs += [f"L{n}11", f"L{n}21"]
         refs += [f"C{n}1{k}" for k in range(1, 8)] + [f"C{n}2{k}" for k in range(1, 8)]
         refs += [
