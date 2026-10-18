@@ -446,11 +446,14 @@ def demo_spec(cfg: BoardConfig) -> Spec:
         width=w,
         height=h,
         layers=dm.board.layers,
-        clearance=0.15,
-        track=0.3,
+        # the four-layer capability of JLCPCB (0.09 mm tracks and gaps, 0.3 mm
+        # drills), kept with margin: finer rules than the two-layer boards of
+        # the plateau, which the 166 parts of a 100 x 100 mm board need
+        clearance=0.127,
+        track=0.25,
         power_track=0.5,
-        via_pad=0.8,
-        via_drill=0.4,
+        via_pad=0.6,
+        via_drill=0.3,
         gnd_layer="In1.Cu" if dm.board.layers == 4 else "B.Cu",
         power_nets=("3V3", "HALL_VCC"),  # VBUS: a short run under 0.5 A, thin like a signal
         pour_region=lay.pour,
