@@ -511,7 +511,7 @@ def _stack_right(out, refs, ckt, x0, x1, y0):
 
 ROW_GAP_MM = 0.8  # between two stacked groups of parts: a track and its clearance pass
 FANOUT_RING_MM = 5.2  # no part nearer a fine-pitch chip's centre: escape vias at 3.6 and 4.3
-ROW_PITCH_MM = 2.2  # the matching capacitors: 1.2 mm between two 0603 pads, a via fits
+ROW_PITCH_MM = 2.5  # the matching capacitors: 1.5 mm between two 0603 pads, a track or a via passes
 MATCH_ROW_MM = 5.9  # the matching capacitors' row centre, past the loop's outer copper edge
 NEAR_SHELF_MM = 15.5  # the decoupling shelf east of a reader chip reaches this far from it
 
@@ -561,30 +561,42 @@ def hallrfid_placements(
         # pad 2 (the loop end) on top, where the loop's feed arrives
         out[f"R{n}22"] = (cx - 1.2, rq_y, 90.0)  # west branch: loop end 1
         out[f"R{n}12"] = (cx + 1.2, rq_y, 90.0)  # east branch: loop end 2
-        # one row per branch, inner to outer: C1 main, trim, spare, C2 main,
-        # trim, spare, C0; upright 0603 at a pitch that leaves a via and its
-        # clearance between two neighbours (the nets of the row alternate
-        # between the top and the bottom pads)
+        # one row per branch, inner to outer: the C1 trio (main, trim,
+        # spare) then the C2 trio; upright 0603 at a pitch that leaves a
+        # track or a via between two neighbours. An upright 0603 at 90 has
+        # its pin 1 south, at 270 its pin 1 north: the C1 trio (NA, NB) at
+        # 90 puts NB north, where the C2 trio (NB, GND) at 270 puts its NB
+        # too, one straight line under the damping resistor's NB pad; the
+        # C2 trio's ground pads face south, toward the pour, and the C1
+        # trio's NA pads face the filter row, where the inductor's NA pad is
         y_row = y_f + MATCH_ROW_MM
-        west = [f"C{n}22", f"C{n}23", f"C{n}24", f"C{n}25", f"C{n}26", f"C{n}27", f"C{n}21"]
-        east = [f"C{n}12", f"C{n}13", f"C{n}14", f"C{n}15", f"C{n}16", f"C{n}17", f"C{n}11"]
+        west = [f"C{n}22", f"C{n}23", f"C{n}24", f"C{n}25", f"C{n}26", f"C{n}27"]
+        east = [f"C{n}12", f"C{n}13", f"C{n}14", f"C{n}15", f"C{n}16", f"C{n}17"]
         for k, ref in enumerate(west):
-            out[ref] = (cx - 2.6 - ROW_PITCH_MM * k, y_row, 90.0)
+            out[ref] = (cx - 2.6 - ROW_PITCH_MM * k, y_row, 90.0 if k < 3 else 270.0)
         for k, ref in enumerate(east):
-            out[ref] = (cx + 2.6 + ROW_PITCH_MM * k, y_row, 90.0)
-        # EMC filter, isolators, TX test points and U.FL taps in one row, a
-        # via row's worth under the capacitors and clear of the reader's
-        # north escape vias (3.6 and 4.3 mm from its centre)
+            out[ref] = (cx + 2.6 + ROW_PITCH_MM * k, y_row, 90.0 if k < 3 else 270.0)
+        # the filter row: isolators against the chip's TX pins, inductors
+        # (NA pad north, toward the C1 trio), the C0 capacitors beside them
+        # (NA north, ground south into the pour), then the TX test points
+        # and the U.FL taps; a via row's worth under the capacitors and
+        # clear of the reader's north escape vias (3.6 and 4.3 mm from its
+        # centre)
         y_l0 = y_row + 5.9
-        out[f"L{n}21"] = (cx - 3.6, y_l0, 90.0)
-        out[f"L{n}11"] = (cx + 3.6, y_l0, 90.0)
         out[f"R{n}21"] = (cx - 1.3, y_l0, 90.0)
         out[f"R{n}11"] = (cx + 1.3, y_l0, 90.0)
-        out[f"TP{n}02"] = (cx - 6.9, y_l0, 0.0)  # TX2
-        out[f"TP{n}01"] = (cx + 6.9, y_l0, 0.0)  # TX1
-        out[f"J{n}02"] = (cx - 11.0, y_l0, 0.0)  # U.FL west (not fitted)
-        out[f"J{n}01"] = (cx + 11.0, y_l0, 0.0)
-        y_u = y_l0 + 5.6
+        out[f"L{n}21"] = (cx - 3.6, y_l0, 90.0)
+        out[f"L{n}11"] = (cx + 3.6, y_l0, 90.0)
+        out[f"C{n}21"] = (cx - 5.9, y_l0, 270.0)
+        out[f"C{n}11"] = (cx + 5.9, y_l0, 270.0)
+        out[f"TP{n}02"] = (cx - 8.0, y_l0, 0.0)  # TX2
+        out[f"TP{n}01"] = (cx + 8.0, y_l0, 0.0)  # TX1
+        out[f"J{n}02"] = (cx - 12.0, y_l0, 0.0)  # U.FL west (not fitted)
+        out[f"J{n}01"] = (cx + 12.0, y_l0, 0.0)
+        # the chip a fanout ring under the filter row: its north escape vias
+        # (3.6 and 4.3 mm from the centre, with their clearance) stay clear
+        # of the isolators' pads
+        y_u = y_l0 + 6.6
         out[f"U{n}"] = (cx, y_u, READER_ROT)
         # the shelves beside the chip use the room past the loop's width:
         # the board edge side and the corridor between the two zones
@@ -615,18 +627,21 @@ def hallrfid_placements(
     _stack(out, ["C21", "C22", "C23", "C24", "C25", "C26"], ckt, 8.0, 25.5, 75.5)
     b = _stack(out, ["R31", "C31", "R32", "R33", "R34", "R35", "C32"], ckt, 24.5, 36.0, 69.0)
     _stack(out, ["Q1", "R41", "JP1", "C41", "C42", "TP4"], ckt, 24.5, 36.0, b + ROW_GAP_MM)
-    out["J4"] = (3.6, 69.5, 0.0)  # 2 x 10, pins run south, clear of the corner hole
+    # the escape header lies along the south-west edge, pins along x: its
+    # north row is fed from the strip, its south row from the lane along
+    # the connectors of the edge, and the west edge keeps a routing lane
+    out["J4"] = (9.1, 92.35, 90.0)  # courtyard x 7.3 to 33.7, y 88.0 to 94.1
     _stack(out, ["TP1", "TP2", "TP3", "TP7"], ckt, 8.0, 16.0, 79.0)
     out["J3"] = (12.0, 96.5, 90.0)  # 1 x 6 along the south edge, pin 1 west
     # ---- strip, centre: buffer, regulator, USB-C on the south edge with its protection west
     b = _stack(out, ["U7"], ckt, 37.0, 48.5, 69.0)
     _stack(out, ["C71", "R71"], ckt, 37.0, 48.5, b + 2.2)  # past the buffer's escape vias
     _stack(out, ["U6", "C63", "C61", "C62"], ckt, 49.0, 60.5, 70.0)
-    _stack(out, ["R61", "U5", "R62"], ckt, 36.5, 44.5, 88.5)
+    _stack(out, ["R61", "U5", "R62"], ckt, 34.5, 44.5, 88.5)
     out["J1"] = (47.0, 90.85, 0.0)
-    out["J2"] = (30.0, 95.0, 90.0)
+    out["J2"] = (20.0, 83.0, 0.0)  # the bench supply pads, between the test points and the header
     # ---- strip, east: the module, its antenna on the east edge
-    ux, uy = 87.0, 81.5
+    ux, uy = 87.0, 82.5
     out["U4"] = (ux, uy, 270.0)
     b = _stack(out, ["C51", "C52", "R51", "C53", "R52"], ckt, 61.0, 72.0, 71.0)
     _stack(out, ["D1", "R53", "C54", "TP5", "TP6"], ckt, 61.0, 72.0, b + ROW_GAP_MM)
