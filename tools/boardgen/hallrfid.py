@@ -109,7 +109,14 @@ FIDUCIAL_FP = "Fiducial:Fiducial_1mm_Mask2mm"
 # the board edge and gets a copper keepout instead of the library's wide
 # clearance area (the clock board does the same)
 ESP32_DEMO_COURTYARD = (-9.75, -12.95, 9.75, 13.45)
-BOARD_OPTIONS = {"overhang": ("J1",), "courtyards": {"U4": ESP32_DEMO_COURTYARD}}
+# the module's pads are coarse: plain runways, no fanout via nor exit
+# corridor, which would wall the row of parts above it
+BOARD_OPTIONS = {
+    "overhang": ("J1",),
+    "courtyards": {"U4": ESP32_DEMO_COURTYARD},
+    "plain_fanout": ("U4",),
+}
+SPINE_INSET_MM = 1.4  # the 3.3 V spine runs this far from the west and south edges
 
 READER_ROT = 180.0  # TX1 and TX2 face the loop: the HVQFN32 pins 9 to 16 run along the north edge
 
@@ -629,12 +636,12 @@ def hallrfid_placements(
     # north row is fed from the strip, its south row from the lane along
     # the connectors of the edge, and the west edge keeps a routing lane
     out["J4"] = (9.1, 92.35, 90.0)  # courtyard x 7.3 to 33.7, y 88.0 to 94.1
-    _stack(out, ["TP1", "TP2", "TP3", "TP7"], ckt, 8.0, 16.0, 79.0)
+    _stack(out, ["TP3", "TP7"], ckt, 8.0, 16.0, 79.0)
     out["J3"] = (12.0, 96.5, 90.0)  # 1 x 6 along the south edge, pin 1 west
     # ---- strip, centre: buffer, regulator, USB-C on the south edge with its protection west
-    b = _stack(out, ["U7"], ckt, 37.0, 48.5, 69.0)
+    b = _stack(out, ["U7"], ckt, 37.0, 48.5, 70.5)  # its north escape vias under the row above
     _stack(out, ["C71", "R71"], ckt, 37.0, 48.5, b + 2.2)  # past the buffer's escape vias
-    _stack(out, ["U6", "C63", "C61", "C62"], ckt, 49.0, 60.5, 70.0)
+    _stack(out, ["U6", "C63", "C61", "C62", "TP1", "TP2"], ckt, 49.0, 60.5, 70.0)
     _stack(out, ["R61", "U5", "R62"], ckt, 34.5, 44.5, 88.5)
     out["J1"] = (47.0, 90.85, 0.0)
     out["J2"] = (20.0, 83.0, 0.0)  # the bench supply pads, between the test points and the header
@@ -699,6 +706,17 @@ def hand_routes(gb: GenericBoard, cfg: BoardConfig, lay: DemoLayout) -> None:
         for k, net in enumerate(nets):
             x = round(xs + CORRIDOR_PITCH_MM * k, 3)
             gb.seed(net, back, [(x, round(top, 3)), (x, round(bottom, 3))], gb.spec.track)
+    # the 3.3 V spine: a wide run along the west and south edges on the
+    # inner signal layer, under the connectors of the edge and past the
+    # corner holes; the loads on either side of the dense west block
+    # reach it in short routes where a route across the block found no lane
+    if "In2.Cu" in gb.layers:
+        w, h = gb.spec.width, gb.spec.height
+        e = SPINE_INSET_MM
+        upper = [hole for hole in lay.holes if hole.centre_mm[1] < h / 2.0]
+        top_y = max(hole.centre_mm[1] + hole.d_mm / 2.0 + 1.5 for hole in upper)
+        pts = [(e, round(top_y, 3)), (e, h - e), (w - e, h - e)]
+        gb.seed("3V3", "In2.Cu", pts, gb.spec.power_track)
     for n, sq in enumerate(cfg.hall_rfid.demo.squares(), start=1):
         d = draw[sq]
         west = pads[(f"R{n}22", "2")]
