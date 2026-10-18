@@ -455,7 +455,9 @@ def demo_spec(cfg: BoardConfig) -> Spec:
         via_pad=0.6,
         via_drill=0.3,
         gnd_layer="In1.Cu" if dm.board.layers == 4 else "B.Cu",
-        power_nets=("3V3", "HALL_VCC"),  # VBUS: a short run under 0.5 A, thin like a signal
+        # VBUS (under 0.5 A, a short run) and the sensor rail (60 mA) go thin
+        # like signals; 3V3 alone takes the wide track, with its spine
+        power_nets=("3V3",),
         pour_region=lay.pour,
         h_weight=2.5,  # long routes from the loops to the far side of the strip: greedy search
     )
@@ -614,6 +616,12 @@ def hallrfid_placements(
         ring = FANOUT_RING_MM
         b_w = _stack_right(out, near_w, ckt, zx0, cx - ring, top)
         b_w = _stack(out, far_w, ckt, zx0, cx - ring, b_w + ROW_GAP_MM)
+        # the receive chain reads along the row: RXD north of R31, R32 and the
+        # jumper, RXC north of them and of C31 (turned), RX south of C31 and
+        # R33, VMID north of R33 and of C06 (turned), its ground south
+        for ref in (f"C{n}31", f"C{n}06"):
+            x, y, _rot = out[ref]
+            out[ref] = (x, y, 270.0)
         b_e = _stack(out, near_e, ckt, cx + ring, cx + ring + NEAR_SHELF_MM - 3.6, top)
         b_e = _stack(out, far_e, ckt, cx + ring, zx1, b_e + ROW_GAP_MM)
         # the digital pulls and the RX and ground test points, under the east shelf
@@ -622,8 +630,10 @@ def hallrfid_placements(
     # ---- strip, west: multiplexer, filters, references, switched rail
     out["U3"] = (18.5, 70.5, 0.0)
     _stack(out, ["C21", "C22", "C23", "C24", "C25", "C26"], ckt, 8.0, 25.5, 75.5)
-    b = _stack(out, ["R31", "C31", "R32", "R33", "R34", "R35", "C32"], ckt, 24.5, 36.0, 69.0)
-    _stack(out, ["Q1", "R41", "JP1", "C41", "C42", "TP4"], ckt, 24.5, 36.0, b + ROW_GAP_MM)
+    # a lane east of the mux's fanout vias, for the sensor rail coming down
+    # from the corridors to its switch
+    b = _stack(out, ["R31", "C31", "R32", "R33", "R34", "R35", "C32"], ckt, 26.0, 37.5, 69.0)
+    _stack(out, ["Q1", "R41", "JP1", "C41", "C42", "TP4"], ckt, 26.0, 37.5, b + ROW_GAP_MM)
     # the escape header lies along the south-west edge, pins along x: its
     # north row is fed from the strip, its south row from the lane along
     # the connectors of the edge, and the west edge keeps a routing lane
