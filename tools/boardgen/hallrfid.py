@@ -654,7 +654,7 @@ def hallrfid_placements(
     # the ESD array and the CC pull-downs, with the 3V3 and ground test points
     _stack(out, ["R61", "U5", "R62", "TP1", "TP2"], ckt, 34.0, 44.5, 88.5)
     out["J1"] = (47.0, 90.85, 0.0)
-    out["J2"] = (57.7, 95.5, 0.0)  # the bench supply pads, between the USB-C and the pickup header
+    out["J2"] = (57.7, 93.5, 0.0)  # the bench supply pads (pin 2 at +2.54), clear of the 3V3 spine
     # ---- strip, east: the module, its antenna on the east edge
     ux, uy = 87.0, 82.5
     out["U4"] = (ux, uy, 270.0)
