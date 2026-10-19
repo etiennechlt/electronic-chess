@@ -608,6 +608,15 @@ Voir [l'état](07-etat-et-reste-a-faire.md).
   notes 26 et 27, la fiche de coûts et les deux nomenclatures en HTML
   dans `docs/pages/`, même habillage que les autres pages, figures et
   rendus embarqués.
-- Maquette 2 x 2 revérifiée (voir plus bas) ; le README de la maquette
-  et le commentaire du yaml disaient encore une barrette 1 x 10, le
-  connecteur a douze broches depuis l'ADR 0009.
+- Maquette 2 x 2 revérifiée le 19/10 : `coilgen build` et
+  `analoggen build` sur le yaml commité redonnent les deux `.kicad_pcb`
+  à l'octet près (mêmes empreintes que les archives de gerbers, seuls
+  les uuid du schéma changent), nomenclatures et CPL identiques, DRC
+  KiCad à 0 erreur et 0 élément non connecté sur les deux cartes
+  (10 avertissements sur la carte bobines, 375 sur l'analogique, bouts
+  de piste et sérigraphie). Deux textes étaient en retard : le README
+  de la maquette et le commentaire du yaml disaient une barrette 1 x 10
+  (douze broches depuis l'ADR 0009), et `mockup.analog_board.size_mm`
+  disait 100 x 56 alors que le générateur et la carte font 100 x 62 ;
+  le yaml est corrigé et un test épingle désormais le générateur sur
+  lui.
