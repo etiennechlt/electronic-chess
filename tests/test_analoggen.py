@@ -295,3 +295,12 @@ def test_the_maze_coarsens_its_raster_for_a_haul_across_the_board():
         for g in geoms:
             for o in obstacles:
                 assert g.distance(o) >= CLEAR - 1e-9, layer
+
+
+def test_the_analog_board_size_is_the_yaml_one(cfg):
+    """`mockup.analog_board.size_mm` is the single source of the board
+    outline; the generator's floor plan must match it."""
+    from analoggen.pcb import BOARD_H, BOARD_W
+
+    assert cfg.mockup.analog_board.size_mm == (BOARD_W, BOARD_H)
+    assert cfg.mockup.analog_board.layers == 2

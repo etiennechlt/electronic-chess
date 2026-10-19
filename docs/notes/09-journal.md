@@ -604,3 +604,10 @@ Voir [l'état](07-etat-et-reste-a-faire.md).
 - Fiche de coûts : second scénario « soudure maison, gros matériel déjà
   acheté » (cartes nues, pas d'assemblage ni d'outillage, pochoir en
   option) : A 173 USD, B 144 USD, les deux 277 USD au minimum.
+- Pages autonomes des démonstrateurs : `docfig.page_note` rend les
+  notes 26 et 27, la fiche de coûts et les deux nomenclatures en HTML
+  dans `docs/pages/`, même habillage que les autres pages, figures et
+  rendus embarqués.
+- Maquette 2 x 2 revérifiée (voir plus bas) ; le README de la maquette
+  et le commentaire du yaml disaient encore une barrette 1 x 10, le
+  connecteur a douze broches depuis l'ADR 0009.

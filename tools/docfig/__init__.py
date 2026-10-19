@@ -19,6 +19,7 @@ from .common import standalone
 from .hall import fig_hall_classes, fig_hall_curve, fig_hall_scan, fig_hall_stack, fig_nfc_switch
 from .page_bench import bench_page
 from .page_hall import hall_page
+from .page_note import RENDERED, make_page
 from .page_q import q_page
 from .page_tuto import tuto_page
 from .q import (
@@ -60,6 +61,7 @@ PAGES: dict[str, Callable[[BoardConfig], str]] = {
     "cerveau-banc.html": bench_page,
     "tuto-banc.html": tuto_page,
     "hall-rfid.html": hall_page,
+    **{name: make_page(name) for name in RENDERED},
 }
 
 

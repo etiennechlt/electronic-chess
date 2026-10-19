@@ -16,7 +16,7 @@ afterwards at the netclass clearance, the value KiCad counts as an
 error, together with a per-net connectivity check and a plane
 integrity check.
 
-Floor plan (origin top-left, y down, 100 x 56 mm): MCU header and
+Floor plan (origin top-left, y down, 100 x 62 mm): MCU header and
 test points on the north edge, power down the west side with the Pi
 header and UART isolator below, drive rail in the south-west corner,
 amplifier chain flowing west to east across the middle, four coil

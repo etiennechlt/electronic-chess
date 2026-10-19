@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coûts des démonstrateurs</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f3f5f2; --surface:#ffffff; --ink:#1a1e1d; --ink-2:#4f5754; --ink-3:#7d8582; --rule:#d3d8d4;
+  --q-high:#2a78d6; --q-low:#eb6834; --band:rgba(42,120,214,.09); --tint:#e9eef4;
+  --wood:#e6d3b1; --felt:#c9ccc4; --air:#f7f9f7; --pcb:#c4d9c0; --copper:#c8843a; --magnet:#8b8f92; --piece:#efe6d6;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15191a; --surface:#1e2324; --ink:#e8ecea; --ink-2:#a8b0ac; --ink-3:#7c8582; --rule:#343d3b;
+    --q-high:#3987e5; --q-low:#d95926; --band:rgba(57,135,229,.14); --tint:#232b30;
+    --wood:#6b5836; --felt:#4a4f4b; --air:#1b2021; --pcb:#2f4a33; --copper:#d0894a; --magnet:#6b7073; --piece:#3a3630;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15191a; --surface:#1e2324; --ink:#e8ecea; --ink-2:#a8b0ac; --ink-3:#7c8582; --rule:#343d3b;
+  --q-high:#3987e5; --q-low:#d95926; --band:rgba(57,135,229,.14); --tint:#232b30;
+  --wood:#6b5836; --felt:#4a4f4b; --air:#1b2021; --pcb:#2f4a33; --copper:#d0894a; --magnet:#6b7073; --piece:#3a3630;
+  color-scheme:dark;
+}
+body{background:var(--bg); color:var(--ink); font-family:"IBM Plex Sans","Segoe UI",Roboto,Helvetica,Arial,sans-serif; font-size:16px; line-height:1.55; margin:0;}
+.wrap{max-width:920px; margin:0 auto; padding-block:40px 64px; padding-inline:16px;}
+h1,h2{font-family:"Bricolage Grotesque","IBM Plex Sans",Helvetica,Arial,sans-serif; text-wrap:balance; line-height:1.1; margin:0;}
+h1{font-size:clamp(2.4rem,6vw,3.6rem); font-weight:700; letter-spacing:-.01em;}
+h2{font-size:clamp(1.45rem,3vw,1.9rem); font-weight:600; margin-top:.2em;}
+.eyebrow{font-family:"IBM Plex Mono",Menlo,Consolas,monospace; font-size:.74rem; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); margin:0 0 .5rem;}
+.lede{font-size:1.2rem; line-height:1.5; color:var(--ink-2); max-width:62ch; margin:1rem 0 0;}
+p{max-width:68ch; margin:.9rem 0;}
+ul,ol{max-width:68ch; padding-left:1.2rem;}
+li{margin:.35rem 0;}
+section{margin-top:3.2rem; padding-top:2rem; border-top:1px solid var(--rule);}
+.keep{margin-top:2rem; background:var(--surface); border:1px solid var(--rule); border-left:4px solid var(--q-high); padding:1rem 1.2rem; border-radius:6px; max-width:68ch;}
+.keep p{margin:.3rem 0;}
+.keep strong{color:var(--q-high);}
+figure{margin:1.6rem 0 0;}
+.fig-scroll{overflow-x:auto; position:relative; background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:12px 8px;}
+.fig-scroll svg{display:block; width:100%; min-width:640px; height:auto; color:var(--ink); font-family:"IBM Plex Sans",Helvetica,Arial,sans-serif;}
+figcaption{font-size:.92rem; color:var(--ink-2); margin-top:.6rem; max-width:72ch;}
+figcaption b{color:var(--ink);}
+svg .lbl{font-size:12.5px; fill:var(--ink);}
+svg .lbl.small{font-size:11px;}
+svg .lbl.strong{font-weight:600;}
+svg .muted{fill:var(--ink-2);}
+svg .mono{font-family:"IBM Plex Mono",Menlo,Consolas,monospace;}
+svg .glyph{font-size:20px; font-family:"Segoe UI Symbol","Apple Symbols","Noto Sans Symbols 2","DejaVu Sans",sans-serif;}
+svg .title{font-size:14px; font-weight:600; fill:var(--ink);}
+svg .axis{stroke:currentColor; stroke-width:1.2; fill:none; opacity:.55;}
+svg .tick{stroke:currentColor; stroke-width:1; opacity:.55;}
+svg .grid{stroke:currentColor; stroke-width:1; opacity:.12;}
+svg .dash{stroke:currentColor; stroke-width:1; stroke-dasharray:5 4; opacity:.5; fill:none;}
+svg .brk{stroke:currentColor; stroke-width:1.2; opacity:.6; fill:none;}
+svg .trace{fill:none; stroke-width:2; stroke-linejoin:round; stroke-linecap:round;}
+svg .trace.ghost{opacity:.35; stroke-dasharray:3 3;}
+svg .env{fill:none; stroke-width:1.2; stroke-dasharray:4 4; opacity:.7;}
+svg .q-high{stroke:var(--q-high);}
+svg .q-low{stroke:var(--q-low);}
+svg .q-high-t{fill:var(--q-high); font-weight:600;}
+svg .q-low-t{fill:var(--q-low); font-weight:600;}
+svg .mark{stroke-width:1.6;}
+svg .dot{fill:var(--surface); stroke-width:2.5;}
+svg .band{fill:var(--band);}
+svg .peak-black{fill:var(--q-high); stroke:var(--q-high); stroke-width:1.5; stroke-linejoin:round; opacity:.9;}
+svg .peak-white{fill:var(--surface); stroke:var(--q-high); stroke-width:1.8; stroke-linejoin:round;}
+svg .peak{cursor:default;}
+svg .peak:hover .peak-black, svg .peak:hover .peak-white{stroke:var(--q-low);}
+svg .tipbox{fill:var(--surface); stroke:var(--rule);}
+svg .lay-pcb{fill:var(--pcb);} svg .lay-air{fill:var(--air);} svg .lay-wood{fill:var(--wood);} svg .lay-felt{fill:var(--felt);}
+svg .copper{fill:var(--copper);}
+svg .piece{fill:var(--piece); stroke:currentColor; stroke-width:1.2; opacity:.95;}
+svg .bundle{fill:url(#wire); stroke:currentColor; stroke-width:1;}
+svg .cap{fill:var(--q-low); stroke:none;}
+svg .magnet{fill:var(--magnet); opacity:.75;}
+svg .field{fill:none; stroke:var(--q-high); stroke-width:1.6; opacity:.8;}
+svg .seg{fill:var(--tint); stroke:var(--rule);}
+svg .seg-pulse{fill:var(--q-low); opacity:.35; stroke:var(--q-low);}
+svg .seg-listen{fill:var(--band); stroke:var(--q-high);}
+svg .box{fill:var(--surface); stroke:var(--rule); stroke-width:1.2;}
+svg .box-piece{stroke:var(--q-high); stroke-width:1.8;}
+svg .box-mcu{fill:var(--tint); stroke:var(--q-high); stroke-width:1.8;}
+svg .box-soft{fill:var(--tint); stroke:var(--rule); stroke-width:1.2;}
+svg .box-warm{fill:var(--surface); stroke:var(--q-low); stroke-width:1.6;}
+svg .wire{stroke:currentColor; stroke-width:1.4; fill:none; opacity:.7;}
+svg .wire-a{stroke:var(--q-high); stroke-width:2; fill:none;}
+svg .wire-p{stroke:var(--q-low); stroke-width:2; fill:none;}
+svg .zone{fill:none; stroke:var(--rule); stroke-width:1.2; stroke-dasharray:6 4;}
+svg .coil{fill:none; stroke:var(--copper); stroke-width:2;}
+svg .puck{fill:var(--piece); stroke:currentColor; stroke-width:1.2;}
+.tip{position:absolute; pointer-events:none; background:var(--surface); color:var(--ink); border:1px solid var(--rule); border-radius:6px; padding:.45rem .6rem; font-size:.84rem; line-height:1.35; box-shadow:0 4px 14px rgba(0,0,0,.12); max-width:260px; z-index:2;}
+.formulas{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; margin:1.2rem 0; max-width:900px;}
+.formula{background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:.8rem .95rem;}
+.formula .f{font-family:"IBM Plex Mono",Menlo,Consolas,monospace; font-size:1.02rem; margin:0 0 .35rem; color:var(--ink);}
+.formula .d{font-size:.88rem; color:var(--ink-2); margin:0;}
+table{border-collapse:collapse; width:100%; font-size:.9rem; margin-top:1rem; font-variant-numeric:tabular-nums;}
+th,td{padding:.42rem .55rem; border-bottom:1px solid var(--rule); text-align:left; vertical-align:top;}
+td.n,th.n{text-align:right; white-space:nowrap;}
+th{font-family:"IBM Plex Mono",Menlo,Consolas,monospace; font-size:.74rem; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); font-weight:500;}
+.tbl{overflow-x:auto;}
+dl{display:grid; grid-template-columns:max-content 1fr; gap:.5rem 1.2rem; max-width:80ch; margin:1rem 0 0;}
+dt{font-weight:600; color:var(--ink);}
+dd{margin:0; color:var(--ink-2);}
+@media (max-width:560px){ dl{grid-template-columns:1fr;} dd{margin-bottom:.5rem;} }
+.foot{margin-top:3rem; padding-top:1rem; border-top:1px solid var(--rule); font-size:.84rem; color:var(--ink-3); max-width:72ch;}
+code{font-family:"IBM Plex Mono",Menlo,Consolas,monospace; font-size:.9em; background:var(--tint); padding:.05em .3em; border-radius:3px;}
+
+h3{font-family:"Bricolage Grotesque","IBM Plex Sans",Helvetica,Arial,sans-serif; font-size:1.2rem; font-weight:600; margin:1.8rem 0 0; text-wrap:balance;}
+pre{background:var(--tint); border:1px solid var(--rule); border-radius:8px; padding:.8rem 1rem; overflow-x:auto; font-size:.84rem; line-height:1.45; max-width:100%;}
+pre code{background:none; padding:0; font-size:inherit;}
+.shot{display:block; width:100%; height:auto; border-radius:8px; border:1px solid var(--rule); background:var(--surface);}
+.keep ul,.keep ol{margin:.4rem 0 0; padding-left:1.1rem;}
+.keep li{margin:.3rem 0;}
+blockquote{margin:1rem 0; padding:.2rem 1rem; border-left:4px solid var(--rule); color:var(--ink-2); max-width:68ch;}
+blockquote p{margin:.4rem 0;}
+td a,th a{color:var(--q-high); text-decoration:none;} td a:hover{text-decoration:underline;}
+.wrap a{color:var(--q-high);}
+</style>
+</head>
+<body>
+<div class="wrap">
+<p class="eyebrow">Les deux démonstrateurs</p>
+<h1>Coûts des démonstrateurs</h1>
+<p class="lede">Généré par <code>python3 tools/demobom.py</code> le 18/10/2026 depuis <code>docs/prix-demonstrateur.csv</code> (prix et sources, datés, « vérifié » ou « estimé ») et les nomenclatures des cartes. Les composants sont comptés au canal le moins cher ligne à ligne, rechange comprise ; le détail par repère est dans <a href="bom-demonstrateur-a.html"><code>bom-demonstrateur-a.md</code></a> et <a href="bom-demonstrateur-b.html"><code>bom-demonstrateur-b.md</code></a>. Conversion 1 USD = 0.92 EUR, TVA 20% dans la colonne EUR TTC. Une ligne « optionnelle » n'entre pas dans le minimum : elle est comptée dans le total complet. L'outillage s'achète une fois pour les deux démonstrateurs. Deux scénarios : tout acheter, cartes assemblées par JLCPCB et établi à équiper ; puis souder soi-même avec le gros matériel déjà acheté (section « soudure maison » en fin de fiche).</p>
+<section>
+<h2>Démonstrateur A, détection LC par oscillations</h2>
+<div class="tbl"><table><thead><tr><th>Poste</th><th class="n">USD</th><th class="n">EUR TTC</th><th>Statut</th><th>Source et remarque</th></tr></thead><tbody><tr><td><strong>Composants des cartes</strong> (36 lignes, 107 pièces, rechange comprise)</td><td class="n">28</td><td class="n">31</td><td>relevés web</td><td>le moins cher de LCSC ou Mouser ligne à ligne ; tout chez LCSC 11 USD, tout chez Mouser 60 USD</td></tr></tbody></table></div>
+<h3>Cartes nues (JLCPCB)</h3>
+<div class="tbl"><table><thead><tr><th>Poste</th><th class="n">USD</th><th class="n">EUR TTC</th><th>Statut</th><th>Source et remarque</th></tr></thead><tbody><tr><td>PCB 100x100 4L x5</td><td class="n">30</td><td class="n">33</td><td>estimé</td><td>JLCPCB 4 couches 100 x 100 mm, 5 pieces, HASL : 25 a 35 USD, plus 10 a 25 pour le cuivre interne 1 oz (note 23, 3.1)</td></tr><tr><td>PCB inner copper 1oz</td><td class="n">18</td><td class="n">20</td><td>optionnel, estimé</td><td>option cuivre interne 1 oz sur la carte bobines 4 couches, 10 a 25 USD (note 23, 3.1) ; optionnelle</td></tr><tr><td>PCB 100x62 2L x5</td><td class="n">4</td><td class="n">4</td><td>estimé</td><td>JLCPCB 2 couches 100 x 62 mm, 5 pieces</td></tr><tr><td>PCB stencil 100x100</td><td class="n">8</td><td class="n">9</td><td>optionnel, estimé</td><td>pochoir inox JLCPCB pour une carte 100 x 100, pour qui soude lui-meme a la pate ; 7 a 12 USD</td></tr><tr><td><em>Sous-total cartes nues (jlcpcb)</em></td><td class="n"><em>60</em></td><td class="n"><em>66</em></td><td></td><td></td></tr></tbody></table></div>
+<h3>Assemblage (JLCPCB)</h3>
+<div class="tbl"><table><thead><tr><th>Poste</th><th class="n">USD</th><th class="n">EUR TTC</th><th>Statut</th><th>Source et remarque</th></tr></thead><tbody><tr><td>PCBA economic setup</td><td class="n">25</td><td class="n">28</td><td>optionnel, estimé</td><td>assemblage economique JLCPCB, frais fixes 2 cartes : preparation 8 USD, pochoir 1.5 USD, 3 USD par reference etendue (note 23, 8.3)</td></tr><tr><td>JLC3DP pucks and jigs</td><td class="n">15</td><td class="n">17</td><td>optionnel, estimé</td><td>impression 3D JLC3DP des quatre pucks, gabarits de bobinage et gabarit de percage du modele A, resine ou PLA ; 10 a 20 USD, ou filament maison 3 USD</td></tr><tr><td><em>Sous-total assemblage (jlcpcb)</em></td><td class="n"><em>40</em></td><td class="n"><em>44</em></td><td></td><td></td></tr></tbody></table></div>
+<h3>Cartes de développement</h3>
+<div class="tbl"><table><thead><tr><th>Poste</th><th class="n">USD</th><th class="n">EUR TTC</th><th>Statut</th><th>Source et remarque</th></tr></thead><tbody><tr><td>NUCLEO-G474RE</td><td class="n">20</td><td class="n">22</td><td>estimé</td><td>carte de developpement ST ; releves web du 2026-10-17 : Future 17.33 a 19.52 USD, DigiKey UK 14.96 GBP HT, RS et eStore ST vers 17.5 EUR HT (fiche de la maquette) ; Mouser a verifier au panier</td></tr><tr><td><em>Sous-total cartes de développement</em></td><td class="n"><em>20</em></td><td class="n"><em>22</em></td><td></td><td></td></tr></tbody></table></div>
+<h3>Composants hors cartes et matériaux</h3>
+<div class="tbl"><table><thead><tr><th>Poste</th><th class="n">USD</th><th class="n">EUR TTC</th><th>Statut</th><th>Source et remarque</th></tr></thead><tbody><tr><td>Magnets ferrite 12 15 18x4</td><td class="n">12</td><td class="n">13</td><td>estimé</td><td>aimants ferrite Y30 axiaux, 12, 15 et 18 x 4 mm, 18 pieces, boutique d aimants ou place de marche (note 25, 8.3)</td></tr><tr><td>Enamelled wire 025 0315</td><td class="n">8</td><td class="n">9</td><td>estimé</td><td>fil emaille 0,25 et 0,315 mm, 50 g de chaque, pour les quatre pucks</td></tr><tr><td>Puck C0G capacitors</td><td class="n">1</td><td class="n">1</td><td>estimé</td><td>quatre condensateurs C0G 1 pct (12, 10, 8.2, 6.8 nF, 0805 ou 1206) et leur rechange</td></tr><tr><td>Plywood 3mm felt</td><td class="n">6</td><td class="n">7</td><td>estimé</td><td>contreplaque sec 3 mm 200 x 200 et feutre 0,5 mm (magasin de bricolage ou de loisirs creatifs)</td></tr><tr><td>Nylon M3 kit</td><td class="n">6</td><td class="n">7</td><td>estimé</td><td>visserie nylon M3 : entretoises 2 mm (A) ou 30 mm (B), vis, ecrous ; un assortiment</td></tr><tr><td>Supply 12V 2A jack</td><td class="n">12</td><td class="n">13</td><td>estimé</td><td>bloc 12 V 2 A a jack 5,5 x 2,1 mm pour le modele A ; une alimentation de laboratoire le remplace</td></tr><tr><td>Dupont and USB cables</td><td class="n">2</td><td class="n">2</td><td>estimé</td><td>vingt nappes Dupont femelle-femelle, un cable USB (micro-B pour la Nucleo, USB-C pour le module) ; 3 a 8 USD</td></tr><tr><td><em>Sous-total composants hors cartes et matériaux</em></td><td class="n"><em>47</em></td><td class="n"><em>52</em></td><td></td><td></td></tr></tbody></table></div>
+<h3>Outillage et instruments</h3>
+<div class="tbl"><table><thead><tr><th>Poste</th><th class="n">USD</th><th class="n">EUR TTC</th><th>Statut</th><th>Source et remarque</th></tr></thead><tbody><tr><td>Tool soldering iron kit</td><td class="n">25</td><td class="n">28</td><td>estimé</td><td>fer a panne fine reglable, flux, tresse, brucelles, loupe ; 25 a 60 USD selon la gamme</td></tr><tr><td>Tool multimeter</td><td class="n">15</td><td class="n">17</td><td>estimé</td><td>multimetre avec gamme millivolts (le courant TVDD se lit en mV sur 1 ohm)</td></tr><tr><td>Tool bench supply</td><td class="n">45</td><td class="n">50</td><td>estimé</td><td>alimentation de laboratoire 0 a 30 V limitee en courant, indispensable aux premieres mises sous tension</td></tr><tr><td>Tool pocket oscilloscope</td><td class="n">60</td><td class="n">66</td><td>estimé</td><td>oscilloscope de poche 10 MHz ou plus (bande des notes du modele A jusqu a 650 kHz) ; optionnel pour B</td></tr><tr><td>Tool LCR meter</td><td class="n">30</td><td class="n">33</td><td>optionnel, estimé</td><td>LCR-metre de poche : tranche une bobine de puck douteuse en une minute ; optionnel</td></tr><tr><td><em>Sous-total outillage et instruments</em></td><td class="n"><em>175</em></td><td class="n"><em>193</em></td><td></td><td></td></tr></tbody></table></div>
+<h3>Port et douane</h3>
+<div class="tbl"><table><thead><tr><th>Poste</th><th class="n">USD</th><th class="n">EUR TTC</th><th>Statut</th><th>Source et remarque</th></tr></thead><tbody><tr><td>Shipping JLCPCB</td><td class="n">25</td><td class="n">28</td><td>estimé</td><td>port DHL ou standard vers la France, 15 a 40 USD selon le poids</td></tr><tr><td>Shipping Mouser</td><td class="n">20</td><td class="n">22</td><td>estimé</td><td>port Mouser France, offert au-dessus de 50 EUR HT</td></tr><tr><td>Customs import FR</td><td class="n">0</td><td class="n">0</td><td>estimé</td><td>TVA et frais de dedouanement a l importation : la TVA de 20 pct est comptee dans la colonne EUR TTC ; le transporteur ajoute 10 a 20 EUR de frais de dossier selon l envoi</td></tr><tr><td><em>Sous-total port et douane</em></td><td class="n"><em>45</em></td><td class="n"><em>50</em></td><td></td><td></td></tr></tbody></table></div>
+<div class="tbl"><table><thead><tr><th>Total</th><th class="n">USD</th><th class="n">EUR TTC</th></tr></thead><tbody><tr><td><strong>Minimum</strong> (composants, cartes, port, matériaux et outillage indispensables)</td><td class="n"><strong>318</strong></td><td class="n"><strong>351</strong></td></tr><tr><td><strong>Complet</strong> (options comprises)</td><td class="n"><strong>414</strong></td><td class="n"><strong>457</strong></td></tr></tbody></table></div>
+</section>
+<section>
+<h2>Démonstrateur B, effet Hall et RFID</h2>
+<div class="tbl"><table><thead><tr><th>Poste</th><th class="n">USD</th><th class="n">EUR TTC</th><th>Statut</th><th>Source et remarque</th></tr></thead><tbody><tr><td><strong>Composants des cartes</strong> (48 lignes, 157 pièces, rechange comprise)</td><td class="n">32</td><td class="n">35</td><td>relevés web</td><td>le moins cher de LCSC ou Mouser ligne à ligne ; tout chez LCSC 32 USD, tout chez Mouser 85 USD</td></tr></tbody></table></div>
+<h3>Cartes nues (JLCPCB)</h3>
+<div class="tbl"><table><thead><tr><th>Poste</th><th class="n">USD</th><th class="n">EUR TTC</th><th>Statut</th><th>Source et remarque</th></tr></thead><tbody><tr><td>PCB 100x100 4L x5</td><td class="n">30</td><td class="n">33</td><td>estimé</td><td>JLCPCB 4 couches 100 x 100 mm, 5 pieces, HASL : 25 a 35 USD, plus 10 a 25 pour le cuivre interne 1 oz (note 23, 3.1)</td></tr><tr><td>PCB 100x87 2L 0.8 x5</td><td class="n">8</td><td class="n">9</td><td>estimé</td><td>planche d etiquettes 0.8 mm, 2 couches, panneau client a 4 conceptions : 5 a 15 USD</td></tr><tr><td>PCB stencil 100x100</td><td class="n">8</td><td class="n">9</td><td>optionnel, estimé</td><td>pochoir inox JLCPCB pour une carte 100 x 100, pour qui soude lui-meme a la pate ; 7 a 12 USD</td></tr><tr><td><em>Sous-total cartes nues (jlcpcb)</em></td><td class="n"><em>46</em></td><td class="n"><em>51</em></td><td></td><td></td></tr></tbody></table></div>
+<h3>Assemblage (JLCPCB)</h3>
+<div class="tbl"><table><thead><tr><th>Poste</th><th class="n">USD</th><th class="n">EUR TTC</th><th>Statut</th><th>Source et remarque</th></tr></thead><tbody><tr><td>PCBA standard 2 boards</td><td class="n">60</td><td class="n">66</td><td>estimé</td><td>assemblage Standard JLCPCB face avant, 2 cartes : preparation 25 USD, pochoir, 3 USD par reference etendue (module, lecteurs, mux, tampon, regulateur, USB-C, quartz, selfs), joints : 50 a 70 USD (note 25, 8.2 et 8.4)</td></tr><tr><td>JLC3DP pieces and plate</td><td class="n">20</td><td class="n">22</td><td>optionnel, estimé</td><td>impression 3D JLC3DP des pieces de test, plaque, cales et gabarits du modele B (note 25, 6) ; 15 a 30 USD, ou filament maison 5 USD</td></tr><tr><td><em>Sous-total assemblage (jlcpcb)</em></td><td class="n"><em>80</em></td><td class="n"><em>88</em></td><td></td><td></td></tr></tbody></table></div>
+<h3>Cartes de développement</h3>
+<div class="tbl"><table><thead><tr><th>Poste</th><th class="n">USD</th><th class="n">EUR TTC</th><th>Statut</th><th>Source et remarque</th></tr></thead><tbody><tr><td>ESP32-S3-DevKitC-1</td><td class="n">8</td><td class="n">9</td><td>optionnel, estimé</td><td>carte de developpement de secours du modele B, branchee sur la barrette d echappement si le module ne demarre pas ; optionnelle ; 8 a 15 USD</td></tr><tr><td><em>Sous-total cartes de développement</em></td><td class="n"><em>8</em></td><td class="n"><em>9</em></td><td></td><td></td></tr></tbody></table></div>
+<h3>Composants hors cartes et matériaux</h3>
+<div class="tbl"><table><thead><tr><th>Poste</th><th class="n">USD</th><th class="n">EUR TTC</th><th>Statut</th><th>Source et remarque</th></tr></thead><tbody><tr><td>Magnets ferrite 12 15 18x4</td><td class="n">12</td><td class="n">13</td><td>estimé</td><td>aimants ferrite Y30 axiaux, 12, 15 et 18 x 4 mm, 18 pieces, boutique d aimants ou place de marche (note 25, 8.3)</td></tr><tr><td>NTAG213 cards</td><td class="n">3</td><td class="n">3</td><td>estimé</td><td>deux ou trois cartes NTAG213 du commerce, reference de lecture (M13)</td></tr><tr><td>Polyimide tape</td><td class="n">4</td><td class="n">4</td><td>estimé</td><td>ruban polyimide 10 mm qui tient les disques d etiquette dans les bases</td></tr><tr><td>Nylon M3 kit</td><td class="n">6</td><td class="n">7</td><td>estimé</td><td>visserie nylon M3 : entretoises 2 mm (A) ou 30 mm (B), vis, ecrous ; un assortiment</td></tr><tr><td>UFL SMA pigtails</td><td class="n">2</td><td class="n">2</td><td>estimé</td><td>deux pigtails U.FL vers SMA (ou RG178 nu) a souder sur les points de test TX pour l accord au NanoVNA</td></tr><tr><td>Dupont and USB cables</td><td class="n">2</td><td class="n">2</td><td>estimé</td><td>vingt nappes Dupont femelle-femelle, un cable USB (micro-B pour la Nucleo, USB-C pour le module) ; 3 a 8 USD</td></tr><tr><td>Aluminium steel plates</td><td class="n">8</td><td class="n">9</td><td>optionnel, estimé</td><td>plaques d aluminium et d acier plus grandes que la zone de jeu pour M14b (chute de magasin de bricolage)</td></tr><tr><td><em>Sous-total composants hors cartes et matériaux</em></td><td class="n"><em>37</em></td><td class="n"><em>41</em></td><td></td><td></td></tr></tbody></table></div>
+<h3>Outillage et instruments</h3>
+<div class="tbl"><table><thead><tr><th>Poste</th><th class="n">USD</th><th class="n">EUR TTC</th><th>Statut</th><th>Source et remarque</th></tr></thead><tbody><tr><td>Tool soldering iron kit</td><td class="n">25</td><td class="n">28</td><td>estimé</td><td>fer a panne fine reglable, flux, tresse, brucelles, loupe ; 25 a 60 USD selon la gamme</td></tr><tr><td>Tool multimeter</td><td class="n">15</td><td class="n">17</td><td>estimé</td><td>multimetre avec gamme millivolts (le courant TVDD se lit en mV sur 1 ohm)</td></tr><tr><td>Tool bench supply</td><td class="n">45</td><td class="n">50</td><td>estimé</td><td>alimentation de laboratoire 0 a 30 V limitee en courant, indispensable aux premieres mises sous tension</td></tr><tr><td>NanoVNA-H</td><td class="n">70</td><td class="n">77</td><td>estimé</td><td>NanoVNA-H avec sonde et cables U.FL vers SMA, 60 a 90 EUR, place de marche (note 25, D9)</td></tr><tr><td>Tool NFC phone</td><td class="n">0</td><td class="n">0</td><td>vérifié</td><td>un telephone NFC lit chaque etiquette avant montage : deja possede</td></tr><tr><td>Tool pocket oscilloscope</td><td class="n">60</td><td class="n">66</td><td>optionnel, estimé</td><td>oscilloscope de poche 10 MHz ou plus (bande des notes du modele A jusqu a 650 kHz) ; optionnel pour B</td></tr><tr><td>Tool hot air station</td><td class="n">40</td><td class="n">44</td><td>optionnel, estimé</td><td>station a air chaud pour souder soi-meme les QFN du MFRC522 ; inutile si JLCPCB assemble la carte</td></tr><tr><td><em>Sous-total outillage et instruments</em></td><td class="n"><em>255</em></td><td class="n"><em>282</em></td><td></td><td></td></tr></tbody></table></div>
+<h3>Port et douane</h3>
+<div class="tbl"><table><thead><tr><th>Poste</th><th class="n">USD</th><th class="n">EUR TTC</th><th>Statut</th><th>Source et remarque</th></tr></thead><tbody><tr><td>Shipping JLCPCB</td><td class="n">25</td><td class="n">28</td><td>estimé</td><td>port DHL ou standard vers la France, 15 a 40 USD selon le poids</td></tr><tr><td>Shipping Mouser</td><td class="n">20</td><td class="n">22</td><td>estimé</td><td>port Mouser France, offert au-dessus de 50 EUR HT</td></tr><tr><td>Customs import FR</td><td class="n">0</td><td class="n">0</td><td>estimé</td><td>TVA et frais de dedouanement a l importation : la TVA de 20 pct est comptee dans la colonne EUR TTC ; le transporteur ajoute 10 a 20 EUR de frais de dossier selon l envoi</td></tr><tr><td><em>Sous-total port et douane</em></td><td class="n"><em>45</em></td><td class="n"><em>50</em></td><td></td><td></td></tr></tbody></table></div>
+<div class="tbl"><table><thead><tr><th>Total</th><th class="n">USD</th><th class="n">EUR TTC</th></tr></thead><tbody><tr><td><strong>Minimum</strong> (composants, cartes, port, matériaux et outillage indispensables)</td><td class="n"><strong>359</strong></td><td class="n"><strong>396</strong></td></tr><tr><td><strong>Complet</strong> (options comprises)</td><td class="n"><strong>503</strong></td><td class="n"><strong>555</strong></td></tr></tbody></table></div>
+</section>
+<section>
+<h2>Les deux démonstrateurs ensemble</h2>
+<p>L'outillage, la visserie, les nappes, les aimants et un port Mouser ne s'achètent qu'une fois ; une seule commande JLCPCB peut porter les quatre cartes, ce qui économise encore un port (non compté ici).</p>
+<div class="tbl"><table><thead><tr><th>Total</th><th class="n">USD</th><th class="n">EUR TTC</th></tr></thead><tbody><tr><td>Minimum des deux</td><td class="n">552</td><td class="n">610</td></tr><tr><td>Complet des deux</td><td class="n">732</td><td class="n">809</td></tr></tbody></table></div>
+</section>
+<section>
+<h2>Scénario : soudure maison, gros matériel déjà acheté</h2>
+<p>Les cartes se commandent nues et se soudent au fer ; le HVQFN du MFRC522 et le module ESP32 passent à l'air chaud ou à la plaque, avec le pochoir. Fer, air chaud, alimentation de laboratoire, multimètre, oscilloscope et NanoVNA sont déjà sur l'établi, pâte, flux et tresse aussi. Restent les composants, les cartes nues, les cartes de développement (la NUCLEO reste comptée : elle porte le démonstrateur A ; à retirer si elle est déjà dans le tiroir), les matériaux et le port. Les codes LCSC manquants des condensateurs d'adaptation n'ont plus d'importance : on les achète par valeur, chez Mouser ou LCSC, dans la même commande.</p>
+<h3>Démonstrateur A, détection LC par oscillations</h3>
+<div class="tbl"><table><thead><tr><th>Poste</th><th class="n">USD</th><th class="n">EUR TTC</th><th>Statut</th><th>Remarque</th></tr></thead><tbody><tr><td>Composants des cartes (107 pièces, rechange comprise)</td><td class="n">28</td><td class="n">31</td><td>relevés web</td><td>le moins cher de LCSC ou Mouser ligne à ligne</td></tr><tr><td>PCB 100x100 4L x5</td><td class="n">30</td><td class="n">33</td><td>estimé</td><td>cartes nues (jlcpcb)</td></tr><tr><td>PCB inner copper 1oz</td><td class="n">18</td><td class="n">20</td><td>optionnel, estimé</td><td>cartes nues (jlcpcb)</td></tr><tr><td>PCB 100x62 2L x5</td><td class="n">4</td><td class="n">4</td><td>estimé</td><td>cartes nues (jlcpcb)</td></tr><tr><td>PCB stencil 100x100</td><td class="n">8</td><td class="n">9</td><td>optionnel, estimé</td><td>conseillé pour poser la pâte sous les QFN et le module</td></tr><tr><td>JLC3DP pucks and jigs</td><td class="n">15</td><td class="n">17</td><td>optionnel, estimé</td><td>ou imprimés chez soi</td></tr><tr><td>NUCLEO-G474RE</td><td class="n">20</td><td class="n">22</td><td>estimé</td><td>cartes de développement</td></tr><tr><td>Magnets ferrite 12 15 18x4</td><td class="n">12</td><td class="n">13</td><td>estimé</td><td>composants hors cartes et matériaux</td></tr><tr><td>Enamelled wire 025 0315</td><td class="n">8</td><td class="n">9</td><td>estimé</td><td>composants hors cartes et matériaux</td></tr><tr><td>Puck C0G capacitors</td><td class="n">1</td><td class="n">1</td><td>estimé</td><td>composants hors cartes et matériaux</td></tr><tr><td>Plywood 3mm felt</td><td class="n">6</td><td class="n">7</td><td>estimé</td><td>composants hors cartes et matériaux</td></tr><tr><td>Nylon M3 kit</td><td class="n">6</td><td class="n">7</td><td>estimé</td><td>composants hors cartes et matériaux</td></tr><tr><td>Supply 12V 2A jack</td><td class="n">12</td><td class="n">13</td><td>estimé</td><td>composants hors cartes et matériaux</td></tr><tr><td>Dupont and USB cables</td><td class="n">2</td><td class="n">2</td><td>estimé</td><td>composants hors cartes et matériaux</td></tr><tr><td>Shipping JLCPCB</td><td class="n">25</td><td class="n">28</td><td>estimé</td><td>port et douane</td></tr><tr><td>Shipping Mouser</td><td class="n">20</td><td class="n">22</td><td>estimé</td><td>port et douane</td></tr><tr><td>Customs import FR</td><td class="n">0</td><td class="n">0</td><td>estimé</td><td>port et douane</td></tr><tr><td><strong>Minimum</strong></td><td class="n"><strong>173</strong></td><td class="n"><strong>191</strong></td><td></td><td></td></tr><tr><td><strong>Avec les options</strong> (pochoir, impression 3D, carte de secours)</td><td class="n"><strong>214</strong></td><td class="n"><strong>237</strong></td><td></td><td></td></tr></tbody></table></div>
+<h3>Démonstrateur B, effet Hall et RFID</h3>
+<div class="tbl"><table><thead><tr><th>Poste</th><th class="n">USD</th><th class="n">EUR TTC</th><th>Statut</th><th>Remarque</th></tr></thead><tbody><tr><td>Composants des cartes (157 pièces, rechange comprise)</td><td class="n">32</td><td class="n">35</td><td>relevés web</td><td>le moins cher de LCSC ou Mouser ligne à ligne</td></tr><tr><td>PCB 100x100 4L x5</td><td class="n">30</td><td class="n">33</td><td>estimé</td><td>cartes nues (jlcpcb)</td></tr><tr><td>PCB 100x87 2L 0.8 x5</td><td class="n">8</td><td class="n">9</td><td>estimé</td><td>cartes nues (jlcpcb)</td></tr><tr><td>PCB stencil 100x100</td><td class="n">8</td><td class="n">9</td><td>optionnel, estimé</td><td>conseillé pour poser la pâte sous les QFN et le module</td></tr><tr><td>JLC3DP pieces and plate</td><td class="n">20</td><td class="n">22</td><td>optionnel, estimé</td><td>ou imprimés chez soi</td></tr><tr><td>ESP32-S3-DevKitC-1</td><td class="n">8</td><td class="n">9</td><td>optionnel, estimé</td><td>cartes de développement</td></tr><tr><td>Magnets ferrite 12 15 18x4</td><td class="n">12</td><td class="n">13</td><td>estimé</td><td>composants hors cartes et matériaux</td></tr><tr><td>NTAG213 cards</td><td class="n">3</td><td class="n">3</td><td>estimé</td><td>composants hors cartes et matériaux</td></tr><tr><td>Polyimide tape</td><td class="n">4</td><td class="n">4</td><td>estimé</td><td>composants hors cartes et matériaux</td></tr><tr><td>Nylon M3 kit</td><td class="n">6</td><td class="n">7</td><td>estimé</td><td>composants hors cartes et matériaux</td></tr><tr><td>UFL SMA pigtails</td><td class="n">2</td><td class="n">2</td><td>estimé</td><td>composants hors cartes et matériaux</td></tr><tr><td>Dupont and USB cables</td><td class="n">2</td><td class="n">2</td><td>estimé</td><td>composants hors cartes et matériaux</td></tr><tr><td>Aluminium steel plates</td><td class="n">8</td><td class="n">9</td><td>optionnel, estimé</td><td>composants hors cartes et matériaux</td></tr><tr><td>Shipping JLCPCB</td><td class="n">25</td><td class="n">28</td><td>estimé</td><td>port et douane</td></tr><tr><td>Shipping Mouser</td><td class="n">20</td><td class="n">22</td><td>estimé</td><td>port et douane</td></tr><tr><td>Customs import FR</td><td class="n">0</td><td class="n">0</td><td>estimé</td><td>port et douane</td></tr><tr><td><strong>Minimum</strong></td><td class="n"><strong>144</strong></td><td class="n"><strong>159</strong></td><td></td><td></td></tr><tr><td><strong>Avec les options</strong> (pochoir, impression 3D, carte de secours)</td><td class="n"><strong>188</strong></td><td class="n"><strong>208</strong></td><td></td><td></td></tr></tbody></table></div>
+<div class="tbl"><table><thead><tr><th>Les deux démonstrateurs, soudure maison</th><th class="n">USD</th><th class="n">EUR TTC</th></tr></thead><tbody><tr><td>Minimum (visserie, nappes, aimants et port Mouser comptés une fois)</td><td class="n">277</td><td class="n">306</td></tr><tr><td>Avec les options</td><td class="n">362</td><td class="n">400</td></tr></tbody></table></div>
+</section>
+<section>
+<h2>Ce que les prix ne couvrent pas</h2>
+<ul><li>Les frais de dossier du transporteur à l'importation (10 à 20 EUR par envoi hors UE), variables ; la TVA est comptée.</li><li>Le temps de montage et de mesure, et le contreplaqué ou le filament déjà en stock chez qui bricole.</li><li>Les codes LCSC des condensateurs C0G d'adaptation, à relever le jour de la commande : sans eux, l'assemblage les saute et ils se soudent au fer.</li></ul>
+</section>
+<p class="foot">Page générée par <code>python -m docfig pages</code> depuis <code>docs/couts-demonstrateurs.md</code> du dépôt electronic-chess : le même texte que le document, ses figures embarquées, ses chiffres calculés par <code>chessboard_calc</code> depuis <code>config/board.yaml</code> et épinglés par les tests du dépôt.</p>
+</div>
+</body>
+</html>

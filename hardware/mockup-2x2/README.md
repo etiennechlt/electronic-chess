@@ -75,7 +75,7 @@ feutre, visserie, impression des pièces de `mechanical/`.
 1. Carte analogique : souder les traversants (jack, barrettes J2 J4
    J5, JP1 JP3) ; laisser R66 et R67 non montées (elles court-circuitent
    l'isolateur UART).
-2. Carte bobines : souder la barrette coudée 1 x 10 mâle pointant vers
+2. Carte bobines : souder la barrette coudée 1 x 12 mâle pointant vers
    le nord ; entretoises M3 x 25 aux quatre coins.
 3. Emboîter la barrette dans le connecteur femelle coudé J2 de la
    carte analogique : les deux cartes sont coplanaires, broche 1 sur

@@ -56,6 +56,13 @@ def test_tuto_figures_carry_the_four_test_pieces(cfg):
     assert f"{rows[0]['f0_khz']:.0f} kHz" in tests_svg  # the first puck's note is the first check
 
 
+TEXT_ONLY_PAGES = {
+    "couts-demonstrateurs.html",
+    "bom-demonstrateur-a.html",
+    "bom-demonstrateur-b.html",
+}
+
+
 @pytest.mark.parametrize("name", sorted(PAGES))
 def test_every_page_is_a_whole_document(cfg, name):
     """The pages of docs/pages: one self-contained file each, all their
@@ -67,7 +74,8 @@ def test_every_page_is_a_whole_document(cfg, name):
     assert "{{" not in page
     assert chr(0x2014) not in page and chr(0x2013) not in page
     assert "/home/" not in page
-    assert page.count("<svg") >= 1  # the figures travel with the page
+    if name not in TEXT_ONLY_PAGES:
+        assert page.count("<svg") >= 1  # the figures travel with the page
 
 
 def test_the_q_page_carries_the_model_numbers(cfg):
@@ -110,3 +118,32 @@ def test_hall_figures_carry_the_sensor_and_the_threshold(cfg):
     assert f"seuil de présence : {fr_num(b.threshold_mT)} mT" in curve
     classes = FIGURES["hall-classes.svg"](cfg)
     assert "1 groupe(s)" in classes and "3 groupe(s)" in classes
+
+
+def test_the_demonstrator_pages_render_their_notes(cfg):
+    """The pages of notes 26 and 27 are the notes themselves: title, the
+    sections, the tables and the figures of the Markdown, the links to
+    the other pages, the renders embedded."""
+    from chessboard_calc.config import Color, PieceType
+
+    lc = PAGES["demonstrateur-lc.html"](cfg)
+    f_pawn = frequency_plan(cfg).line(PieceType.PAWN, Color.BLACK).f0_hz
+    assert "<h1>Démonstrateur A" in lc
+    assert f">{fr_num(f_pawn / 1e3)}<" in lc  # the plan table, from the note
+    assert 'href="demonstrateur-hall-rfid.html"' in lc  # the twin note has a page
+    assert 'href="couts-demonstrateurs.html"' in lc
+    assert "github.com/etiennechlt/electronic-chess/blob/main/hardware/mockup-2x2" in lc
+    assert 'src="data:image/png;base64,' in lc  # the board renders travel with the page
+    assert "<dl><dt>" in lc  # the lexicon
+    assert "<pre><code>" in lc
+    hr = PAGES["demonstrateur-hall-rfid.html"](cfg)
+    assert "<h1>Démonstrateur B" in hr
+    assert "DRV5055A3" in hr and "MFRC522" in hr
+    assert hr.count("<section>") == 8
+    assert "![" not in hr and "](" not in hr  # no Markdown left behind
+
+
+def test_the_cost_page_follows_the_sheet(cfg):
+    page = PAGES["couts-demonstrateurs.html"](cfg)
+    assert "Scénario : soudure maison" in page
+    assert '<td class="n">' in page  # the amounts are right-aligned

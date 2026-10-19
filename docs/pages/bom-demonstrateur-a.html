@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nomenclature du démonstrateur A, détection LC par oscillations</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f3f5f2; --surface:#ffffff; --ink:#1a1e1d; --ink-2:#4f5754; --ink-3:#7d8582; --rule:#d3d8d4;
+  --q-high:#2a78d6; --q-low:#eb6834; --band:rgba(42,120,214,.09); --tint:#e9eef4;
+  --wood:#e6d3b1; --felt:#c9ccc4; --air:#f7f9f7; --pcb:#c4d9c0; --copper:#c8843a; --magnet:#8b8f92; --piece:#efe6d6;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15191a; --surface:#1e2324; --ink:#e8ecea; --ink-2:#a8b0ac; --ink-3:#7c8582; --rule:#343d3b;
+    --q-high:#3987e5; --q-low:#d95926; --band:rgba(57,135,229,.14); --tint:#232b30;
+    --wood:#6b5836; --felt:#4a4f4b; --air:#1b2021; --pcb:#2f4a33; --copper:#d0894a; --magnet:#6b7073; --piece:#3a3630;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15191a; --surface:#1e2324; --ink:#e8ecea; --ink-2:#a8b0ac; --ink-3:#7c8582; --rule:#343d3b;
+  --q-high:#3987e5; --q-low:#d95926; --band:rgba(57,135,229,.14); --tint:#232b30;
+  --wood:#6b5836; --felt:#4a4f4b; --air:#1b2021; --pcb:#2f4a33; --copper:#d0894a; --magnet:#6b7073; --piece:#3a3630;
+  color-scheme:dark;
+}
+body{background:var(--bg); color:var(--ink); font-family:"IBM Plex Sans","Segoe UI",Roboto,Helvetica,Arial,sans-serif; font-size:16px; line-height:1.55; margin:0;}
+.wrap{max-width:920px; margin:0 auto; padding-block:40px 64px; padding-inline:16px;}
+h1,h2{font-family:"Bricolage Grotesque","IBM Plex Sans",Helvetica,Arial,sans-serif; text-wrap:balance; line-height:1.1; margin:0;}
+h1{font-size:clamp(2.4rem,6vw,3.6rem); font-weight:700; letter-spacing:-.01em;}
+h2{font-size:clamp(1.45rem,3vw,1.9rem); font-weight:600; margin-top:.2em;}
+.eyebrow{font-family:"IBM Plex Mono",Menlo,Consolas,monospace; font-size:.74rem; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); margin:0 0 .5rem;}
+.lede{font-size:1.2rem; line-height:1.5; color:var(--ink-2); max-width:62ch; margin:1rem 0 0;}
+p{max-width:68ch; margin:.9rem 0;}
+ul,ol{max-width:68ch; padding-left:1.2rem;}
+li{margin:.35rem 0;}
+section{margin-top:3.2rem; padding-top:2rem; border-top:1px solid var(--rule);}
+.keep{margin-top:2rem; background:var(--surface); border:1px solid var(--rule); border-left:4px solid var(--q-high); padding:1rem 1.2rem; border-radius:6px; max-width:68ch;}
+.keep p{margin:.3rem 0;}
+.keep strong{color:var(--q-high);}
+figure{margin:1.6rem 0 0;}
+.fig-scroll{overflow-x:auto; position:relative; background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:12px 8px;}
+.fig-scroll svg{display:block; width:100%; min-width:640px; height:auto; color:var(--ink); font-family:"IBM Plex Sans",Helvetica,Arial,sans-serif;}
+figcaption{font-size:.92rem; color:var(--ink-2); margin-top:.6rem; max-width:72ch;}
+figcaption b{color:var(--ink);}
+svg .lbl{font-size:12.5px; fill:var(--ink);}
+svg .lbl.small{font-size:11px;}
+svg .lbl.strong{font-weight:600;}
+svg .muted{fill:var(--ink-2);}
+svg .mono{font-family:"IBM Plex Mono",Menlo,Consolas,monospace;}
+svg .glyph{font-size:20px; font-family:"Segoe UI Symbol","Apple Symbols","Noto Sans Symbols 2","DejaVu Sans",sans-serif;}
+svg .title{font-size:14px; font-weight:600; fill:var(--ink);}
+svg .axis{stroke:currentColor; stroke-width:1.2; fill:none; opacity:.55;}
+svg .tick{stroke:currentColor; stroke-width:1; opacity:.55;}
+svg .grid{stroke:currentColor; stroke-width:1; opacity:.12;}
+svg .dash{stroke:currentColor; stroke-width:1; stroke-dasharray:5 4; opacity:.5; fill:none;}
+svg .brk{stroke:currentColor; stroke-width:1.2; opacity:.6; fill:none;}
+svg .trace{fill:none; stroke-width:2; stroke-linejoin:round; stroke-linecap:round;}
+svg .trace.ghost{opacity:.35; stroke-dasharray:3 3;}
+svg .env{fill:none; stroke-width:1.2; stroke-dasharray:4 4; opacity:.7;}
+svg .q-high{stroke:var(--q-high);}
+svg .q-low{stroke:var(--q-low);}
+svg .q-high-t{fill:var(--q-high); font-weight:600;}
+svg .q-low-t{fill:var(--q-low); font-weight:600;}
+svg .mark{stroke-width:1.6;}
+svg .dot{fill:var(--surface); stroke-width:2.5;}
+svg .band{fill:var(--band);}
+svg .peak-black{fill:var(--q-high); stroke:var(--q-high); stroke-width:1.5; stroke-linejoin:round; opacity:.9;}
+svg .peak-white{fill:var(--surface); stroke:var(--q-high); stroke-width:1.8; stroke-linejoin:round;}
+svg .peak{cursor:default;}
+svg .peak:hover .peak-black, svg .peak:hover .peak-white{stroke:var(--q-low);}
+svg .tipbox{fill:var(--surface); stroke:var(--rule);}
+svg .lay-pcb{fill:var(--pcb);} svg .lay-air{fill:var(--air);} svg .lay-wood{fill:var(--wood);} svg .lay-felt{fill:var(--felt);}
+svg .copper{fill:var(--copper);}
+svg .piece{fill:var(--piece); stroke:currentColor; stroke-width:1.2; opacity:.95;}
+svg .bundle{fill:url(#wire); stroke:currentColor; stroke-width:1;}
+svg .cap{fill:var(--q-low); stroke:none;}
+svg .magnet{fill:var(--magnet); opacity:.75;}
+svg .field{fill:none; stroke:var(--q-high); stroke-width:1.6; opacity:.8;}
+svg .seg{fill:var(--tint); stroke:var(--rule);}
+svg .seg-pulse{fill:var(--q-low); opacity:.35; stroke:var(--q-low);}
+svg .seg-listen{fill:var(--band); stroke:var(--q-high);}
+svg .box{fill:var(--surface); stroke:var(--rule); stroke-width:1.2;}
+svg .box-piece{stroke:var(--q-high); stroke-width:1.8;}
+svg .box-mcu{fill:var(--tint); stroke:var(--q-high); stroke-width:1.8;}
+svg .box-soft{fill:var(--tint); stroke:var(--rule); stroke-width:1.2;}
+svg .box-warm{fill:var(--surface); stroke:var(--q-low); stroke-width:1.6;}
+svg .wire{stroke:currentColor; stroke-width:1.4; fill:none; opacity:.7;}
+svg .wire-a{stroke:var(--q-high); stroke-width:2; fill:none;}
+svg .wire-p{stroke:var(--q-low); stroke-width:2; fill:none;}
+svg .zone{fill:none; stroke:var(--rule); stroke-width:1.2; stroke-dasharray:6 4;}
+svg .coil{fill:none; stroke:var(--copper); stroke-width:2;}
+svg .puck{fill:var(--piece); stroke:currentColor; stroke-width:1.2;}
+.tip{position:absolute; pointer-events:none; background:var(--surface); color:var(--ink); border:1px solid var(--rule); border-radius:6px; padding:.45rem .6rem; font-size:.84rem; line-height:1.35; box-shadow:0 4px 14px rgba(0,0,0,.12); max-width:260px; z-index:2;}
+.formulas{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; margin:1.2rem 0; max-width:900px;}
+.formula{background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:.8rem .95rem;}
+.formula .f{font-family:"IBM Plex Mono",Menlo,Consolas,monospace; font-size:1.02rem; margin:0 0 .35rem; color:var(--ink);}
+.formula .d{font-size:.88rem; color:var(--ink-2); margin:0;}
+table{border-collapse:collapse; width:100%; font-size:.9rem; margin-top:1rem; font-variant-numeric:tabular-nums;}
+th,td{padding:.42rem .55rem; border-bottom:1px solid var(--rule); text-align:left; vertical-align:top;}
+td.n,th.n{text-align:right; white-space:nowrap;}
+th{font-family:"IBM Plex Mono",Menlo,Consolas,monospace; font-size:.74rem; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); font-weight:500;}
+.tbl{overflow-x:auto;}
+dl{display:grid; grid-template-columns:max-content 1fr; gap:.5rem 1.2rem; max-width:80ch; margin:1rem 0 0;}
+dt{font-weight:600; color:var(--ink);}
+dd{margin:0; color:var(--ink-2);}
+@media (max-width:560px){ dl{grid-template-columns:1fr;} dd{margin-bottom:.5rem;} }
+.foot{margin-top:3rem; padding-top:1rem; border-top:1px solid var(--rule); font-size:.84rem; color:var(--ink-3); max-width:72ch;}
+code{font-family:"IBM Plex Mono",Menlo,Consolas,monospace; font-size:.9em; background:var(--tint); padding:.05em .3em; border-radius:3px;}
+
+h3{font-family:"Bricolage Grotesque","IBM Plex Sans",Helvetica,Arial,sans-serif; font-size:1.2rem; font-weight:600; margin:1.8rem 0 0; text-wrap:balance;}
+pre{background:var(--tint); border:1px solid var(--rule); border-radius:8px; padding:.8rem 1rem; overflow-x:auto; font-size:.84rem; line-height:1.45; max-width:100%;}
+pre code{background:none; padding:0; font-size:inherit;}
+.shot{display:block; width:100%; height:auto; border-radius:8px; border:1px solid var(--rule); background:var(--surface);}
+.keep ul,.keep ol{margin:.4rem 0 0; padding-left:1.1rem;}
+.keep li{margin:.3rem 0;}
+blockquote{margin:1rem 0; padding:.2rem 1rem; border-left:4px solid var(--rule); color:var(--ink-2); max-width:68ch;}
+blockquote p{margin:.4rem 0;}
+td a,th a{color:var(--q-high); text-decoration:none;} td a:hover{text-decoration:underline;}
+.wrap a{color:var(--q-high);}
+</style>
+</head>
+<body>
+<div class="wrap">
+<p class="eyebrow">Démonstrateur A</p>
+<h1>Nomenclature du démonstrateur A, détection LC par oscillations</h1>
+<p class="lede">Générée par <code>python3 tools/demobom.py --model a</code> le 18/10/2026 depuis les <code>bom.csv</code> des cartes et <code>docs/prix-demonstrateur.csv</code>. Les quantités sont celles des cartes ; la colonne « achat » ajoute la rechange de 10 % par ligne (au moins une pièce, deux au-delà de dix). Les prix sont en USD à l'unité ou à la petite série, datés dans la fiche de prix, « vérifié » ou « estimé » ; chaque lien ouvre la page ou la recherche du distributeur, à relire le jour de la commande. Conversion 1 USD = 0.92 EUR, TVA 20 % ajoutée dans les totaux.</p>
+<section>
+<h2>Composants</h2>
+<div class="tbl"><table><thead><tr><th>Repères</th><th>Valeur</th><th>Empreinte</th><th>MPN</th><th class="n">bobines</th><th class="n">analogique</th><th class="n">Achat</th><th>LCSC (USD)</th><th>Mouser (USD)</th><th>Moins cher</th></tr></thead><tbody><tr><td>resistor</td><td>100k</td><td>R_0603_1608Metric</td><td></td><td class="n">0</td><td class="n">13</td><td class="n">15</td><td>0.005</td><td><a href="https://www.mouser.fr/c/?q=100k%200603">chercher</a> 0.10</td><td>0.07 (lcsc)</td></tr><tr><td>resistor</td><td>10k</td><td>R_0603_1608Metric</td><td></td><td class="n">0</td><td class="n">10</td><td class="n">12</td><td>0.005</td><td><a href="https://www.mouser.fr/c/?q=10k%200603">chercher</a> 0.10</td><td>0.06 (lcsc)</td></tr><tr><td>diode</td><td>BAV99</td><td>SOT-23</td><td>BAV99</td><td class="n">0</td><td class="n">9</td><td class="n">10</td><td><a href="https://www.lcsc.com/product-detail/C2500.html">C2500</a> 0.020</td><td><a href="https://www.mouser.fr/ProductDetail/771-BAV99-T%2FR">771-BAV99-T/R</a> 0.15</td><td>0.20 (lcsc)</td></tr><tr><td>resistor</td><td>330R</td><td>R_0603_1608Metric</td><td></td><td class="n">0</td><td class="n">8</td><td class="n">9</td><td>0.005</td><td><a href="https://www.mouser.fr/c/?q=330R%200603">chercher</a> 0.10</td><td>0.04 (lcsc)</td></tr><tr><td>capacitor</td><td>100n</td><td>C_0603_1608Metric</td><td></td><td class="n">0</td><td class="n">7</td><td class="n">8</td><td>0.010</td><td><a href="https://www.mouser.fr/c/?q=100n%200603">chercher</a> 0.12</td><td>0.08 (lcsc)</td></tr><tr><td>transistor</td><td>AO3400A</td><td>SOT-23</td><td>AO3400A</td><td class="n">0</td><td class="n">5</td><td class="n">6</td><td><a href="https://www.lcsc.com/product-detail/C20917.html">C20917</a> 0.040</td><td><a href="https://www.mouser.fr/ProductDetail/785-AO3400A">785-AO3400A</a> 0.30</td><td>0.24 (lcsc)</td></tr><tr><td>transistor</td><td>AO3401A</td><td>SOT-23</td><td>AO3401A</td><td class="n">0</td><td class="n">5</td><td class="n">6</td><td><a href="https://www.lcsc.com/product-detail/C15127.html">C15127</a> 0.052</td><td><a href="https://www.mouser.fr/ProductDetail/785-AO3401A">785-AO3401A</a> 0.30</td><td>0.31 (lcsc)</td></tr><tr><td>diode</td><td>SS34</td><td>D_SMA</td><td>SS34</td><td class="n">0</td><td class="n">5</td><td class="n">6</td><td><a href="https://www.lcsc.com/product-detail/C8678.html">C8678</a> 0.040</td><td><a href="https://www.mouser.fr/ProductDetail/833-SS34">833-SS34</a> 0.30</td><td>0.24 (lcsc)</td></tr><tr><td>resistor</td><td>680R</td><td>R_0805_2012Metric</td><td></td><td class="n">0</td><td class="n">4</td><td class="n">5</td><td>0.010</td><td><a href="https://www.mouser.fr/c/?q=680R%200805">chercher</a> 0.10</td><td>0.05 (lcsc)</td></tr><tr><td>diode</td><td>B5819W</td><td>D_SOD-123</td><td>B5819W</td><td class="n">0</td><td class="n">4</td><td class="n">5</td><td><a href="https://www.lcsc.com/product-detail/C8598.html">C8598</a> 0.030</td><td><a href="https://www.mouser.fr/c/?q=B5819W">chercher</a> 0.25</td><td>0.15 (lcsc)</td></tr><tr><td>resistor</td><td>1k</td><td>R_0603_1608Metric</td><td></td><td class="n">0</td><td class="n">3</td><td class="n">4</td><td>0.005</td><td><a href="https://www.mouser.fr/c/?q=1k%200603">chercher</a> 0.10</td><td>0.02 (lcsc)</td></tr><tr><td>capacitor</td><td>1n</td><td>C_0603_1608Metric</td><td></td><td class="n">0</td><td class="n">3</td><td class="n">4</td><td>0.010</td><td><a href="https://www.mouser.fr/c/?q=1n%200603">chercher</a> 0.12</td><td>0.04 (lcsc)</td></tr><tr><td>capacitor</td><td>1u</td><td>C_0603_1608Metric</td><td></td><td class="n">0</td><td class="n">3</td><td class="n">4</td><td>0.010</td><td><a href="https://www.mouser.fr/c/?q=1u%200603">chercher</a> 0.12</td><td>0.04 (lcsc)</td></tr><tr><td>capacitor</td><td>330p</td><td>C_0603_1608Metric</td><td></td><td class="n">0</td><td class="n">2</td><td class="n">3</td><td>0.010</td><td><a href="https://www.mouser.fr/c/?q=330p%200603">chercher</a> 0.12</td><td>0.03 (lcsc)</td></tr><tr><td>resistor</td><td>590R</td><td>R_0603_1608Metric</td><td></td><td class="n">0</td><td class="n">2</td><td class="n">3</td><td>0.005</td><td><a href="https://www.mouser.fr/c/?q=590R%200603">chercher</a> 0.10</td><td>0.01 (lcsc)</td></tr><tr><td>resistor</td><td>750R</td><td>R_0603_1608Metric</td><td></td><td class="n">0</td><td class="n">2</td><td class="n">3</td><td>0.005</td><td><a href="https://www.mouser.fr/c/?q=750R%200603">chercher</a> 0.10</td><td>0.01 (lcsc)</td></tr><tr><td>resistor</td><td>787R</td><td>R_0603_1608Metric</td><td></td><td class="n">0</td><td class="n">2</td><td class="n">3</td><td>0.005</td><td><a href="https://www.mouser.fr/c/?q=787R%200603">chercher</a> 0.10</td><td>0.01 (lcsc)</td></tr><tr><td>ic</td><td>OPA2810</td><td>SOIC-8_3.9x4.9mm_P1.27mm</td><td>OPA2810IDR</td><td class="n">0</td><td class="n">2</td><td class="n">3</td><td><a href="https://www.lcsc.com/product-detail/C2059830.html">C2059830</a></td><td><a href="https://www.mouser.fr/ProductDetail/595-OPA2810IDR">595-OPA2810IDR</a> 5.48</td><td>16.44 (mouser)</td></tr><tr><td>resistor</td><td>10R</td><td>R_2512_6332Metric</td><td></td><td class="n">0</td><td class="n">1</td><td class="n">2</td><td>0.050</td><td><a href="https://www.mouser.fr/c/?q=10R%202512">chercher</a> 0.30</td><td>0.10 (lcsc)</td></tr><tr><td>capacitor</td><td>10n</td><td>C_0603_1608Metric</td><td></td><td class="n">0</td><td class="n">1</td><td class="n">2</td><td>0.010</td><td><a href="https://www.mouser.fr/c/?q=10n%200603">chercher</a> 0.12</td><td>0.02 (lcsc)</td></tr><tr><td>capacitor</td><td>10u/10V</td><td>C_1206_3216Metric</td><td></td><td class="n">0</td><td class="n">1</td><td class="n">2</td><td>0.030</td><td><a href="https://www.mouser.fr/c/?q=10u%2F10V%201206">chercher</a> 0.25</td><td>0.06 (lcsc)</td></tr><tr><td>capacitor</td><td>10u/25V</td><td>C_1206_3216Metric</td><td></td><td class="n">0</td><td class="n">1</td><td class="n">2</td><td>0.030</td><td><a href="https://www.mouser.fr/c/?q=10u%2F25V%201206">chercher</a> 0.25</td><td>0.06 (lcsc)</td></tr><tr><td>resistor</td><td>20k5</td><td>R_0603_1608Metric</td><td></td><td class="n">0</td><td class="n">1</td><td class="n">2</td><td>0.005</td><td><a href="https://www.mouser.fr/c/?q=20k5%200603">chercher</a> 0.10</td><td>0.01 (lcsc)</td></tr><tr><td>capacitor</td><td>2u2</td><td>C_0603_1608Metric</td><td></td><td class="n">0</td><td class="n">1</td><td class="n">2</td><td>0.010</td><td><a href="https://www.mouser.fr/c/?q=2u2%200603">chercher</a> 0.12</td><td>0.02 (lcsc)</td></tr><tr><td>resistor</td><td>3.57k</td><td>R_0603_1608Metric</td><td></td><td class="n">0</td><td class="n">1</td><td class="n">2</td><td>0.005</td><td><a href="https://www.mouser.fr/c/?q=3.57k%200603">chercher</a> 0.10</td><td>0.01 (lcsc)</td></tr><tr><td>capacitor</td><td>47u/25V</td><td>CP_Elec_6.3x7.7</td><td></td><td class="n">0</td><td class="n">1</td><td class="n">2</td><td>0.100</td><td><a href="https://www.mouser.fr/c/?q=47u%2F25V%20Elec">chercher</a> 0.40</td><td>0.20 (lcsc)</td></tr><tr><td>resistor</td><td>49R9</td><td>R_0603_1608Metric</td><td></td><td class="n">0</td><td class="n">1</td><td class="n">2</td><td>0.005</td><td><a href="https://www.mouser.fr/c/?q=49R9%200603">chercher</a> 0.10</td><td>0.01 (lcsc)</td></tr><tr><td>resistor</td><td>523R</td><td>R_0603_1608Metric</td><td></td><td class="n">0</td><td class="n">1</td><td class="n">2</td><td>0.005</td><td><a href="https://www.mouser.fr/c/?q=523R%200603">chercher</a> 0.10</td><td>0.01 (lcsc)</td></tr><tr><td>jumper</td><td>5VA: 1 buck / 3 LDO</td><td>PinHeader_1x03_P2.54mm_Vertical</td><td></td><td class="n">0</td><td class="n">1</td><td class="n">2</td><td>0.100</td><td><a href="https://www.mouser.fr/c/?q=5VA%3A%201%20buck%20%2F%203%20LDO%201x03">chercher</a> 0.30</td><td>0.20 (lcsc)</td></tr><tr><td>ic</td><td>74HC4052</td><td>TSSOP-16_4.4x5mm_P0.65mm</td><td>74HCT4052PW</td><td class="n">0</td><td class="n">1</td><td class="n">2</td><td><a href="https://www.lcsc.com/product-detail/C57078.html">C57078</a> 0.151</td><td><a href="https://www.mouser.fr/ProductDetail/771-74HCT4052PW118">771-74HCT4052PW118</a> 0.60</td><td>0.30 (lcsc)</td></tr><tr><td>ic</td><td>AD8421</td><td>SOIC-8_3.9x4.9mm_P1.27mm</td><td>AD8421ARZ</td><td class="n">0</td><td class="n">1</td><td class="n">2</td><td><a href="https://www.lcsc.com/product-detail/C392903.html">C392903</a> 3.691</td><td><a href="https://www.mouser.fr/ProductDetail/584-AD8421ARZ">584-AD8421ARZ</a> 8.91</td><td>7.38 (lcsc)</td></tr><tr><td>connector</td><td>COIL JOINT</td><td>PinHeader_1x12_P2.54mm_Vertical</td><td></td><td class="n">0</td><td class="n">1</td><td class="n">2</td><td>0.100</td><td><a href="https://www.mouser.fr/c/?q=COIL%20JOINT%201x12">chercher</a> 0.30</td><td>0.20 (lcsc)</td></tr><tr><td>connector</td><td>12V</td><td>BarrelJack_Horizontal</td><td>DC-005-5.5x2.1</td><td class="n">0</td><td class="n">1</td><td class="n">2</td><td><a href="https://www.lcsc.com/product-detail/C381118.html">C381118</a> 0.200</td><td><a href="https://www.mouser.fr/c/?q=DC-005-5.5x2.1">chercher</a> 0.80</td><td>0.40 (lcsc)</td></tr><tr><td>ic</td><td>LP2985-5.0</td><td>SOT-23-5</td><td>LP2985AIM5-5.0</td><td class="n">0</td><td class="n">1</td><td class="n">2</td><td><a href="https://www.lcsc.com/product-detail/C129541.html">C129541</a> 0.165</td><td><a href="https://www.mouser.fr/ProductDetail/926-LP2985AIM5-5.0NOPB">926-LP2985AIM5-5.0NOPB</a> 0.60</td><td>0.33 (lcsc)</td></tr><tr><td>connector</td><td>MCU</td><td>PinHeader_2x10_P2.54mm_Vertical</td><td></td><td class="n">0</td><td class="n">1</td><td class="n">2</td><td>0.100</td><td><a href="https://www.mouser.fr/c/?q=MCU%202x10">chercher</a> 0.30</td><td>0.20 (lcsc)</td></tr><tr><td>diode</td><td>SMBJ15A</td><td>D_SMB</td><td>SMBJ15A</td><td class="n">0</td><td class="n">1</td><td class="n">2</td><td><a href="https://www.lcsc.com/product-detail/C113962.html">C113962</a> 0.100</td><td><a href="https://www.mouser.fr/ProductDetail/576-SMBJ15A">576-SMBJ15A</a> 0.40</td><td>0.20 (lcsc)</td></tr></tbody></table></div>
+</section>
+<section>
+<h2>Totaux</h2>
+<div class="tbl"><table><thead><tr><th>Poste</th><th class="n">USD</th><th class="n">EUR TTC</th></tr></thead><tbody><tr><td>Composants, tout chez LCSC (lignes qui y existent)</td><td class="n">11</td><td class="n">13</td></tr><tr><td>Composants, tout chez Mouser (lignes qui y existent)</td><td class="n">60</td><td class="n">67</td></tr><tr><td>Composants, le moins cher ligne à ligne</td><td class="n">28</td><td class="n">31</td></tr><tr><td>NUCLEO-G474RE</td><td class="n">20</td><td class="n">22</td></tr><tr><td>PCB_100x100_4L_x5</td><td class="n">30</td><td class="n">33</td></tr><tr><td>PCB_100x62_2L_x5</td><td class="n">4</td><td class="n">4</td></tr><tr><td>Shipping_JLCPCB</td><td class="n">25</td><td class="n">28</td></tr><tr><td>Shipping_Mouser</td><td class="n">20</td><td class="n">22</td></tr><tr><td><strong>Total, le moins cher ligne à ligne, cartes et port compris</strong></td><td class="n"><strong>126</strong></td><td class="n"><strong>139</strong></td></tr></tbody></table></div>
+</section>
+<section>
+<h2>Non monté sur le démonstrateur</h2>
+<ul><li>carte analogique : C26, C27, C4, C5, C6, C7, C8, FB1, J5, JP3, L1, R1, R2, R3, R4, R66, R67, R68, U1, U7, U8</li></ul>
+</section>
+<p class="foot">Page générée par <code>python -m docfig pages</code> depuis <code>docs/bom-demonstrateur-a.md</code> du dépôt electronic-chess : le même texte que le document, ses figures embarquées, ses chiffres calculés par <code>chessboard_calc</code> depuis <code>config/board.yaml</code> et épinglés par les tests du dépôt.</p>
+</div>
+</body>
+</html>

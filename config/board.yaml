@@ -199,7 +199,7 @@ bench:                         # the Nucleo bench of note 19: NUCLEO=1 build of 
 mockup:
   # 2 x 2 mockup, phase 1. Two boards (ADR 0008): a script-generated
   # 4-layer coil board and a Nucleo-shield analog board, joined edge to
-  # edge by a rigid 1x10 header. Pitch is pitch.mockup_mm.
+  # edge by a rigid 1x12 header. Pitch is pitch.mockup_mm.
   test_pieces:  # deliberately the bottom of the band, tightest spacing
     - { piece: pawn, color: black }
     - { piece: knight, color: black }
@@ -237,7 +237,7 @@ mockup:
       color_black: [40, 60, 255]   # cool blue camp
       chain_squares: [2, 2, 4, 4, 3, 3, 1, 1]  # data order along the chain
   analog_board:
-    size_mm: [100.0, 56.0]
+    size_mm: [100.0, 62.0]       # analoggen.pcb BOARD_W, BOARD_H; pinned by the tests
     layers: 2
     format: nucleo64_shield      # Arduino R3 header pattern, Nucleo below
   analog:

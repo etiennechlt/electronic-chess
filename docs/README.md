@@ -125,9 +125,13 @@ pas.
   [le facteur Q](pages/facteur-q.html),
   [le cerveau et le banc](pages/cerveau-banc.html),
   [monter le banc](pages/tuto-banc.html), et la note 24 en trois
-  lectures, [Hall + RFID](pages/hall-rfid.html). Elles sont générées par
-  `python -m docfig pages`, des mêmes fonctions et du même yaml que les
-  notes, donc jamais désynchronisées d'elles.
+  lectures, [Hall + RFID](pages/hall-rfid.html) ; les deux tutoriels des
+  démonstrateurs, [A, LC](pages/demonstrateur-lc.html) et
+  [B, Hall + RFID](pages/demonstrateur-hall-rfid.html), la
+  [fiche de coûts](pages/couts-demonstrateurs.html) et les deux
+  nomenclatures sont rendus depuis les documents eux-mêmes. Elles sont
+  générées par `python -m docfig pages`, des mêmes fonctions et du même
+  yaml que les notes, donc jamais désynchronisées d'elles.
 - **Modifier une carte** :
   [générateurs KiCad](notes/03-generateurs-kicad.md),
   [routeur et garanties](notes/04-routeur-et-garanties.md),
